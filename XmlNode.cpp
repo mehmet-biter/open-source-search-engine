@@ -4,6 +4,7 @@
 #include "Mem.h"
 #include "Sanity.h"
 
+static int32_t getTagLen(const char *node);
 
 // . Here's a nice list of all the html nodes names, lengths, whether they're
 //   a breaking node or not and their node id
@@ -210,6 +211,66 @@ const NodeType g_nodes[] = {
 // NAME hasBackTag brk? isVisible? filterKeep1? filterKeep2 type/m_nodeId[i]
 
 
+// . does "s" start a tag? (regular tag , back tag or comment tag)
+static bool isTagStart(const char *s) {
+	// it must start with < to be a tag
+	if( s[0] != '<' )
+		return false;
+
+	// next char can be an alnum, !-- or / then alnum
+
+	// Extensible Markup Language (XML) 1.0 (Fifth Edition)
+	// https://www.w3.org/TR/REC-xml/#NT-Name
+	// NameStartChar ::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] |
+	//                   [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] |
+	//                   [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] |
+	//                   [#x10000-#xEFFFF]
+
+	/// @todo ALC cater for other start characters
+	/// regex: "^<[A-Za-z]"
+	if( is_alpha_a(s[1]) )
+		return true;
+
+	// next char can be 1 of 3 things to be a tag
+	// / is also acceptable, followed only by an alnum or >
+
+	/// @todo ALC "</>" a valid tag?
+	/// regex: "^</[A-Za-z0-9>]"
+	if( s[1] == '/' ) {
+		if( is_alnum_a(s[2]) || (s[2] == '>') )
+			return true;
+		return false;
+	}
+
+	// office.microsoft.com uses <?xml ...?> tags
+	/// regex: "^<?[A-Za-z0-9]"
+	if( s[1]=='?' ) {
+		if( is_alnum_a(s[2]) )
+			return true;
+		return false;
+	}
+
+	// make sure the double hyphens follow the ! or alnum
+	if( s[1]=='!' ) {
+		// this is for <!xml> i guess
+		if( is_alnum_a(s[2]) )
+			return true;
+
+		// and the <![CDATA[
+		// and <![....]> i've seen too
+		// <![if gt IE 6]><script>.... for waterfordcoc.org
+		if( s[2] == '[' )
+			return true;
+
+		// and the <!-- comment here--> famous comment tag
+		if( s[2]=='-' && s[3]=='-' )
+			return true;
+	}
+
+	return false;
+}
+
+
 // . called by Xml class
 // . returns the length of the node
 // . TODO: "node" is now guaranteed to be \0 terminated -- make this faster
@@ -339,7 +400,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 }
 
 // . return the length of a node starting at "node"
-int32_t getTagLen ( const char *node ) {
+static int32_t getTagLen ( const char *node ) {
 	// skip over first <
 	int32_t i ;
 

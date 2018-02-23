@@ -13,6 +13,7 @@
 #include "Conf.h"
 #include "UrlBlockCheck.h"
 #include "Domains.h"
+#include "FxExplicitKeywords.h"
 
 
 #ifdef _VALGRIND_
@@ -38,12 +39,6 @@ public:
 		m_useSections			= true;
 		m_startDist				= 0;
 
-		// BR 20160108: Now default to false since we will only use it for
-		// very specific cases like spiderdate, which is for debugging only.
-		// If true, creates 4 posdb entries for numbers in posdb, e.g.
-		// gbsortbyint:gbisadultint32, gbrevsortbyint:gbisadultint32
-		// gbsortby:gbisadultfloat32, gbrevsortby:gbisadultfloat32
-		m_createSortByForNumbers= false;
 		m_hashNumbers			= true;
 		m_filterUrlIndexableWords	= false;
 		m_linkerSiteRank		= 0;
@@ -59,7 +54,6 @@ public:
 	int32_t			m_startDist;
 	bool			m_useCountTable;
 	bool			m_useSections;
-	bool			m_createSortByForNumbers;
 	bool			m_hashNumbers;
 	bool			m_filterUrlIndexableWords; //Do special filtering on words in url, eg. exclude "com" before path
 };
@@ -263,12 +257,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
-	unsigned char *hc = (unsigned char *)getHopCount();
-	if (!hc || hc == (void *)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, getHopCount returned -1");
-		return (char *)hc;
-	}
-
 	// need this for hashing
 	HashTableX *cnt = getCountTable();
 	if (!cnt) {
@@ -414,6 +402,12 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 
+	//Hash explicit keywords, if any
+	if(!hashExplicitKeywords(table)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashExplicityKeywords failed");
+		return NULL;
+	}
+
 	// then hash the incoming link text, NO ANOMALIES, because
 	// we index the single words in the neighborhoods next, and
 	// we had songfacts.com coming up for the 'street light facts'
@@ -449,11 +443,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 
 	if (!hashLinks(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLinks failed");
-		return NULL;
-	}
-
-	if (!hashDateNumbers(table)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, hashDateNumbers failed");
 		return NULL;
 	}
 
@@ -607,40 +596,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 
 
-// . hash dates for sorting by using gbsortby: and gbrevsortby:
-// . do 'gbsortby:gbspiderdate' as your query to see this in action
-bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
-
-	// stop if already set
-	if ( ! m_spideredTimeValid ) return true;
-
-	int32_t indexedTime = getIndexedTime();
-
-	// first the last spidered date
-	HashInfo hi;
-	hi.m_hashGroup = 0;// this doesn't matter, it's a numeric field
-	hi.m_tt        = tt;
-	hi.m_desc      = "last spidered date";
-	hi.m_prefix    = "gbspiderdate";
-	hi.m_createSortByForNumbers = true;
-
-	char buf[64];
-	int32_t bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)m_spideredTime );
-	if ( ! hashNumberForSorting( buf , buf , bufLen , &hi ) )
-		return false;
-
-	// and index time is >= spider time, so you want to sort by that for
-	// the widget for instance
-	hi.m_desc      = "last indexed date";
-	hi.m_prefix    = "gbindexdate";
-	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
-	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
- 		return false;
-
-	// all done
-	return true;
-}
-
 // returns false and sets g_errno on error
 bool XmlDoc::hashContentType ( HashTableX *tt ) {
 
@@ -653,7 +608,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 		return false;
 	}
 
-	char *s = NULL;
+	const char *s = NULL;
 
 	setStatus ( "hashing content type" );
 
@@ -923,7 +878,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		gbshutdownLogicError();
 	}
 
-	char *s = fu->getUrl();
+	const char *s = fu->getUrl();
 	int32_t slen = fu->getUrlLen();
 
 	if (!*ini || m_version <= 126) {
@@ -1151,7 +1106,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//   wikipedia.org as subsites!!
 	if ( ! m_links.hasSubdirOutlink() ) add = false;
 
-	char *host = fu->getHost        ();
+	const char *host = fu->getHost();
 	int32_t  hlen = fu->getHostLen     ();
 
 	// tags from here out
@@ -1160,7 +1115,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// hash it
 	if ( add ) {
 		// remove the last path component
-		char *end2 = s + slen - 2;
+		const char *end2 = s + slen - 2;
 		// back up over last component
 		for ( ; end2 > fu->getPath() && *end2 != '/' ; end2-- ) ;
 		// hash that part of the url
@@ -1208,7 +1163,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 
 	if (size_utf8Content - 1 > 0) {
 		setStatus("hashing url path");
-		char *path = fu->getPath();
+		const char *path = fu->getPath();
 		int32_t plen = fu->getPathLen();
 
 		// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
@@ -1273,7 +1228,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 		int32_t tlen = k->size_linkText;
 		if ( tlen > 0 ) tlen--;
 		// get the text
-		char *txt = k->getLinkText();
+		const char *txt = k->getLinkText();
 		// sanity check
 		if ( ! verifyUtf8 ( txt , tlen ) ) {
 			log("xmldoc: bad link text 2 from url=%s for %s",
@@ -1320,37 +1275,33 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	//   space in the titleRec
 	// . now we only do one or the other, not both
 	LinkInfo  *linkInfo = getLinkInfo1();
+	if(!linkInfo)
+		return true;
 
 	// loop over all the Inlinks
-	Inlink *k = NULL;
- loop:
-	// get the next inlink
-	k = linkInfo ? linkInfo->getNextInlink( k ) : NULL;
-	// break if done
-	if ( ! k ) return true;
+	for(Inlink *k = linkInfo->getNextInlink(NULL); k; k = linkInfo->getNextInlink(k)) {
+		// skip if internal, they often have the same neighborhood text
+		if((k->m_ip&0x0000ffff)==(m_ip&0x0000ffff))
+			continue;
 
-	// skip if internal, they often have the same neighborhood text
-	if ( (k->m_ip&0x0000ffff)==(m_ip&0x0000ffff) ) goto loop;
+		// get the left and right texts and hash both
+		const char *s = k->getSurroundingText();
+		if(!s || k->size_surroundingText <= 1)
+			continue;
 
-	// get the left and right texts and hash both
-	char *s = k->getSurroundingText();
-	if ( ! s || k->size_surroundingText <= 1 ) goto loop;
+		// update hash parms
+		HashInfo hi;
+		hi.m_tt        = tt;
+		hi.m_desc      = "surrounding text";
+		hi.m_hashGroup = HASHGROUP_NEIGHBORHOOD;
 
-	//int32_t inlinks = *getSiteNumInlinks();
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_desc      = "surrounding text";
-	hi.m_hashGroup = HASHGROUP_NEIGHBORHOOD;
-
-	// . hash that
-	// . this returns false and sets g_errno on error
-	int32_t len = k->size_surroundingText - 1;
-	if ( ! hashString ( s, len, &hi ) ) return false;
-
-	// get the next Inlink
-	goto loop;
+		// . hash that
+		// . this returns false and sets g_errno on error
+		int32_t len = k->size_surroundingText - 1;
+		if(!hashString(s, len, &hi))
+			return false;
+	}
+	return true;
 }
 
 // . we now do the title hashing here for newer titlerecs, version 80+, rather
@@ -1407,10 +1358,10 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	char **wptrs = m_words.getWordPtrs();
-	int32_t  *wlens = m_words.getWordLens();
-	char  *title    = wptrs[a];
-	char  *titleEnd = wptrs[i-1] + wlens[i-1];
+	const char * const *wptrs = m_words.getWordPtrs();
+	const int32_t  *wlens = m_words.getWordLens();
+	const char  *title    = wptrs[a];
+	const char  *titleEnd = wptrs[i-1] + wlens[i-1];
 	int32_t   titleLen = titleEnd - title;
 	if ( ! hashString ( title, titleLen, &hi) ) return false;
 
@@ -1457,7 +1408,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 	//char buf [ 2048 + 2 ];
 	//int32_t len=m_xml.getMetaContentPointer ( buf , 2048 , "keywords" , 8 );
 	int32_t mklen;
-	char *mk = getMetaKeywords( &mklen );
+	const char *mk = getMetaKeywords( &mklen );
 
 	// update hash parms
 	HashInfo hi;
@@ -1467,6 +1418,41 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 
 	// call XmlDoc::hashString
 	return hashString ( mk , mklen , &hi);
+}
+
+
+void XmlDoc::lookupAndSetExplicitKeywords() {
+	std::string kw;
+	kw = ExplicitKeywords::lookupExplicitKeywords(m_firstUrl.getUrl());
+	if(kw.empty())
+		kw = ExplicitKeywords::lookupExplicitKeywords(m_currentUrl.getUrl());
+	if(!kw.empty()) {
+		log(LOG_DEBUG,"spider: found explicit keywords '%s' for %s", kw.c_str(),m_firstUrl.getUrl());
+		m_explicitKeywordsBuf.set(kw.c_str());
+		ptr_explicitKeywords = m_explicitKeywordsBuf.getBufStart();
+		size_explicitKeywords = m_explicitKeywordsBuf.length();
+	} else {
+		m_explicitKeywordsBuf.purge();
+		ptr_explicitKeywords = NULL;
+		size_explicitKeywords = 0;
+	}
+}
+
+bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
+	if(m_version<128)
+		return true;
+	setStatus("hashing explicit keywords");
+	
+	if(size_explicitKeywords>0) {
+		log(LOG_DEBUG,"spider: hashing explicit keywords '%.*s' for %s", size_explicitKeywords, ptr_explicitKeywords, m_firstUrl.getUrl());
+		// update hash parms
+		HashInfo hi;
+		hi.m_tt         = tt;
+		hi.m_desc       = "explicit keywords";
+		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
+		return hashString(ptr_explicitKeywords, size_explicitKeywords, &hi);
+	} else
+		return true; //nothing done - no error
 }
 
 
@@ -1490,7 +1476,7 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	//char buf [ 2048 + 2 ];
 	//int32_t len = m_xml.getMetaContent ( buf , 2048 , "summary" , 7 );
 	int32_t mslen;
-	char *ms = getMetaSummary ( &mslen );
+	const char *ms = getMetaSummary ( &mslen );
 
 	// update hash parms
 	HashInfo hi;
@@ -1521,7 +1507,7 @@ bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
 	setStatus ( "hashing meta geo.placename" );
 
 	int32_t mgplen;
-	char *mgp = getMetaGeoPlacename( &mgplen );
+	const char *mgp = getMetaGeoPlacename( &mgplen );
 
 	// update hash parms
 	HashInfo hi;
@@ -1669,7 +1655,7 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	return true;
 }
 
-bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
+bool XmlDoc::hashString( const char *s, int32_t slen, HashInfo *hi ) {
 	if ( ! m_versionValid        ) { g_process.shutdownAbort(true); }
 
 	if ( hi->m_useCountTable && ! m_countTableValid){g_process.shutdownAbort(true); }
@@ -1685,7 +1671,7 @@ bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 }
 
 
-bool XmlDoc::hashString3( char       *s              ,
+bool XmlDoc::hashString3( const char       *s              ,
 		  int32_t        slen           ,
 		  HashInfo   *hi             ,
 		  HashTableX *countTable     ,
@@ -1695,7 +1681,7 @@ bool XmlDoc::hashString3( char       *s              ,
 	Bits    bits;
 	Phrases phrases;
 
-	if ( ! words.set   ( s , slen , true ) )
+	if ( ! words.set(s, slen) )
 		return false;
 	if ( !bits.set(&words))
 		return false;
@@ -2090,187 +2076,10 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 					return false;
 			}
 		}
-
-
-		//
-		// NUMERIC SORTING AND RANGES
-		//
-
-		// only store numbers in fields this way
-		if ( prefixHash == 0 )
-		{
-			continue;
-		}
-
-		// this may or may not be numeric.
-		if ( ! is_digit ( wptrs[i][0] ) )
-		{
-			continue;
-		}
-
-		// Avoid creating "sortby" number values in posdb if not wanted
-		if( !hi->m_createSortByForNumbers )
-		{
-			continue;
-		}
-
-		// this might have to "back up" before any '.' or '-' symbols
-		if ( ! hashNumberForSorting ( wptrs[0] ,
-				    wptrs[i] ,
-				    wlens[i] ,
-				    hi ) )
-			return false;
 	}
 
 	// between calls? i.e. hashTitle() and hashBody()
 	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
-
-	return true;
-}
-
-// . we store numbers as floats in the top 4 bytes of the lower 6 bytes of the
-//   posdb key
-// . the termid is the hash of the preceeding field
-// . in json docs a field is like "object.details.price"
-// . in meta tags it is just the meta tag name
-// . credit card numbers are 16 digits. we'd need like 58 bits to store those
-//   so we can't do that here, but we can approximate as a float
-// . the binary representation of floating point numbers is ordered in the
-//   same order as the floating points themselves! so we are lucky and can
-//   keep our usually KEYCMP sorting algos to keep the floats in order.
-bool XmlDoc::hashNumberForSorting ( const char *beginBuf ,
-			  const char *buf ,
-			  int32_t bufLen ,
-			  HashInfo *hi ) {
-
-	if ( ! is_digit(buf[0]) ) return true;
-
-	const char *p = buf;
-	const char *bufEnd = buf + bufLen;
-
-	// back-up over any .
-	if ( p > beginBuf && p[-1] == '.' ) p--;
-
-	// negative sign?
-	if ( p > beginBuf && p[-1] == '-' ) p--;
-
-	//
-	// also hash as an int, 4 byte-integer so our lastSpidered timestamps
-	// dont lose 128 seconds of resolution
-	//
-
-	int32_t i = (int32_t) atoll2 ( p , bufEnd - p );
-
-	if ( ! hashNumberForSortingAsInt32 ( i , hi , "gbsortbyint" ) )
-		return false;
-
-	// also hash in reverse order for sorting from low to high
-	i = -1 * i;
-
-	if ( ! hashNumberForSortingAsInt32 ( i , hi , "gbrevsortbyint" ) )
-		return false;
-
-
-	return true;
-}
-
-bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char *sortByStr ) {
-
-	// prefix is something like price. like the meta "name" or
-	// the json name with dots in it like "product.info.price" or something
-	int64_t nameHash = 0LL;
-	int32_t nameLen = 0;
-	if ( hi->m_prefix ) nameLen = strlen ( hi->m_prefix );
-	if ( hi->m_prefix && nameLen )
-		nameHash = hash64Lower_utf8_nospaces( hi->m_prefix , nameLen );
-	// need a prefix for hashing numbers... for now
-	else { g_process.shutdownAbort(true); }
-
-	// combine prefix hash with a special hash to make it unique to avoid
-	// collisions. this is the "TRUE" prefix.
-	int64_t truePrefix64 = hash64n ( sortByStr ); // "gbsortby");
-	// hash with the "TRUE" prefix
-	int64_t ph2 = hash64 ( nameHash , truePrefix64 );
-
-	// . now store it
-	// . use field hash as the termid. normally this would just be
-	//   a prefix hash
-	// . use mostly fake value otherwise
-	key144_t k;
-	Posdb::makeKey ( &k ,
-			  ph2 ,
-			  0,//docid
-			  0,// word pos #
-			  0,// densityRank , // 0-15
-			  0 , // MAXDIVERSITYRANK
-			  0 , // wordSpamRank ,
-			  0 , //siterank
-			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
-			  langUnknown,
-			  0 , // multiplier
-			  false, // syn?
-			  false , // delkey?
-			  hi->m_shardByTermId );
-
-	Posdb::setInt ( &k , n );
-
-	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
-	// so that we can b-step into a posdb list and make sure
-	// we are aligned on a 6 byte or 12 byte key, since they come
-	// in both sizes. but for this, hack it off to tell
-	// addTable144() that we are a special posdb key, a "numeric"
-	// key that has a float stored in it. then it will NOT
-	// set the siterank and langid bits which throw our sorting
-	// off!!
-	Posdb::setAlignmentBit ( &k , 0 );
-
-	// sanity
-	//float t = Posdb::getFloat ( &k );
-	int32_t x = Posdb::getInt ( &k );
-	if ( x != n ) { g_process.shutdownAbort(true); }
-
-	HashTableX *dt = hi->m_tt;
-
-	// the key may indeed collide, but that's ok for this application
-	if ( ! dt->addTerm144 ( &k ) )
-		return false;
-
-	if ( ! m_wts )
-		return true;
-
-	// store in buffer
-	char buf[128];
-	snprintf(buf,126,"%s:%s int32=%" PRId32,sortByStr, hi->m_prefix,n);
-	int32_t bufLen = strlen(buf);
-
-	// add to wts for PageParser.cpp display
-	// store it
-	if ( ! storeTerm ( buf,
-			   bufLen,
-				ph2,
-			   hi,
-			   0, // word#, i,
-			   0, // wordPos
-			   0,// densityRank , // 0-15
-			   0, // MAXDIVERSITYRANK,//phrase
-			   0, // ws,
-			   0, // hashGroup,
-			   //true,
-			   &m_wbuf,
-			   m_wts,
-			   // a hack for display in wts:
-			   SOURCE_NUMBER, // SOURCE_BIGRAM, // synsrc
-			   langUnknown ,
-			   k ) )
-		return false;
 
 	return true;
 }

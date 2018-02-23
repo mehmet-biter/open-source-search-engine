@@ -17,11 +17,22 @@
 #include "Process.h"
 #include "ip.h"
 #include "Mem.h"
+#include "JobScheduler.h"
+#include "SpiderdbRdbSqliteBridge.h"
 
+
+class State00;
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;
 static void gotListWrapper           ( void *state, RdbList *list, Msg5 *msg5);
 static void doneSending_ass          ( void *state , UdpSlot *slot ) ;
+
+static void handleSpiderdbRequest(State00 *state);
+static void execSpiderdbRequest(void *pv);
+static void doneSpiderdbRequest(void *state, job_exit_t exit_type);
+
+static void handleLocalSpiderdbGetList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list);
+
 
 Msg0::Msg0 ( ) {
 	constructor();
@@ -192,7 +203,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 
 	//if it is spiderdb then we only have it it we are a spider host too
-	if((rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
+	if((rdbId == RDB_SPIDERDB_DEPRECATED || rdbId == RDB2_SPIDERDB2_DEPRECATED) &&
 	   isLocal &&
 	   !g_hostdb.getMyHost()->m_spiderEnabled)
 	{
@@ -207,6 +218,12 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( isLocal ) {
 		logTrace( g_conf.m_logTraceMsg0, "isLocal" );
 
+		if(rdbId==RDB_SPIDERDB_DEPRECATED) {
+			logTrace( g_conf.m_logTraceMsg0, "Jump to handleLocalSpiderdbGetList()" );
+			handleLocalSpiderdbGetList(m_collnum,m_startKey,m_endKey,m_minRecSizes,m_list);
+			logTrace( g_conf.m_logTraceMsg0, "END, jump to handleLocalSpiderdbGetList()" );
+			return true;
+		}
 		try { m_msg5 = new ( Msg5 ); } 
 		catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
@@ -437,10 +454,12 @@ public:
 	UdpSlot   *m_slot;
 	int64_t  m_startTime;
 	int32_t       m_niceness;
+	collnum_t  m_collnum;
 	rdbid_t    m_rdbId;
 	char       m_ks;
 	char       m_startKey[MAX_KEY_BYTES];
 	char       m_endKey[MAX_KEY_BYTES];
+	int32_t    m_minRecSizes;
 };
 
 // . reply to a request for an RdbList
@@ -529,10 +548,18 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	st0->m_slot = slot;
 	// init this one
 	st0->m_niceness = niceness;
+	st0->m_collnum = collnum;
 	st0->m_rdbId    = rdbId;
 	st0->m_ks = ks;
 	memcpy(st0->m_startKey,startKey,ks);
 	memcpy(st0->m_endKey,endKey,ks);
+	st0->m_minRecSizes = minRecSizes;
+
+	//spiderdb is sqlite-based, not Rdb-based
+	if(rdbId==RDB_SPIDERDB_DEPRECATED) {
+		handleSpiderdbRequest(st0);
+		return;
+	}
 
 	// . if this request came over on the high priority udp server
 	//   make sure the priority gets passed along
@@ -734,4 +761,60 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	// release st0 now
 	mdelete ( st0 , sizeof(State00) , "Msg0" );
 	delete ( st0 );
+}
+
+
+static void handleSpiderdbRequest(State00 *state) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN");
+	if(!g_jobScheduler.submit(execSpiderdbRequest, doneSpiderdbRequest,
+				  state,
+				  thread_type_spider_read,
+				  0))
+	{
+		log(LOG_ERROR,"Could not submit job for spiderdb-read");
+		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		delete state;
+	}
+	logTrace( g_conf.m_logTraceMsg0, "END");
+}
+
+
+static void execSpiderdbRequest(void *pv) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN");
+	State00 *state = reinterpret_cast<State00*>(pv);
+	if(!SpiderdbRdbSqliteBridge::getList(state->m_collnum,
+					     &state->m_list,
+					     *(reinterpret_cast<const u_int128_t*>(state->m_startKey)),
+					     *(reinterpret_cast<const u_int128_t*>(state->m_endKey)),
+					     state->m_minRecSizes)) {
+		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		delete state;
+		logTrace( g_conf.m_logTraceMsg0, "END");
+		return;
+	}
+	state->m_list.setOwnData(false);
+	g_udpServer.sendReply(state->m_list.getList(), state->m_list.getListSize(), state->m_list.getAlloc(), state->m_list.getAllocSize(), state->m_slot, state, doneSending_ass);
+	logTrace( g_conf.m_logTraceMsg0, "END");
+}
+
+
+static void doneSpiderdbRequest(void *pv, job_exit_t exit_type) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN");
+	if(exit_type!=job_exit_normal) {
+		State00 *state = reinterpret_cast<State00*>(pv);
+		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		delete state;
+	}
+	logTrace( g_conf.m_logTraceMsg0, "END");
+}
+
+
+
+static void handleLocalSpiderdbGetList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list) {
+	g_errno = 0;
+	SpiderdbRdbSqliteBridge::getList(collnum,
+					 list,
+					 *(reinterpret_cast<const u_int128_t*>(startKey)),
+					 *(reinterpret_cast<const u_int128_t*>(endKey)),
+					 minRecSizes);
 }

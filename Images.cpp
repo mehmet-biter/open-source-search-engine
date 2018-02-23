@@ -135,8 +135,8 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 	//m_pageSite  = pageSite;
 	// scan the words
 	int32_t       nw     = words->getNumWords();
-	nodeid_t  *tids   = words->getTagIds();
-	int64_t *wids   = words->getWordIds();
+	const nodeid_t *tids   = words->getTagIds();
+	const int64_t  *wids   = words->getWordIds();
 	//int32_t      *scores = scoresArg->m_scores;
 	Section **sp = NULL; 
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -237,7 +237,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 
 		// before we lookup the image url to see if it is unique we
 		// must first make sure that we have an adequate number of
-		// permalinks from this same site with this same hop count.
+		// permalinks from this same site
 		// we need at least 10 before we extract image thumbnails.
 		char buf[2000];
 		// set the query

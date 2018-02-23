@@ -12,7 +12,8 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 | ------------- | ------------- |
 | Multi-threading | Many improvements have been made with regards to multi-threading and general optimizations.|
 | Stability | Numerous general bugfixes and major improvements in thread safety.|
-| Data formats | Posdb is being changed to store the entries for a page in a single Posdb file, rather than spreading out a the entries  across multiple files and merging the data in memory + handling delete keys at query time. A new index file will point to the file containing the newest version of a document.|
+| Data formats | Posdb is being changed to store the entries for a page in a single Posdb file, rather than spreading out a the entries  across multiple files and merging the data in memory + handling delete keys at query time. A new index file will point to the file containing the newest version of a document. |
+|| Spiderdb is modified to use sqlite3 database instead of RDB format.|
 | Data file merging | Our version use a dedicated drive for merging, instead of merging + deleting part files on-the-fly on the same data drive. We will create a completely merged file on the merge drive, temporarily make GB use that file for queries, delete the original files, copy the newly merged file back to the 'production drive', switch back query handling to that drive and delete the temporary file. The merge drive must be big enough to hold at least 1 instance's posdb data.|
 | Alerting | Start script improved to send alerts if GB crashes (and avoid successive coredumps, but stay down for analysis).|
 | Trace log | Lots of options to add very detailed trace log to different parts of the code.|
@@ -32,6 +33,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 | Copy | Stop your running GB instances. Copy the files contained in the new gb-[date]-[rev].tar.gz file to your GB instance 0.|
 | Install | Go to your GB instance 0 and do a './gb install' to copy the binary and needed files to all instances.|
 | Remove files | Remove the posdb files from your collections |
+| Convert files | Convert the spiderdb files to sqlite3 format by using './gb convertspiderdb' |
 | Start | './gb start' from your instance 0 and you should be on your way.|
 | Rebuild | Rebuild the posdb data files through the web UI. This is needed because we store less data in posdb than the original version, and GB cannot clean this 'junk' data up when re-indexing pages.|
 
@@ -56,6 +58,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl-dev
 *    libprotobuf-dev
 *    protobuf-compiler
+*    libsqlite3-dev
 
 #### OpenSuse
 *    g++
@@ -76,6 +79,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    openssl-devel
 *    protobuf-devel
 *    protobuf-compiler
+*    sqlite-devel
 
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.

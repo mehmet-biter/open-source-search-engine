@@ -55,10 +55,4 @@ public:
 };
 
 
-bool printSearchResultsHeader ( class State0 *st ) ;
-bool printResult ( class State0 *st,  int32_t ix , int32_t *numPrintedSoFar );
-bool printSearchResultsTail ( class State0 *st ) ;
-
-
-
 #endif // GB_PAGERESULTS_H

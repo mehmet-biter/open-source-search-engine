@@ -137,13 +137,15 @@ bool Rdb::init(const char *dbname,
 		case RDB2_POSDB2:
 		case RDB_TITLEDB:
 		case RDB2_TITLEDB2:
-		case RDB_SPIDERDB:
+		case RDB_SPIDERDB_DEPRECATED:
 		case RDB_DOLEDB:
-		case RDB2_SPIDERDB2:
+		case RDB2_SPIDERDB2_DEPRECATED:
 		case RDB_LINKDB:
 		case RDB2_LINKDB2:
 			m_pageSize = GB_INDEXDB_PAGE_SIZE;
 			break;
+		// Not a real rdb: case RDB_SPIDERDB_SQLITE:
+		// Not a real rdb: case RDB2_SPIDERDB2_SQLITE:
 		default:
 			m_pageSize = GB_TFNDB_PAGE_SIZE;
 	}
@@ -1062,14 +1064,14 @@ void attemptMergeAll() {
 			RDB_TITLEDB,
 			RDB_TAGDB,
 			RDB_LINKDB,
-			RDB_SPIDERDB,
+			RDB_SPIDERDB_DEPRECATED,
 			RDB_CLUSTERDB,
 			// also try to merge on rdbs being rebuilt
 			RDB2_POSDB2,
 			RDB2_TITLEDB2,
 			RDB2_TAGDB2,
 			RDB2_LINKDB2,
-			RDB2_SPIDERDB2,
+			RDB2_SPIDERDB2_DEPRECATED,
 			RDB2_CLUSTERDB2
 		};
 		static const unsigned numRdbs = sizeof(rdbid)/sizeof(rdbid[0]);
@@ -1130,7 +1132,7 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
 	       m_rdbId == RDB_DOLEDB     ||
-	       m_rdbId == RDB_SPIDERDB   ) ) {
+	       m_rdbId == RDB_SPIDERDB_DEPRECATED ) ) {
 
 		// allow banning of sites still
 		log(LOG_WARN, "db: How did an add come in while in repair mode? rdbName=%s", getDbnameFromId(m_rdbId));
@@ -1512,46 +1514,6 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		}
 	}
 
-	// . cancel any spider request that is a dup in the dupcache to save disk space
-	// . twins might have different dupcaches so they might have different dups,
-	//   but it shouldn't be a big deal because they are dups!
-	if (m_rdbId == RDB_SPIDERDB && !KEYNEG(key)) {
-		// . this will create it if spiders are on and its NULL
-		// . even if spiders are off we need to create it so 
-		//   that the request can adds its ip to the waitingTree
-		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-
-		// skip if not there
-		if (!sc) {
-			logTrace(g_conf.m_logTraceRdb, "END. %s: No spider coll. Returning true", m_dbname);
-			return true;
-		}
-
-		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
-		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(data - 4 - sizeof(key128_t));
-
-		// is it really a request and not a SpiderReply?
-		if (Spiderdb::isSpiderRequest(&(sreq->m_key))) {
-			// skip if in dup cache. do NOT add to cache since
-			// addToWaitingTree() in Spider.cpp will do that when called
-			// from addSpiderRequest() below
-			if (sc->isInDupCache(sreq, false)) {
-				logDebug(g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url);
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Duplicated spider req. Returning true", m_dbname);
-				return true;
-			}
-
-			// if we are overflowing...
-			if (!sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
-			    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
-				g_stats.m_totalOverflows++;
-				logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Overflow. Returning true", m_dbname);
-				return true;
-			}
-		}
-	}
-
 	if (m_useTree) {
 		if (!m_tree.addNode(collnum, key, dataCopy, dataSize)) {
 			log(LOG_INFO, "db: Had error adding data to %s: %s", m_dbname, mstrerror(g_errno));
@@ -1577,7 +1539,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	}
 
 	// if adding to spiderdb, add to cache, too (except negative key)
-	if ((m_rdbId == RDB_SPIDERDB || m_rdbId == RDB_DOLEDB) && !KEYNEG(key)) {
+	if (m_rdbId == RDB_DOLEDB && !KEYNEG(key)) {
 		// . this will create it if spiders are on and its NULL
 		// . even if spiders are off we need to create it so
 		//   that the request can adds its ip to the waitingTree
@@ -1588,91 +1550,27 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 			return true;
 		}
 
-		// if doing doledb...
-		if (m_rdbId == RDB_DOLEDB) {
-			int32_t pri = Doledb::getPriority((key96_t *)key);
-			// skip over corruption
-			if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Skip over corruption", m_dbname);
-				return true;
-			}
-			// if added positive key is before cursor, update curso
-			if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
-				KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
-
-				if (g_conf.m_logDebugSpider) {
-					char keyStrBuf[MAX_KEYSTR_BYTES];
-					KEYSTR(key, 12, keyStrBuf);
-					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, keyStrBuf);
-				}
-			}
-
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
-
-			// that's it for doledb mods
+		int32_t pri = Doledb::getPriority((key96_t *)key);
+		// skip over corruption
+		if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Skip over corruption", m_dbname);
 			return true;
 		}
-
-		// . ok, now add that reply to the cache
-
-		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
-		// assume this is the rec (4 byte dataSize,spiderdb key is now 16 bytes)
-		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(data - 4 - sizeof(key128_t));
-
-		// is it really a request and not a SpiderReply?
-		if (Spiderdb::isSpiderRequest(&sreq->m_key)) {
-			// add the request
+		// if added positive key is before cursor, update curso
+		if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
+			KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
 
 			if (g_conf.m_logDebugSpider) {
-				// log that. why isn't this undoling always
 				char keyStrBuf[MAX_KEYSTR_BYTES];
-				KEYSTR((const char *)&sreq->m_key, sizeof(key128_t), keyStrBuf);
-
-				char ipbuf[16];
-				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree"
-				         " request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
-				         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp,ipbuf), keyStrBuf);
-			}
-
-			// false means to NOT call evaluateAllRequests()
-			// because we call it below. the reason we do this
-			// is because it does not always get called
-			// in addSpiderRequest(), like if its a dup and
-			// gets "nuked". (removed callEval arg since not
-			// really needed)
-			sc->addSpiderRequest(sreq);
-		} else {
-			// otherwise repl
-			SpiderReply *rr = (SpiderReply *)sreq;
-
-			// log that. why isn't this undoling always
-			logDebug(g_conf.m_logDebugSpider, "rdb: rdb: got spider reply for uh48=%" PRIu64, rr->getUrlHash48());
-
-			// add the reply
-			sc->addSpiderReply(rr);
-
-			/// @todo ALC why are we removing this here? this check should be at where we're trying to insert this
-			// don't actually add it if "fake". i.e. if it
-			// was an internal error of some sort... this will
-			// make it try over and over again i guess...
-			// no because we need some kinda reply so that gb knows
-			// the pagereindex docid-based spider requests are done,
-			// at least for now, because the replies were not being
-			// added for now. just for internal errors at least...
-			// we were not adding spider replies to the page reindexes
-			// as they completed and when i tried to rerun it
-			// the title recs were not found since they were deleted,
-			// so we gotta add the replies now.
-			int32_t indexCode = rr->m_errCode;
-			if (indexCode == EABANDONED) {
-				log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
-				              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
-				m_tree.deleteNode(collnum, key, false);
+				KEYSTR(key, 12, keyStrBuf);
+				logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, keyStrBuf);
 			}
 		}
 
-		// clear errors from adding to SpiderCache
-		g_errno = 0;
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
+
+		// that's it for doledb mods
+		return true;
 	}
 
 	logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
@@ -1867,14 +1765,14 @@ Rdb *getRdbFromId ( rdbid_t rdbId ) {
 		case RDB_TAGDB: return g_tagdb.getRdb();
 		case RDB_POSDB: return g_posdb.getRdb();
 		case RDB_TITLEDB: return g_titledb.getRdb();
-		case RDB_SPIDERDB: return g_spiderdb.getRdb();
+		case RDB_SPIDERDB_DEPRECATED: return g_spiderdb.getRdb_deprecated();
 		case RDB_DOLEDB: return g_doledb.getRdb();
 		case RDB_CLUSTERDB: return g_clusterdb.getRdb();
 		case RDB_LINKDB: return g_linkdb.getRdb();
 
 		case RDB2_POSDB2: return g_posdb2.getRdb();
 		case RDB2_TITLEDB2: return g_titledb2.getRdb();
-		case RDB2_SPIDERDB2: return g_spiderdb2.getRdb();
+		case RDB2_SPIDERDB2_DEPRECATED: return g_spiderdb2.getRdb_deprecated();
 		case RDB2_CLUSTERDB2: return g_clusterdb2.getRdb();
 		case RDB2_LINKDB2: return g_linkdb2.getRdb();
 		case RDB2_TAGDB2: return g_tagdb2.getRdb();
@@ -1888,14 +1786,14 @@ rdbid_t getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_tagdb.getRdb    () ) return RDB_TAGDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
-	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
+	if ( rdb == g_spiderdb.getRdb_deprecated() ) return RDB_SPIDERDB_DEPRECATED;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
-	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
+	if ( rdb == g_spiderdb2.getRdb_deprecated() ) return RDB2_SPIDERDB2_DEPRECATED;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
 
@@ -1908,9 +1806,11 @@ bool isSecondaryRdb ( rdbid_t rdbId ) {
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
 		case RDB2_TITLEDB2   : return true;
-		case RDB2_SPIDERDB2  : return true;
+		case RDB2_SPIDERDB2_DEPRECATED : return true;
 		case RDB2_CLUSTERDB2 : return true;
 		case RDB2_LINKDB2 : return true;
+		case RDB2_SPIDERDB2_SQLITE : return true;
+		//(todo?) rdb2_spiderdb2_sqlite
 		default:
 			return false;
 	}
@@ -1919,8 +1819,8 @@ bool isSecondaryRdb ( rdbid_t rdbId ) {
 // use a quick table now...
 char getKeySizeFromRdbId(rdbid_t rdbId) {
 	switch(rdbId) {
-		case RDB_SPIDERDB:
-		case RDB2_SPIDERDB2:
+		case RDB_SPIDERDB_DEPRECATED:
+		case RDB2_SPIDERDB2_DEPRECATED:
 		case RDB_TAGDB:
 		case RDB2_TAGDB2:
 			return sizeof(key128_t); // 16
@@ -1934,6 +1834,8 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 		case RDB_END:
 			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
 			g_process.shutdownAbort(true);
+		case RDB_SITEDEFAULTPAGETEMPERATURE:
+			return 8; //fake
 		default:
 			return sizeof(key96_t); // 12
 	}
@@ -1958,7 +1860,8 @@ int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 				ds = 0;
 			else if ( i == RDB_TITLEDB ||
 				  i == RDB_TAGDB   ||
-				  i == RDB_SPIDERDB ||
+				  i == RDB_SPIDERDB_DEPRECATED ||
+				  i == RDB_SPIDERDB_SQLITE ||
 				  i == RDB_DOLEDB )
 				ds = -1;
 			else if ( i == RDB2_POSDB2 ||
@@ -1967,8 +1870,11 @@ int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 				ds = 0;
 			else if ( i == RDB2_TITLEDB2 ||
 				  i == RDB2_TAGDB2   ||
-				  i == RDB2_SPIDERDB2 )
+				  i == RDB2_SPIDERDB2_DEPRECATED ||
+				  i == RDB2_SPIDERDB2_SQLITE )
 				ds = -1;
+			else if ( i == RDB_SITEDEFAULTPAGETEMPERATURE )
+				ds = 4+4; //fake
 			else {
 				continue;
 			}

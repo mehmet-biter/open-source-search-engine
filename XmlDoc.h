@@ -51,6 +51,8 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Json.h"
 #include "Posdb.h"
+#include "SiteDefaultPageTemperatureRemoteRegistry.h" //SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t
+
 
 // forward declaration
 class GetMsg20State;
@@ -174,7 +176,7 @@ public:
 
 	int16_t   m_httpStatus; // -1 if not found (empty http reply)
 	
-	int8_t    m_hopCount;
+	int8_t    m_reserved5a;
 	uint8_t   m_langId;
 	uint8_t   m_reserved6;
 	uint8_t   m_contentType;
@@ -227,7 +229,7 @@ public:
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;
-	char      *ptr_unused1;
+	char      *ptr_explicitKeywords;
 	char      *ptr_unused2;
 	char      *ptr_unused3;
 	char      *ptr_utf8Content;
@@ -252,7 +254,7 @@ public:
 	int32_t       size_imageData;
 	int32_t       size_unused6;
 	int32_t       size_unused7;
-	int32_t       size_unused1;
+	int32_t       size_explicitKeywords;
 	int32_t       size_unused2;
 	int32_t       size_unused3;
 	int32_t       size_utf8Content;
@@ -333,6 +335,8 @@ public:
 	char *getIsAdult ( ) ;
 
 	bool *checkBlockList();
+	unsigned *getDefaultSitePageTemperature();
+	static void gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result);
 
 	bool *parseRobotsMetaTag();
 	void parseRobotsMetaTagContent(const char *content, int32_t contentLen);
@@ -395,11 +399,13 @@ public:
 	int64_t *getDocId ( ) ;
 	char *getIsIndexed ( ) ;
 	class TagRec *getTagRec ( ) ;
+	class TagRec *getCurrentTagRec ( ) ;
 	// non-dup/nondup addresses only
 	int32_t *getFirstIp ( ) ;
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
 	int32_t *getIp ( ) ;
+	void setIp(GbDns::DnsResponse *response);
 	std::vector<std::string>* getHostNameServers(const char *hostname, size_t hostnameLen);
 	static void gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state);
 	static void gotIpWrapper(GbDns::DnsResponse *response, void *state);
@@ -441,7 +447,6 @@ public:
 	class TagRec ***getOutlinkTagRecVector () ;
 	int32_t **getOutlinkFirstIpVector () ;
 	char *getIsSiteRoot ( ) ;
-	int8_t *getHopCount ( ) ;
 	char *getSpiderLinks ( ) ;
 	bool getIsInjecting();
 	int32_t *getSpiderPriority ( ) ;
@@ -468,6 +473,12 @@ public:
 	uint64_t m_ipStartTime;
 	uint64_t m_ipEndTime;
 
+	int64_t m_getLinkInfoStartTime;
+	int64_t m_getLinkInfoEndTime;
+
+	int64_t m_getSiteLinkInfoStartTime;
+	int64_t m_getSiteLinkInfoEndTime;
+
 	bool m_updatedMetaData;
 
 	void copyFromOldDoc ( class XmlDoc *od ) ;
@@ -484,6 +495,8 @@ public:
 
 	char *addOutlinkSpiderRecsToMetaList ( );
 
+	void lookupAndSetExplicitKeywords();
+
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
 			   int64_t docId ,
@@ -498,13 +511,13 @@ public:
 	
 	bool hashLinks ( class HashTableX *table ) ;
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
-	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashIncomingLinkText(HashTableX *table);
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
 	bool hashTitle ( class HashTableX *table );
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
+	bool hashExplicitKeywords(HashTableX *table);
 	bool hashMetaGeoPlacename( class HashTableX *table );
 	bool hashMetaSummary ( class HashTableX *table );
 	bool hashLanguage ( class HashTableX *table ) ;
@@ -539,23 +552,14 @@ public:
 
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
-	bool hashString( char *s, int32_t slen, class HashInfo *hi );
+	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
 
 	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
 					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
 					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
-	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
+	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
-
-	bool hashNumberForSorting( const char *beginBuf ,
-			  const char *buf , 
-			  int32_t bufLen , 
-			  class HashInfo *hi ) ;
-
-	bool hashNumberForSortingAsInt32 ( int32_t x,
-			   class HashInfo *hi ,
-			   const char *gbsortByStr ) ;
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
@@ -588,7 +592,6 @@ public:
 
 	// we we started spidering it, in milliseconds since the epoch
 	int64_t    m_startTime;
-	int64_t    m_injectStartTime;
 
 	class XmlDoc *m_prevInject;
 	class XmlDoc *m_nextInject;
@@ -656,7 +659,7 @@ public:
 	bool isFirstUrlRobotsTxt();
 	bool m_isRobotsTxtUrl;
 
-	bool isFirstUrlCanonical();
+	bool* isFirstUrlCanonical();
 	bool m_isUrlCanonical;
 
 	Images     m_images;
@@ -664,6 +667,7 @@ public:
 	HttpMime   m_mime;
 	TagRec     m_tagRec;
 	SafeBuf    m_tagRecBuf;
+	TagRec     m_currentTagRec;
 	SafeBuf    m_newTagBuf;
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
@@ -689,6 +693,7 @@ public:
 	bool m_firstUrlHash64Valid;
 	bool m_docIdValid;
 	bool m_tagRecValid;
+	bool m_currentTagRecValid;
 	bool m_robotsTxtLenValid;
 	bool m_tagRecDataValid;
 	bool m_newTagBufValid;
@@ -701,7 +706,6 @@ public:
 	bool m_wordSpamBufValid;
 	bool m_finalSummaryBufValid;
 
-	bool m_hopCountValid;
 	bool m_isInjectingValid;
 	bool m_isImportingValid;
 	bool m_metaListCheckSum8Valid;
@@ -800,14 +804,11 @@ public:
 	bool m_outlinkIpVectorValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
-	bool m_outlinkHopCountVectorValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
 	bool m_replyValid;
 	bool m_isPageParserValid;
-	bool m_imageUrlValid;
-	bool m_imageUrl2Valid;
 	bool m_queryValid;
 	bool m_matchesValid;
 	bool m_dbufValid;
@@ -821,7 +822,9 @@ public:
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
 	bool m_blockedDocValid;
+	bool m_defaultSitePageTemperatureValid;
 	bool m_hostNameServersValid;
+	bool m_ipsValid;
 	bool m_isSiteMap;
 
 	// shadows
@@ -887,6 +890,7 @@ public:
 	bool m_wasInIndex;
 
 	Msg8a   m_msg8a;
+	Msg8a   m_currentMsg8a;
 
 	Url   m_extraUrl;
 	SafeBuf m_mySiteLinkInfoBuf;
@@ -914,6 +918,7 @@ public:
 	bool m_skipContentHashCheck;
 	char m_isWWWDup;	// May be -1
 
+	SafeBuf m_explicitKeywordsBuf;
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;
@@ -950,8 +955,6 @@ public:
 	// cachedb related args
 	bool    m_allHashed;
 
-	int8_t *m_outlinkHopCountVector;
-	int32_t  m_outlinkHopCountVectorSize;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
 	int32_t m_numRedirects;
@@ -1123,7 +1126,10 @@ public:
 	bool m_blockedDoc;
 	bool m_checkedUrlBlockList;
 	bool m_checkedDnsBlockList;
+	bool m_checkedIpBlockList;
 
+	unsigned m_defaultSitePageTemperature;
+	bool m_defaultSitePageTemperatureIsUnset;
 	bool m_parsedRobotsMetaTag;
 	bool m_robotsNoIndex;
 	bool m_robotsNoFollow;
@@ -1131,6 +1137,7 @@ public:
 	bool m_robotsNoSnippet;
 
 	std::vector<std::string> m_hostNameServers;
+	std::vector<uint32_t> m_ips;
 
 	bool m_addSpiderRequest;
 
@@ -1150,7 +1157,6 @@ public:
 			 class CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMime ,
-			 int32_t hopCount,
 			 int32_t charset,
 			 int32_t langId,
 			 bool deleteUrl,

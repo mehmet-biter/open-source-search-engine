@@ -27,8 +27,8 @@ DocReindex g_docReindex("docreindex.txt", false);
 DocReindex g_docReindexUrl("docreindexurl.txt", true);
 
 struct DocReindexDocItem : public DocProcessDocItem {
-	DocReindexDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: DocProcessDocItem(docProcess, key, lastPos)
+	DocReindexDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
+		: DocProcessDocItem(docProcess, key, firstIp, lastPos)
 		, m_msg0()
 		, m_spiderdbList()
 		, m_spiderdbListRequested(false)
@@ -42,11 +42,11 @@ struct DocReindexDocItem : public DocProcessDocItem {
 };
 
 DocReindex::DocReindex(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, !isUrl) {
 }
 
-DocProcessDocItem* DocReindex::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocReindexDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocReindex::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocReindexDocItem(docProcess, key, firstIp, lastPos);
 }
 
 void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {
@@ -94,29 +94,8 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	int32_t *firstIp = nullptr;
-	if (*oldTitleRec) {
-		XmlDoc **oldXmlDoc = xmlDoc->getOldXmlDoc();
-		if (!oldXmlDoc || oldXmlDoc == (XmlDoc **)-1) {
-			// we must not be blocked/invalid at this point
-			gbshutdownLogicError();
-		}
-
-		firstIp = (*oldXmlDoc)->getFirstIp();
-		if (!firstIp || firstIp == (int32_t *)-1) {
-			// we must not be blocked/invalid at this point
-			gbshutdownLogicError();
-		}
-	} else {
-		firstIp = xmlDoc->getFirstIp();
-		if (!firstIp || firstIp == (int32_t *)-1) {
-			// blocked
-			return;
-		}
-	}
-
-	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
-	if (!siteNumInLinks || siteNumInLinks == (int32_t *)-1) {
+	int32_t *firstIp = xmlDoc->getFirstIp();
+	if (!firstIp || firstIp == (int32_t *)-1) {
 		// blocked
 		return;
 	}
@@ -135,7 +114,7 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 
 		reindexDocItem->m_spiderdbListRequested = true;
 
-		if (!reindexDocItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &reindexDocItem->m_spiderdbList, (const char *)&startKey,
+		if (!reindexDocItem->m_msg0.getList(-1, RDB_SPIDERDB_DEPRECATED, xmlDoc->m_collnum, &reindexDocItem->m_spiderdbList, (const char *)&startKey,
 		                             (const char *)&endKey,
 		                             1000000, reindexDocItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
 			// blocked
@@ -149,7 +128,7 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 			xmlDoc->m_addSpiderRequest = true;
 		} else {
 			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(reindexDocItem->m_spiderdbList.getCurrentRec());
-			xmlDoc->m_sreq = *sreq;
+			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t) + 4);
 		}
 
 		xmlDoc->m_sreqValid = true;

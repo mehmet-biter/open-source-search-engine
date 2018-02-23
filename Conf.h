@@ -67,6 +67,8 @@ class Conf {
 
 	// max amount of memory we can use
 	size_t m_maxMem;
+	bool m_mlockAllCurrent;
+	bool m_mlockAllFuture;
 
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about
@@ -247,8 +249,16 @@ class Conf {
 	bool   m_flushWrites; 
 	bool   m_verifyWrites;
 	int32_t   m_corruptRetries;
+	int m_sqliteSynchronous;
 
-	bool m_msg20FallbackToAllHosts;
+	// verify tagrec while indexing
+	bool m_verifyTagRec;
+
+	bool m_spiderHostToQueryHostFallbackAllowed;
+	bool m_queryHostToSpiderHostFallbackAllowed;
+
+	int64_t m_docProcessDelayMs;
+	int64_t m_docProcessMaxPending;
 
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;
@@ -299,7 +309,9 @@ class Conf {
 	int32_t  m_logQueryTimeThreshold;
 	// if disk read took this or more milliseconds, log its time
 	int32_t  m_logDiskReadTimeThreshold;
-	
+
+	int32_t m_logSqliteTransactionTimeThreshold;
+
 	bool  m_logQueryReply;
 	// log what gets into the index
 	bool  m_logSpideredUrls;
@@ -365,11 +377,15 @@ class Conf {
 	bool m_logTraceDnsCache;
 	bool m_logTraceFile;
 	bool m_logTraceHttpMime;
+	bool m_logTraceIpBlockList;
 	bool m_logTraceLanguageResultOverride;
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
-	bool m_logTraceMsg4;
+	bool m_logTraceMsg4In;
+	bool m_logTraceMsg4Out;
+	bool m_logTraceMsg4OutData;
 	bool m_logTraceMsg25;
+	bool m_logTracePageLinkdbLookup;
 	bool m_logTracePageSpiderdbLookup;
 	bool m_logTracePos;
 	bool m_logTracePosdb;
@@ -389,14 +405,13 @@ class Conf {
 	bool m_logTraceRobotsCheckList;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
-	bool m_logTraceSpiderdbHostDelete;
 	bool m_logTraceReindex;
+	bool m_logTraceSpiderdbRdbSqliteBridge;
 	bool m_logTraceSummary;
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
 	bool m_logTraceUrlMatchList;
-	bool m_logTraceUrlMatchHostList;
 	bool m_logTraceUrlResultOverride;
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
@@ -410,7 +425,7 @@ class Conf {
 	bool m_logTimingDb;
 	bool m_logTimingNet;
 	bool m_logTimingQuery;
-	bool m_logTimingSpcache;
+	bool m_logTimingLinkInfo;
 	bool m_logTimingRobots;
 
 	// programmer reminders.
@@ -444,6 +459,7 @@ class Conf {
 	bool  m_fullRebuild;
 	bool  m_rebuildAddOutlinks;
 	bool  m_rebuildRecycleLinkInfo;
+	bool  m_rebuildUseTitleRecTagRec;
 	bool  m_rebuildTitledb;
 	bool  m_rebuildPosdb;
 	bool  m_rebuildClusterdb;

@@ -8,7 +8,6 @@
 #define JT_OBJECT 6
 
 #include "gb-include.h"
-#include "Unicode.h"
 #include "SafeBuf.h"
 
 #define MAXJSONPARENTS 64

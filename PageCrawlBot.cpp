@@ -108,9 +108,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		sreq.m_hostHash32 = url.getHostHash32();
 		sreq.m_domHash32  = url.getDomainHash32();
 		sreq.m_siteHash32 = url.getHostHash32();
-		//sreq.m_probDocId  = probDocId;
-		sreq.m_hopCount   = 0; // we're a seed
-		sreq.m_hopCountValid = true;
 		sreq.m_addedTime = now;
 		
 		sreq.m_fakeFirstIp = 1;
@@ -140,7 +137,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		}
 
 		// store rdbid first
-		if ( ! listBuf->pushChar(RDB_SPIDERDB) ) {
+		if ( ! listBuf->pushChar(RDB_SPIDERDB_DEPRECATED) ) {
 			// return false with g_errno set
 			return false;
 		}

@@ -527,7 +527,7 @@ void RdbMerge::filterListWrapper(void *state) {
 
 	logTrace(g_conf.m_logTraceRdbMerge, "BEGIN. list=%p m_startKey=%s", &THIS->m_list, KEYSTR(THIS->m_startKey, THIS->m_ks));
 
-	if (THIS->m_rdbId == RDB_SPIDERDB) {
+	if (THIS->m_rdbId == RDB_SPIDERDB_DEPRECATED) {
 		dedupSpiderdbList(&(THIS->m_list));
 	} else if (THIS->m_rdbId == RDB_TITLEDB) {
 //		filterTitledbList(&(THIS->m_list));
@@ -610,7 +610,7 @@ bool RdbMerge::filterList() {
 	// dedup for spiderdb before we dump it. try to save disk space.
 	//
 	/////
-	if (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB_TITLEDB) {
+	if (m_rdbId == RDB_SPIDERDB_DEPRECATED || m_rdbId == RDB_TITLEDB) {
 		if (g_jobScheduler.submit(filterListWrapper, filterDoneWrapper, this, thread_type_merge_filter, 0)) {
 			return false;
 		}
@@ -618,7 +618,7 @@ bool RdbMerge::filterList() {
 		log(LOG_WARN, "db: Unable to submit job for merge filter. Will run in main thread");
 
 		// fall back to filter without thread
-		if (m_rdbId == RDB_SPIDERDB) {
+		if (m_rdbId == RDB_SPIDERDB_DEPRECATED) {
 			dedupSpiderdbList(&m_list);
 		} else {
 //			filterTitledbList(&m_list);

@@ -10,6 +10,9 @@
 #ifndef GB_BITS_H
 #define GB_BITS_H
 
+#include <inttypes.h>
+
+
 // . here's the bit define's:
 // . used for phrasing 
 // . no punctuation or "big" numbers can be in a phrase

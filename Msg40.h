@@ -53,6 +53,7 @@ public:
 	Msg20 *getAvailMsg20();
 	Msg20 *getCompletedSummary ( int32_t ix );
 	bool gotSummary       ( ) ;
+	bool gotSummaries();
 	bool gotEnoughSummaries();
 	bool reallocMsg20Buf ( ) ;
 
@@ -88,8 +89,6 @@ public:
 
 	bool  moreResultsFollow() const { return m_moreToCome; }
 	time_t getCachedTime() const { return m_cachedTime; }
-
-	bool printSearchResult9 ( int32_t ix, int32_t *numPrintedSoFar, class Msg20Reply *mr ) ;
 
 	int32_t m_numMsg20sOut ;
 	int32_t m_numMsg20sIn  ;
@@ -173,6 +172,8 @@ public:
 	HashTableT<uint64_t, uint64_t> m_urlTable;
 
 private:
+	int64_t      m_deadline; //deadline for providing a result, even if empty. (not completely enforced yet)
+
 	int32_t      m_numRealtimeClassificationsStarted;
 	int32_t      m_numRealtimeClassificationsCompleted;
 	GbMutex      m_mtxRealtimeClassificationsCounters;

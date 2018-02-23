@@ -26,8 +26,8 @@ DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
 
 struct DocRebuildDocItem : public DocProcessDocItem {
-	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: DocProcessDocItem(docProcess, key, lastPos)
+	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
+		: DocProcessDocItem(docProcess, key, firstIp, lastPos)
 		, m_msg0()
 		, m_spiderdbList()
 		, m_spiderdbListRequested(false)
@@ -43,11 +43,11 @@ struct DocRebuildDocItem : public DocProcessDocItem {
 };
 
 DocRebuild::DocRebuild(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, false) {
 }
 
-DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocRebuildDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocRebuildDocItem(docProcess, key, firstIp, lastPos);
 }
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
@@ -160,12 +160,6 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		rebuildDocItem->m_clearedXmlDoc = true;
 	}
 
-	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
-	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
-		// blocked
-		return;
-	}
-
 	// reset callback
 	if (xmlDoc->m_masterLoop == processedDoc) {
 		xmlDoc->m_masterLoop = nullptr;
@@ -180,7 +174,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 
 		rebuildDocItem->m_spiderdbListRequested = true;
 
-		if (!rebuildDocItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &rebuildDocItem->m_spiderdbList, (const char *)&startKey,
+		if (!rebuildDocItem->m_msg0.getList(-1, RDB_SPIDERDB_DEPRECATED, xmlDoc->m_collnum, &rebuildDocItem->m_spiderdbList, (const char *)&startKey,
 		                             (const char *)&endKey,
 		                             1000000, rebuildDocItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
 			// blocked
@@ -194,7 +188,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 			xmlDoc->m_addSpiderRequest = true;
 		} else {
 			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(rebuildDocItem->m_spiderdbList.getCurrentRec());
-			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t));
+			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t) + 4);
 		}
 
 		xmlDoc->m_sreqValid = true;

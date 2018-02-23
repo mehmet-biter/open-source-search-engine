@@ -53,15 +53,15 @@ libgtest.so:
 CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/word_variations -isystem $(GTEST_DIR)/include
+CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/word_variations  -I$(BASE_DIR)/unicode -isystem $(GTEST_DIR)/include
 CPPFLAGS += -std=c++11
 
 # exported in parent make
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
-LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre -ldl
-LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares -lword_variations -lsto
+LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre -lsqlite3 -ldl
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares -lword_variations -lsto -lunicode
 
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@

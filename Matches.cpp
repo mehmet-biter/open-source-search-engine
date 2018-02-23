@@ -275,8 +275,8 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	int32_t  a     = tt->getTitleTagStart();
 	int32_t  b     = tt->getTitleTagEnd();
 
-	char *start = NULL;
-	char *end   = NULL;
+	const char *start = NULL;
+	const char *end   = NULL;
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
@@ -369,7 +369,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	return true;
 }
 
-bool Matches::addMatches( char *s, int32_t slen, mf_t flags ) {
+bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
@@ -382,7 +382,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags ) {
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
 	// set the words class for this match group
-	if ( !wp->set( s, slen, true ) ) {
+	if ( !wp->set( s, slen ) ) {
 		return false;
 	}
 
@@ -459,7 +459,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 	const int64_t *wids = words->getWordIds();
 	const int32_t *wlens = words->getWordLens();
 	const char * const *wptrs = words->getWordPtrs();
-	nodeid_t *tids = words->getTagIds();
+	const nodeid_t *tids = words->getTagIds();
 	int32_t nw = words->getNumWords();
 	int32_t n;
 	int32_t matchStack = 0;
@@ -771,10 +771,10 @@ int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t
 	if ( ! (m_qtableFlags[n] & 0x02) ) { *numQWords = 1; return 1; }
 
 	// get word ids array for the doc
-	int64_t  *wids   = words->getWordIds();
+	const int64_t  *wids   = words->getWordIds();
 	//int64_t  *swids  = words->getStripWordIds();
-	char      **ws     = words->getWordPtrs();
-	int32_t       *wl     = words->getWordLens();
+	const char * const *ws = words->getWordPtrs();
+	const int32_t      *wl     = words->getWordLens();
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;
 	int32_t count = 0;

@@ -35,7 +35,6 @@ extern const char *g_msg;
 // . declare all dynamic functions here
 // . these are all defined in Page*.cpp files
 // . these are called to send a dynamic page
-bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) ;
 bool sendPageBasicStatus     ( TcpSocket *s , HttpRequest *r );
 
 bool printGigabotAdvice(SafeBuf *sb,
@@ -54,6 +53,7 @@ bool sendPageHosts    ( TcpSocket *s , HttpRequest *r );
 bool sendPageSockets  ( TcpSocket *s , HttpRequest *r );
 bool sendPagePerf     ( TcpSocket *s , HttpRequest *r );
 bool sendPageTitledb  ( TcpSocket *s , HttpRequest *r );
+bool sendPageLinkdbLookup(TcpSocket *s, HttpRequest *r);
 bool sendPageSpiderdbLookup(TcpSocket *s, HttpRequest *r);
 bool sendPageParser   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddColl  ( TcpSocket *s , HttpRequest *r );
@@ -212,6 +212,7 @@ enum {
 	PAGE_API ,
 
 	PAGE_TITLEDB     ,
+	PAGE_LINKDBLOOKUP,
 	PAGE_SPIDERDBLOOKUP,
 	PAGE_SPIDERDB    ,
 	PAGE_DOLEIPTABLE ,

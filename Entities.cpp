@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Entities.h"
-#include "Unicode.h"
 #include "HashTableX.h"
 #include "Process.h"
 #include "GbMutex.h"
@@ -189,7 +188,7 @@ static uint32_t getHexadecimalEntity ( const char *s , int32_t len ) {
 // . returns full length of entity @ "s" if there is a valid one, 0 otherwise
 // . sets *c to the iso character the entity represents (if there is one)
 // JAB: const-ness for optimizer...
-int32_t getEntity_a ( const char *s, int32_t maxLen, uint32_t codepoint[2], int32_t *codepointCount, int32_t *utf8Len ) {
+int32_t getHtmlEntity(const char *s, int32_t maxLen, uint32_t codepoint[2], int32_t *codepointCount, int32_t *utf8Len) {
 	//TODO: handle multi-codepoint entitites
 	*utf8Len=0;
 

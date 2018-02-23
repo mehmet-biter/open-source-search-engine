@@ -55,8 +55,6 @@ static bool gotLinkTextWrapper(void *state);
 Msg25::Msg25() {
 	m_numRequests = 0;
 	m_linkSpamOut = 0;
-	// set minhopcount to unknown
-	//m_minInlinkerHopCount = -1;
 	m_numReplyPtrs = 0;
 	//m_linkInfo = NULL;
 	m_ownReplies = true;
@@ -74,7 +72,6 @@ Msg25::Msg25() {
 	m_retried = false;
 	m_prependWWW = false;
 	m_onlyNeedGoodInlinks = false;
-	m_getLinkerTitles = false;
 	m_docId = 0;
 	m_collnum = 0;
 	m_state = NULL;
@@ -222,7 +219,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		 void      *state,
 		 void (* callback)(void *state),
 		 bool       isInjecting,
-		 SafeBuf   *pbuf,
 		 bool       printInXml,
 		 int32_t       siteNumInlinks,
 		 const LinkInfo  *oldLinkInfo,
@@ -232,7 +228,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		 bool       canBeCancelled,
 		 int32_t       lastUpdateTime,
 		 bool       onlyNeedGoodInlinks,
-		 bool       getLinkerTitles,
 		 int32_t       ourHostHash32,
 		 int32_t       ourDomHash32,
 		 SafeBuf   *linkInfoBuf)
@@ -298,7 +293,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	req->m_canBeCancelled = canBeCancelled;
 	req->m_lastUpdateTime = lastUpdateTime;
 	req->m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
-	req->m_getLinkerTitles = getLinkerTitles;
 	req->m_ourHostHash32 = ourHostHash32;
 	req->m_ourDomHash32 = ourDomHash32;
 
@@ -557,7 +551,6 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 				   req->m_canBeCancelled      ,
 				   req->m_lastUpdateTime      ,
 				   req->m_onlyNeedGoodInlinks  ,
-				   req->m_getLinkerTitles ,
 				   req->m_ourHostHash32 ,
 				   req->m_ourDomHash32 ,
 				   m25->m_linkInfoBuf ) ) // SafeBuf 4 output
@@ -668,13 +661,12 @@ bool Msg25::getLinkInfo2(const char      *site,
 			 bool       canBeCancelled,
 			 int32_t       lastUpdateTime,
 			 bool       onlyNeedGoodInlinks,
-			 bool       getLinkerTitles,
 			 int32_t       ourHostHash32,
 			 int32_t       ourDomHash32,
 			 // put LinkInfo output class in here
 			 SafeBuf   *linkInfoBuf )
 {
-	logTrace(g_conf.m_logTraceMsg25,"site [%s] url [%s] isSiteLinkInfo [%s] docId [%" PRId64 "] getLinkerTitles [%s]", site, url, isSiteLinkInfo?"true":"false", docId, getLinkerTitles?"true":"false");
+	logTrace(g_conf.m_logTraceMsg25,"site [%s] url [%s] isSiteLinkInfo [%s] docId [%" PRId64 "]", site, url, isSiteLinkInfo?"true":"false", docId);
 
 	// reset the ip table
 	reset();
@@ -691,7 +683,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 		m_pbuf = NULL;
 
 	m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
-	m_getLinkerTitles     = getLinkerTitles;
 	// save safebuf ptr, where we store the link info
 	m_linkInfoBuf = linkInfoBuf;
 	if ( ! linkInfoBuf ) { g_process.shutdownAbort(true); }
@@ -824,8 +815,6 @@ bool Msg25::doReadLoop() {
 
 	m_minRecSizes = READSIZE; // MAX_LINKERS_IN_TERMLIST * 10 + 6;
 
-	// NO, DON't restrict because it will mess up the hopcount.
-	//bool includeTree = true;
 	//It's expensive to do include the tree. Can we avoid it?
 	//When injecting a mass number of documents, eg a dump from wikipedia
 	//then the document titles are usually ok already (inlink texts already
@@ -1653,16 +1642,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . linkText->getLinkTextLen()
 	if ( msg20reply && good &&
 	     msg20reply->size_linkText <= 0 &&
-	     msg20reply->size_rssItem  <= 0 &&
-	     // allow if from a ping server because like 
-	     // rpc.weblogs.com/shortChanges.xml so we can use
-	     // "inlink==xxx" in the url filters to assign any page linked
-	     // to by a pingserver into a special spider queue. then we can
-	     // spider that page quickly and get its xml feed url, and then
-	     // spider that to get new outlinks of permalinks.
-	     // Well now we use "inpingserver" instead of having to specify
-	     // the "inlink==xxx" expression for every ping server we know.
-	     ! linker.isPingServer() ) {
+	     msg20reply->size_rssItem  <= 0 ) {
 		good = false;
 		m_noText++;
 		note = "no link text";
@@ -2304,7 +2284,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     "<td>lang</td>"
 				     "<td>discovered</td>"
 				     "<td>pubdate</td>"
-				     "<td>hop count</td>"
 				     "<td>site rank</td>"
 				     "<td># words in link text</td>"
 				     "<td>link text bytes</td>"
@@ -2484,7 +2463,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     "<td>%s</td>"   // language
 				     "<td>%s</td>"   // discoverydate
 				     "<td>%s</td>"   // datedbdate
-				     "<td>%" PRId32"</td>" // hopcount
 				     "<td><font color=red><b>%" PRId32
 				     "</b></font></td>"  // site rank
 				     "<td>%" PRId32"</td>"  // nw 
@@ -2494,7 +2472,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     getLanguageString(r->m_language),
 				     discBuf,
 				     dbuf,//r->m_datedbDate,
-				     (int32_t)r->m_hopcount,
 				     (int32_t)r->m_siteRank, // docQuality,
 				     (int32_t)r->m_linkTextNumWords ,
 				     tlen );
@@ -2847,13 +2824,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 			      Msg25          *msg25,
 			      SafeBuf        *linkInfoBuf)
 {
-	// a table for counting words per link text
-	HashTableX tt;
-	// buf for tt
-	char ttbuf[2048];
-	// must init it!
-	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
-
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
 
@@ -3100,7 +3070,6 @@ void Inlink::set ( const Msg20Reply *r ) {
 	m_country             = r->m_country;
 	m_language            = r->m_language;
 	m_siteRank            = r->m_siteRank;
-	m_hopcount            = r->m_hopcount;
 
 	// MDW: use a new way. construct m_buf. 64-bit stuff.
 	int32_t poff = 0;
@@ -3226,7 +3195,6 @@ void Inlink::setMsg20Reply(Msg20Reply *r) {
 	r->m_country             = m_country;
 	r->m_language            = m_language;
 	r->m_siteRank            = m_siteRank;
-	r->m_hopcount            = m_hopcount;
 	r->m_isAdult             = false;       //appears to be irrelevant when dealing with links
 	
 	r->ptr_ubuf              = const_cast<char*>(getUrl());
@@ -3349,7 +3317,6 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) const {
 			       "d=<a href=\"/admin/titledb?c=%s&"
 			       "d=%" PRId64"\">%016" PRId64"</a>, "
 			       "siterank=%" PRId32", "
-			       "hopcount=%03" PRId32" "
 			       "outlinks=%05" PRId32", "
 			       "ip=%s "
 			       "numLinksToSite=%" PRId32" "
@@ -3370,7 +3337,6 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) const {
 			       k->m_docId,
 			       //(int32_t)k->m_docQuality,
 			       (int32_t)k->m_siteRank,
-			       (int32_t)k->m_hopcount,
 			       (int32_t)k->m_numOutlinks ,
 			       iptoa(k->m_ip,ipbuf),
 			       (int32_t)k->m_siteNumInlinks,
@@ -4125,9 +4091,9 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	// same site?
 	if (m_parentUrl) {
 		SiteGetter parentSiteGetter;
-		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0, 0);
+		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0);
 		SiteGetter siteGetter;
-		siteGetter.getSite(url.getUrl(), nullptr, 0, 0, 0);
+		siteGetter.getSite(url.getUrl(), nullptr, 0, 0);
 
 		if (strcmp(siteGetter.getSite(), parentSiteGetter.getSite()) == 0) {
 			flags |= LF_SAMESITE;

@@ -7,6 +7,7 @@
 #include "Mem.h"
 #include "Sections.h"
 #include "Process.h"
+#include "Words.h"
 
 
 Bits::Bits() {

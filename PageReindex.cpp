@@ -16,6 +16,9 @@
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 class State13 {
@@ -272,7 +275,9 @@ bool Msg1c::reindexQuery ( const char *query,
 
 	// reset again just in case
 	m_msg3a.m_msg39req.reset();
-
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&m_msg3a.m_msg39req,sizeof(m_msg3a.m_msg39req));
+#endif
 	// set our Msg39Request
 	m_msg3a.m_msg39req.m_collnum = m_collnum;
 	m_msg3a.m_msg39req.m_docsToGet                 = endNum;
@@ -398,8 +403,7 @@ bool Msg1c::gotList ( ) {
 		// use a fake ip
 		sr.m_firstIp        =  firstIp;
 		// we are not really injecting...
-		sr.m_isInjecting    =  false;//true;
-		sr.m_hopCount       = -1;
+		sr.m_isInjecting    =  false;
 		sr.m_isPageReindex  =  1;
 		sr.m_urlIsDocId     =  1;
 		sr.m_fakeFirstIp    =  1;
@@ -441,7 +445,7 @@ bool Msg1c::gotList ( ) {
 
 	log("reindex: adding docid list (docids:%d) to spiderdb", m_numDocIdsAdded);
 
-	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB);
+	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB_DEPRECATED);
 }
 
 void addedListWrapper ( void *state ) {

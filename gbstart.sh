@@ -13,6 +13,15 @@ else
 	logfile="log"$(printf "%03d" $host_id)
 fi
 
+function get_datetime() {
+	date -u +%Y-%m-%dT%H:%M:%SZ
+}
+
+function get_gb_version() {
+	version=$(./gb -v |awk -F: '{for (i=2; i<NF; i++) printf $i ":"; print $NF}' |xargs -i echo -n "{}|")
+	echo ${version%?}
+}
+
 function get_cpu_affinity() {
 	if [ -z ${host_id} ]; then
 		return
@@ -54,6 +63,16 @@ function send_core_alert() {
 		fi
 	fi
 }
+
+function append_eventlog() {
+	echo -n "$(get_datetime)"
+
+	for var in "$@"; do
+		echo -n "|$var"
+	done
+
+	echo ""
+} >> eventlog
 
 function backup_core() {
 	core_file=$(find_newest_file core*)
@@ -149,16 +168,18 @@ cp -f gb gb.oldsave
 ADDARGS=''
 INC=1
 
+GB_VERSION=$(get_gb_version)
+
 while true; do
 	# in case gb was updated
 	if [ -f gb.installed ]; then
 		mv -f gb.installed gb
+		GB_VERSION=$(get_gb_version)
 	fi
 
 	# leftover from previous run
 	rm -f cleanexit
 
-	GB_PRE=
 	cpu_affinity=$(get_cpu_affinity)
 	if [ ! -z ${cpu_affinity} ]; then
 		GB_PRE="taskset -c ${cpu_affinity}"
@@ -177,6 +198,7 @@ while true; do
 	find . -not -path '*/\.*' -not -path '*/__*' -not -path './*-bak*' -type f -exec ls -l --full-time {} \; 2>/dev/null |column -t|sort -k 9 > file_state.txt
 
 	GB_START_TIME=$(date +%s)
+	append_eventlog "gb start" "${GB_VERSION}"
 
 	${GB_PRE} ./gb -l $ADDARGS > gb_output.txt 2>&1
 	EXITSTATUS=$?
@@ -187,17 +209,20 @@ while true; do
 	# if gb does exit(0) then stop
 	# also stop if ./cleanexit is there because exit(0) does not always work for some strange reasons
 	if [ $EXITSTATUS = 0 ] || [ -f "cleanexit" ]; then
+		append_eventlog "gb stop" "${GB_VERSION}"
 		break
 	fi
 
 	# stop if ./fatal_error is there
 	if [ -f "fatal_error" ]; then
+		append_eventlog "gb fatal error" "${GB_VERSION}"
 		send_alert "FATAL ERROR. Shut down"
 		backup_core_with_alert
 		break
 	fi
 
 	# alert even if core doesn't exist
+	append_eventlog "gb core dumped" "${GB_VERSION}"
 	send_alert "GB died, core dumped"
 	backup_core_with_alert
 

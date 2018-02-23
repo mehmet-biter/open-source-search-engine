@@ -2,7 +2,7 @@
 
 #include "Words.h"
 #include "Xml.h"
-#include "Unicode.h" // getUtf8CharSize()
+#include "unicode/UCEnums.h"
 #include "StopWords.h"
 #include "Speller.h"
 #include "HashTableX.h"
@@ -24,7 +24,6 @@ Words::~Words ( ) {
 void Words::reset ( ) {
 	m_numWords = 0;
 	m_numAlnumWords = 0;
-	m_xml = NULL;
 	m_preCount = 0;
 	if ( m_buf && m_buf != m_localBuf && m_buf != m_localBuf2 )
 		mfree ( m_buf , m_bufSize , "Words" );
@@ -33,7 +32,6 @@ void Words::reset ( ) {
 	m_nodes = NULL;
 	m_tagIds = NULL;
 	m_numTags = 0;
-	m_hasTags = false;
 	m_localBuf2 = NULL;
 	m_localBufSize2 = 0;
 
@@ -43,38 +41,17 @@ void Words::reset ( ) {
 	m_wordIds = NULL;
 }
 
-bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
-	// bail if nothing
-	if ( ! s || slen == 0 ) {
-		m_numWords = 0;
-		m_numAlnumWords = 0;
-		return true;
-	}
-
-	char c = s[slen];
-	if ( c != '\0' ) {
-		s[slen] = '\0';
-	}
-
-	bool status = set( s, computeWordIds );
-	if ( c != '\0' ) {
-		s[slen] = c;
-	}
-
-	return status;
-}
-
 // a quickie
 // this url gives a m_preCount that is too low. why?
 // http://go.tfol.com/163/speed.asp
-static int32_t countWords ( const char *p , int32_t plen ) {
+static int32_t countWords ( const char *p, int32_t plen ) {
 	const char *pend  = p + plen;
 	int32_t  count = 1;
 
-	while ( p < pend ) {
+	while ( p < pend && *p) {
 
 		// sequence of punct
-		for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
+		for  ( ; p < pend && *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
 			// in case being set from xml tags, count as words now
 			if ( *p == '<' ) {
 				count++;
@@ -83,7 +60,7 @@ static int32_t countWords ( const char *p , int32_t plen ) {
 		count++;
 
 		// sequence of alnum
-		for  ( ; p < pend && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
+		for  ( ; p < pend && *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
 			;
 
 		count++;
@@ -93,35 +70,8 @@ static int32_t countWords ( const char *p , int32_t plen ) {
 	return count+10;
 }
 
-static int32_t countWords ( const char *p ) {
-	int32_t  count = 1;
-
-	while ( *p ) {
-		// sequence of punct
-		for  ( ; *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-			// in case being set from xml tags, count as words now
-			if ( *p=='<') count++; 
-		}
-		count++;
-
-		// sequence of alnum
-		for  ( ; *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-			;
-
-		count++;
-
-	}
-	// some extra for good meaure
-	return count+10;
-}
-
-bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
-	// prevent setting with the same string
-	if ( m_xml == xml ) gbshutdownLogicError();
-
+bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 	reset();
-
-	m_xml = xml;
 
 	// if xml is empty, bail
 	if ( !xml->getContent() ) {
@@ -161,12 +111,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 
 		// is the kth node a tag?
 		if ( !xml->isTag( k ) ) {
-			/// @todo ALC why are we adding NULL and restoring it after?
-			/// addWords should be change to use nodeLen and not null terminated string
-			char c = node[nodeLen];
-			node[nodeLen] = '\0';
-			addWords( node, nodeLen, computeWordIds );
-			node[nodeLen] = c;
+			addWords(node, nodeLen);
 			continue;
 		}
 
@@ -177,8 +122,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 		m_wordIds  [m_numWords] = 0LL;
 		m_nodes    [m_numWords] = k;
 
-		// we have less than 127 HTML tags, so set 
-		// the high bit for back tags
+		// If it is an end-tag then set the bit
 		if ( xml->isBackTag(k)) {
 			m_tagIds[m_numWords] |= BACKBIT;
 		}
@@ -192,6 +136,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 	return true;
 }
 
+
 // . set words from a string
 // . assume no HTML entities in the string "s"
 // . s must be NULL terminated
@@ -200,29 +145,36 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set( char *s, bool computeWordIds ) {
+bool Words::set(const char *s) {
+	return set(s,0x7fffffff);
+}
+
+bool Words::set(const char *s, int32_t slen) {
 	reset();
+	// bail if nothing
+	if ( ! s || slen == 0 ) {
+		return true;
+	}
 
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
-	m_preCount = countWords ( s );
+	m_preCount = countWords(s,slen);
 	if ( !allocateWordBuffers( m_preCount ) ) {
 		return false;
 	}
 
-	return addWords( s, 0x7fffffff, computeWordIds );
+	return addWords(s, slen);
 }
 
-bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
+bool Words::addWords(const char *s, int32_t nodeLen) {
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
 
 	bool hadApostrophe = false;
 
-	UCScript oldScript = ucScriptCommon;
-	UCScript saved;
-	UCProps props;
+	Unicode::script_t oldScript = Unicode::script_t::Common;
+	Unicode::script_t saved;
 
  uptop:
 
@@ -240,41 +192,9 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			goto done;
 		}
 
-		// tag?
-		if ( s[i]=='<' && m_hasTags && isTagStart(s+i) ) {
-			// get the tag id
-			if( m_tagIds ) {
-				if ( s[i + 1] == '/' ) {
-					// skip over /
-					m_tagIds[m_numWords] = ::getTagId( s + i + 2 );
-					m_tagIds[m_numWords] |= BACKBIT;
-				} else {
-					m_tagIds[m_numWords] = ::getTagId( s + i + 1 );
-				}
-			}
-
-			m_words[m_numWords] = s + i;
-			m_wordIds[m_numWords] = 0LL;
-
-			// skip till end
-			int32_t tagLen = getTagLen( s + i );
-			m_wordLens[m_numWords] = tagLen;
-			m_nodes[m_numWords] = 0;
-			m_numWords++;
-
-			// advance
-			i += tagLen;
-			goto uptop;
-		}
-
 		// it is a punct word, find end of it
-		char *start = s+i;
-		for ( ; s[i] ; i += getUtf8CharSize(s+i)) {
-			// stop on < if we got tags
-			if ( s[i] == '<' && m_hasTags ) {
-				break;
-			}
-
+		const char *start = s+i;
+		for ( ; i<nodeLen && s[i] ; i += getUtf8CharSize(s+i)) {
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
@@ -283,7 +203,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 				}
 
 				// update
-				oldScript = ucScriptCommon;
+				oldScript = Unicode::script_t::Common;
 
 				// otherwise, stop we got alnum
 				break;
@@ -293,12 +213,13 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			UChar32 c = utf8Decode ( s+i );
 
 			// stop if word char
-			if ( ! ucIsWordChar ( c ) ) {
+			if ( ! ucIsWordChar_fast( c ) ) {
 				continue;
 			}
 
 			// update first though
-			oldScript = ucGetScript ( c );
+			oldScript = UnicodeMaps::query_script(c);
+			if ( oldScript == Unicode::script_t::Latin ) oldScript = Unicode::script_t::Common;
 
 			// then stop
 			break;
@@ -319,37 +240,39 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 	// get an alnum word
 	j = i;
  again:
-	for ( ; s[i] ; i += getUtf8CharSize(s+i) ) {
+	for ( ; i<nodeLen && s[i] ; i += getUtf8CharSize(s+i) ) {
 		// simple ascii?
 		if ( is_ascii(s[i]) ) {
 			// accumulate alnum chars
 			if ( is_alnum_a(s[i]) ) continue;
 			// update
-			oldScript = ucScriptCommon;
+			oldScript = Unicode::script_t::Common;
 			// otherwise, stop we got punct
 			break;
 		}
 		// get the code point of the utf8 char
 		UChar32 c = utf8Decode ( s+i );
 		// get props
-		props = ucProperties ( c );
+		uint32_t props = UnicodeMaps::query_properties(c);
 		// good stuff?
-		if ( props & (UC_IGNORABLE|UC_EXTEND) ) continue;
+		if(props&(Unicode::Extender)) continue;
+		//(todo): props&ignorable (which is quite complicated)
+		//something abotu ignorable
 		// stop? if UC_WORCHAR is set, that means its an alnum
-		if ( ! ( props & UC_WORDCHAR ) ) {
+		if(!UnicodeMaps::is_wordchar(c)) {
 			// reset script between words
-			oldScript = ucScriptCommon;
+			oldScript = Unicode::script_t::Common;
 			break;
 		}
 		// save it
 		saved = oldScript;
 		// update here
-		oldScript = ucGetScript(c);
+		oldScript = UnicodeMaps::query_script(c);
 		// treat ucScriptLatin (30) as common so we can have latin1
 		// like char without breaking the word!
-		if ( oldScript == ucScriptLatin ) oldScript = ucScriptCommon;
+		if ( oldScript == Unicode::script_t::Latin ) oldScript = Unicode::script_t::Common;
 		// stop on this crap too i guess. like japanes chars?
-		if ( props & ( UC_IDEOGRAPH | UC_HIRAGANA | UC_THAI ) ) {
+		if((props&Unicode::Ideographic) || oldScript==Unicode::script_t::Hiragana || oldScript==Unicode::script_t::Thai) {
 			// include it
 			i += getUtf8CharSize(s+i);
 			// but stop
@@ -412,7 +335,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 	m_words   [ m_numWords  ] = &s[j];
 	m_wordLens[ m_numWords  ] = wlen;
 
-	if ( computeWordIds ) {
+	{
 		int64_t h = hash64Lower_utf8(&s[j],wlen);
 		m_wordIds [m_numWords] = h;
 	}
@@ -465,7 +388,7 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 
 	// set ptrs
 	char *p = m_buf;
-	m_words    = (char     **)p ;
+	m_words    = (const char **)p ;
 	p += sizeof(char*) * count;
 	m_wordLens = (int32_t      *)p ;
 	p += sizeof(int32_t)* count;
@@ -491,15 +414,15 @@ unsigned char getCharacterLanguage ( const char *utf8Char ) {
 	if ( cs == 1 ) return langUnknown;
 	// convert to 32 bit unicode
 	UChar32 c = utf8Decode ( utf8Char );
-	UCScript us = ucGetScript ( c );
+	Unicode::script_t us = UnicodeMaps::query_script(c);
 	// arabic? this also returns for persian!! fix?
-	if ( us == ucScriptArabic ) 
+	if ( us == Unicode::script_t::Arabic ) 
 		return langArabic;
-	if ( us == ucScriptCyrillic )
+	if ( us == Unicode::script_t::Cyrillic )
 		return langRussian;
-	if ( us == ucScriptHebrew )
+	if ( us == Unicode::script_t::Hebrew )
 		return langHebrew;
-	if ( us == ucScriptGreek )
+	if ( us == Unicode::script_t::Greek )
 		return langGreek;
 
 	return langUnknown;

@@ -735,7 +735,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 					gbshutdownAbort(true); }
 			}
 		}
-		if ( rdbId == RDB_SPIDERDB && ! KEYNEG(k) &&
+		if ( rdbId == RDB_SPIDERDB_DEPRECATED && ! KEYNEG(k) &&
 		     getCurrentDataSize() > 0 ) {
 			char *rec = getCurrentRec();
 			// bad url in spider request?
@@ -1759,7 +1759,8 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
+                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t totalFiles, int32_t startFileNum,
+                      bool isRealMerge) {
 	assert(this);
 	verify_signature();
 	// sanity
@@ -1834,7 +1835,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum, isRealMerge);
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, totalFiles, startFileNum, isRealMerge);
 		verify_signature();
 		return;
 	}
@@ -2160,6 +2161,22 @@ int getPtrIndex(RdbList **lists, int32_t numLists, const char *ptr) {
 	return -1;
 }
 
+int getListOffset(RdbBase *base, int ptrIndex, int32_t oriNumLists, int32_t startFileIndex, int32_t totalFiles) {
+	// all files are readable
+	if (totalFiles == oriNumLists) {
+		return 0;
+	}
+
+	int listOffset = 0;
+	for (int i = 0; i < base->getNumFiles() && i <= ptrIndex; ++i) {
+		if (!base->isReadable(i)) {
+			++listOffset;
+		}
+	}
+
+	return listOffset;
+}
+
 ////////
 //
 // SPECIALTY MERGE FOR POSDB
@@ -2167,7 +2184,8 @@ int getPtrIndex(RdbList **lists, int32_t numLists, const char *ptr) {
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileIndex, bool isRealMerge) {
+                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t totalFiles,
+                           int32_t startFileIndex, bool isRealMerge) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	int oriNumLists = numLists;
@@ -2291,6 +2309,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
 	RdbBase *base = getRdbBase(rdbId, collNum);
+	if(!base)
+		gbshutdownLogicError();
 	RdbIndexQuery rdbIndexQuery(base);
 	char *new_listPtr = m_listPtr;
 	int32_t listOffset = 0;
@@ -2411,13 +2431,17 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
-			int prtIndex = getPtrIndex(lists, oriNumLists, ends[mini]);
-			if (filePos > prtIndex + startFileIndex) {
-				// docId is present in newer file
-				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%d mini=%hd listOffset=%d startFileIndex=%d ptrIndex=%d",
-				         filePos, mini, listOffset, startFileIndex, prtIndex);
+			int ptrIndex = getPtrIndex(lists, oriNumLists, ends[mini]);
+			if (ptrIndex >= 0) {
+				int listOffset = getListOffset(base, ptrIndex, oriNumLists, startFileIndex, totalFiles);
+				if (filePos > ptrIndex + listOffset + startFileIndex) {
+					// docId is present in newer file
+					logTrace(g_conf.m_logTraceRdbList,
+					         "docId in newer list. skip. filePos=%d mini=%hd listOffset=%d startFileIndex=%d ptrIndex=%d",
+					         filePos, mini, listOffset, startFileIndex, ptrIndex);
 
-				goto skip;
+					goto skip;
+				}
 			}
 		}
 

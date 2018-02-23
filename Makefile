@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+'SHELL = /bin/bash
 
 config=release
 
@@ -19,18 +19,20 @@ OBJS_O0 =  \
 	File.o \
 	FxTermCheckList.o FxCheckAdult.o FxCheckSpam.o \
 	GbMutex.o \
-	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o SiteDefaultPageTemperatureRemoteRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageLinkdbLookup.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
-	InstanceInfoExchange.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
+	SpiderdbSqlite.o \
+	SpiderdbRdbSqliteBridge.o \
+	DumpSpiderdbSqlite.o \
 	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
 	Tagdb.o TcpServer.o Titledb.o \
 	Version.o \
@@ -52,7 +54,7 @@ OBJS_O2 = \
 	Rdb.o RdbBase.o \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
-	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
+	UCPropTable.o UdpServer.o \
 	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
@@ -61,19 +63,20 @@ OBJS_O3 = \
 	BlockList.o \
 	ContentTypeBlockList.o \
 	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
-	IPAddressChecks.o \
+	IPAddressChecks.o IpBlockList.o \
 	LanguageResultOverride.o Linkdb.o \
 	Msg40.o \
 	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o ResultOverride.o RobotsBlockedResultOverride.o RobotsCheckList.o \
-	SafeBuf.o sort.o SpiderdbHostDelete.o Statistics.o \
+	SafeBuf.o sort.o Statistics.o \
 	ScoringWeights.o \
 	BaseScoringParameters.o \
 	TopTree.o \
-	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlMatch.o UrlMatchList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
+	FxExplicitKeywords.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
 	GbSignature.o \
@@ -82,6 +85,13 @@ OBJS_O3 = \
 	GbThreadQueue.o \
 	GbEncoding.o FxLanguage.o \
 	GbDns.o \
+	ConvertSpiderdb.o \
+	SpiderdbUtil.o \
+	FxBlobCache.o \
+	FxBlobCacheInstantiation.o \
+	InstanceInfoExchange.o \
+	ByteOrderMark.o \
+	utf8.o utf8_fast.o utf8_convert.o \
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
@@ -241,7 +251,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -ldl
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -lsqlite3 -ldl
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
@@ -281,9 +291,9 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
-LIBS += -lword_variations -lsto
+LIBS += -lword_variations -lsto -lunicode
 
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
@@ -323,6 +333,11 @@ libword_variations.a:
 libsto.a:
 	$(MAKE) -C sto/
 	ln -sf sto/libsto.a libsto.a
+
+PHONY: libunicode.a
+libunicode.a:
+	$(MAKE) -C unicode/
+	ln -sf unicode/libunicode.a libunicode.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
 	$(CXX) WantedCheckExampleLib.o -shared -o $@
@@ -401,7 +416,7 @@ doc:
 
 # used for tools/unittest
 libgb.a: $(OBJS)
-	ar rcs $@ $^
+	ar rcs $@ $^ word_variations/*.o sto/*.o
 
 .PHONY: tools
 tools:
@@ -423,13 +438,17 @@ systemtest:
 
 .PHONY: clean
 clean:
-	-rm -f *.o *.d gb core core.* libgb.a libsto.a libword_variations.a
+	-rm -f *.o *.d gb core core.* libgb.a libsto.a libword_variations.a libunicode.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
 	-rm -f entities.inc
 	-rm -f default_css.inc
+	-rm -f query_stop_words.??.inc query_stop_words_list.inc
 	$(MAKE) -C test $@
+	$(MAKE) -C word_variations/ $@
+	$(MAKE) -C sto/ $@
+	$(MAKE) -C unicode/ $@
 
 
 .PHONY: cleandb
@@ -440,9 +459,16 @@ cleandb:
 .PHONY: cleantest
 cleantest: cleandb
 	rm -f fatal_error
-	rm -f urlblacklist.txt urlwhitelist.txt dnsblocklist.txt robotschecklist.txt
-	rm -f docdelete.txt docdelete.txt.processing docdelete.txt.docid
+	rm -f urlblacklist.txt urlwhitelist.txt dnsblocklist.txt contenttypeblocklist.txt contenttypeallowed.txt
+	rm -f ipblocklist.txt
+	rm -f docdelete.txt docdelete.txt.processing docdelete.txt.lastpos
+	rm -f docrebuild.txt docrebuild.txt.processing docrebuild.txt.lastpos
+	rm -f docreindex.txt docreindex.txt.processing docreindex.txt.lastpos
 	rm -f spiderdbhostdelete.txt spiderdbhostdelete.txt.processing
+	rm -f spiderdburldelete.txt spiderdburldelete.txt.processing
+	rm -f explicit_keywords.txt
+	rm -f adultwords.txt adultphrases.txt spamphrases.txt
+	rm -f robotschecklist.txt urlresultoverride.txt
 
 # shortcuts
 .PHONY: release-safe
@@ -492,6 +518,18 @@ entities.json entities.inc:
 
 Entities.o: entities.inc
 Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
+
+query_stop_words.xx.inc: query_stop_words.xx.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh xx $< $@
+query_stop_words.en.inc: query_stop_words.en.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh en $< $@
+query_stop_words.de.inc: query_stop_words.de.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh de $< $@
+query_stop_words.da.inc: query_stop_words.da.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh da $< $@
+query_stop_words_list.inc: ./generate_query_stop_word_languages.sh query_stop_words.xx.inc query_stop_words.en.inc query_stop_words.de.inc query_stop_words.da.inc
+	./generate_query_stop_word_languages.sh $@
+StopWords.o: query_stop_words_list.inc
 
 default_css.inc: default.css
 	echo "static const char embedded_default_css[] =" >$@.tmp

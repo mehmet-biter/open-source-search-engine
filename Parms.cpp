@@ -13,7 +13,6 @@
 #include "Collectiondb.h"
 #include "HttpMime.h"      // atotime()
 #include "SearchInput.h"
-#include "Unicode.h"
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
@@ -37,8 +36,9 @@
 #include "Collectiondb.h"
 #include "Doledb.h"
 #include "GbDns.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include <set>
-
+#include <fstream>
 
 
 class WaitEntry {
@@ -222,7 +222,7 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		case TYPE_FILEUPLOADBUTTON:
 			return true; //silently ignored
 		case TYPE_UNSET:
-			log(LOG_LOGIC,"admin: attempt to print vlaue of unset parameter %s", m_title);
+			log(LOG_LOGIC,"admin: attempt to print value of unset parameter %s", m_title);
 			return true;
 	}
 
@@ -701,11 +701,6 @@ static bool CommandMergeTitledb(const char *rec) {
 }
 
 
-static bool CommandMergeSpiderdb(const char *rec) {
-	forceMergeAll(RDB_SPIDERDB);
-	return true;
-}
-
 static bool CommandMergeLinkdb(const char *rec) {
 	forceMergeAll(RDB_LINKDB);
 	return true;
@@ -716,6 +711,18 @@ static bool CommandMergeTagdb(const char *rec) {
 	return true;
 }
 
+
+static bool CommandSiteDefaultPageTemperature(const char *rec) {
+	const char *subCommand = getDataFromParmRec(rec);
+	log(LOG_DEBUG,"admin: stedeftemp: subCommand=%s'", subCommand);
+	if(strcmp(subCommand,"prepare")==0)
+		return g_smptr.prepare_new_generation();
+	if(strcmp(subCommand,"switch")==0) {
+		g_smptr.switch_generation();
+		return true;
+	}
+	return false;
+}
 
 static bool CommandDiskPageCacheOff(const char *rec) {
 	g_process.resetPageCaches();
@@ -730,7 +737,7 @@ static bool CommandForceIt(const char *rec) {
 static bool CommandDiskDump(const char *rec) {
 	g_clusterdb.getRdb()->submitRdbDumpJob(true);
 	g_tagdb.getRdb()->submitRdbDumpJob(true);
-	g_spiderdb.getRdb()->submitRdbDumpJob(true);
+	g_spiderdb.getRdb_deprecated()->submitRdbDumpJob(true);
 	g_posdb.getRdb()->submitRdbDumpJob(true);
 	g_titledb.getRdb()->submitRdbDumpJob(true);
 	g_linkdb.getRdb()->submitRdbDumpJob(true);
@@ -1635,7 +1642,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf ( "<td width=%" PRId32"%%>" , 100/nc/2 );
 	}
 
-	// if parm value is not defaut, use orange!
 	StackBuf<1024> val1;
 	if ( m->m_type != TYPE_FILEUPLOADBUTTON )
 		m->printVal ( &val1 , collnum , j ); // occNum );
@@ -1643,10 +1649,21 @@ bool Parms::printParm( SafeBuf* sb,
 	if ( m->m_def &&
 	     m->m_obj != OBJ_NONE &&
 	     m->m_obj != OBJ_IR && // do not do for injectionrequest
-	     m->m_obj != OBJ_GBREQUEST && // do not do for GigablastRequest
-	     strcmp(val1.getBufStart(), m->m_def) != 0 )
-		// put non-default valued parms in orange!
-		bg = "ffa500";
+	     m->m_obj != OBJ_GBREQUEST) // do not do for GigablastRequest
+	{
+		bool is_non_default = false;
+		if(m->m_type==TYPE_FLOAT || m->m_type==TYPE_DOUBLE) {
+			if(!almostEqualDouble(atof(val1.getBufStart()),atof(m->m_def)))
+				is_non_default = true;
+		} else {
+			if(strcmp(val1.getBufStart(), m->m_def) != 0)
+				is_non_default = true;
+		}
+		if(is_non_default) {
+			// put non-default valued parms in orange!
+			bg = "ffa500";
+		}
+	}
 
 
 	// print the title/description in current table for non-arrays
@@ -3513,29 +3530,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "stream search results";
-	m->m_desc  = "Stream search results back on socket as they arrive. "
-		"Useful when thousands/millions of search results are "
-		"requested. Required when doing such things otherwise "
-		"Gigablast could run out of memory. Only supported for "
-		"JSON and XML formats, not HTML.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_streamResults);
-	m->m_def   = "0";
-	m->m_cgi   = "stream";
-	m->m_flags = PF_API;
-	m++;
-
-	m->m_title = "seconds back";
-	m->m_desc  = "Limit results to pages spidered this many seconds ago. "
-		"Use 0 to disable.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_secsBack);
-	m->m_def   = "0";
-	m->m_cgi   = "secsback";
-	m->m_flags = PF_API;
-	m++;
-
 	m->m_title = "sort by";
 	m->m_desc  = "Use 0 to sort results by relevance, 1 to sort by "
 		"most recent spider date down, and 2 to sort by oldest "
@@ -3867,6 +3861,15 @@ void Parms::init ( ) {
 	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "hashGroupWeightExplicitKeywords";
+	m->m_desc  = "hashGroupWeightExplicitKeywords";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
@@ -4331,6 +4334,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_inmenu";
 	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Hashgroup weight - explicit keywords";
+	m->m_desc  = "";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
@@ -4910,6 +4923,24 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
 	m++;
 
+	m->m_title = "mlock-all, current";
+	m->m_desc  = "Try to lock memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallcurrent";
+	simple_m_set(Conf,m_mlockAllCurrent);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "mlock-all, future";
+	m->m_desc  = "Try to lock future memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallfuture";
+	simple_m_set(Conf,m_mlockAllFuture);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max total spiders";
 	m->m_desc  = "What is the maximum number of web "
 		"pages the spider is allowed to download "
@@ -4921,7 +4952,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtsp";
 	simple_m_set(Conf,m_maxTotalSpiders);
 	m->m_def   = "100";
-	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
@@ -5170,18 +5200,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "tight merge spiderdb";
-	m->m_desc  = "Merges all outstanding spiderdb files.";
-	m->m_cgi   = "spmerge";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandMergeSpiderdb;
-	m->m_cast  = true;
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-
         m->m_title = "tight merge linkdb";
         m->m_desc  = "Merges all outstanding linkdb files.";
         m->m_cgi   = "lmerge";
@@ -5201,6 +5219,18 @@ void Parms::init ( ) {
         m->m_func  = CommandMergeTagdb;
         m->m_cast  = true;
         m->m_group = false;
+        m->m_page  = PAGE_MASTER;
+        m->m_obj   = OBJ_CONF;
+        m++;
+
+        m->m_title = "sitedeftemp";
+        m->m_desc  = "prepares or switches to a new site-default-page-temperature file generation.";
+        m->m_cgi   = "sitedeftemp";
+        m->m_type  = TYPE_CMD;
+        m->m_func  = CommandSiteDefaultPageTemperature;
+        m->m_cast  = true;
+        m->m_group = false;
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
         m++;
@@ -5923,6 +5953,16 @@ void Parms::init ( ) {
 	m->m_group = true;
 	m++;
 
+	m->m_title = "sqlite synchronous level";
+	m->m_desc  = "0=off, 1=normal, 2=full, 3=extra. See <a href=\"https://sqlite.org/pragma.html#pragma_synchronous\">sqlite documentation </a> for details";
+	m->m_cgi   = "sqlitesynchronous";
+	simple_m_set(Conf,m_sqliteSynchronous);
+	m->m_def   = "1";
+	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "verify tree integrity";
 	m->m_desc  = "Ensure that tree/buckets have not been corrupted after modifcations. "
 		"Helps isolate sources of corruption. Used for debugging.";
@@ -5969,12 +6009,52 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "msg20 fallback to all hosts";
-	m->m_desc  = "When getting summary or link text and the desired host(s) in the shard are dead may msg20 fall back to just asking all hosts in the shard?";
-	m->m_cgi   = "msgtwentyfallbackyoallhosts";
-	simple_m_set(Conf,m_msg20FallbackToAllHosts);
+	m->m_title = "verify tag record";
+	m->m_desc  = "Ensure that tag record being used for first ip is for the same site. Used for debugging.";
+	m->m_cgi   = "vtr";
+	simple_m_set(Conf,m_verifyTagRec);
+	m->m_def   = "0";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "fallback spider->query allowed";
+	m->m_desc  = "If a spider-host is unavailable can requests fall back to any query-hosts in the shard?";
+	m->m_cgi   = "fallbackspidertoquery";
+	simple_m_set(Conf,m_spiderHostToQueryHostFallbackAllowed);
 	m->m_def   = "1";
 	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+	m->m_title = "fallback query->spider allowed";
+	m->m_desc  = "If a query-host is unavailable can requests fall back to any spider-hosts in the shard?";
+	m->m_cgi   = "fallbackquerytospider";
+	simple_m_set(Conf,m_queryHostToSpiderHostFallbackAllowed);
+	m->m_def   = "1";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Delay between each item for DocProcess";
+	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
+	m->m_cgi   = "docprocessdelayms";
+	simple_m_set(Conf,m_docProcessDelayMs);
+	m->m_def   = "1000";
+	m->m_units = "ms";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Max pending doc allowed for DocProcess";
+	m->m_desc  = "How many concurrent processes we allow for DocProcess";
+	m->m_cgi   = "docprocessmaxpending";
+	simple_m_set(Conf,m_docProcessMaxPending);
+	m->m_def   = "10";
+	m->m_units = "";
+	m->m_group = false;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;
@@ -6233,8 +6313,6 @@ void Parms::init ( ) {
 	m->m_desc  = "List of urls to index. One per line or space separated. "
 		"If your url does not index as you expect you "
 		"can check it's spider history by doing a url: search on it. "
-		"Added urls will have a "
-		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
 		"Added urls will match the <i><a href=\"/admin/filters#isaddurl\">"
 		"isaddurl</a></i> directive on "
 		"the url filters page. "
@@ -6304,8 +6382,6 @@ void Parms::init ( ) {
 		"<a href=\"/admin/sites\">site list</a>. You can "
 		"change that behavior in the <a href=\"/admin/filters\">url "
 		"filters</a> if you want. "
-		"Injected urls will have a "
-		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
 		"The injection api is described on the "
 		"<a href=\"/admin/api\">api</a> page. "
 		"Make up a fake url if you are injecting content that "
@@ -6415,15 +6491,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
 	simple_m_set_checkbox(InjectionRequest,m_doConsistencyTesting);
-	m++;
-
-	m->m_title = "hop count";
-	m->m_desc  = "Use this hop count when injecting the page.";
-	m->m_cgi   = "hopcount";
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN; // | PF_API
-	m->m_page  = PAGE_INJECT;
-	simple_m_set(InjectionRequest,m_hopCount);
 	m++;
 
 	m->m_title = "url IP";
@@ -8280,6 +8347,16 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "reuse tagrec from titlerec";
+	m->m_desc  = "If enabled, gigablast will use tagrec in titlerec instead of the latest from tagdb "
+		"(except for titledb rebuild)";
+	m->m_cgi   = "rtft";
+	simple_m_set(Conf,m_rebuildUseTitleRecTagRec);
+	m->m_page  = PAGE_REPAIR;
+	m->m_def   = "1";
+	m->m_group = false;
+	m++;
+
 	m->m_title = "rebuild titledb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrt"; // repair rebuild titledb
@@ -8487,6 +8564,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "ldrtt";
 	simple_m_set(Conf,m_logDiskReadTimeThreshold);
 	m->m_def   = "50";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log sqlite transaction time threshold";
+	m->m_desc  = "If a sqlite transaction took this many millliseconds or longer, then log the "
+		"time it took to process.";
+	m->m_cgi   = "lsqltt";
+	simple_m_set(Conf,m_logSqliteTransactionTimeThreshold);
+	m->m_def   = "1000";
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8927,6 +9014,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for IpBlockList";
+	m->m_cgi   = "ltrc_ipbl";
+	simple_m_set(Conf,m_logTraceIpBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for LanguageResultOverride";
 	m->m_cgi   = "ltrc_langro";
 	simple_m_set(Conf,m_logTraceLanguageResultOverride);
@@ -8948,9 +9042,23 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for Msg4";
-	m->m_cgi   = "ltrc_msgfour";
-	simple_m_set(Conf,m_logTraceMsg4);
+	m->m_title = "log trace info for Msg4In";
+	m->m_cgi   = "ltrc_msgfour_in";
+	simple_m_set(Conf,m_logTraceMsg4In);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg4Out";
+	m->m_cgi   = "ltrc_msgfour_out";
+	simple_m_set(Conf,m_logTraceMsg4Out);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg4Out data";
+	m->m_cgi   = "ltrc_msgfourdat";
+	simple_m_set(Conf,m_logTraceMsg4OutData);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8962,6 +9070,12 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for PageLinkdbLookup";
+	m->m_cgi   = "ltrc_pgldl";
+	simple_m_set(Conf,m_logTracePageLinkdbLookup);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
 
 	m->m_title = "log trace info for PageSpiderdbLookup";
 	m->m_cgi   = "ltrc_pgspl";
@@ -9090,17 +9204,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for SpiderdbHostDelete";
-	m->m_cgi   = "ltrc_sphdel";
-	simple_m_set(Conf,m_logTraceSpiderdbHostDelete);
-	m->m_def   = "0";
-	m->m_flags = PF_REBUILDSPIDERSETTINGS;
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log trace info for reindex";
 	m->m_cgi   = "ltrc_reindex";
 	simple_m_set(Conf,m_logTraceReindex);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for SpiderdbRdbSqliteBridge";
+	m->m_cgi   = "ltrc_sqlitebridge";
+	simple_m_set(Conf,m_logTraceSpiderdbRdbSqliteBridge);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9136,13 +9249,6 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for UrlMatchList";
 	m->m_cgi   = "ltrc_urlbl";
 	simple_m_set(Conf,m_logTraceUrlMatchList);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log trace info for UrlMatchHostList";
-	m->m_cgi   = "ltrc_urlhbl";
-	simple_m_set(Conf,m_logTraceUrlMatchHostList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9212,10 +9318,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log timing messages for spcache";
-	m->m_desc  = "Log various timing related messages.";
+	m->m_title = "log timing messages for linkinfo";
 	m->m_cgi   = "ltspc";
-	simple_m_set(Conf,m_logTimingSpcache);
+	simple_m_set(Conf,m_logTimingLinkInfo);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -10577,39 +10682,16 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			g_udpServer.sendReply(NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2);
 		}
 
-
-		// . determine if it alters the url filters
-		// . if those were changed we have to nuke doledb and
-		//   waiting tree in Spider.cpp and rebuild them!
-		if ( parm->m_flags & PF_REBUILDURLFILTERS )
-			we->m_doRebuilds = true;
-
-		if ( parm->m_flags & PF_REBUILDPROXYTABLE )
-			we->m_doProxyRebuild = true;
-
-		if ( parm->m_flags & PF_REBUILDACTIVELIST )
-			we->m_rebuildActiveList = true;
-
-		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
-			rebuildRankingSettings = true;
-
-		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
-			rebuildDnsSettings = true;
-		}
-
-		if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
-			rebuildSpiderSettings = true;
-		}
-
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
 			we->m_collnum = getCollnumFromParmRec ( rec );
 
+		bool changed = false;
 		// . this returns false if blocked, returns true and sets
 		//   g_errno on error
 		// . it'll block if trying to delete a coll when the tree
 		//   is saving or something (CommandDeleteColl())
-		if ( ! g_parms.updateParm ( rec , we ) ) {
+		if ( ! g_parms.updateParm ( rec , we, &changed ) ) {
 			////////////
 			//
 			// . it blocked! it will call we->m_callback when done
@@ -10624,6 +10706,35 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 			log("parms: updateParm blocked. waiting.");
 			return;
+		}
+
+		if (changed) {
+			// . determine if it alters the url filters
+			// . if those were changed we have to nuke doledb and
+			//   waiting tree in Spider.cpp and rebuild them!
+			if (parm->m_flags & PF_REBUILDURLFILTERS) {
+				we->m_doRebuilds = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDPROXYTABLE) {
+				we->m_doProxyRebuild = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDACTIVELIST) {
+				we->m_rebuildActiveList = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDRANKINGSETTINGS) {
+				rebuildRankingSettings = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
+				rebuildDnsSettings = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
+				rebuildSpiderSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10642,6 +10753,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	// basically resetting the spider here...
 	CollectionRec *cx = g_collectiondb.getRec(we->m_collnum);
 	if ( we->m_doRebuilds && cx ) {
+		log("parms: rebuild url filters");
 		// . this tells Spider.cpp to rebuild the spider queues
 		// . this is NULL if spider stuff never initialized yet,
 		//   like if you just added the collection
@@ -10655,22 +10767,33 @@ void Parms::handleRequest3fLoop(void *weArg) {
 		cx->rebuildUrlFilters();
 	}
 
-	if ( we->m_rebuildActiveList && cx )
+	if ( we->m_rebuildActiveList && cx ) {
+		log("parms: rebuild active list");
 		g_spiderLoop.invalidateActiveList();
+	}
 
 	// if user changed the list of proxy ips rebuild the binary
 	// array representation of the proxy ips we have
-	if ( we->m_doProxyRebuild )
+	if ( we->m_doProxyRebuild ) {
+		log("parms: rebuild proxy table");
 		buildProxyTable();
+	}
 
-	if ( rebuildRankingSettings )
+	if ( rebuildRankingSettings ) {
+		log("parms: rebuild ranking settings");
 		reinitializeRankingSettings();
+	}
 
 	if (rebuildDnsSettings) {
-		GbDns::initializeSettings();
+		log("parms: rebuild dns settings");
+		if (!g_jobScheduler.submit(GbDns::reinitializeSettings, nullptr, nullptr, thread_type_config_load, 0)) {
+			// run in main thread
+			GbDns::reinitializeSettings(nullptr);
+		}
 	}
 
 	if (rebuildSpiderSettings) {
+		log("parms: rebuild spider settings");
 		g_spiderLoop.initSettings();
 	}
 
@@ -11064,15 +11187,13 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 	return true;
 }
 
-void resetImportLoopFlag (); //in PageInject.cpp
-
 // . this adds the key if not a cmd key to parmdb rdbtree
 // . this executes cmds
 // . this updates the CollectionRec which may disappear later and be fully
 //   replaced by Parmdb, just an RdbTree really.
 // . returns false if blocked
 // . returns true and sets g_errno on error
-bool Parms::updateParm(const char *rec, WaitEntry *we) {
+bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 
@@ -11210,9 +11331,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	parm->printVal ( &val2 , collnum , occNum );
 
 	// did this parm change value?
-	bool changed = true;
-	if ( strcmp ( val1.getBufStart() , val2.getBufStart() ) == 0 )
-		changed = false;
+	*changed = (strcmp(val1.getBufStart(), val2.getBufStart()) != 0);
 
 	// . update array count if necessary
 	// . parm might not have changed value based on what was in there
@@ -11236,7 +11355,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 			updateCount = false;
 		// and for other pages, like master ips, skip if empty!
 		// PAGE_PASSWORDS, PAGE_MASTERPASSWORDS, ...
-		if ( parm->m_page != PAGE_FILTERS && ! changed )
+		if ( parm->m_page != PAGE_FILTERS && ! *changed )
 			updateCount = false;
 
 		// ok, increment the array count of items in the array
@@ -11245,7 +11364,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	}
 
 	// all done if value was unchanged
-	if ( ! changed )
+	if ( ! *changed )
 		return true;
 
 	// show it
@@ -11257,6 +11376,15 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	    (int32_t)collnum,
 	    val1.getBufStart(),
 	    val2.getBufStart());
+
+	if (g_hostdb.getMyHostId() == 0) {
+		std::ofstream file("eventlog", (std::ios::out | std::ios::app));
+		char timebuf[32];
+		file << formatTime(time(nullptr), timebuf) << "|parms update|"
+		     << parm->m_title << (parm->isArray() ? " #" + std::to_string(occNum) : "") << "|"
+		     << parm->m_cgi << (parm->isArray() ? std::to_string(occNum) : "") << "|"
+		     << val1.getBufStart() << "|" << val2.getBufStart() << std::endl;
+	}
 
 	if ( cr ) cr->setNeedsSave();
 
@@ -11322,21 +11450,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "belongs to ruleset 33. Only for assigning to "
 			  "spider priority or a banned ruleset.</td></tr>"
 			  */
-
-			  "<tr class=poo><td><a name=hopcount></a>"
-			  "hopcount<4 && iswww</td>"
-			  "<td>Matches if document has a hop count of 4, and "
-			  "is a \"www\" url (or domain-only url).</td></tr>"
-
-			  "<tr class=poo><td>hopcount</td>"
-			  "<td>All root urls, those that have only a single "
-			  "slash for their path, and no cgi parms, have a "
-			  "hop count of 0. Also, all RSS urls, ping "
-			  "server urls and site roots (as defined in the "
-			  "site rules table) have a hop count of 0. Their "
-			  "outlinks have a hop count of 1, and the outlinks "
-			  "of those outlinks a hop count of 2, etc."
-			  "</td></tr>"
 
 			  "<tr class=poo><td>sitepages</td>"
 			  "<td>The number of pages that are currently indexed "
@@ -11483,16 +11596,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "Which means it matches isaddurl, isinjected, "
 			  " or isreindex. as opposed to only "
 			  "being discovered from the spider. "
-			  "</td></tr>"
-
-			  "<tr class=poo><td><nobr>inpingserver | !inpingserver"
-			  "</nobr></td>"
-			  "<td>"
-			  "This is true if the url has an inlink from "
-			  "a recognized ping server. Ping server urls are "
-			  "hard-coded in Url.cpp. <b><font color=red> "
-			  "pingserver urls are assigned a hop count of 0"
-			  "</font></b>"
 			  "</td></tr>"
 
 			  "<tr class=poo><td>isindexed | !isindexed</td>"

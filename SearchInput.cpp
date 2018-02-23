@@ -67,8 +67,6 @@ SearchInput::SearchInput()
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
 	m_numFlagRankAdjustments=26;
-	m_streamResults = false;
-	m_secsBack = 0;
 	m_sortBy = 0;
 	m_filetype = NULL;
 	m_realMaxTop = 0;
@@ -214,14 +212,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// and set from the http request. will set m_coll, etc.
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
-
-	if ( m_streamResults &&
-	     tmpFormat != FORMAT_XML &&
-	     tmpFormat != FORMAT_JSON ) {
-		log("si: streamResults only supported for "
-		    "xml/csv/json. disabling");
-		m_streamResults = false;
-	}
 
 	m_coll = coll;
 
@@ -520,23 +510,16 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		boolq = true;
 	}
 
-	// and this
-	if ( m_secsBack > 0 ) {
-		int32_t timestamp = getTimeGlobalNoCore();
-		timestamp -= m_secsBack;
-		if ( timestamp <= 0 ) timestamp = 0;
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbminint:gbspiderdate:%" PRIu32,timestamp);
-	}
-
 	if ( m_sortBy == 1 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
 	}
 
 	if ( m_sortBy == 2 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
 	}
 
 	char *ft = m_filetype;

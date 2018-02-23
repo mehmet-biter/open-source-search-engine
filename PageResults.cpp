@@ -16,7 +16,6 @@
 #include "Bits.h"
 #include "sort.h"
 #include "CountryCode.h"
-#include "Unicode.h"
 #include "Posdb.h"
 #include "PosdbTable.h"
 #include "PageResults.h"
@@ -35,6 +34,9 @@
 #include "RobotsBlockedResultOverride.h"
 
 
+static bool printSearchResultsHeader(State0 *st);
+static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar);
+static bool printSearchResultsTail(State0 *st);
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
@@ -395,17 +397,6 @@ static bool gotResults ( void *state ) {
 		return sendReply(st,NULL);
 	}
 
-	// if in streaming mode and we never sent anything and we had
-	// an error, then send that back. we never really entered streaming
-	// mode in that case. this happens when someone deletes a coll
-	// and queries it immediately, then each shard reports ENOCOLLREC.
-	// it was causing a socket to be permanently stuck open.
-	if ( g_errno &&
-	     si->m_streamResults &&
-	     st->m_socket->m_totalSent == 0 )
-	       return sendReply(st,NULL);
-
-
 	// if we skipped a shard because it was dead, usually we provide
 	// the results anyway, but if this switch is true then return an
 	// error code instead. this is the 'all or nothing' switch.
@@ -421,49 +412,6 @@ static bool gotResults ( void *state ) {
 	       return sendReply(st,reply);
 	}
 
-
-	// if already printed from Msg40.cpp, bail out now
-	if ( si->m_streamResults ) {
-		// this will be our final send
-		if ( st->m_socket->m_streamingMode ) {
-			log("res: socket still in streaming mode. wtf? err=%s",
-			    mstrerror(g_errno));
-			st->m_socket->m_streamingMode = false;
-		}
-		log("msg40: done streaming. nuking state=0x%" PTRFMT" "
-		    "tcpsock=0x%" PTRFMT" "
-		    "sd=%i "
-		    "msg40=0x%" PTRFMT" q=%s. "
-		    "msg20sin=%i msg20sout=%i sendsin=%i sendsout=%i "
-		    "numrequests=%i numreplies=%i "
-		    ,(PTRTYPE)st
-		    ,(PTRTYPE)st->m_socket
-		    ,(int)st->m_socket->m_sd
-		    ,(PTRTYPE)msg40
-		    ,si->m_q.originalQuery()
-
-		    , msg40->m_numMsg20sIn
-		    , msg40->m_numMsg20sOut
-		    , msg40->m_sendsIn
-		    , msg40->m_sendsOut
-		    , msg40->m_numRequests
-		    , msg40->m_numReplies
-
-		    );
-
-		// just let tcpserver nuke it, but don't double call
-		// the callback, doneSendingWrapper9()... because msg40
-		// will have been deleted!
-		st->m_socket->m_callback = NULL;
-
-		// fix this to try to fix double close i guess
-		// if ( st->m_socket->m_sd > 0 )
-		// 	st->m_socket->m_sd *= -1;
-
-		mdelete(st, sizeof(State0), "PageResults2");
-		delete st;
-		return true;
-	}
 
 	// collection rec must still be there since SearchInput references 
 	// into it, and it must be the SAME ptr too!
@@ -657,7 +605,7 @@ static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 	return true;
 }
 
-bool printSearchResultsHeader ( State0 *st ) {
+static bool printSearchResultsHeader(State0 *st) {
 
 	const SearchInput *si = &st->m_si;
 
@@ -954,18 +902,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 	else if ( st->m_header && si->m_format == FORMAT_JSON )
 		sb->safePrintf("\"hits\":%" PRId64",\n", (int64_t)totalHits);
 
-	// if streaming results we just don't know if we will require
-	// a "Next 10" link or not! we can print that after we print out
-	// the results i guess...
-	if ( ! si->m_streamResults ) {
-		if ( si->m_format == FORMAT_XML )
-			sb->safePrintf("\t<moreResultsFollow>%" PRId32
-				       "</moreResultsFollow>\n"
-				       ,(int32_t)moreFollow);
-		else if ( st->m_header && si->m_format == FORMAT_JSON )
-			sb->safePrintf("\"moreResultsFollow\":%" PRId32",\n",
-				       (int32_t)moreFollow);
-	}
+	if ( si->m_format == FORMAT_XML )
+		sb->safePrintf("\t<moreResultsFollow>%" PRId32
+				"</moreResultsFollow>\n"
+				,(int32_t)moreFollow);
+	else if ( st->m_header && si->m_format == FORMAT_JSON )
+		sb->safePrintf("\"moreResultsFollow\":%" PRId32",\n",
+				(int32_t)moreFollow);
 
 	// . did he get a spelling recommendation?
 	// . do not use htmlEncode() on this anymore since receiver
@@ -1100,57 +1043,62 @@ bool printSearchResultsHeader ( State0 *st ) {
 			
 		sb->safePrintf("\t\"terms\":[\n");
 		for ( int i = 0 ; i < q->m_numTerms ; i++ ) {
+			const QueryTerm &qt = q->m_qterms[i];
 			sb->safePrintf("\t\t{\n");
-			const QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\t\"termNum\":%i,\n",i);
 			sb->safePrintf("\t\t\t\"termStr\":\"");
-			sb->jsonEncode (qt->m_term,qt->m_termLen);
+			sb->jsonEncode(qt.m_term, qt.m_termLen);
 			sb->safePrintf("\",\n");
-			// syn?
-			const QueryTerm *sq = qt->m_synonymOf;
-			// what language did synonym come from?
-			if ( sq ) {
-				// language map from wiktionary
-				sb->safePrintf("\t\t\t\"termLang\":\"");
-				bool first = true;
-				for ( int i = 0 ; i < langLast ; i++ ) {
-					uint64_t bit = (uint64_t)1 << i;
-					if ( ! (qt->m_langIdBits&bit))continue;
-					const char *str = getLanguageAbbr(i);
-					if ( ! first ) sb->pushChar(',');
-					first = false;
-					sb->jsonEncode ( str );
+			sb->safePrintf("\t\t\t\"isPhrase\":%s,\n", qt.m_isPhrase?"true":"false");
+			sb->safePrintf("\t\t\t\"termHash48\":%" PRId64",\n",   qt.m_termId);
+			sb->safePrintf("\t\t\t\"termHash64\":%" PRIu64",\n",    qt.m_rawTermId);
+			//m_termSign?
+			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n",      qt.m_termFreq);
+			sb->safePrintf("\t\t\t\"termFreqWeight\":%.2f,\n",      qt.m_termFreqWeight);
+			sb->safePrintf("\t\t\t\"queryStopWord\":%s,\n",         qt.m_isQueryStopWord?"true":"false");
+			sb->safePrintf("\t\t\t\"termWeight\":%.2f,\n",          qt.m_termWeight);
+			sb->safePrintf("\t\t\t\"userWeight\":%.2f,\n",          qt.m_userWeight);
+			sb->safePrintf("\t\t\t\"userNotRequired\":%s,\n",       qt.m_userNotRequired?"true":"false");
+			sb->safePrintf("\t\t\t\"ignored\":%s,\n",               qt.m_ignored?"true":"false");
+			const QueryTerm *synqt = qt.m_synonymOf;
+			if(synqt) {
+				if(qt.m_langIdBitsValid) {
+					// what language did synonym come from?
+					// language map from wiktionary
+					sb->safePrintf("\t\t\t\"termLang\":\"");
+					bool first = true;
+					for(int i = 0; i < langLast; i++) {
+						uint64_t bit = (uint64_t)1 << i;
+						if(!(qt.m_langIdBits&bit))
+							continue;
+						const char *str = getLanguageAbbr(i);
+						if(!first)
+							sb->pushChar(',');
+						first = false;
+						sb->jsonEncode(str);
+					}
+					sb->safePrintf("\",\n");
 				}
+				
+				sb->safePrintf("\t\t\t\"synonymOf\":\"");
+				sb->jsonEncode(synqt->m_term, synqt->m_termLen);
 				sb->safePrintf("\",\n");
 			}
+			const char *fieldCodeName = getFieldCodeName(qt.m_fieldCode);
+			if(fieldCodeName)
+				sb->safePrintf("\t\t\t\"fieldCodeName\":\"%s\",\n", fieldCodeName);
+			sb->safePrintf("\t\t\t\"required\":%s,\n",              qt.m_isRequired?"true":"false");
 
-			if ( sq ) {
-				sb->safePrintf("\t\t\t\"synonymOf\":\"");
-				sb->jsonEncode(sq->m_term,sq->m_termLen);
-				sb->safePrintf("\",\n");
-			}				
-			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n"
-				       ,qt->m_termFreq);
-			sb->safePrintf("\t\t\t\"termFreqWeight\":%.2f,\n"
-				       ,qt->m_termFreqWeight);
-
-			sb->safePrintf("\t\t\t\"termHash48\":%" PRId64",\n"
-				       ,qt->m_termId);
-			sb->safePrintf("\t\t\t\"termHash64\":%" PRIu64",\n"
-				       ,qt->m_rawTermId);
-
-			// don't end last query term attr on a omma
-			const QueryWord *qw = qt->m_qword;
-			sb->safePrintf("\t\t\t\"prefixHash64\":%" PRIu64"\n"
-				       ,qw->m_prefixHash);
+			sb->safePrintf("\t\t\t\"prefixHash64\":%" PRIu64"\n", qt.m_qword->m_prefixHash);
 
 			sb->safePrintf("\t\t}");
-			if ( i + 1 < q->m_numTerms )
+			// don't end last query term attr on a omma
+			if( i + 1 < q->m_numTerms)
 				sb->pushChar(',');
 			sb->pushChar('\n');
 		}
 		sb->safePrintf("\t]\n"); // end "terms":[]
-		sb->safePrintf("},\n");
+		sb->safePrintf("},\n"); //end "queryInfo":{}
 	}
 
 	if ( si->m_format == FORMAT_JSON && st->m_header ) {
@@ -1379,7 +1327,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 }
 
 
-bool printSearchResultsTail ( State0 *st ) {
+bool printSearchResultsTail(State0 *st) {
 	SafeBuf *sb = &st->m_sb;
 
 	SearchInput *si = &st->m_si;	
@@ -1844,7 +1792,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		sb->safePrintf("</td><td>");
 		char ipbuf[16];
 		sb->safePrintf("<a href=\"/search?c=%s&q=ip%%3A%s"
-			"+gbsortbyint%%3Agbsitenuminlinks&n=100\">"
+			       "&n=100\">"
 			       ,si->m_cr->m_coll,iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("%s</a>",iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("</td><td>%" PRId32"</td></tr>"
@@ -1871,7 +1819,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 }
 
 // use this for xml as well as html
-bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
+static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	SafeBuf *sb = &st->m_sb;
 
 	HttpRequest *hr = &st->m_hr;
@@ -1921,11 +1869,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		return true;
 	}
 
-	Msg20 *m20;
-	if ( si->m_streamResults )
-		m20 = msg40->getCompletedSummary(ix);
-	else
-		m20 = msg40->m_msg20[ix];
+	Msg20 *m20 = msg40->m_msg20[ix];
 
 	// get the reply
 	Msg20Reply *mr = m20->m_r;
@@ -1935,7 +1879,8 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	// . i think this happens if all hosts in a shard are down or timeout
 	//   or something
 	if ( ! mr ) {
-		sb->safePrintf("<i>getting summary for docid %" PRId64" had error: %s</i><br><br>", d, mstrerror(m20->m_errno));
+		if(si->m_format == FORMAT_HTML)
+			sb->safePrintf("<i>getting summary for docid %" PRId64" had error: %s</i><br>\n", d, mstrerror(m20->m_errno));
 		return true;
 	}
 
@@ -2527,14 +2472,6 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		sb->jsonEncode ( displayUrl , displayUrlLen );
 		sb->safePrintf("\",\n");
 	}
-
-
-	if ( si->m_format == FORMAT_XML )
-		sb->safePrintf("\t\t<hopCount>%" PRId32"</hopCount>\n",
-			       (int32_t)mr->m_hopcount);
-	if ( si->m_format == FORMAT_JSON )
-		sb->safePrintf("\t\t\"hopCount\":%" PRId32",\n",(int32_t)mr->m_hopcount);
-
 
 	// now the last spidered date of the document
 	time_t ts = mr->m_lastSpidered;
@@ -3255,7 +3192,6 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	sb->safePrintf("<tr><td colspan=10><b><center>Final score</center></b></td></tr>");
 	sb->safePrintf("<tr><td>DocId</td><td>%" PRId64"</td></tr>", dp->m_docId);
 	sb->safePrintf("<tr><td>Site</td><td>%s</td></tr>", mr->ptr_site);
-	sb->safePrintf("<tr><td>Hopcount</td><td>%" PRId32 "</td></tr>", (int32_t)mr->m_hopcount);
 	sb->safePrintf("<tr><td>Language</td><td><font color=green><b>%s</b></font></td></tr>", getLanguageString(mr->m_language)); // use page language
 	sb->safePrintf("<tr><td>Language boost</td><td><font color=green><b>%.01f</b></font></td></tr>", langBoost);
 	sb->safePrintf("<tr><td>Country</td><td>%s</td></tr>", cc);
@@ -4506,8 +4442,6 @@ static bool printLogoAndSearchBox(SafeBuf *sb, HttpRequest *hr, const SearchInpu
 	return true;
 }
 
-
-#include "Json.h"
 
 
 class MenuItem {

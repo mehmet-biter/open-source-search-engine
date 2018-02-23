@@ -1217,6 +1217,14 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 }
 
 
+bool Hostdb::mayWeSendRequestToHost(const Host *host, msg_type_t /*msgType*/) {
+	if(!getMyHost()->m_spiderEnabled && host->m_spiderEnabled && !g_conf.m_queryHostToSpiderHostFallbackAllowed)
+		return false;
+	if(!getMyHost()->m_queryEnabled && host->m_queryEnabled && !g_conf.m_spiderHostToQueryHostFallbackAllowed)
+		return false;
+	return true;
+}
+
 // if niceness 0 can't pick noquery host/ must pick spider host.
 // if niceness 1 can't pick nospider host/ must pick query host.
 // Used to select based on PingInfo::m_udpSlotsInUseIncoming but that information is not exchanged often enough to
@@ -1514,8 +1522,10 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 		}
 
-		case RDB_SPIDERDB:
-		case RDB2_SPIDERDB2: {
+		case RDB_SPIDERDB_DEPRECATED:
+		case RDB2_SPIDERDB2_DEPRECATED:
+		case RDB_SPIDERDB_SQLITE:
+		case RDB2_SPIDERDB2_SQLITE: {
 			int32_t firstIp = Spiderdb::getFirstIp((key128_t *)k);
 			// do what Spider.h getGroupId() used to do so we are
 			// backwards compatible
@@ -1538,6 +1548,12 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 			// HACK:!!!!!!  this is a trick!!! it is us!!!
 			//return m_myHost->m_groupId;
 			return m_myHost->m_shardNum;
+
+		case RDB_SITEDEFAULTPAGETEMPERATURE: {
+			//first 64 bit (shl'ed 1)are docid, and shared the same way as titledb
+			uint64_t d = (*(const uint64_t*)k)>>1;
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
 
 		default:
 			// core -- must be provided

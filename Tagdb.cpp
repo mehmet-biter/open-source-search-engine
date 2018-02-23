@@ -5,7 +5,6 @@
 #include "Tagdb.h"
 #include "Conf.h"       // for setting rdb from Conf file
 #include "Collectiondb.h"
-#include "Unicode.h"
 #include "JobScheduler.h"
 #include "HttpServer.h"
 #include "HttpRequest.h"
@@ -764,7 +763,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 			url.set(urlPtr);
 
 			SiteGetter sg;
-			sg.getSite(url.getUrl(), NULL, 0, 0, 0);
+			sg.getSite(url.getUrl(), NULL, 0, 0);
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
@@ -941,8 +940,6 @@ static TagDesc s_tagDesc[] = {
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
-	{"manualban"            ,0x00,0},
-
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
 
@@ -1004,7 +1001,9 @@ static TagDesc s_tagDesc[] = {
 	{"pagerank", TDF_DEPRECATED, 0},
 	{"ruleset", TDF_DEPRECATED, 0},
 
-	{"deep", TDF_DEPRECATED, 0}
+	{"deep", TDF_DEPRECATED, 0},
+
+	{"manualban", TDF_DEPRECATED, 0}
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -1278,7 +1277,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	// . if site was NULL that means we guess it. default to hostname
 	//   unless in a recognized for like /~mwells/
 	SiteGetter sg;
-	sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
+	sg.getSite ( url->getUrl(), NULL, collnum, m_niceness );
 	// if it set it to a recognized site, like ~mwells, then set "site"
 	if ( sg.getSiteLen() ) {
 		site    = sg.getSite();
@@ -1481,9 +1480,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;
-	int32_t requestNum = msg8aState->m_requestNum;
-	key128_t startKey = msg8aState->m_startKey;
-	key128_t endKey = msg8aState->m_endKey;
 	mdelete( msg8aState, sizeof(*msg8aState), "msg8astate" );
 	delete msg8aState;
 
@@ -1492,14 +1488,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	// error?
 	if ( g_errno ) {
 		msg8a->m_errno = g_errno;
-	} else {
-		log( LOG_DEBUG, "tagdb: adding key=%s to cache", KEYSTR(&startKey, sizeof(startKey)) );
-
-		// only add to cache when we don't have error for this reply
-		RdbList *list = &(msg8a->m_tagRec->m_lists[requestNum]);
-
-		/// @todo hack to get addList working (verify if there will be issue)
-		list->setLastKey((char*)&endKey);
 	}
 
 	msg8a->m_replies++;

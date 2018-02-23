@@ -3,6 +3,7 @@
 #include "Lang.h"
 #include <string>
 #include <vector>
+#include <stdarg.h>
 
 
 //Weight to use when generating variations. Values are in the range [0.0 .. 1.0]
@@ -52,6 +53,21 @@ public:
 	//todo: change API so query_variations() method has access to full query and is also allowed to provide variations of bigrams etc.
 	
 	static WordVariationGenerator *get_generator(lang_t lang);
+	
+	enum log_class_t {
+		log_trace,
+		log_debug,
+		log_info,
+		log_warn,
+		log_error
+	};
+	typedef void (*log_pfn_t)(log_class_t log_class, const char *fmt, va_list ap);
+	static void set_log_function(log_pfn_t pfn);
+
+protected:
+	static void log(log_class_t log_class, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
+private:
+	static log_pfn_t log_pfn;
 };
 
 bool initializeWordVariationGenerator_Danish();

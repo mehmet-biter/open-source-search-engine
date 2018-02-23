@@ -1,4 +1,5 @@
 #include "PageTemperatureRegistry.h"
+#include "ScopedLock.h"
 #include "ScalingFunctions.h"
 #include "Log.h"
 #include <stdio.h>
@@ -6,13 +7,16 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <float.h>      // FLT_EPSILON, DBL_EPSILON
 
 PageTemperatureRegistry g_pageTemperatureRegistry;
+static GbMutex load_lock;
 
 static const char filename[] = "page_temperatures.dat";
 
 
 bool PageTemperatureRegistry::load() {
+	ScopedLock sl(load_lock);
 	log(LOG_DEBUG, "Loading %s", filename);
 
 	FILE *fp = fopen(filename, "r");
@@ -98,7 +102,7 @@ bool PageTemperatureRegistry::load() {
 
 	temperature_range_for_scaling = max_temperature-min_temperature;
 	
-	min_temperature_log = log(min_temperature);
+	min_temperature_log = min_temperature>0 ? log(min_temperature) : DBL_EPSILON;
 	max_temperature_log = log(max_temperature);
 	temperature_range_for_scaling_log = log(temperature_range_for_scaling);
 	default_temperature_log = log(default_temperature);
@@ -111,6 +115,9 @@ bool PageTemperatureRegistry::load() {
 	log(LOG_DEBUG, "pagetemp: default_temperature=%u",default_temperature);
 
 	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
+	
+	stat_ino = st.st_ino;
+	stat_mtime = st.st_mtime;
 	return true;
 }
 
@@ -123,27 +130,51 @@ void PageTemperatureRegistry::unload() {
 }
 
 
+void PageTemperatureRegistry::reload_if_needed() {
+	struct stat st;
+	if(stat(filename,&st)!=0)
+		return;
+	if(st.st_ino!=stat_ino || st.st_mtime!=stat_mtime)
+		load();
+}
+
+
 unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid) const {
+	return query_page_temperature_internal(docid,default_temperature);
+}
+
+
+unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid, unsigned raw_default) const {
 	unsigned idx = ((uint32_t)docid) % hash_table_size;
 	while(slot[idx]) {
 		if(slot[idx]>>26 == docid)
 			return slot[idx]&0x3ffffff;
 		idx = (idx+1)%hash_table_size;
 	}
-	//Unregistered page. Return an default temperature
-	return default_temperature;
+	return raw_default;
 }
 
 
-double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max) const {
-	if(hash_table_size==0)
-		return scale_linear(default_temperature_log, min_temperature_log, max_temperature_log, range_min, range_max);
 
-	double temperature_26bit_log = log((double)query_page_temperature_internal(docid));
-	//Then scale to a number in the rangte [0..1]
-	//It is a bit annoying to do this computation for each lookup but it saves memory
-//	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
+bool PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, double *temperature) const {
+	if(hash_table_size==0)
+		return false;
+	unsigned idx = ((uint32_t)docid) % hash_table_size;
+	while(slot[idx]) {
+		if(slot[idx]>>26 == docid) {
+			*temperature = scale_temperature(range_min,range_max,slot[idx]&0x3ffffff);
+			return slot[idx]&0x3ffffff;
+		}
+		idx = (idx+1)%hash_table_size;
+	}
+	return false;
+}
+
+double PageTemperatureRegistry::scale_temperature(double range_min, double range_max, unsigned raw_temperature) const {
+	double temperature_26bit_log = log(raw_temperature);
 	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
 }
 
-
+double PageTemperatureRegistry::query_default_page_temperature(double range_min, double range_max) const {
+	return scale_linear(default_temperature_log, min_temperature_log, max_temperature_log, range_min, range_max);
+}

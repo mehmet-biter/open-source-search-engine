@@ -91,7 +91,7 @@ void SpiderLoop::reset() {
 	}
 	m_list.freeList();
 	m_lockTable.reset();
-	m_winnerListCache.reset();
+	m_winnerListCache.clear();
 }
 
 void SpiderLoop::init() {
@@ -116,14 +116,9 @@ void SpiderLoop::init() {
 	// for locking. key size is 8 for easier debugging
 	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
 
-	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
-					-1     , // fixedatasize
-					10000  , // maxcachenodes
-					"winnerspidercache", // dbname
-					false, //loadfromdisk
-					12, //cachekeysize
-					-1)) //numptrsmax
-		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
+	m_winnerListCache.configure(10000, // maxcachenodes
+				    20000000 , // maxcachemem, 20MB
+				    1200); //max age
 
 	initSettings();
 
@@ -146,8 +141,8 @@ void SpiderLoop::initSettings() {
 }
 
 void SpiderLoop::nukeWinnerListCache(collnum_t collnum) {
-	RdbCacheLock rcl(m_winnerListCache);
-	m_winnerListCache.clear(collnum);
+	FxBlobCacheLock<int32_t> rcl(m_winnerListCache);
+	m_winnerListCache.clear();
 }
 
 

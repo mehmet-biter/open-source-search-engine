@@ -43,6 +43,8 @@ Conf::Conf ( ) {
 
 	// set max mem to 16GB at least until we load on disk
 	m_maxMem = 16000000000;
+	m_mlockAllCurrent = true;
+	m_mlockAllFuture = true;
 
 	// Coverity.. a bit overkill, but wth...
 	m_runAsDaemon = false;
@@ -139,7 +141,11 @@ Conf::Conf ( ) {
 	m_verifyIndex = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;
+	m_verifyTagRec = false;
 	m_corruptRetries = 0;
+	m_sqliteSynchronous = 1;
+	m_docProcessDelayMs = 1000;
+	m_docProcessMaxPending = 10;
 	m_detectMemLeaks = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;
@@ -163,6 +169,7 @@ Conf::Conf ( ) {
 	m_logRdbMapAddListTimeThreshold = 50;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
+	m_logSqliteTransactionTimeThreshold = 0;
 	m_logQueryReply = false;
 	m_logSpideredUrls = false;
 	m_logInfo = false;
@@ -221,11 +228,15 @@ Conf::Conf ( ) {
 	m_logTraceDnsCache = false;
 	m_logTraceFile = false;
 	m_logTraceHttpMime = false;
+	m_logTraceIpBlockList = false;
 	m_logTraceLanguageResultOverride = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
-	m_logTraceMsg4 = false;
+	m_logTraceMsg4In = false;
+	m_logTraceMsg4Out = false;
+	m_logTraceMsg4OutData = false;
 	m_logTraceMsg25 = false;
+	m_logTracePageLinkdbLookup = false;
 	m_logTracePageSpiderdbLookup = false;
 	m_logTracePos = false;
 	m_logTracePosdb = false;
@@ -244,14 +255,13 @@ Conf::Conf ( ) {
 	m_logTraceRobotsCheckList = false;
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
-	m_logTraceSpiderdbHostDelete = false;
 	m_logTraceReindex = false;
+	m_logTraceSpiderdbRdbSqliteBridge = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;
 	m_logTracePhrases= false;
 	m_logTraceUrlMatchList = false;
-	m_logTraceUrlMatchHostList = false;
 	m_logTraceUrlResultOverride = false;
 	m_logTraceWordSpam=false;
 	m_logTraceUrlClassification = false;
@@ -262,7 +272,7 @@ Conf::Conf ( ) {
 	m_logTimingDb = false;
 	m_logTimingNet = false;
 	m_logTimingQuery = false;
-	m_logTimingSpcache = false;
+	m_logTimingLinkInfo = false;
 	m_logTimingRobots = false;
 	m_logReminders = false;
 	memset(m_redirect, 0, sizeof(m_redirect));
@@ -278,6 +288,7 @@ Conf::Conf ( ) {
 	m_fullRebuild = true;
 	m_rebuildAddOutlinks = false;
 	m_rebuildRecycleLinkInfo = true;
+	m_rebuildUseTitleRecTagRec = true;
 	m_rebuildTitledb = false;
 	m_rebuildPosdb = false;
 	m_rebuildClusterdb = false;

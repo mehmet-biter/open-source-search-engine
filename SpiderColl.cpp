@@ -13,6 +13,8 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "SpiderdbRdbSqliteBridge.h"
+#include "SpiderdbUtil.h"
 #include "UrlBlockCheck.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
@@ -62,7 +64,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_lastOverflowFirstIp = 0;
 	m_deleteMyself = false;
 	m_isLoading = false;
-	m_gettingList1 = false;
 	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
 	m_isPopulatingDoledb = false;
@@ -87,7 +88,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_tailPriority = 0;
 	m_tailTimeMS = 0;
 	m_tailUh48 = 0;
-	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
 	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
@@ -108,7 +108,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_totalBytesScanned = 0;
 	m_deleteMyself = false;
 	m_pri2 = 0;
-	m_gettingList1 = false;
 	memset(m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
 	m_overflowList = NULL;
 	m_totalNewSpiderRequests = 0;
@@ -598,45 +597,17 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 	if ( sreq->m_hadReply    ) dupKey64 ^= 293294099;
 
 	// . maxage=86400,promoteRec=yes. returns -1 if not in there
-	// . dupKey64 is for hopcount 0, so if this url is in the dupcache
-	//   with a hopcount of zero, do not add it
 	RdbCacheLock rcl(m_dupCache);
 
-	// limit hopcount to 3 for making cache key so we don't flood cache
-	int32_t hopCount = (sreq->m_hopCount >= 3 ? 3 : sreq->m_hopCount);
-	// don't insert same hopcount
-	if (m_dupCache.getLong(0, dupKey64 ^ hopCount, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
 	if (m_dupCache.getLong(0, dupKey64, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
-	// if our hopcount is 2 and there is a hopcount 1 in there, do not add
-	if (hopCount >= 2 && m_dupCache.getLong(0, dupKey64 ^ 0x01, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x01, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
-	// likewise, if there's a hopcount 2 in there, do not add if we are 3+
-	if (hopCount >= 3 && m_dupCache.getLong(0, dupKey64 ^ 0x02, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x02, org_dupKey64,
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
 			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	if (addToCache) {
-		logDebug(g_conf.m_logDebugSpider, "spider: Adding to dup cache. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
+		logDebug(g_conf.m_logDebugSpider, "spider: Adding to dup cache. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
 			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-
-		// mangle the key with hopcount before adding it to the cache
-		dupKey64 ^= hopCount;
 
 		// add it
 		m_dupCache.addLong(0, dupKey64, 1);
@@ -1190,25 +1161,16 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// make state
 		//int32_t state2 = (int32_t)m_cr->m_collnum;
 		// read the list from local disk
-		if ( !m_msg5b.getList(RDB_SPIDERDB,
-		                      m_cr->m_collnum,
-		                      &m_waitingTreeList,
-		                      &m_waitingTreeNextKey,
-		                      KEYMAX(),
-		                      SR_READ_SIZE, // minRecSizes (512k)
-		                      true, // includeTree
-		                      0, // startFileNum
-		                      -1, // numFiles (all)
-		                      this,//(void *)state2,//this//state
-		                      gotSpiderdbWaitingTreeListWrapper,
-		                      MAX_NICENESS, // niceness
-		                      true, // do error correct?
-		                      -1,              // maxRetries
-		                      false))           // isRealMerge
-		{
-			// return if blocked
-			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
-			return;
+		if (!SpiderdbRdbSqliteBridge::getFirstIps(m_cr->m_collnum,
+		                                          &m_waitingTreeList,
+		                                          Spiderdb::getFirstIp(&m_waitingTreeNextKey),
+		                                          -1,
+		                                          SR_READ_SIZE)) {
+			if(!g_errno) {
+				g_errno = EIO; //imprecise
+				logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+				return;
+			}
 		}
 	}
 
@@ -1671,31 +1633,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 }
 
 
-void SpiderColl::gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5) {
-	SpiderColl *THIS = (SpiderColl *)state;
-
-	// prevent a core
-	THIS->m_gettingList1 = false;
-
-	// are we trying to exit? some firstip lists can be quite long, so
-	// terminate here so all threads can return and we can exit properly
-	if (g_process.isShuttingDown()) {
-		return;
-	}
-
-	// return if that blocked
-	if (!THIS->evalIpLoop()) {
-		return;
-	}
-
-	// we are done, re-entry popuatedoledb
-	THIS->m_isPopulatingDoledb = false;
-
-	// gotta set m_isPopulatingDoledb to false lest it won't work
-	THIS->populateDoledbFromWaitingTree();
-}
-
-
 
 ///////////////////
 //
@@ -1727,7 +1664,6 @@ bool SpiderColl::evalIpLoop ( ) {
 		return true;
 	}
 
-	time_t cachedTimestamp = 0;
 	bool useCache = true;
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
@@ -1752,43 +1688,30 @@ bool SpiderColl::evalIpLoop ( ) {
 		cacheKey.n0 = m_scanningIp;
 		cacheKey.n1 = 0;
 		char *doleBuf = NULL;
-		int32_t doleBufSize;
+		size_t doleBufSize;
 		//g_spiderLoop.m_winnerListCache.verify();
-		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-		bool inCache = g_spiderLoop.m_winnerListCache.getRecord(m_collnum,
-									(char *)&cacheKey,
-									&doleBuf,
-									&doleBufSize,
-									false, // doCopy?
-									// we raised MAX_WINNER_NODES so
-									// grow from 600 to 1200
-									// (10 mins to 20 mins) to make
-									// some crawls faster
-									1200, // maxAge
-									true, // incCounts
-									&cachedTimestamp, // rec timestamp
-									true );  // promote rec?
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		bool inCache = g_spiderLoop.m_winnerListCache.lookup(m_scanningIp, (void**)&doleBuf, &doleBufSize);
 		if ( inCache ) {
 			int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
 	
 			char ipbuf[16];
-			logDebug( g_conf.m_logDebugSpider, "spider: GOT %" PRId32" bytes of SpiderRequests "
+			logDebug( g_conf.m_logDebugSpider, "spider: GOT %zu bytes of SpiderRequests "
 				"from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
 				doleBufSize,
 				iptoa(m_scanningIp,ipbuf),
 				(PTRTYPE)doleBuf,
 				crc);
 	
-			// we no longer re-add to avoid churn. but do not free it
-			// so do not 'own' it.
+			//copy doleuf out from cache so we can release the lock
 			SafeBuf sb;
-			sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
+			sb.safeMemcpy(doleBuf,doleBufSize);
 
 			rcl.unlock();
 
 			// now add the first rec m_doleBuf into doledb's tree
 			// and re-add the rest back to the cache with the same key.
-			bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
+			bool rc = addDoleBufIntoDoledb(&sb,true);
 	
 			logTrace( g_conf.m_logTraceSpider, "END, after addDoleBufIntoDoledb. returning %s", rc ? "true" : "false" );
 			return rc;
@@ -1860,11 +1783,17 @@ bool SpiderColl::evalIpLoop ( ) {
 		// if list not empty, keep reading!
 		if(m_list.isEmpty())
 			break;
+
 		// update m_nextKey for successive reads of spiderdb by
 		// calling readListFromSpiderdb()
 		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
-		// sanity
-		//if ( endKey != finalKey ) gbshutdownLogicError();
+
+		// we're already done with this ip
+		int64_t lastUh48 = Spiderdb::getUrlHash48(&lastKey);
+		if (lastUh48 == 0xffffffffffffLL) {
+			break;
+		}
+
 		// crazy corruption?
 		if ( lastKey < m_nextKey ) {
 			char ipbuf[16];
@@ -1877,8 +1806,7 @@ bool SpiderColl::evalIpLoop ( ) {
 			m_nextKey  = m_endKey;
 		}
 		else {
-			m_nextKey  = lastKey;
-			m_nextKey++;
+			m_nextKey = Spiderdb::makeLastKey(Spiderdb::getFirstIp(&lastKey), ++lastUh48);
 		}
 		// . watch out for wrap around
 		// . normally i would go by this to indicate that we are
@@ -1979,8 +1907,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 		return true;
 	}
 
-	// sanity check
-	if ( m_gettingList1 ) gbshutdownLogicError();
 	// . read in a replacement SpiderRequest to add to doledb from
 	//   this ip
 	// . get the list of spiderdb records
@@ -2005,42 +1931,27 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	logDebug(g_conf.m_logDebugSpider, "spider: readListFromSpiderdb: firstip=%s key=%s",
 	         iptoa(m_scanningIp,ipbuf), KEYSTR( &m_nextKey, sizeof( key128_t ) ) );
 		    
-	// flag it
-	m_gettingList1 = true;
-
 	// . read the list from local disk
 	// . if a niceness 0 intersect thread is taking a LONG time
 	//   then this will not complete in a long time and we
 	//   end up timing out the round. so try checking for
 	//   m_gettingList in spiderDoledUrls() and setting
 	//   m_lastSpiderCouldLaunch
-	if ( ! m_msg5.getList ( RDB_SPIDERDB   ,
-				m_cr->m_collnum   ,
-				&m_list        ,
-				&m_nextKey      ,
-				&m_endKey       ,
-				SR_READ_SIZE   , // minRecSizes (512k)
-				true           , // includeTree
-				0              , // startFileNum
-				-1             , // numFiles (all)
-				this,//(void *)state2,//this,//state 
-				gotSpiderdbListWrapper ,
-				MAX_NICENESS   , // niceness
-				true,            // do error correct?
-				-1,              // maxRetries
-				false))          // isRealMerge
+	if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
+					     &m_list,
+					     m_nextKey,
+					     m_endKey,
+					     SR_READ_SIZE))
 	{
-		// return false if blocked
-		logTrace( g_conf.m_logTraceSpider, "END, msg5.getList blocked" );
-		return false ;
+		if(!g_errno)
+			g_errno = EIO; //imprecise
+		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+		return true;
 	}
-	
+
 	// note its return
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
 		
-	// no longer getting list
-	m_gettingList1 = false;
-
 	// got it without blocking. maybe all in tree or in cache
 	logTrace( g_conf.m_logTraceSpider, "END, didn't block" );
 	return true;
@@ -2354,15 +2265,19 @@ bool SpiderColl::scanListForWinners ( ) {
 			continue;
 		}
 
-		if(!sreq->m_urlIsDocId) {
-			//skip request if it is an url we don't want to index
+		if (!sreq->m_urlIsDocId) {
+			//delete request if it is an url we don't want to index
 			Url url;
 			url.set(sreq->m_url);
-			if(url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
-				continue;
-			}
-			if(isUrlBlocked(url,NULL)) {
-				continue;
+			if (url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) || isUrlBlocked(url,NULL)) {
+				if (srep && !srep->m_isIndexedINValid && srep->m_isIndexed) {
+					log(LOG_DEBUG, "Found unwanted/non-indexable URL '%s' in spiderdb. Force deleting it", sreq->m_url);
+					sreq->m_forceDelete = true;
+				} else {
+					log(LOG_DEBUG, "Found unwanted/non-indexable URL '%s' in spiderdb. Deleting it", sreq->m_url);
+					SpiderdbUtil::deleteRecord(m_collnum, sreq->m_firstIp, uh48);
+					continue;
+				}
 			}
 		}
 
@@ -2416,14 +2331,6 @@ bool SpiderColl::scanListForWinners ( ) {
 		// and can increment it and re-add it to its spiderreply if
 		// it gets another error
 		if ( srep ) {
-			sreq->m_errCount = srep->m_errCount;
-
-			// Save error code of last reply in the request so we
-			// can compare with error code after next spider attempt.
-			sreq->m_prevErrCode = srep->m_errCode;
-			sreq->m_sameErrCount = srep->m_sameErrCount;
-
-
 			// . assign this too from latest reply - smart compress
 			// . this WAS SpiderReply::m_pubdate so it might be
 			//   set to a non-zero value that is wrong now... but
@@ -2431,11 +2338,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_contentHash32 = srep->m_contentHash32;
 			// if we tried it before
 			sreq->m_hadReply = true;
-		}
-		else {
-			sreq->m_errCount = 0;
-			sreq->m_sameErrCount = 0;
-			sreq->m_prevErrCode = 0;
 		}
 
 		// . get the url filter we match
@@ -2491,13 +2393,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			continue;
 		}
 
-		// more corruption detection
-		if ( sreq->m_hopCount < -1 ) {
-			log( LOG_WARN, "spider: got corrupt 5 spiderRequest in scan (cn=%" PRId32")",
-			    (int32_t)m_collnum);
-			continue;
-		}
-
 		// save this shit for storing in doledb
 		sreq->m_ufn = ufn;
 		sreq->m_priority = priority;
@@ -2547,7 +2442,6 @@ bool SpiderColl::scanListForWinners ( ) {
 		// make key
 		key192_t wk = makeWinnerTreeKey( firstIp ,
 						 priority ,
-						 sreq->m_hopCount,
 						 spiderTimeMS ,
 						 uh48 );
 
@@ -2558,8 +2452,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// replace it or we skip ourselves. 
 		//
 		// watch out for dups in winner tree, the same url can have 
-		// multiple spiderTimeMses somehow... i guess it could have 
-		// different hop counts
+		// multiple spiderTimeMses somehow...
 		// as well, resulting in different priorities...
 		// actually the dedup table could map to a priority and a node
 		// so we can kick out a lower priority version of the same url.
@@ -2567,16 +2460,9 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( winSlot >= 0 ) {
 			const key192_t *oldwk = (const key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
-			// get the min hopcount  
 			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(const char *)oldwk);
 			
 			if ( wsreq ) {
-				if ( sreq->m_hopCount < wsreq->m_hopCount )
-					wsreq->m_hopCount = sreq->m_hopCount;
-					
-				if ( wsreq->m_hopCount < sreq->m_hopCount )
-					sreq->m_hopCount = wsreq->m_hopCount;
-					
 				// and the min added time as well!
 				// get the oldest timestamp so
 				// gbssDiscoveryTime will be accurate.
@@ -2641,11 +2527,6 @@ bool SpiderColl::scanListForWinners ( ) {
 					continue;
 				if (priority > m_tailPriority)
 					goto gotNewWinner;
-				// if tied use hop counts so we are breadth first
-				if (sreq->m_hopCount > m_tailHopCount)
-					continue;
-				if (sreq->m_hopCount < m_tailHopCount)
-					goto gotNewWinner;
 				// if tied, use actual times. assuming both<nowGlobalMS
 				if (spiderTimeMS > m_tailTimeMS)
 					continue;
@@ -2709,7 +2590,7 @@ gotNewWinner:
 				// set new tail parms
 				const key192_t *tailKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(tailNode));
 				// convert to char first then to signed int32_t
-				parseWinnerTreeKey(tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48);
+				parseWinnerTreeKey(tailKey, &m_tailIp, &m_tailPriority, &m_tailTimeMS, &m_tailUh48);
 
 				// sanity
 				if (m_tailIp != firstIp) {
@@ -2937,11 +2818,10 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			// parse it up
 			int32_t winIp;
 			int32_t winPriority;
-			int32_t winHopCount;
 			int64_t winSpiderTimeMS;
 			int64_t winUh48;
 			const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(node));
-			parseWinnerTreeKey(winKey, &winIp, &winPriority, &winHopCount, &winSpiderTimeMS, &winUh48);
+			parseWinnerTreeKey(winKey, &winIp, &winPriority, &winSpiderTimeMS, &winUh48);
 
 			// sanity
 			if (winIp != firstIp) gbshutdownAbort(true);
@@ -3161,31 +3041,11 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// remove from cache? if we added the last spider request in the
 	// cached dolebuf to doledb then remove it from cache so it's not
 	// a cached empty dolebuf and we recompute it not using the cache.
-	if ( isFromCache && p >= doleBufEnd ) {
-		// i don't think we can remove keys from cache so add
-		// a rec with a byte size of 1 to indicate for us to ignore.
-		// set the timestamp to 12345 so the getRecord above will
-		// not get it and promote it in the linked list.
-		char byte = 0;
-		key96_t cacheKey;
-		cacheKey.n0 = firstIp;
-		cacheKey.n1 = 0;
-		//g_spiderLoop.m_winnerListCache.verify();
-		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-		g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
-							 (char *)&cacheKey,
-							 &byte,
-							 1,
-							 12345);
-		//g_spiderLoop.m_winnerListCache.verify();
-	}
-
-	// if it wasn't in the cache and it was only one record we
-	// obviously do not want to add it to the cache.
-	else if ( p < doleBufEnd ) {
-		key96_t cacheKey;
-		cacheKey.n0 = firstIp;
-		cacheKey.n1 = 0;
+	if ( p >= doleBufEnd ) {
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.remove(firstIp);
+	} else {
+		// insert (or replace) the3 list in the cache
 		char *x = doleBuf->getBufStart();
 		// the new offset is the next record after the one we
 		// just added to doledb
@@ -3200,19 +3060,12 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
 		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, (PTRTYPE)x);
 		//validateDoleBuf ( doleBuf );
-		//g_spiderLoop.m_winnerListCache.verify();
 		// inherit timestamp. if 0, RdbCache will set to current time
 		// don't re-add just use the same modified buffer so we
 		// don't churn the cache.
 		// but do add it to cache if not already in there yet.
-		if ( ! isFromCache ) {
-			RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-			g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
-								 (char *)&cacheKey,
-								 doleBuf->getBufStart(),
-								 doleBuf->length(),
-								 0); //cachedTimestamp );
-		}
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.insert(firstIp, doleBuf->getBufStart(), doleBuf->length());
 	}
 
 	// keep it on stack now that doledb is tree-only
@@ -3385,31 +3238,12 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// if not being deleted return false
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
-	if ( sc->m_msg5b.isWaitingForList() ) {
-		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-			    "waiting1",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
 	if ( sc->m_isLoading ) {
 		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 			    "waiting3",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
-	// this means msg5 is out
-	if ( sc->m_msg5.isWaitingForList() ) {
-		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-			    "waiting4",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_gettingList1 ) {
-	// 	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting5",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
 	// if ( sc->m_gettingWaitingTreeList ) {
 	// 	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
 	//"waiting6",

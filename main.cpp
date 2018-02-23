@@ -35,6 +35,7 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include "UrlRealtimeClassification.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
@@ -52,6 +53,7 @@
 #include "InstanceInfoExchange.h"
 #include "WantedChecker.h"
 #include "Dns.h"
+#include "DumpSpiderdbSqlite.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
@@ -67,7 +69,8 @@
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
-#include "Unicode.h"
+#include "unicode/UCMaps.h"
+#include "utf8_convert.h"
 
 #include "Profiler.h"
 #include "Proxy.h"
@@ -89,7 +92,7 @@
 #include "GbDns.h"
 #include "ScopedLock.h"
 #include "RobotsCheckList.h"
-#include "SpiderdbHostDelete.h"
+#include "ConvertSpiderdb.h"
 #include "RobotsBlockedResultOverride.h"
 #include "UrlResultOverride.h"
 #include "FxCheckAdult.h"
@@ -97,6 +100,9 @@
 #include "GbCompress.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
+#include "FxExplicitKeywords.h"
+#include "IpBlockList.h"
+#include "SpiderdbSqlite.h"
 
 
 #include <sys/stat.h> //umask()
@@ -118,8 +124,6 @@ static void printHelp();
 
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
-static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
-static int32_t dumpSpiderdbCsv(const char *coll);
 
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
@@ -131,16 +135,12 @@ static void dumpRobotsTxtCache(const char *coll);
 
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
-static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
+static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url, bool urlhash);
 
 static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
-
-static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
-
-static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
 
 static int copyFiles(const char *dstDir);
 
@@ -157,7 +157,9 @@ static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t output);
 
 static bool argToBoolean(const char *arg);
+static bool parseOptionalHostRange(int rangearg, int argc, char **argv, int *h1, int *h2);
 
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap);
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -189,6 +191,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 
+static char unicode_data_dir[2014]; //filled in by main2() when hostdb has been initialized
+
 //void tryMergingWrapper ( int fd , void *state ) ;
 
 //void resetAll ( );
@@ -201,7 +205,6 @@ extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetUnicode       ( );
 
 
 extern bool g_recoveryMode; // HostFlags.cpp
@@ -248,11 +251,6 @@ int main ( int argc , char *argv[] ) {
 int main2 ( int argc , char *argv[] ) {
 	g_conf.m_runAsDaemon = false;
 	g_conf.m_logToFile = false;
-
-	// appears that linux 2.4.17 kernel would crash with this?
-	// let's try again on gk127 to make sure
-	// YES! gk0 cluster has run for months with this just fine!!
-	mlockall(MCL_CURRENT|MCL_FUTURE);
 
 #ifdef _VALGRIND_
 	//threads are incrementing the counters all over the place
@@ -453,6 +451,8 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	sprintf(unicode_data_dir,"%s/ucdata/",g_hostdb.m_dir);
+
 	// . hashinit() calls srand() w/ a fixed number
 	// . let's mix it up again
 	srand ( time(NULL) );
@@ -525,8 +525,13 @@ int main2 ( int argc , char *argv[] ) {
 			return 1;
 		}
 
-		if ( !ucInit(g_hostdb.m_dir)) {
-			log( LOG_ERROR, "db: Unicode initialization failed!" );
+		const char *errmsg=NULL;
+		if ( !UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log( LOG_ERROR, "db: Unicode initialization failed! %s", errmsg);
+			return 1;
+		}
+		if(!utf8_convert_initialize()) {
+			log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 			return 1;
 		}
 
@@ -575,7 +580,7 @@ int main2 ( int argc , char *argv[] ) {
 		g_loop.runLoop();
 	}
 
-	// gb dsh
+	// gb dsh cmd [hostrange]
 	if ( strcmp ( cmd , "dsh" ) == 0 ) {	
 		if ( cmdarg+1 >= argc ) {
 			printHelp();
@@ -584,23 +589,14 @@ int main2 ( int argc , char *argv[] ) {
 
 		char *cmd = argv[cmdarg+1];
 
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
 
 		return install ( ifk_dsh, h1, NULL, h2, cmd );
 	}
 
-	// gb dsh2
+	// gb dsh2 cmd [hostrange]
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) {
 			printHelp();
@@ -608,18 +604,9 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		char *cmd = argv[cmdarg+1];
 
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
 
 		return install ( ifk_dsh2, h1, NULL, h2, cmd );
 	}
@@ -634,135 +621,82 @@ int main2 ( int argc , char *argv[] ) {
 		return copyFiles ( dir );
 	}
 
-	// gb install
+	// gb install [hostrange]
 	if ( strcmp ( cmd , "install" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-		if ( cmdarg + 1 < argc ) h1 = atoi ( argv[cmdarg+1] );
-		// might have a range
-		if (cmdarg + 1 < argc && strstr(argv[cmdarg+1],"-") )
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
 		return install ( ifk_install, h1, NULL, h2 );
 	}
 
-	// gb installgb
+	// gb installgb [hostrange]
 	if ( strcmp ( cmd , "installgb" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installgb , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installgb, h1, NULL, h2);
 	}
 
-	// gb installfile
+	// gb installfile filename [hostrange]
 	if ( strcmp ( cmd , "installfile" ) == 0 ) {
-		if (cmdarg+1 < argc) {
-			// get hostId to install TO (-1 means all)
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-
-			if (cmdarg + 2 < argc) {
-				h1 = atoi(argv[cmdarg + 2]);
-
-				// might have a range
-				if (strstr(argv[cmdarg + 2], "-")) {
-					sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-				}
-			}
-
-			return install_file(argv[cmdarg + 1], h1, h2);
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
+		return install_file(argv[cmdarg + 1], h1, h2);
 	}
 
-	// gb installtmpgb
+	// gb installtmpgb [hostrange]
 	if ( strcmp ( cmd , "installtmpgb" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installtmpgb , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installtmpgb, h1, NULL, h2);
 	}
 
-	// gb installconf
+	// gb installconf [hostrange]
 	if ( strcmp ( cmd , "installconf" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installconf , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installconf, h1, NULL, h2);
 	}
 
-	// gb installconf2
+	// gb installconf2 [hostrange]
 	if ( strcmp ( cmd , "installconf2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installconf2 , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installconf2, h1, NULL, h2);
 	}
 
 	// gb start [hostId]
 	if ( strcmp ( cmd , "start" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi( argv[ cmdarg + 1 ] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf( argv[cmdarg+1], "%" PRId32"-%" PRId32, &h1, &h2 );
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_start, h1, NULL, h2 );
-		}
-
-		// default to keepalive start for now!!
-		return install ( ifk_start , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_start, h1, NULL, h2);
 	}
 
 	// gb tmpstart [hostId]
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_tmpstart, h1, NULL, h2 );
-		}
-		return install ( ifk_tmpstart, hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_tmpstart, h1, NULL, h2);
 	}
 
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "save=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1", h1, "master", true, false, h2);
 	}
 
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
-		//same as stop, here for consistency
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-			// might have a range
-
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "save=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1", h1, "master", true, false, h2);
 	}
 
 	// gb backupcopy [hostId] <backupSubdirName>
@@ -794,34 +728,18 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb stop [hostId]
 	if ( strcmp ( cmd , "stop" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "save=1" , h1 , "master" , true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1" , h1 , "master", true, false, h2);
 	}
 
 	// gb save [hostId]
 	if ( strcmp ( cmd , "save" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-			// might have a range
-
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "js=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "js=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("js=1", h1, "master", true, false, h2);
 	}
 
 	// gb spidersoff [hostId]
@@ -854,66 +772,34 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb pmerge [hostId]
 	if ( strcmp ( cmd , "pmerge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "pmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "pmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("pmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb spmerge [hostId]
 	if ( strcmp ( cmd , "spmerge" ) == 0 ) {
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "spmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "spmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("spmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb tmerge [hostId]
 	if ( strcmp ( cmd , "tmerge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "tmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "tmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("tmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb merge [hostId]
 	if ( strcmp ( cmd , "merge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "merge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "merge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("merge=1", h1, "master", true, false, h2);
 	}
 
 	// gb setnote <hostid> <note>
@@ -1052,21 +938,14 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
-		//else if ( argv[cmdarg+1][0] == 's' ) {
-		else if (strcmp(argv[cmdarg+1], "s") == 0) {
+ 		else if (strcmp(argv[cmdarg+1], "s") == 0) {
+ 			int32_t firstIp = 0;
+ 			if(cmdarg+3 < argc) {
+			    firstIp = atoip(argv[cmdarg + 3]);
+		    }
 
-			int printStats = 0;
-			int32_t firstIp = 0;
-			if(cmdarg+6 < argc)
-				printStats = atol(argv[cmdarg+6]);
-			if(cmdarg+7 < argc)
-				firstIp = atoip(argv[cmdarg+7]);
-
-			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
-			if ( ret == -1 ) {
-				fprintf(stdout,"error dumping spiderdb\n");
-			}
-		}
+			dumpSpiderdbSqlite(coll, firstIp);
+ 		}
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
@@ -1085,10 +964,15 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 'L' ) {
+		else if (strcmp(argv[cmdarg+1], "Lu") == 0) {
 			char *url = NULL;
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
-			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,true);
+		}
+		else if (strcmp(argv[cmdarg+1], "Ls") == 0) {
+			char *url = NULL;
+			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,false);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
 			int64_t termId  = -1;
 			if ( cmdarg+6 < argc ) {
@@ -1121,8 +1005,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpAdultTitledbRecs(coll, startFileNum, numFiles, includeTree);
 		}  else if (strcmp(argv[cmdarg+1], "st") == 0) {
 			dumpSpamTitledbRecs(coll, startFileNum, numFiles, includeTree);
-		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
-			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
 		} else {
 			printHelp();
 			return 1;
@@ -1132,73 +1014,50 @@ int main2 ( int argc , char *argv[] ) {
 		g_collectiondb.reset();
 		return 0;
 	}
+	
+	// gb sitedeftemp prepare|switch [hostrange]
+	if(strcmp(cmd, "sitedeftemp") == 0) {
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
+		if(strcmp(argv[cmdarg+1],"prepare")==0)
+			return doCmd("sitedeftemp=prepare", h1, "master", true, false, h2);
+		else if(strcmp(argv[cmdarg+1],"switch")==0)
+			return doCmd("sitedeftemp=switch", h1, "master", true, false, h2);
+		else {
+			printHelp();
+			return 1;
+		}
+	}
 
 	if(strcmp(cmd, "dumpcsv") == 0) {
+		g_conf.m_readOnlyMode = true; //we don't need write access
 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
 		if( !g_collectiondb.loadAllCollRecs()) {
 			log("db: Collectiondb init failed.");
 			return 1;
 		}
-		if(argv[cmdarg+1][0] == 's')
-			dumpSpiderdbCsv(argv[cmdarg+2]);
+		if(argv[cmdarg+1][0] == 's') {
+			bool interpret_values = argc>cmdarg+3 ? argToBoolean(argv[cmdarg+3]) : false;
+			dumpSpiderdbSqliteCsv(argv[cmdarg+2],interpret_values);
+		}
 		g_log.m_disabled = true;
 		g_collectiondb.reset();
 		return 0;
 	}
 
-	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
-	// . spiderdb is special:
-	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
-	//           [priority] [printStats?]
-	if ( strcmp ( cmd , "verify" ) == 0 ) {
-		//
-		// tell Collectiondb, not to verify each rdb's data
-		//
-		g_dumpMode = true;
-
-		if ( cmdarg+1 >= argc ) {
-			printHelp();
+	if(strcmp(cmd, "convertspiderdb") == 0) {
+		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
+		if( !g_collectiondb.loadAllCollRecs()) {
+			log("db: Collectiondb init failed.");
 			return 1;
 		}
-		int32_t startFileNum =  0;
-		int32_t numFiles     = -1;
-		bool includeTree     =  true;
-		const char *coll = "";
-
-		// so we do not log every collection coll.conf we load
-		g_conf.m_doingCommandLine = true;
-
-		// we have to init collection db because we need to know if 
-		// the collnum is legit or not in the tree
-		if ( ! g_collectiondb.loadAllCollRecs()   ) {
-			log("db: Collectiondb init failed." ); return 1; }
-
-		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
-		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
-		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
-		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
-
-		if ( argv[cmdarg+1][0] == 's' ) {
-			int32_t firstIp = 0;
-			if(cmdarg+6 < argc)
-				firstIp = atoip(argv[cmdarg+6]);
-
-			int32_t ret = verifySpiderdb ( coll, startFileNum, numFiles, includeTree, firstIp );
-			if ( ret == -1 ) {
-				fprintf(stdout,"error verifying spiderdb\n");
-			}
-		}
-		else {
-			printHelp();
-			return 1;
-		}
-		// disable any further logging so final log msg is clear
+		const char *collname = argc>cmdarg+1 ? argv[cmdarg+1] : "main";
+		convertSpiderDb(collname);
 		g_log.m_disabled = true;
 		g_collectiondb.reset();
 		return 0;
 	}
-
-
 
 	if( strcmp( cmd, "countdomains" ) == 0 && argc >= (cmdarg + 2) ) {
 		const char *coll = "";
@@ -1220,8 +1079,13 @@ int main2 ( int argc , char *argv[] ) {
 
 		log( LOG_INFO, "countdomains: Allocated Larger Mem Table for: %" PRId32,
 		     g_mem.getMemTableSize() );
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
+		const char *errmsg=NULL;
+		if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log("Unicode initialization failed! %s", errmsg);
+			return 1;
+		}
+		if(!utf8_convert_initialize()) {
+			log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 			return 1;
 		}
 
@@ -1332,8 +1196,13 @@ int main2 ( int argc , char *argv[] ) {
 	log("host: Running as host id #%" PRId32,g_hostdb.m_myHostId );
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log( LOG_ERROR, "Unicode initialization failed!" );
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log( LOG_ERROR, "Unicode initialization failed! %s", errmsg);
+		return 1;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return 1;
 	}
 
@@ -1349,6 +1218,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	WordVariationGenerator::set_log_function(wvg_log_function);
 	log(LOG_DEBUG,"main: initializing word variations: Danish");
 	if(!initializeWordVariationGenerator_Danish()) {
 		log(LOG_WARN, "word-variation-danish initialization failed" );
@@ -1397,6 +1267,20 @@ int main2 ( int argc , char *argv[] ) {
 		_exit(1);
 	}
 
+	// make sure the we have spiderdb sqlite if we still have spiderdb rdb files
+	for (collnum_t collNum = g_collectiondb.getFirstCollnum(); collNum < g_collectiondb.getNumRecs(); ++collNum) {
+		CollectionRec *collRec = g_collectiondb.getRec(collNum);
+		if (collRec != nullptr) {
+			RdbBase *base = collRec->getBase(RDB_SPIDERDB_DEPRECATED);
+			if (base->getNumFiles() != 0 && !g_spiderdb_sqlite.existDb(collNum)) {
+				// has rdb files but no sqlite file
+				log(LOG_ERROR, "Found spiderdb rdb files but no spiderdb sqlite files.");
+				log(LOG_ERROR, "Run ./gb convertspiderdb before starting up gb instances");
+				gbshutdownCorrupted();
+			}
+		}
+	}
+
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
 
@@ -1406,9 +1290,13 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
+	//load sitehash32->default page temperature
+	g_smptr.open();
+	
 	// load block lists
 	g_dnsBlockList.init();
 	g_contentTypeBlockList.init();
+	g_ipBlockList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
@@ -1423,6 +1311,11 @@ int main2 ( int argc , char *argv[] ) {
 
 	// Initialize spam detection
 	g_checkSpamList.init("spamphrases.txt");
+
+	if(!ExplicitKeywords::initialize()) {
+		log(LOG_ERROR,"Could not initialize explicit keywords file");
+		//but otherwise carry on
+	}
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
@@ -1591,18 +1484,25 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// initialize spiderdb host delete
-	if (!SpiderdbHostDelete::initialize()) {
-		logError("Unable to initialize Spiderdb host delete");
-		return 0;
-	}
-
 	// . start the spiderloop
 	// . comment out when testing SpiderCache
 	g_spiderLoop.init();
 
 	// allow saving of conf again
 	g_conf.m_save = true;
+
+	if(g_conf.m_mlockAllCurrent || g_conf.m_mlockAllFuture) {
+		log(LOG_DEBUG,"Locking memory");
+		int rc;
+		if(g_conf.m_mlockAllCurrent && g_conf.m_mlockAllFuture)
+			rc = mlockall(MCL_CURRENT|MCL_FUTURE);
+		else if(g_conf.m_mlockAllCurrent)
+			rc = mlockall(MCL_CURRENT);
+		else //if(g_conf.m_mlockAllFuture) //doesn't make a lot of sense to me
+			rc = mlockall(MCL_FUTURE);
+		if(rc!=0)
+			log(LOG_WARN, "mlockall() failed with errno=%d (%s)", errno, mstrerror(errno));
+	}
 
 	log("db: gb is now ready");
 
@@ -1861,16 +1761,16 @@ static void printHelp() {
 		"\tdoledb:\n"
 		"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
 
-		"\tlinkdb:\n"
-		"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (site):\n"
+		"\t\tdump Ls <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (url):\n"
+		"\t\tdump Lu <collection> <fileNum> <numFiles> <includeTree> <url>\n"
 
 		"\tposdb (the index):\n"
 		"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
 
 		"\tspiderdb:\n"
-		"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
-		"\tspiderdb (Unwanted documents, checked against blocklist, plugins):\n"
-		"\t\tdump us <collection> <fileNum> <numFiles> <includeTree>\n"
+		"\t\tdump s <collection> <firstIp>\n"
 
 		"\ttagdb:\n"
 		"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
@@ -1899,12 +1799,12 @@ static void printHelp() {
 		"\trobots.txt.cache:\n"
 		"\t\tdump rtc <url>\n"
 		"\n"
-
-		"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
-		"Example: gb verify s main\n"
-		"\t<collection> is the name of the collection.\n"
-		"\tspiderdb:\n"
-		"\t\tverify s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+		"sitedeftemp\n"
+		"\tPrepares or switches to a new site-default-page-temperature generation.\n"
+		"\tsitedeftemp prepare\n"
+		"\t\tPrepares a new site-default-page-temperature generation\n"
+		"\tsitedeftemp switch\n"
+		"\t\tSwitches to a new site-default-page-temperature generation previously prepared with 'sitedeftemp prepare'\n"
 		"\n"
 		);
 
@@ -1946,6 +1846,26 @@ static bool argToBoolean(const char *arg) {
 	return strcmp(arg,"1")==0 ||
 	       strcmp(arg,"true")==0;
 }
+
+static bool parseOptionalHostRange(int rangearg, int argc, char **argv, int *h1, int *h2) {
+	if(rangearg < argc) {
+		int n = sscanf(argv[rangearg],"%u-%u", h1, h2);
+		if(n==0) {
+			fprintf(stderr,"Unrecognized host range: '%s'\n", argv[rangearg]);
+			return false;
+		} else if(n==1) {
+			*h2 = -1;
+		} else if(*h2<*h1) {
+			fprintf(stderr,"host2<host1 in host range: '%s'\n", argv[rangearg]);
+			return false;
+		}
+	} else {
+		*h1 = -1;
+		*h2 = -1;
+	}
+	return true;
+}
+
 
 // save them all
 static       void doCmdAll   ( int fd, void *state ) ;
@@ -2415,8 +2335,13 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -2564,7 +2489,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						"%s"
 						"version=%02" PRId32" "
 						//"maxLinkTextWeight=%06" PRIu32"%% "
-						"hc=%" PRId32" "
 						"redir=%s "
 						"url=%s "
 						"firstdup=1 "
@@ -2588,7 +2512,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						foo,
 						(int32_t)xd->m_version,
 						//ms,
-						(int32_t)xd->m_hopCount,
 						ru,
 						u->getUrl() ,
 						shard );
@@ -2639,7 +2562,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				"numLinkTexts=%04" PRId32" "
 				"%s"
 				"version=%02" PRId32" "
-				"hc=%" PRId32" "
 				"shard=%" PRId32" "
 				"metadatasize=%" PRId32" "
 				"redir=%s "
@@ -2658,7 +2580,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				info->getNumGoodInlinks(),
 				foo,
 				(int32_t)xd->m_version,
-				(int32_t)xd->m_hopCount,
 				shard,
 				0,
 				ru,
@@ -2933,524 +2854,7 @@ void dumpRobotsTxtCache(const char *url) {
 	}
 }
 
-
-
-
-// . dataSlot fo the hashtable for spider stats in dumpSpiderdb
-// . key is firstip
-class UStat {
-public:
-	// for spider requests:
-	int32_t m_numRequests;
-	int32_t m_numRequestsWithReplies;
-	int32_t m_numWWWRoots;
-	int32_t m_numNonWWWRoots;
-	int32_t m_numHops1;
-	int32_t m_numHops2;
-	int32_t m_numHops3orMore;
-	int32_t m_ageOfYoungestSpideredRequest;
-	int32_t m_ageOfOldestUnspideredRequest;
-	int32_t m_ageOfOldestUnspideredWWWRootRequest;
-	// for spider replies:
-	int32_t m_numGoodReplies;
-	int32_t m_numErrorReplies;
-};
-
-static HashTableX g_ut;
-
-static void addUStat1(const SpiderRequest *sreq, bool hadReply , int32_t now) {
-	int32_t firstIp = sreq->m_firstIp;
-	// lookup
-	int32_t n = g_ut.getSlot ( &firstIp );
-	UStat *us = NULL;
-	UStat tmp;
-	if ( n < 0 ) {
-		us = &tmp;
-		memset(us,0,sizeof(UStat));
-		g_ut.addKey(&firstIp,us);
-		us = (UStat *)g_ut.getValue ( &firstIp );
-	}
-	else {
-		us = (UStat *)g_ut.getValueFromSlot ( n );
-	}
-
-	if( !us ) {
-		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
-		return;
-	}
-
-	bool isWWWSubdomain;
-	if(!sreq->m_urlIsDocId) {
-		Url url;
-		url.set(sreq->m_url);
-		isWWWSubdomain = url.isSimpleSubdomain();
-	} else
-		isWWWSubdomain = false;
-
-	int32_t age = now - sreq->m_addedTime;
-	// inc the counts
-	us->m_numRequests++;
-	if ( hadReply) us->m_numRequestsWithReplies++;
-	if ( sreq->m_hopCount == 0 ) {
-		if  ( isWWWSubdomain ) us->m_numWWWRoots++;
-		else                   us->m_numNonWWWRoots++;
-	}
-	else if ( sreq->m_hopCount == 1 ) us->m_numHops1++;
-	else if ( sreq->m_hopCount == 2 ) us->m_numHops2++;
-	else if ( sreq->m_hopCount >= 3 ) us->m_numHops3orMore++;
-	if ( hadReply ) {
-		if (age < us->m_ageOfYoungestSpideredRequest ||
-		          us->m_ageOfYoungestSpideredRequest == 0 )
-			us->m_ageOfYoungestSpideredRequest = age;
-	}
-	if ( ! hadReply ) {
-		if (age > us->m_ageOfOldestUnspideredRequest ||
-		          us->m_ageOfOldestUnspideredRequest == 0 )
-			us->m_ageOfOldestUnspideredRequest = age;
-	}
-	if ( ! hadReply && sreq->m_hopCount == 0 && isWWWSubdomain ) {
-		if (age > us->m_ageOfOldestUnspideredWWWRootRequest ||
-		          us->m_ageOfOldestUnspideredWWWRootRequest == 0 )
-			us->m_ageOfOldestUnspideredWWWRootRequest = age;
-	}
-}
-
-static void addUStat2(const SpiderReply *srep , int32_t now) {
-	int32_t firstIp = srep->m_firstIp;
-	// lookup
-	int32_t n = g_ut.getSlot ( &firstIp );
-	UStat *us = NULL;
-	UStat tmp;
-	if ( n < 0 ) {
-		us = &tmp;
-		memset(us,0,sizeof(UStat));
-		g_ut.addKey(&firstIp,us);
-		us = (UStat *)g_ut.getValue ( &firstIp );
-	}
-	else {
-		us = (UStat *)g_ut.getValueFromSlot ( n );
-	}
-
-	if( !us ) {
-		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
-		return;
-	}
-
-	//int32_t age = now - srep->m_spideredTime;
-	// inc the counts
-	if ( srep->m_errCode ) {
-		us->m_numErrorReplies++;
-	}
-	else {
-		us->m_numGoodReplies++;
-	}
-}
-
-
-int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp) {
-	if ( startFileNum < 0 ) {
-		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
-		return -1;
-	}		
-
-	if ( printStats == 1 ) {
-		if ( ! g_ut.set ( 4, sizeof(UStat), 10000000, NULL, 0, false, "utttt") ) {
-			return -1;
-		}
-	}
-
-	g_spiderdb.init ();
-	g_spiderdb.getRdb()->addRdbBase1(coll );
-
-	key128_t startKey;
-	key128_t endKey;
-
-	// start based on firstip if non-zero
-	if ( firstIp ) {
-		startKey = Spiderdb::makeFirstKey ( firstIp );
-		endKey  = Spiderdb::makeLastKey ( firstIp );
-	} else {
-		startKey.setMin();
-		endKey.setMax();
-	}
-
-	Msg5 msg5;
-	RdbList list;
-
-	// clear before calling Msg5
-	g_errno = 0;
-
-	// init stats vars
-	int32_t negRecs   = 0;
-	int32_t emptyRecs = 0;
-	int32_t uniqDoms  = 0;
-
-	// count urls per domain in "domTable"
-	HashTable domTable;
-	domTable.set ( 1024*1024 );
-
-	// count every uniq domain per ip in ipDomTable (uses dup keys)
-	HashTableX ipDomTable;
-
-	// allow dups? true!
-	ipDomTable.set ( 4,4,5000000 , NULL, 0, true, "ipdomtbl");
-
-	// count how many unique domains per ip
-	HashTable ipDomCntTable;
-	ipDomCntTable.set ( 1024*1024 );
-
-	// buffer for holding the domains
-	int32_t  bufSize = 1024*1024;
-	char *buf     = (char *)mmalloc(bufSize,"spiderstats");
-	int32_t  bufOff  = 0;
-	int32_t  count   = 0;
-	int32_t  countReplies = 0;
-	int32_t  countRequests = 0;
-	int64_t offset = 0LL;
-	int32_t now;
-	static int64_t s_lastRepUh48 = 0LL;
-	static int32_t s_lastErrCode = 0;
-	static int32_t s_lastErrCount = 0;
-	static int32_t s_sameErrCount = 0;
-
-	const CollectionRec *cr = g_collectiondb.getRec(coll);
-
-	for(;;) {
-		// use msg5 to get the list, should ALWAYS block since no threads
-		if ( ! msg5.getList ( RDB_SPIDERDB  ,
-				cr->m_collnum       ,
-				&list         ,
-				(char *)&startKey      ,
-				(char *)&endKey        ,
-				commandLineDumpdbRecSize,
-				includeTree   ,
-				startFileNum  ,
-				numFiles      ,
-				NULL          , // state
-				NULL          , // callback
-				0             , // niceness
-				false         , // err correction?
-				-1,             // maxRetries
-				false))          // isRealMerge
-		{
-			log(LOG_LOGIC,"db: getList did not block.");
-			return -1;
-		}
-		// all done if empty
-		if ( list.isEmpty() )
-			break;
-
-		// this may not be in sync with host #0!!!
-		now = getTimeLocal();
-
-		// loop over entries in list
-		for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
-			// print a counter
-			if ( ((count++) % 100000) == 0 ) {
-				fprintf( stderr, "Processed %" PRId32" records.\n", count - 1 );
-			}
-
-			// get it
-			char *srec = list.getCurrentRec();
-
-			// save it
-			int64_t curOff = offset;
-
-			// and advance
-			offset += list.getCurrentRecSize();
-
-			// must be a request -- for now, for stats
-			if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
-				// print it
-				if ( ! printStats ) {
-					printf( "offset=%" PRId64" ",curOff);
-					Spiderdb::print ( srec );
-					printf("\n");
-				}
-
-				// its a spider reply
-				const SpiderReply *srep = (SpiderReply *)srec;
-				++countReplies;
-
-				// store it
-				s_lastRepUh48 = srep->getUrlHash48();
-				s_lastErrCode = srep->m_errCode;
-				s_lastErrCount = srep->m_errCount;
-				s_sameErrCount = srep->m_sameErrCount;
-
-				// get firstip
-				if ( printStats == 1 ) {
-					addUStat2( srep, now );
-				}
-				continue;
-			}
-
-			// cast it
-			const SpiderRequest *sreq = (SpiderRequest *)srec;
-			++countRequests;
-
-			int64_t uh48 = sreq->getUrlHash48();
-			// count how many requests had replies and how many did not
-			bool hadReply = ( uh48 == s_lastRepUh48 );
-
-			if( !hadReply ) {
-				// Last reply and current request do not belong together
-				s_lastErrCode = 0;
-				s_lastErrCount = 0;
-				s_sameErrCount = 0;
-			}
-
-			// get firstip
-			if ( printStats == 1 ) {
-				addUStat1( sreq, hadReply, now );
-			}
-
-			// print it
-			if ( ! printStats ) {
-				printf( "offset=%" PRId64" ",curOff);
-				Spiderdb::print ( srec );
-
-				printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
-				printf(" hadReply=%" PRId32,(int32_t)hadReply);
-
-				if( hadReply ) {
-					// Only dump these values if last reply and current request belong together
-					printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
-					printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
-
-					if ( s_lastErrCode ) {
-						printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
-					} else {
-						printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
-					}
-
-					if ( sreq->m_prevErrCode ) {
-						printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
-					} else {
-						printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
-					}
-				}
-
-				printf("\n");
-			}
-
-			if ( printStats != 2 ) {
-				continue;
-			}
-
-			// skip negatives
-			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
-				++negRecs;
-				continue;
-			}
-
-			// skip bogus shit
-			if ( sreq->m_firstIp == 0 || sreq->m_firstIp==-1 ) continue;
-
-			// shortcut
-			int32_t domHash = sreq->m_domHash32;
-			// . is it in the domain table?
-			// . keeps count of how many urls per domain
-			int32_t slot = domTable.getSlot ( domHash );
-			if ( slot >= 0 ) {
-				int32_t off = domTable.getValueFromSlot ( slot );
-				// just inc the count for this domain
-				*(int32_t *)(buf + off) = *(int32_t *)(buf + off) + 1;
-				continue;
-			}
-
-			// get the domain
-			int32_t  domLen = 0;
-			const char *dom = getDomFast ( sreq->m_url , &domLen );
-
-			// always need enough room...
-			if ( bufOff + 4 + domLen + 1 >= bufSize ) {
-				int32_t  growth     = bufSize * 2 - bufSize;
-				// limit growth to 10MB each time
-				if ( growth > 10*1024*1024 ) growth = 10*1024*1024;
-				int32_t  newBufSize = bufSize + growth;
-				char *newBuf = (char *)mrealloc( buf , bufSize , 
-								newBufSize,
-								"spiderstats");
-				if ( ! newBuf ) return -1;
-				// re-assign
-				buf     = newBuf;
-				bufSize = newBufSize;
-			}
-
-			// store the count of urls followed by the domain
-			char *ptr = buf + bufOff;
-			*(int32_t *)ptr = 1;
-			ptr += 4;
-			gbmemcpy ( ptr , dom , domLen );
-			ptr += domLen;
-			*ptr = '\0';
-			// use an ip of 1 if it is 0 so it hashes right
-			int32_t useip = sreq->m_firstIp; // ip;
-
-			// this table counts how many urls per domain, as
-			// well as stores the domain
-			if ( ! domTable.addKey (domHash , bufOff) ) return -1;
-
-			// . if this is the first time we've seen this domain,
-			//   add it to the ipDomTable
-			// . this hash table must support dups.
-			// . we need to print out all the domains for each ip
-			if ( ! ipDomTable.addKey ( &useip , &bufOff ) ) return -1;
-
-			// . this table counts how many unique domains per ip
-			// . it is kind of redundant since we have ipDomTable
-			int32_t ipCnt = ipDomCntTable.getValue ( useip );
-
-			if ( ipCnt < 0 ) {
-				ipCnt = 0;
-			}
-
-			if ( ! ipDomCntTable.addKey ( useip, ipCnt+1) ) {
-				return -1;
-			}
-
-			// advance to next empty spot
-			bufOff += 4 + domLen + 1;
-
-			// count unque domains
-			++uniqDoms;
-		}
-
-		startKey = *(key128_t *)list.getLastKey();
-		startKey++;
-
-		// watch out for wrap around
-		if ( startKey < *(key128_t *)list.getLastKey() )
-			break;
-	}
-
-	// print out the stats
-	if ( ! printStats ) {
-		return 0;
-	}
-
-	// print UStats now
-	if ( printStats == 1 ) {
-		for ( int32_t i = 0 ; i < g_ut.getNumSlots();i++ ) {
-			if ( g_ut.m_flags[i] == 0 ) continue;
-			UStat *us = (UStat *)g_ut.getValueFromSlot(i);
-			int32_t firstIp = *(int32_t *)g_ut.getKeyFromSlot(i);
-			char ipbuf[16];
-			fprintf(stdout,"%s ",
-				iptoa(firstIp,ipbuf));
-			fprintf(stdout,"requests=%" PRId32" ",
-				us->m_numRequests);
-			fprintf(stdout,"wwwroots=%" PRId32" ",
-				us->m_numWWWRoots);
-			fprintf(stdout,"nonwwwroots=%" PRId32" ",
-				us->m_numNonWWWRoots);
-			fprintf(stdout,"1hop=%" PRId32" ",
-				us->m_numHops1);
-			fprintf(stdout,"2hop=%" PRId32" ",
-				us->m_numHops2);
-			fprintf(stdout,"3hop+=%" PRId32" ",
-				us->m_numHops3orMore);
-			fprintf(stdout,"mostrecentspider=%" PRId32"s ",
-				us->m_ageOfYoungestSpideredRequest);
-			fprintf(stdout,"oldestunspidered=%" PRId32"s ",
-				us->m_ageOfOldestUnspideredRequest);
-			fprintf(stdout,"oldestunspideredwwwroot=%" PRId32" ",
-				us->m_ageOfOldestUnspideredWWWRootRequest);
-			fprintf(stdout,"spidered=%" PRId32" ",
-				us->m_numRequestsWithReplies);
-			fprintf(stdout,"goodspiders=%" PRId32" ",
-				us->m_numGoodReplies);
-			fprintf(stdout,"errorspiders=%" PRId32,
-				us->m_numErrorReplies);
-			fprintf(stdout,"\n");
-		}
-		return 0;
-	}
-
-
-	int32_t uniqIps = ipDomCntTable.getNumUsedSlots();
-
-	// print out all ips, and # of domains they have and list of their
-	// domains
-	int32_t nn = ipDomTable.getNumSlots();
-	// i is the bucket to start at, must be EMPTY!
-	int32_t i = 0;
-	// count how many buckets we visit
-	int32_t visited = 0;
-	// find the empty bucket
-	for ( i = 0 ; i < nn ; i++ )
-		if ( ipDomTable.m_flags[i] == 0 ) break;
-		//if ( ipDomTable.getKey(i) == 0 ) break;
-	// now we can do our scan of the ips. there can be dup ips in the
-	// table so we must chain for each one we find
-	for ( ; visited++ < nn ; i++ ) {
-		// wrap it
-		if ( i == nn ) i = 0;
-		// skip empty buckets
-		if ( ipDomTable.m_flags[i] == 0 ) continue;
-		// get ip of the ith slot
-		int32_t ip = *(int32_t *)ipDomTable.getKeyFromSlot(i);
-		// get it in the ip table, if not there, skip it
-		int32_t domCount = ipDomCntTable.getValue ( ip ) ;
-		if ( domCount == 0 ) continue;
-		// log the count
-		int32_t useip = ip;
-		if ( ip == 1 ) useip = 0;
-		char ipbuf[16];
-		fprintf(stderr,"%s has %" PRId32" domains.\n",iptoa(useip,ipbuf),domCount);
-		// . how many domains on that ip, print em out
-		// . use j for the inner loop
-		int32_t j = i;
-		iptoa(useip,ipbuf);
-	jloop:
-		int32_t ip2 = *(int32_t *)ipDomTable.getKeyFromSlot ( j ) ;
-		if ( ip2 == ip ) {
-			// get count
-			int32_t  off = *(int32_t *)ipDomTable.getValueFromSlot ( j );
-			char *ptr = buf + off;
-			int32_t  cnt = *(int32_t *)ptr;
-			char *dom = buf + off + 4;
-			// print: "IP Domain urlCountInDomain"
-			fprintf(stderr,"%s %s %" PRId32"\n",ipbuf,dom,cnt);
-			// advance && wrap
-			if ( ++j >= nn ) j = 0;
-			// keep going
-			goto jloop;
-		}
-		// not an empty bucket, so keep chaining
-		if ( ip2 != 0 ) { 
-			// advance & wrap
-			if ( ++j >= nn ) j = 0; 
-			// keep going
-			goto jloop; 
-		}
-		// ok, we are done, do not do this ip any more
-		ipDomCntTable.removeKey(ip);
-	}
-
-	if ( negRecs ) {
-		fprintf( stderr, "There are %" PRId32" total negative records.\n", negRecs );
-	}
-
-	if ( emptyRecs ) {
-		fprintf( stderr, "There are %" PRId32" total negative records.\n", emptyRecs );
-	}
-
-	fprintf(stderr,"There are %" PRId32" total records.\n", count);
-	fprintf(stderr,"There are %" PRId32" total request records.\n", countRequests);
-	fprintf(stderr,"There are %" PRId32" total replies records.\n", countReplies);
-
-	// end with total uniq domains
-	fprintf(stderr,"There are %" PRId32" unique domains.\n", uniqDoms);
-
-	// and with total uniq ips in this priority
-	fprintf(stderr,"There are %" PRId32" unique IPs.\n", uniqIps);
-
-	return 0;
-}
-
-
+#if 0
 static int32_t dumpSpiderdbCsv(const char *coll) {
 	g_spiderdb.init();
 	g_spiderdb.getRdb()->addRdbBase1(coll);
@@ -3535,7 +2939,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				printf("%d,",spiderRequest->m_sameErrCount);
 				printf("%d,",spiderRequest->m_version);
 				printf("%d,",spiderRequest->m_discoveryTime);
-				printf("%d,",spiderRequest->m_prevErrCode);
 				printf("%d,",spiderRequest->m_contentHash32);
 				printf("%d,",spiderRequest->m_hopCount);
 				printf("%d,",spiderRequest->m_recycleContent);
@@ -3606,7 +3009,7 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 	}
 	return 0;
 }
-
+#endif
 
 // time speed of inserts into RdbTree for indexdb
 static bool hashtest() {
@@ -3852,8 +3255,13 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4021,8 +3429,13 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4158,8 +3571,13 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4333,8 +3751,13 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4486,218 +3909,6 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 	}
 }
 
-
-
-static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
-	if (startFileNum < 0) {
-		log(LOG_LOGIC, "db: Start file number is < 0. Must be >= 0.");
-		return;
-	}
-
-	g_spiderdb.init ();
-	g_spiderdb.getRdb()->addRdbBase1(coll );
-
-	key128_t startKey;
-	startKey.setMin();
-
-	key128_t endKey;
-	endKey.setMax();
-
-	Msg5 msg5;
-	RdbList list;
-
-	// clear before calling Msg5
-	g_errno = 0;
-
-	int32_t count = 0;
-
-	const CollectionRec *cr = g_collectiondb.getRec(coll);
-
-	g_urlBlackList.init();
-	g_urlWhiteList.init();
-
-	for(;;) {
-		// use msg5 to get the list, should ALWAYS block since no threads
-		if (!msg5.getList(RDB_SPIDERDB,
-		                  cr->m_collnum,
-		                  &list,
-		                  (char *)&startKey,
-		                  (char *)&endKey,
-		                  commandLineDumpdbRecSize,
-		                  includeTree,
-		                  startFileNum,
-		                  numFiles,
-		                  NULL, // state
-		                  NULL, // callback
-		                  0, // niceness
-		                  false, // err correction?
-		                  -1,             // maxRetries
-		                  false)) {          // isRealMerge
-			log(LOG_LOGIC, "db: getList did not block.");
-			return;
-		}
-
-		// all done if empty
-		if (list.isEmpty()) {
-			return;
-		}
-
-		// loop over entries in list
-		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
-			// print a counter
-			if (((count++) % 100000) == 0) {
-				fprintf(stderr, "Processed %" PRId32" records.\n", count - 1);
-			}
-
-			// get it
-			char *srec = list.getCurrentRec();
-
-			// must be a request
-			if (Spiderdb::isSpiderReply((key128_t *)srec)) {
-				continue;
-			}
-
-			// cast it
-			SpiderRequest *sreq = (SpiderRequest *)srec;
-			if (!sreq->m_urlIsDocId) {
-				Url url;
-				// we don't need to strip parameter here, speed up
-				url.set(sreq->m_url, strlen(sreq->m_url), false, false, 122);
-
-				const char *reason = NULL;
-				if (isUrlUnwanted(url, &reason)) {
-					fprintf(stdout, "%s|%s\n", reason, sreq->m_url);
-					continue;
-				}
-			}
-		}
-
-		startKey = *(key128_t *)list.getLastKey();
-		startKey++;
-
-		// watch out for wrap around
-		if (startKey < *(key128_t *)list.getLastKey()) {
-			return;
-		}
-	}
-
-	return;
-}
-
-static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp) {
-	if ( startFileNum < 0 ) {
-		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
-		return -1;
-	}		
-
-	g_spiderdb.init ();
-	g_spiderdb.getRdb()->addRdbBase1(coll );
-
-	key128_t startKey;
-	key128_t endKey;
-
-	// start based on firstip if non-zero
-	if ( firstIp ) {
-		startKey = Spiderdb::makeFirstKey ( firstIp );
-		endKey  = Spiderdb::makeLastKey ( firstIp );
-	} else {
-		startKey.setMin();
-		endKey.setMax();
-	}
-
-	Msg5 msg5;
-	RdbList list;
-
-	// clear before calling Msg5
-	g_errno = 0;
-
-
-	// buffer for holding the domains
-	int32_t  count   = 0;
-	int32_t  countRequests = 0;
-	int64_t offset = 0LL;
-	int32_t now;
-
-	const CollectionRec *cr = g_collectiondb.getRec(coll);
-
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_SPIDERDB  ,
-			      cr->m_collnum       ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      commandLineDumpdbRecSize,
-			      includeTree   ,
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      -1,             // maxRetries
-			      false))          // isRealMerge
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return -1;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) goto done;
-
-	// this may not be in sync with host #0!!!
-	now = getTimeLocal();
-
-	// loop over entries in list
-	for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
-		// print a counter
-		if ( ((count++) % 100000) == 0 ) {
-			fprintf( stderr, "Processed %" PRId32" records.\n", count - 1 );
-		}
-
-		// get it
-		char *srec = list.getCurrentRec();
-
-		// save it
-		int64_t curOff = offset;
-
-		// and advance
-		offset += list.getCurrentRecSize();
-
-		// must be a request
-		if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
-			continue;
-		}
-
-		// cast it
-		SpiderRequest *sreq = (SpiderRequest *)srec;
-		++countRequests;
-
-		int64_t uh48 = sreq->getUrlHash48();
-		int64_t recalc_uh48 = (hash64b(sreq->m_url) & 0x0000ffffffffffffLL);
-
-		if( uh48 != recalc_uh48 ) {
-			printf( "offset=%" PRId64" recalc_uh48=%" PRIx64 " ", curOff, recalc_uh48);
-			Spiderdb::print ( srec );
-
-			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
-			printf("\n");
-		}
-	}
-
-	startKey = *(key128_t *)list.getLastKey();
-	startKey++;
-
-	// watch out for wrap around
-	if ( startKey >= *(key128_t *)list.getLastKey() ) {
-		goto loop;
-	}
-
- done:
-	return 0;
-}
-
-
-
 static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	g_titledb.init ();
@@ -4734,8 +3945,13 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 		log(LOG_WARN, "build: speedtestxml: docId %" PRId64" not found.", docId);
 		return false;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log(LOG_WARN, "Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
+		return false;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return false;
 	}
 
@@ -4821,28 +4037,24 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	    "parse docId %" PRId64".", (double)(e - t)/100.0,docId);
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
-		return 1;
-	}
 	Words words;
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4850,13 +4062,13 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=false) "
 	    "took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( content , true ) ) {
+		if ( ! words.set ( content ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4870,7 +4082,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Pos pos;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! pos.set ( &words ) ) {
@@ -4887,7 +4099,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Bits bits;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! bits.setForSummary ( &words ) ) {
@@ -4904,12 +4116,12 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Sections sections;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	bits.set(&words);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &bits, NULL, NULL, 0 ) ) {
+		if ( !sections.set( &words, &bits, NULL, 0 ) ) {
 			log(LOG_WARN, "build: speedtestxml: sections set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4959,7 +4171,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
 			return false;
 		}
-		if ( ! words.set ( buf,true) ) {
+		if ( ! words.set ( buf ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4977,7 +4189,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	Query q;
 	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
@@ -4989,8 +4201,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Matches::set() took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 
@@ -5281,11 +4493,7 @@ static void dumpClusterdb(const char *coll,
 	}
 }
 
-static void dumpLinkdb(const char *coll,
-		       int32_t startFileNum,
-		       int32_t numFiles,
-		       bool includeTree ,
-		       const char *url) {
+static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, const char *url, bool urlhash) {
 	g_linkdb.init ();
 	g_linkdb.getRdb()->addRdbBase1(coll );
 	key224_t startKey ;
@@ -5298,14 +4506,25 @@ static void dumpLinkdb(const char *coll,
 		Url u;
 		u.set( url, strlen( url ), false, false );
 
-		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
+		SiteGetter sg;
+		sg.getSite(url, NULL, 0, 0);
+
+		uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
+		if( urlhash ) {
+			startKey = Linkdb::makeStartKey_uk(h32, u.getUrlHash64());
+			endKey   = Linkdb::makeEndKey_uk  (h32, u.getUrlHash64());
+		}
+		else {
+			startKey = Linkdb::makeStartKey_uk(h32, 0);
+			endKey   = Linkdb::makeEndKey_uk  (h32, LDB_MAXURLHASH);
+		}
+
 
 		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
-			u.getUrlLen(), u.getUrl(), h32, uh64);
+			u.getUrlLen(), u.getUrl(), h32, u.getUrlHash64());
 
-		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
-		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
+		printf("Startkey=%s\n", KEYSTR(&startKey,sizeof(key224_t)));
+		printf("Endkey  =%s\n", KEYSTR(&endKey,sizeof(key224_t)));
 	}
 
 	// bail if not
@@ -5359,7 +4578,6 @@ static void dumpLinkdb(const char *coll,
 			       "linkeeurlhash=0x%012" PRIx64" "
 			       "linkspam=%" PRId32" "
 			       "siterank=%02" PRId32" "
-			       //"hopcount=%03hhu "
 			       "ip32=%s "
 			       "docId=%" PRIu64" "
 			       "discovered=%" PRIu32" "
@@ -5372,7 +4590,6 @@ static void dumpLinkdb(const char *coll,
 			       (int64_t)Linkdb::getLinkeeUrlHash64_uk(&k),
 			       (int32_t)Linkdb::isLinkSpam_uk(&k),
 			       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
-			       //hc,//Linkdb::getLinkerHopCount_uk(&k),
 			       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k),ipbuf),
 			       docId,
 			       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),
@@ -6319,4 +5536,20 @@ static int copyFiles(const char *dstDir) {
 	fprintf(stderr,"\nRunning cmd: %s\n",tmp.getBufStart());
 	system ( tmp.getBufStart() );
 	return 0;
+}
+
+
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap) {
+	char buf[2048];
+	vsnprintf(buf,sizeof(buf), fmt, ap);
+	buf[sizeof(buf)-1]='\0';
+	int32_t type;
+	switch(log_class) {
+		case WordVariationGenerator::log_trace: type = LOG_TRACE; break;
+		case WordVariationGenerator::log_debug: type = LOG_DEBUG; break;
+		case WordVariationGenerator::log_info: type = LOG_INFO; break;
+		case WordVariationGenerator::log_warn: type = LOG_WARN; break;
+		case WordVariationGenerator::log_error: type = LOG_ERROR; break;
+	}
+	log(type,"wordvar:%s",buf);
 }

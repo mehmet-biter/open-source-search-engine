@@ -190,6 +190,7 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 		case EDOCBLOCKEDDNS:
 		case EDOCBLOCKEDURL:
 		case EDOCBLOCKEDURLIP:
+		case EDOCBLOCKEDIP:
 		case EDOCBLOCKEDURLCORRUPT:
 		case EDOCBLOCKEDURLINVALID:
 		case EDOCBLOCKEDSHLIBDOMAIN:
@@ -405,7 +406,7 @@ static RdbCacheHistory rdb_cache_history[] = {
 	{RDB_TAGDB,    "tagdb",    0,0},
 	{RDB_CLUSTERDB,"clusterdb",0,0},
 	{RDB_TITLEDB,  "titledb",  0,0},
-	{RDB_SPIDERDB, "spiderdb", 0,0},
+	{RDB_SPIDERDB_DEPRECATED, "spiderdb", 0,0},
 	{RDB_NONE,0,0,0}
 };
 

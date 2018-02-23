@@ -180,7 +180,6 @@ private:
 	int32_t m_tailPriority;
 	int64_t m_tailTimeMS;
 	int64_t m_tailUh48;
-	int32_t      m_tailHopCount;
 	int64_t m_minFutureTimeMS;
 
 	// list for loading spiderdb recs during the spiderdb scan
@@ -211,7 +210,6 @@ private:
 
 	// spiderdb scan for populating waiting tree
 	RdbList m_waitingTreeList;		// temporary list for reading spiderdb records
-	Msg5 m_msg5b;					// msg used for reading spiderdb records
 	bool m_gettingWaitingTreeList;	// true when waiting for spiderdb read to complete
 	key128_t m_waitingTreeNextKey;	// temporary key used for reading spiderdb records
 	time_t m_lastScanTime;
@@ -221,10 +219,6 @@ private:
 	int32_t m_lastListSize;
 	int32_t m_lastScanningIp;
 	int64_t m_totalBytesScanned;
-
-	// for reading lists from spiderdb
-	Msg5 m_msg5;
-	bool m_gettingList1;
 
 	int32_t *m_overflowList;
 	int64_t  m_totalNewSpiderRequests;
@@ -238,7 +232,6 @@ private:
 
 	CollectionRec *m_cr;
 
-	static void gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5);
 };
 

@@ -29,7 +29,7 @@ TEST( PosTest, FilterAllCaps ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
@@ -110,7 +110,7 @@ TEST( PosTest, FilterEnding ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -144,7 +144,7 @@ TEST( PosTest, FilterTags ) {
 		std::sprintf(input, input_strs[i]);
 
 		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, CT_HTML ) );
-		ASSERT_TRUE( words.set( &xml, true ) );
+		ASSERT_TRUE( words.set( &xml ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
@@ -182,7 +182,7 @@ TEST( PosTest, FilterSamePunct ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -223,11 +223,25 @@ TEST( PosTest, DecodeHTMLEntities ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
 	}
+}
+
+TEST(PosTest, SegFaultDotPrevChar) {
+	Words words;
+	Pos pos;
+	char buf[MAX_BUF_SIZE];
+
+	const char *input_str = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . ...";
+
+	ASSERT_TRUE( words.set( const_cast<char*>(input_str) ) );
+
+	int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+
+	EXPECT_EQ( 0, len );
 }

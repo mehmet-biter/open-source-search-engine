@@ -80,11 +80,9 @@ SiteGetter::SiteGetter ( ) {
 	m_collnum = 0;
 	m_state = NULL;
 	m_callback = NULL;
-	m_sitePathDepth = 0;
 	m_pathDepth = 0;
 	m_maxPathDepth = 0;
 	m_niceness = 0;
-	m_oldSitePathDepth = 0;
 	m_allDone = false;
 	m_hasSubdomain = false;
 	m_tryAgain = false;
@@ -101,7 +99,7 @@ SiteGetter::~SiteGetter ( ) {
 //   pass a bunch of site ptrs to msg9a
 // . "url" MUST BE NORMALIZED via Url.cpp. so using Links' buffer is ok!
 // . TODO: consider setting "state" to null if your url host has tons of inlinx
-bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+bool SiteGetter::getSite ( const char *url, TagRec *gr, collnum_t collnum, int32_t niceness,
                            void   *state, void (* callback)(void *) ) {
 	// save it
 	m_url      = url;
@@ -122,11 +120,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	m_scheme[0] = '\0';
 	
 	m_allDone  = false;
-	m_addedTag.reset();
-
-	// set this to unknown for now
-	m_sitePathDepth    = -1;
-	m_oldSitePathDepth = -1;
 
 	// reset this just in case
 	g_errno = 0;
@@ -139,52 +132,14 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	}
 
 	// bail if nothing else we can do
-	if ( ! gr ) return setSite ( ) ;
+	// also if caller does not want a callback, like XmlDoc.cpp,
+	if (!gr || !m_state) {
+		return setSite();
+	}
 
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) {
 		// g_errno should be set if this is NULL
-		return true;
-	}
-
-	// check the current tag for an age
-	Tag *tag = gr->getTag("sitepathdepth");
-
-	// if there and the age is young, skip it
-	int32_t age = -1;
-
-	// to parse conssitently for the qa test "qatest123" coll use 
-	// "timestamp" as the "current time"
-	if ( tag ) {
-		age = timestamp - tag->m_timestamp;
-
-		// if there, at least get it (might be -1)
-		m_oldSitePathDepth = atol( tag->getTagData());
-	}
-
-
-	// . if older than 10 days, we need to redo it
-	// . if caller give us a timestamp of 0, never redo it!
-	if ( age > 10*24*60*60 && timestamp != 0 ) {
-		age = -1;
-	}
-
-	// . if our site quality is low, forget about dividing it up too
-	// . if age is valid, skip it
-	// . also if caller does not want a callback, like XmlDoc.cpp,
-	//   then use whatever we got
-	if ( age >= 0 || ! m_state ) {
-		// do not add to tagdb
-		m_state = NULL;
-
-		// just use what we had, it is not expired
-		m_sitePathDepth = m_oldSitePathDepth;
-
-		// . now set the site with m_sitePathDepth
-		// . sanity check, should not block since m_state is NULL
-		if ( ! setSite () ) { g_process.shutdownAbort(true); }
-
-		// we did not block
 		return true;
 	}
 
@@ -193,12 +148,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	if ( g_hostdb.m_myHostId != 0 ) {
 		// do not add to tagdb and do not block!
 		m_state = NULL;
-
-		// . use a sitepathdepth of -1 by default then, until host #0
-		//   has a chance to evaluate
-		// . a sitepathdepth of -1 means to use the full hostname
-		//   as the site
-		m_sitePathDepth = -1;
 
 		// sanity check, should not block since m_state is NULL
 		if ( ! setSite () ) { g_process.shutdownAbort(true); }
@@ -384,11 +333,9 @@ bool SiteGetter::gotSiteList ( ) {
 		}
 	}
 
-	// ok, i guess this indicates we have a subsite level
-	m_sitePathDepth = m_pathDepth;
-
-	// this basically means none!
-	if ( m_pathDepth >= m_maxPathDepth ) m_sitePathDepth = -1;
+	const char *pend = getPathEnd(m_url, m_pathDepth);
+	const char *host = getHostFast( m_url, NULL );
+	log(LOG_INFO,"site: '%.*s' detected as a site with linkcount=~%d", (int)(pend-host), host, count);
 
 	// . sets m_site and m_siteLen from m_url
 	// . this returns false if blocked, true otherwise
@@ -582,6 +529,11 @@ bool SiteGetter::setRecognizedSite ( ) {
 		if ( ( *p == '/' ) && ( --depth == 0 ) ) {
 			break;
 		}
+
+		// exit if we reach anchor or query parameter
+		if (*p == '?' || *p == '#') {
+			break;
+		}
 	}
 
 	if ( p - host + 6 >= MAX_SITE_LEN ) {
@@ -590,25 +542,3 @@ bool SiteGetter::setRecognizedSite ( ) {
 
 	goto storeIt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

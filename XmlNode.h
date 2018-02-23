@@ -11,7 +11,6 @@ typedef int16_t nodeid_t;
 int32_t getNumXmlNodes ( ) ;
 bool isBreakingTagId ( nodeid_t tagId ) ;
 bool hasBackTag ( nodeid_t tagId ) ;
-int32_t getTagLen ( const char *node );
 
 // s points to tag name - first char
 nodeid_t getTagId ( const char *s , class NodeType **retp = NULL );
@@ -175,12 +174,6 @@ enum {
 	// support sitemap.xml
 	TAG_LOC = 143,
 
-	//
-	// fake tags below here
-	//
-	// a fake tag used by Sections.cpp
-	TAG_SENTENCE = 144,
-
 	LAST_TAG
 };
 
@@ -276,72 +269,6 @@ public:
 	class XmlNode *m_parent;
 };
 
-// . does "s" start a tag? (regular tag , back tag or comment tag)
-inline bool isTagStart ( const char *s ) {
-	// it must start with < to be a tag
-	if ( s[0] != '<' ) {
-		return false;
-	}
-
-	// next char can be an alnum, !-- or / then alnum
-
-	// Extensible Markup Language (XML) 1.0 (Fifth Edition)
-	// https://www.w3.org/TR/REC-xml/#NT-Name
-	// NameStartChar ::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] |
-	//                   [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] |
-	//                   [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] |
-	//                   [#x10000-#xEFFFF]
-
-	/// @todo ALC cater for other start characters
-	/// regex: "^<[A-Za-z]"
-	if ( is_alpha_a( s[1] ) ) {
-		return true;
-	}
-
-	// next char can be 1 of 3 things to be a tag
-	// / is also acceptable, followed only by an alnum or >
-
-	/// @todo ALC "</>" a valid tag?
-	/// regex: "^</[A-Za-z0-9>]"
-	if ( s[1] == '/' ) {
-		if ( is_alnum_a( s[2] ) || (s[2] == '>') ) {
-			return true;
-		}
-		return false;
-	}
-
-	// office.microsoft.com uses <?xml ...?> tags
-	/// regex: "^<?[A-Za-z0-9]"
-	if ( s[1]=='?' ) {
-		if ( is_alnum_a(s[2]) ) {
-			return true;
-		}
-		return false;
-	}
-
-	// make sure the double hyphens follow the ! or alnum
-	if ( s[1]=='!' ) {
-		// this is for <!xml> i guess
-		if ( is_alnum_a(s[2]) ) {
-			return true;
-		}
-
-		// and the <![CDATA[
-		// and <![....]> i've seen too
-		// <![if gt IE 6]><script>.... for waterfordcoc.org
-		if ( s[2] == '[' ) {
-			return true;
-		}
-
-		// and the <!-- comment here--> famous comment tag
-		if ( s[2]=='-' && s[3]=='-' ) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 enum NodeTagType {
 	TAG_TYPE_UNKNOWN = 0,
 	TAG_TYPE_XML,
@@ -373,10 +300,6 @@ public:
 };
 
 extern const class NodeType g_nodes[];
-
-static inline const char *getTagName( nodeid_t tagId ) {
-	return g_nodes[tagId].m_nodeName;
-}
 
 #endif // GB_XMLNODE_H
 

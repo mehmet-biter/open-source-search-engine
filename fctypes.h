@@ -6,12 +6,9 @@
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
 #include <float.h>	// FLT_EPSILON, DBL_EPSILON
-#include "Unicode.h"
+#include "utf8_fast.h"
 #include "types.h"
 #include "Sanity.h"
-
-bool verifyUtf8 ( const char *txt ) ;
-bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 
 
 class SafeBuf;
@@ -57,13 +54,6 @@ bool is_urlchar(char s);
 void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
-
-// the _a suffix denotes an ascii string
-bool has_alpha_utf8(const char *s, const char *send);
-
-int32_t to_lower_utf8        (char *dst , const char *src ) ;
-int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
-int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
 
 // . get the # of words in this string
 int32_t      getNumWords ( char *s , int32_t len ) ;
@@ -155,38 +145,6 @@ time_t getTimeSynced (); // synced with host #0's system clock
 
 int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
 
-extern const unsigned char g_map_to_lower[256];
-extern const unsigned char g_map_to_upper[256];
-extern const char g_map_is_upper[256];
-extern const char g_map_is_binary[256];
-extern const char g_map_is_lower[256];
-extern const char g_map_is_ascii[256];
-extern const char g_map_is_punct[256];
-extern const char g_map_is_alnum[256];
-extern const char g_map_is_alpha[256];
-extern const char g_map_is_digit[256];
-extern const char g_map_is_hex[256];
-extern const char g_map_is_tagname_char[256];
-
-// . convert "c" to lower case
-#define is_lower_a(c)          g_map_is_lower[(unsigned char)c]
-#define to_lower_a(c)          g_map_to_lower[(unsigned char)c]
-#define is_upper_a(c)          g_map_is_upper[(unsigned char)c]
-#define to_upper_a(c)          g_map_to_upper[(unsigned char)c]
-// c is latin1 in this case:
-#define is_binary_a(c)         g_map_is_binary[(unsigned char)c]
-#define is_wspace_a(c)         (((c)==32) || ((c)==9) || ((c)==10) || ((c)==13))
-#define is_ascii(c)            (((c)>=32) && ((c)<=126))
-#define is_ascii3(c)           ((unsigned char)(c)<128)
-#define is_punct_a(c)          g_map_is_punct[(unsigned char)c]
-#define is_alnum_a(c)          g_map_is_alnum[(unsigned char)c]
-#define is_alpha_a(c)          g_map_is_alpha[(unsigned char)c]
-#define is_digit(c)            g_map_is_digit[(unsigned char)c]
-#define is_hex(c)              g_map_is_hex[(unsigned char)c]
-#define is_tagname_char(c)     g_map_is_tagname_char[(unsigned char)c]
-
-inline bool is_upper_utf8 ( const char *s );
-
 // convert hex digit to value
 inline int32_t htob ( char s ) {
 	if ( is_digit(s) ) return s - '0';
@@ -199,111 +157,6 @@ inline char btoh ( char s ) {
 	if ( s >= 16 ) { gbshutdownAbort(true); }
 	if ( s < 10 ) return s + '0';
 	return (s - 10) + 'a';
-}
-
-inline bool is_ascii2_a(const char *s, int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_ascii(s[i]))
-			return false;
-	return true;
-}
-
-inline void to_lower3_a(const char *s, int32_t len, char *buf) {
-	for (int32_t i=0;i<len ;i++)
-		buf[i]=to_lower_a((unsigned char)s[i]);
-}
-
-inline bool is_binary_utf8 ( const char *p ) {
-	if ( getUtf8CharSize((uint8_t *)p) != 1 ) return false;
-	// it is ascii, use that table now
-	return is_binary_a ( *p );
-}
-
-inline bool is_lower_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_lower_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// is this codepoint lower?
-	return ucIsLower ( x );
-}
-
-inline bool is_upper_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_upper_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// is this codepoint upper?
-	return ucIsUpper ( x );
-}
-
-inline bool is_alnum_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_alnum_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// is this codepoint lower?
-	return ucIsAlnum ( x );
-}
-
-bool is_alnum_utf8_string(const char *s, const char *send);
-bool is_alnum_api_utf8_string(const char *s, const char *send); //starts with letter or underscore, contains only ascii letters/digits and underscore
-
-inline bool is_alnum_utf8 ( const unsigned char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_alnum_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode((char *)src);
-	// is this codepoint lower?
-	return ucIsAlnum ( x );
-}
-
-inline bool is_alpha_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_alpha_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// is this codepoint lower?
-	return ucIsAlpha ( x );
-}
-
-inline bool is_punct_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_punct_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// is this codepoint lower?
-	if ( ucIsAlnum ( x ) ) return false;
-	else                   return true;
-}
-
-inline bool is_wspace_utf8 ( const uint8_t *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) return is_wspace_a ( *src );
-	// convert to a code point
-	UChar32 x = utf8Decode((char *)src);
-	// is this codepoint a whitespace?
-	return ucIsWhiteSpace( x );
-}
-
-inline bool is_wspace_utf8 ( const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3((uint8_t)*src) ) return is_wspace_a ( (uint8_t)*src );
-	// convert to a code point
-	UChar32 x = utf8Decode((char *)src);
-	// is this codepoint a whitespace?
-	return ucIsWhiteSpace( x );
-}
-
-uint32_t calculateChecksum(char *buf, int32_t bufLen);
-
-// use ucIsAlnum instead...
-static inline bool ucIsWordChar(UChar32 c) {
-	if (!(c & 0xffffff80)) return is_alnum_a(c);
-	//if (c < 256) return is_alnum(c);
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_WORDCHAR;
 }
 
 // don't allow "> in our input boxes

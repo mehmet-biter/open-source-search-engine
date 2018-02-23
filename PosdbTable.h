@@ -66,63 +66,35 @@ public:
 	
 	// what query term # do we correspond to in Query.h
 	int32_t      m_qtermNum;
+	QueryTerm   *m_qterm;
 	// the word position of this query term in the Words.h class
 	int32_t      m_qpos;
 	// the wikipedia phrase id if we start one
 	int32_t      m_wikiPhraseId;
 	// phrase id term or bigram is in
 	int32_t      m_quotedStartId;
+	//The base term to the left of this qti/baseterm is ignored
+	bool         m_leftTermIsIgnored;
 };
 
 
 class PosdbTable {
-
- public:
-
-	// . returns false on error and sets errno
-	// . "termFreqs" are 1-1 with q->m_qterms[]
-	// . sets m_q to point to q
-	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
-
-	// pre-allocate m_whiteListTable
-	bool allocWhiteListTable ( ) ;
-
-	void prepareWhiteListTable();
-
-	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
-	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
-	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
-	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
-
-	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs);
-
-
-	// some generic stuff
+public:
 	PosdbTable();
 	~PosdbTable();
 	void reset();
 
-	// Msg39 needs to call these
-	void freeMem ( ) ;
+	// . sets m_q to point to q
+	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
 
 	// has init already been called?
-	bool isInitialized() {
-		return m_initialized;
-	}
+	bool isInitialized() const { return m_initialized; }
 
-	// functions used by intersectlist
-	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile, QueryTermInfo *qtibuf);
-	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
-	void logDebugScoreInfo(int32_t loglevel);
-	void removeScoreInfoForDeletedDocIds();
-	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
-	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
-	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
+	// the new intersection/scoring algo
+	void intersectLists();
 
-	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix);
-	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
-	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs);
-
+	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
+	int32_t getFilteredCount() const { return m_filtered; }
 
 	// how long to add the last batch of lists
 	int64_t       m_addListsTime;
@@ -142,9 +114,6 @@ private:
 	std::vector<int32_t> m_qpos;
 	std::vector<int32_t> m_qtermNums;
 	std::vector<char> m_bflags;
-	//used during intersection, simple variables
-	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
-	const char **m_bestMinTermPairWindowPtrs;       //Position pointers of best minimum score
 
 	bool m_hasMaxSerpScore;
 
@@ -168,14 +137,6 @@ private:
 	BaseScoringParameters m_baseScoringParameters;
 	DerivedScoringWeights m_derivedScoringWeights;
 
-	// for gbsortby:item.price ...
-	int32_t m_sortByTermNum;
-	int32_t m_sortByTermNumInt;
-
-	// fix core with these two
-	int32_t m_sortByTermInfoNum;
-	int32_t m_sortByTermInfoNumInt;
-
 
 	HashTableX m_whiteListTable;
 	bool m_useWhiteTable;
@@ -185,10 +146,30 @@ private:
 	bool allocateScoringInfo();
 	bool setQueryTermInfo();
 
+	// allocation&preparation of m_whiteListTable
+	bool allocWhiteListTable();
+	void prepareWhiteListTable();
+
 	void intersectLists_real();
-public:
-	// the new intersection/scoring algo
-	void intersectLists();
+
+	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile);
+	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	void logDebugScoreInfo(int32_t loglevel);
+	void removeScoreInfoForDeletedDocIds();
+	bool advanceTermListCursors(const char *docIdPtr);
+	bool prefilterMaxPossibleScoreByDistance(float minWinningScore);
+	void mergeTermSubListsForDocId(MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
+
+	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix);
+	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, std::vector<const char *> &highestScoringNonBodyPos, DocIdScore *pdcs);
+	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const std::vector<const char *> &highestScoringNonBodyPos, std::vector<const char *> &bestMinTermPairWindowPtrs, std::vector<const char *> &xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs);
+
+	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
+	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
+	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
+	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const std::vector<const char *> &ptrs, std::vector<const char *> *bestMinTermPairWindowPtrs, float *bestMinTermPairWindowScore, const std::vector<const char *> &highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
+
+	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, const std::vector<const char *> &bestMinTermPairWindowPtrs, DocIdScore *pdcs);
 
 	void delNonMatchingDocIdsFromSubLists();
 
@@ -199,19 +180,15 @@ public:
 	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
 	bool findCandidateDocIds();
 
-
 	// upper score bound
 	float getMaxPossibleScore(const QueryTermInfo *qti) ;
 	float modifyMaxScoreByDistance(float score,
 				       int32_t bestDist,
 				       int32_t qdist,
 				       const QueryTermInfo *qtm);
-	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
-	int32_t getFilteredCount() const { return m_filtered; }
 
-private:
 	// stuff set in setQueryTermInf() function:
-	SafeBuf              m_qiBuf;
+	std::vector<QueryTermInfo> m_queryTermInfos;
 	int32_t                 m_numQueryTermInfos;
 	// the size of the smallest set of sublists. each sublists is
 	// the main term or a synonym, etc. of the main term.
@@ -307,9 +284,6 @@ class DocIdScore {
 	bool serialize   ( class SafeBuf *sb );
 
 	int64_t   m_docId;
-	// made this a double because of intScores which can't be captured
-	// fully with a float. intScores are used to sort by spidered time
-	// for example. see Posdb.cpp "intScore".
 	double      m_finalScore;
 	char        m_siteRank;
 	char        m_usePageTemperature;

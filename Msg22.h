@@ -41,13 +41,6 @@ class Msg22 {
 
 	static bool registerHandler ( ) ;
 
-	bool getAvailDocIdOnly ( class Msg22Request  *r              ,
-				 int64_t preferredDocId ,
-				 const char    *coll,
-				 void *state ,
-				 void (* callback)(void *state) ,
-				 int32_t niceness ) ;
-
 	// . make sure you keep url/coll on your stack cuz we just point to it
 	// . see the other getTitleRec() description below for more details
 	bool getTitleRec ( class Msg22Request *r ,

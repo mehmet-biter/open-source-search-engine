@@ -25,15 +25,15 @@
 #include <string>
 #include <atomic>
 
-typedef std::vector<std::string> blocklist_t;
-typedef std::shared_ptr<blocklist_t> blocklist_ptr_t;
-typedef std::shared_ptr<const blocklist_t> blocklistconst_ptr_t;
+template <typename T> using blocklist_t = std::vector<T>;
+template <typename T> using blocklist_ptr_t = std::shared_ptr<std::vector<T>>;
+template <typename T> using blocklistconst_ptr_t = std::shared_ptr<const std::vector<T>>;
 
-class BlockList {
+template<class T> class BlockList {
 public:
-	BlockList(const char *filename);
+	explicit BlockList(const char *filename);
 
-	bool init();
+	virtual bool init();
 
 	static void reload(int /*fd*/, void *state);
 	static void reload(void *state);
@@ -41,18 +41,18 @@ public:
 protected:
 	bool load();
 
+	virtual void addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line);
+	blocklistconst_ptr_t<T> getBlockList();
+
 	const char *m_filename;
 
-	blocklistconst_ptr_t getBlockList();
-
 private:
-	void swapBlockList(blocklistconst_ptr_t blockList);
+	void swapBlockList(blocklistconst_ptr_t<T> blockList);
 
 	std::atomic_bool m_loading;
-	blocklistconst_ptr_t m_blockList;
+	blocklistconst_ptr_t<T> m_blockList;
 
 	time_t m_lastModifiedTime;
 };
-
 
 #endif //FX_BLOCKLIST_H

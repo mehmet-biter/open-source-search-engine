@@ -375,7 +375,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
 			Words sw;
-			sw.set ( const_cast<char*>(p), e - p, true );
+			sw.set ( const_cast<char*>(p), e - p );
 
 			*(int64_t *)m_wids0Ptr = sw.getWordId(0);
 			*(int64_t *)m_wids1Ptr = sw.getWordId(2);
@@ -403,9 +403,6 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// all done
 		//return m_aidsPtr - m_aids;
 	}
-
-	// strip marks from THIS word, return -1 w/ g_errno set on error
-	if ( ! addStripped ( w , wlen,&dt ) ) return m_aidsPtr - m_aids;
 
 	// do not breach
 	if ( m_aidsPtr - m_aids > maxSyns ) return m_aidsPtr - m_aids;
@@ -517,68 +514,6 @@ bool Synonyms::addAmpPhrase ( int32_t wordNum , HashTableX *dt ) {
 
 	// no langs
 	*m_langIdsPtr++ = 0;
-
-	return true;
-}
-
-// return false and set g_errno on error
-bool Synonyms::addStripped ( const char *w , int32_t wlen , HashTableX *dt ) {
-	// avoid overflow
-	if ( wlen > 200 ) return true;
-
-	// ascii (chars<128) have no accents/diacritics. If the word is composed solely of
-	// ascii then there is no need for the more expensive utf8/unicode processing
-	bool hasNonAscii = false;
-	for(int32_t i = 0; i < wlen; i++) {
-		if((uint8_t)(w[i])>=128) {
-			hasNonAscii = true;
-			break;
-		}
-	}
-	if(!hasNonAscii)
-		return true;
-
-	// filter out accent marks
-	char abuf[256];
-	//int32_t alen = utf8ToAscii(abuf,256,(unsigned char *)w,wlen);
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(w,wlen);
-#endif
-	int32_t alen = stripAccentMarks(abuf,sizeof(abuf)-1,(unsigned char *)w,wlen);
-	// skip if can't convert to ascii... (unsupported letter)
-	if ( alen < 0 ) return true;
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(abuf,alen);
-#endif
-
-	// if same as original word, skip
-	if ( wlen==alen && strncmp(abuf,w,wlen) == 0 ) return true;
-
-	// hash it
-	uint64_t h2 = hash64Lower_utf8(abuf,alen);
-	// do not add dups
-	if ( dt->isInTable ( &h2 ) ) return true;
-	// add to dedup table. return false with g_errno set
-	if ( ! dt->addKey ( &h2 ) ) return false;
-
-
-
-	// store that
-	*m_aidsPtr++ = h2;
-	*m_wids0Ptr++ = 0LL;
-	*m_wids1Ptr++ = 0LL;
-	*m_termPtrsPtr++ = NULL;
-	*m_termOffsPtr++ = m_synWordBuf.length();
-	*m_termLensPtr++ = alen;
-	*m_numAlnumWordsPtr++ = 1;
-	*m_numAlnumWordsInBasePtr++ = 1;
-	*m_srcPtr++ = SOURCE_GENERATED;
-
-	// no langs
-	*m_langIdsPtr++ = 0;
-
-	m_synWordBuf.safeMemcpy(abuf,alen);
-	m_synWordBuf.pushChar('\0');
 
 	return true;
 }

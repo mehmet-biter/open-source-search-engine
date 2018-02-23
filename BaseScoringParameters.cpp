@@ -21,6 +21,7 @@ void BaseScoringParameters::clear() {
 	m_hashGroupWeightInternalLinkText = 0.0;
 	m_hashGroupWeightInUrl = 0.0;
 	m_hashGroupWeightInMenu = 0.0;
+	m_hashGroupWeightExplicitKeywords = 0.0;
 	m_synonymWeight = 0.0;
 	m_bigramWeight = 0.0;
 	m_pageTemperatureWeightMin = 0.0;

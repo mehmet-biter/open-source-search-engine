@@ -210,7 +210,7 @@ bool Query::set2 ( const char *query        ,
 		}
 
 		if(query[i] == '[') {
-			// translate [#w] [#p] [#s] [w] [p] [s] to operators
+			// translate [#w] [#p] [#s] [w] [p] [s] [nrw] to operators
 			char *endptr=NULL;
 			double val;
 			if(is_digit(query[i+1]))
@@ -241,6 +241,11 @@ bool Query::set2 ( const char *query        ,
 			} else if(query[i+1] == 's' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB s RiGhB ");
 				i = i + 2;
+				continue;
+			} else if( i+4 < queryLen && query[i+1] == 'n' && query[i+2] == 'r' && query[i+3] == 'w' && query[i+4]==']') {
+				// user specified [nrw] before word, meaning treat it as not required
+				m_filteredQuery.safePrintf(" LeFtB nrw RiGhB ");
+				i = i + 4;
 				continue;
 			}
 		}
@@ -366,8 +371,11 @@ bool Query::setQTerms ( const Words &words ) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
 		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
-			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
-			logTrace(g_conf.m_logTraceQuery, "            m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+			int64_t phraseTermId = m_qwords[i].m_phraseId&TERMID_MASK;
+			int64_t wordTermId = m_qwords[i].m_wordId&TERMID_MASK;
+			logTrace(g_conf.m_logTraceQuery, "    m_phraseId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
+			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+
 		}
 	}
 	// . set m_qptrs/m_qtermIds/m_qbits
@@ -420,9 +428,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// not '-' either i guess
 			if ( qw->m_wordSign == '-' ) continue;
 			// no url: stuff, maybe only title
-			if ( qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if ( qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			// ignore title: etc. words, they are field names
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
@@ -461,9 +467,7 @@ bool Query::setQTerms ( const Words &words ) {
 			if(qw->m_inQuotes) continue;
 			if(qw->m_wordSign == '+') continue;
 			if(qw->m_wordSign == '-') continue;
-			if(qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if(qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			if(qw->m_ignoreWord == IGNORE_FIELDNAME) continue;
 			// ignore if word weight is zero or synonym weight is zero
@@ -574,7 +578,8 @@ bool Query::setQTerms ( const Words &words ) {
 		// assign score weight, we're a phrase here
 		qt->m_termWeight = m_bigramWeight;
 		qt->m_userWeight = qw->m_userWeightForPhrase ;
-		qt->m_fieldCode  = qw->m_fieldCode  ;
+		qt->m_fieldCode  = qw->m_fieldCode;
+
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
@@ -697,7 +702,9 @@ bool Query::setQTerms ( const Words &words ) {
 		// assign score weight, we're a single-term here
 		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
-		qt->m_fieldCode  = qw->m_fieldCode  ;
+		qt->m_fieldCode  = qw->m_fieldCode;
+		qt->m_userNotRequired = qw->m_userNotRequiredForWord;
+
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
@@ -786,9 +793,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// not '-' either i guess
 			if ( qw->m_wordSign == '-' ) continue;
 			// no url: stuff, maybe only title
-			if ( qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if ( qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			// skip if ignored like a stopword (stop to->too)
 			//if ( qw->m_ignoreWord ) continue;
@@ -918,7 +923,8 @@ bool Query::setQTerms ( const Words &words ) {
 				// assign score weight, we're a synonym here
 				qt->m_termWeight = m_synonymWeight;
 				qt->m_userWeight = qw->m_userWeightForSynonym;
-				qt->m_fieldCode  = qw->m_fieldCode  ;
+				qt->m_fieldCode  = qw->m_fieldCode;
+
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
 					qt->m_userWeight = 1;
@@ -1077,6 +1083,10 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qt->m_synonymOf ) continue;
 		// IGNORE_QSTOP?
 		if ( qt->m_ignored ) continue;
+
+		// user specified "[nrw]" before word
+		if( qt->m_userNotRequired) continue;
+
 		// mark it
 		qt->m_isRequired = true;
 	}
@@ -1223,7 +1233,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length(), true ) ) {
+	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length() ) ) {
 		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -1344,6 +1354,7 @@ bool Query::setQWords ( char boolFlag ,
 	float userWeightForWord   = 1;
 	float userWeightForPhrase = 1;
 	float userWeightForSynonym = 1;
+	bool userNotRequiredForWord = false;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1433,6 +1444,9 @@ bool Query::setQWords ( char boolFlag ,
 				} else if(s[0] == 's') {
 					// phrase weight reset
 					userWeightForSynonym = 1;
+				} else if(s[0] == 'n' && s[1] == 'r' && s[2] == 'w') {
+					// set word as not required
+					userNotRequiredForWord = true;
 				}
 				ignorei = i + 4;
 			} else {
@@ -1455,14 +1469,19 @@ bool Query::setQWords ( char boolFlag ,
 		}
 					
 		// assign score weight, if any for this guy
-		qw->m_userWeightForWord       = userWeightForWord;
+		qw->m_userWeightForWord = userWeightForWord;
 		qw->m_userWeightForPhrase = userWeightForPhrase;
 		qw->m_userWeightForSynonym = userWeightForSynonym;
+		// Set required state based on user input
+		qw->m_userNotRequiredForWord = userNotRequiredForWord;
 		qw->m_queryOp          = false;
+
+
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
 		bool endField = false;
-		if ( words.hasSpace(i) && ! inQuotes ) endField = true;
+		if(words.hasSpace(i) && ! inQuotes)
+			endField = true;
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		// if there's a quote before the first space then
 		// it's ok!!!
@@ -1472,8 +1491,12 @@ bool Query::setQWords ( char boolFlag ,
 			for ( ; s < send ; s++ ) {
 				// if the space is inside the quotes then it
 				// doesn't count!
-				if ( *s == '\"' ) { endField = false; break;}
-				if ( is_wspace_a(*s) ) break;
+				if(*s == '\"') {
+					endField = false;
+					break;
+				}
+				if(is_wspace_a(*s))
+					break;
 			}
 		}
 		// cancel the field if we hit a space (not in quotes)
@@ -1514,17 +1537,11 @@ bool Query::setQWords ( char boolFlag ,
 		// if we were in a field
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		bool cancelField = false;
-		if ( words.hasSpace(i) && ! inQuotes ) cancelField = true;
+		if ( words.hasSpace(i) && ! inQuotes )
+			cancelField = true;
 		// fix title:"foo bar" "another quote" so "another quote"
 		// is not in the title: field
 		if ( words.hasSpace(i) && inQuotes && nq>= 2 ) 
-			cancelField = true;
-
-		// likewise for gbsortby operators watch out for boolean
-		// operators at the end of the field. we also check for 
-		// parens below when computing the hash of the value.
-		if ( (fieldCode == FIELD_GBSORTBYINT) &&
-		     ( w[0] == '(' || w[0] == ')' ) )
 			cancelField = true;
 
 		// BUT if we have a quote, and they just got turned off,
@@ -1556,13 +1573,11 @@ bool Query::setQWords ( char boolFlag ,
 		}
 		// . is this word potentially a field? 
 		// . it cannot be another field name in a field
-		if ( i < (m_numWords-2) &&
-		     w[wlen]   == ':' && ! is_wspace_utf8(w+wlen+1) && 
-		     //w[wlen+1] != '/' &&  // as in http://
-		     (! is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' ||
-		      // for gblatrange2:-106.940994to-106.361282
-		      w[wlen+1]=='-') &&  
-		     ! fieldCode      && ! inQuotes                ) {
+		if(i < m_numWords-2 &&
+		   w[wlen]  == ':' && ! is_wspace_utf8(w+wlen+1) &&
+		   (!is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' || w[wlen+1]=='-') &&
+		   ! fieldCode && ! inQuotes)
+		{
 			// field name may have started before though if it
 			// was a compound field name containing hyphens,
 			// underscores or periods
@@ -1581,7 +1596,8 @@ bool Query::setQWords ( char boolFlag ,
 			}
 
 			// advance j to a non-punct word
-			while (words.isPunct(j)) j++;
+			while (words.isPunct(j))
+				j++;
 
 			// ignore all of these words then, 
 			// they're part of field name
@@ -1591,20 +1607,19 @@ bool Query::setQWords ( char boolFlag ,
 			// set field name to the compound name if it is
 			field     = words.getWord (j);
 			fieldLen  = tlen;
-			if ( j == i ) fieldSign = wordSign;
-			else          fieldSign = m_qwords[j].m_wordSign;
+			if(j == i)
+				fieldSign = wordSign;
+			else
+				fieldSign = m_qwords[j].m_wordSign;
 
 			// . is it recognized field name,like "title" or "url"?
-			// . does it officially end in a colon? incl. in hash?
-			bool hasColon;
-			fieldCode = getFieldCode (field, fieldLen, &hasColon) ;
+			fieldCode = getFieldCode (field, fieldLen);
 
 			// if so, it does NOT get its own QueryWord,
 			// but its sign can be inherited by its members
 			if ( fieldCode ) {
 				for ( int32_t k = j ; k <= i ; k++ )
-					m_qwords[k].m_ignoreWord = 
-						IGNORE_FIELDNAME;
+					m_qwords[k].m_ignoreWord = IGNORE_FIELDNAME;
 				continue;
 			}
 		}
@@ -1676,10 +1691,6 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_LINKS||
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
-
-		     fieldCode == FIELD_GBSORTBYINT ||
-		     fieldCode == FIELD_GBREVSORTBYINT ||
-
 		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
 			// . make "end" point to the end of the entire query
@@ -1723,20 +1734,6 @@ bool Query::setQWords ( char boolFlag ,
 			// this may change later.
 			uint64_t wid = hash64Lower_utf8(w, wlen, 0LL);
 
-			// i've decided not to make 
-			// gbsortby:products.offerPrice 
-			// gbmin:price:1.23 case insensitive
-			// too late... we have to support what we have
-			if (fieldCode == FIELD_GBSORTBYINT ||
-				fieldCode == FIELD_GBREVSORTBYINT) {
-				wid = hash64Lower_utf8(w, wlen, 0LL);
-				// do not include this word as part of
-				// any boolean expression, so
-				// Expression::isTruth() will ignore it and we
-				// fix '(A OR B) gbsortby:offperice' query
-				qw->m_ignoreWordInBoolQuery = true;
-			}
-
 			if (fieldCode == FIELD_GBFIELDMATCH) {
 				// hash the json field name. (i.e. tag.uri)
 				// make it case sensitive as 
@@ -1773,7 +1770,8 @@ bool Query::setQWords ( char boolFlag ,
 					if (is_wspace_utf8(b)) break;
 				}
 				// if in quotes, go until we hit quote
-				for (; inQuotes && *b != '\"'; b++);
+				for (; inQuotes && *b != '\"'; b++)
+					;
 				// now hash that up. this must be 64 bit
 				// to match in XmlDoc.cpp::hashFieldMatch()
 				uint64_t val64 = hash64(a, b - a);
@@ -1914,6 +1912,9 @@ bool Query::setQWords ( char boolFlag ,
 			log(LOG_DEBUG, "query: term='%.*s' with termId %lu is a highfreq term. Marking it for ignoring", wlen, w, termId);
 			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
 		}
+
+		// reset for next word
+		userNotRequiredForWord = false;
 	}
 
 	//If there's only one alphanumerical word and it was ignored due to high-freq-term then the query is treated as 0 terms and will return an empty
@@ -2797,23 +2798,6 @@ const struct QueryField g_fields[] = {
 	// for content type CT_STATUS documents (Spider status docs)
 	//
 
-	{"gbsortbyint", 
-	 FIELD_GBSORTBYINT, 
-	 false,
-	 "gbsortbyint:gbdocspiderdate",
-	 "Sort all documents by the date they were spidered/downloaded.",
-	 NULL,
-	 0},
-
-	{"gbrevsortbyint", 
-	 FIELD_GBREVSORTBYINT, 
-	 false,
-	 "gbrevsortbyint:gbdocspiderdate",
-	 "Sort all documents by the date they were spidered/downloaded "
-	 "but with the oldest on top.",
-	 NULL,
-	 0},
-
 	{"gbdocspiderdate",
 	 FIELD_GENERIC,
 	 false,
@@ -2899,25 +2883,45 @@ static bool initFieldTable(){
 }
 
 
-field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon) {
-	// default
-	if ( hasColon ) {
-		*hasColon = false;
-	}
-
+field_code_t getFieldCode(const char *s, int32_t len) {
 	if ( !initFieldTable() ) {
-		return FIELD_GENERIC;
+		return FIELD_UNSET;
 	}
 
 	int64_t h = hash64Lower_a( s, len );
 	int32_t i = (int32_t) s_table.getScore(h);
 
 	if ( i == 0 ) {
-		return FIELD_GENERIC;
+		return FIELD_UNSET;
 	}
 
 	return g_fields[i-1].field;
 }
+
+const char *getFieldCodeName(field_code_t fc) {
+	switch(fc) {
+		case FIELD_UNSET: return "unset";
+		case FIELD_URL: return "url";
+		case FIELD_LINK: return "link";
+		case FIELD_SITE: return "site";
+		case FIELD_IP: return "ip";
+		case FIELD_SUBURL: return "suburl";
+		case FIELD_TITLE: return "title";
+		case FIELD_TYPE: return "type";
+		case FIELD_EXT: return "ext";
+		case FIELD_LINKS: return "links";
+		case FIELD_SITELINK: return "sitelink";
+		case FIELD_GENERIC: return "generic";
+		case FIELD_GBLANG: return "gblang";
+		case FIELD_GBCOUNTRY: return "gbcountry";
+		case FIELD_GBTERMID: return "gbtermid";
+		case FIELD_GBDOCID: return "gbdocid";
+		case FIELD_GBCONTENTHASH: return "gbcontenthash";
+		case FIELD_GBFIELDMATCH: return "gbfieldmatch";
+		default: return NULL;
+	}
+}
+
 
 // guaranteed to be punctuation
 bool Query::isConnection(const char *s, int32_t len) const {
@@ -3226,6 +3230,7 @@ void QueryTerm::constructor ( ) {
 	m_inQuotes = false;
 	m_termWeight = 0;
 	m_userWeight = 0;
+	m_userNotRequired = false;
 	m_piped = false;
 	m_ignored = false;
 	m_synonymOf = NULL;

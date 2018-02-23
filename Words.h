@@ -38,18 +38,18 @@ class Words {
 	// . NOTE: we never own the data
 	// . there is typically no html in "s"
 	// . html tags are NOT parsed out
-	bool set( char *s, bool computeIds );
+	bool set(const char *s);
 
 	// . similar to above
 	// . but we temporarily stick a \0 @ s[slen] for parsing purposes
-	bool set( char *s, int32_t slen, bool computeIds );
+	bool set(const char *s, int32_t slen);
 
 	// . new function to set directly from an Xml, rather than extracting
 	//   text first
 	// . use range (node1,node2] and if node2 is -1 that means the last one
-	bool set( Xml *xml, bool computeIds, int32_t node1 = 0, int32_t node2 = -1 );
+	bool set(Xml *xml, int32_t node1 = 0, int32_t node2 = -1);
 
-	bool addWords( char *s, int32_t nodeLen, bool computeIds );
+	bool addWords(const char *s, int32_t nodeLen);
 
 	// get the spam modified score of the ith word (baseScore is the 
 	// score if the word is not spammed)
@@ -58,9 +58,6 @@ class Words {
 	}
 	int32_t getNumAlnumWords() const {
 		return m_numAlnumWords;
-	}
-	char *getWord( int32_t n ) {
-		return m_words[n];
 	}
 	const char *getWord( int32_t n ) const {
 		return m_words[n];
@@ -189,13 +186,9 @@ class Words {
 	// want the pure tagid!!!!
 	//
 	// CAUTION!!!
-	nodeid_t       *getTagIds()       { return m_tagIds; }
 	const nodeid_t *getTagIds() const { return m_tagIds; }
-	char           *       *getWordPtrs()       { return m_words; }
 	const char     * const *getWordPtrs() const { return (const char*const*)m_words; }
-	int32_t        *getWordLens()       { return m_wordLens; }
 	const int32_t  *getWordLens() const { return m_wordLens; }
-	int64_t        *getWordIds()       { return m_wordIds; }
 	const int64_t  *getWordIds() const { return m_wordIds; }
 	const int32_t  *getNodes() const { return m_nodes; }
 	
@@ -209,16 +202,10 @@ class Words {
 		return true;
 	}
 
-	int32_t getAsLong ( int32_t n ) const {
-		// skip if no digit
-		if ( ! is_digit ( m_words[n][0] ) ) return -1;
-		return atol2(m_words[n],m_wordLens[n]); 
-	}
-
 	bool      isNum    ( int32_t n ) const { 
 		if ( ! is_digit(m_words[n][0]) ) return false;
-		char *p    = m_words[n];
-		char *pend = p + m_wordLens[n];
+		const char *p    = m_words[n];
+		const char *pend = p + m_wordLens[n];
 		for (  ; p < pend ; p++ )
 			if ( ! is_digit(*p) ) return false;
 		return true;
@@ -231,8 +218,8 @@ class Words {
 			return false;
 		}
 
-		char *p = m_words[n];
-		char *pend = p + m_wordLens[n];
+		const char *p = m_words[n];
+		const char *pend = p + m_wordLens[n];
 		char cs;
 		for ( ; p < pend; p += cs ) {
 			cs = getUtf8CharSize( p );
@@ -254,18 +241,12 @@ class Words {
 		}
 
 		return is_upper_utf8( m_words[n] );
+		//todo: handle titlecase letters (
 	}
 
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 
-
-	char *getContent() { 
-		if ( m_numWords == 0 ) return NULL;
-		return m_words[0]; 
-	}
-
-	int32_t getPreCount() const { return m_preCount; }
 
 private:
 
@@ -278,10 +259,9 @@ private:
 
 	char *m_buf;
 	int32_t  m_bufSize;
-	Xml  *m_xml ;  // if the class is set from xml, rather than a string
 
 	int32_t           m_preCount  ; // estimate of number of words in the doc
-	char          **m_words    ;  // pointers to the word
+	const char          **m_words    ;  // pointers to the word
 	int32_t           *m_wordLens ;  // length of each word
 	int64_t      *m_wordIds  ;  // lower ascii hash of word
 	int32_t           *m_nodes    ;  // Xml.cpp node # (for tags only)
@@ -289,8 +269,6 @@ private:
 
  	int32_t           m_numWords;      // # of words we have
 	int32_t           m_numAlnumWords;
-
-	bool           m_hasTags;
 
 	int32_t m_numTags;
 };

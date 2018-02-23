@@ -27,15 +27,14 @@
 // node cluster....
 #define MAX_OUTSTANDING_MSG20S 200
 
-static bool printHttpMime(int32_t format, SafeBuf *sb);
-
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
 static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
 Msg40::Msg40()
-  : m_numRealtimeClassificationsStarted(0),
+  : m_deadline(0),
+    m_numRealtimeClassificationsStarted(0),
     m_numRealtimeClassificationsCompleted(0),
     m_mtxRealtimeClassificationsCounters(),
     m_realtimeClassificationsSubmitted(false)
@@ -126,7 +125,12 @@ bool Msg40::getResults ( SearchInput *si      ,
 			 void        *state   ,
 			 void   (* callback) ( void *state ) ) {
 
+	log(LOG_INFO, "query: Msg40 start: query_id='%s' query='%s'", si->m_queryId, si->m_query);
 	m_omitCount = 0;
+
+	if(g_conf.m_msg40_msg39_timeout>0) {
+		m_deadline = gettimeofdayInMilliseconds() + g_conf.m_msg40_msg39_timeout;
+	}
 
 	// warning
 	//if ( ! si->m_coll2 ) log(LOG_LOGIC,"net: NULL collection. msg40.");
@@ -165,17 +169,14 @@ bool Msg40::getResults ( SearchInput *si      ,
 	m_cachedTime = 0;
 
 	// bail now if 0 requested!
-	// crap then we don't stream anything if in streaming mode.
 	if ( m_si->m_docsWanted == 0 ) {
-		log("msg40: setting streamresults to false. n=0.");
-		m_si->m_streamResults = false;
+		log("msg40: n=0.");
 		return true;
 	}
 
 	// or if no query terms
 	if ( m_si->m_q.m_numTerms <= 0 ) {
-		log("msg40: setting streamresults to false. numTerms=0.");
-		m_si->m_streamResults = false;
+		log("msg40: numTerms=0.");
 		return true;
 	}
 
@@ -238,12 +239,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 
 	// keep going
 	bool status = prepareToGetDocIds ( );
-
-	if ( status && m_si->m_streamResults ) {
-		log("msg40: setting streamresults to false. "
-		    "prepare did not block.");
-		m_si->m_streamResults = false;
-	}
 
 	return status;
 }
@@ -470,6 +465,7 @@ void gotDocIdsWrapper ( void *state ) {
 	// return if this blocked
 	if ( ! THIS->gotDocIds() ) return;
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -685,9 +681,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 
 	// MDW: try to preserve the old Msg20s if we are being re-called
 	if ( m_buf2 ) {
-		// we do not do recalls when streaming yet
-		if ( m_si->m_streamResults ) { g_process.shutdownAbort(true); }
-
 		// make new buf
 		char *newBuf = (char *)mmalloc(need,"Msg40d");
 		// return false if it fails
@@ -791,17 +784,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 
 	m_numMsg20s = m_msg3a.m_numDocIds;
 
-	// when streaming because we can have hundreds of thousands of
-	// search results we recycle a few msg20s to save mem
-	if ( m_si->m_streamResults ) {
-		int32_t max = MAX_OUTSTANDING_MSG20S * 2;
-		if ( m_msg3a.m_numDocIds < max ) max = m_msg3a.m_numDocIds;
-		need = 0;
-		need += max * sizeof(Msg20 *);
-		need += max * sizeof(Msg20);
-		m_numMsg20s = max;
-	}
-
 	m_buf2        = NULL;
 	m_bufMaxSize2 = need;
 
@@ -886,30 +868,12 @@ bool Msg40::launchMsg20s(bool recalled) {
 		if ( m_si->m_docIdsOnly ) break;
 		// hard limit
 		if ( m_numRequests-m_numReplies >= maxOut ) break;
-		// do not launch another until m_printi comes back because
-		// all summaries are bottlenecked on printing him out now.
-		if ( m_si->m_streamResults &&
-		     // must have at least one outstanding summary guy
-		     // otherwise we can return true below and cause
-		     // the stream to truncate results in gotSummary()
-		     //m_numReplies < m_numRequests &&
-		     i >= m_printi + MAX_OUTSTANDING_MSG20S - 1 )
-			break;
 
 		// do not repeat for this i
 		m_lastProcessedi = i;
 
 		// start up a Msg20 to get the summary
-		Msg20 *m = NULL;
-		if ( m_si->m_streamResults ) {
-			// there can be hundreds of thousands of results
-			// when streaming, so recycle a few msg20s to save mem
-			m = getAvailMsg20();
-			// mark it so we know which docid it goes with
-			m->m_ii = i;
-		}
-		else
-			m = m_msg20[i];
+		Msg20 *m = m_msg20[i];
 
 		// if to a dead host, skip it
 		int64_t docId = m_msg3a.m_docIds[i];
@@ -917,12 +881,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		// get the collection rec
 		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 		// if shard is dead then do not send to it if not crawlbot
-		if ( g_hostdb.isShardDead ( shardNum ) && cr &&
-		     // this is causing us to truncate streamed results
-		     // too early when we have false positives that a 
-		     // host is dead because the server is locking up 
-		     // periodically
-		     ! m_si->m_streamResults ) {
+		if ( g_hostdb.isShardDead ( shardNum ) && cr ) {
 			log("msg40: skipping summary lookup #%" PRId32" of docid %" PRId64" for dead shard #%" PRId32
 			    , i
 			    , docId
@@ -1049,9 +1008,6 @@ bool Msg40::launchMsg20s(bool recalled) {
 		return true;
 	// if we got nothing, that's it
 	if ( m_msg3a.m_numDocIds <= 0 ) {
-		// but if in streaming mode we still have to stream the
-		// empty results back
-		if ( m_si->m_streamResults ) return gotSummary ( );
 		// otherwise, we're done
 		return true;
 	}
@@ -1112,6 +1068,7 @@ bool gotSummaryWrapper ( void *state ) {
 	}
 
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 
 	return true;
@@ -1146,6 +1103,7 @@ static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 	if ( ! THIS->gotSummary() ) return;
 
 	// all done!!!???
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -1179,151 +1137,6 @@ bool Msg40::gotSummary ( ) {
  doAgain:
 
 	st->m_sb.reset();
-
-	if(m_si->m_streamResults) {
-		// this is in PageResults.cpp
-		if ( ! m_printedHeader ) {
-			// only print header once
-			m_printedHeader = true;
-			printHttpMime(m_si->m_format,&st->m_sb);
-			printSearchResultsHeader ( st );
-		}
-
-		for ( ; m_printi<m_msg3a.m_numDocIds ; m_printi++) {
-			// if we are waiting on our previous send to complete... wait..
-			if ( m_sendsOut > m_sendsIn ) break;
-
-			// get summary for result #m_printi
-			Msg20 *m20 = getCompletedSummary ( m_printi );
-
-			// if result summary #i not yet in, wait...
-			if ( ! m20 )
-				break;
-
-			if ( m20->m_errno ) {
-				log("msg40: sum #%" PRId32" error: %s",
-				    m_printi,mstrerror(m20->m_errno));
-				// make it available to be reused
-				m20->reset();
-				continue;
-			}
-
-			// get the next reply we are waiting on to print results order
-			Msg20Reply *mr = m20->m_r;
-			if ( ! mr ) break;
-
-			// primitive deduping. for diffbot json exclude url's from the
-			// XmlDoc::m_contentHash32.. it will be zero if invalid i guess
-			if ( m_si->m_doDupContentRemoval && // &dr=1
-			     mr->m_contentHash32 &&
-			     m_dedupTable.isInTable ( &mr->m_contentHash32 ) ) {
-				//if ( g_conf.m_logDebugQuery )
-				log("msg40: dup sum #%" PRId32" (%" PRIu32") (d=%" PRId64")",m_printi,
-				    mr->m_contentHash32,mr->m_docId);
-				// make it available to be reused
-				m20->reset();
-				continue;
-			}
-
-			// return true with g_errno set on error
-			if ( m_si->m_doDupContentRemoval && // &dr=1
-			     mr->m_contentHash32 &&
-			     ! m_dedupTable.addKey ( &mr->m_contentHash32 ) ) {
-				log("msg40: error adding to dedup table: %s",
-				    mstrerror(g_errno));
-			}
-
-			// assume we show this to the user
-			m_numDisplayed++;
-			//log("msg40: numdisplayed=%" PRId32,m_numDisplayed);
-
-			// do not print it if before the &s=X start position though
-			if ( m_numDisplayed <= m_si->m_firstResultNum ){
-				if ( m_printCount == 0 )
-					log("msg40: hiding #%" PRId32" (%" PRIu32") (d=%" PRId64")",
-					    m_printi,mr->m_contentHash32,mr->m_docId);
-				m_printCount++;
-				if ( m_printCount == 100 ) m_printCount = 0;
-				m20->reset();
-				continue;
-			}
-
-			// . ok, we got it, so print it and stream it
-			// . this might set m_hadPrintError to true
-			printSearchResult9 ( m_printi , &m_numPrintedSoFar , mr );
-
-			// return it so getAvailMsg20() can use it again
-			// this will set m_launched to false
-			m20->reset();
-		}
-
-		// . set it to true on all but the last thing we send!
-		// . after each chunk of data we send out, TcpServer::sendChunk
-		//   will call our callback, doneSendingWrapper9
-		if ( st->m_socket )
-			st->m_socket->m_streamingMode = true;
-
-
-		// if streaming results, and too many results were clustered or
-		// deduped then try to get more by merging the docid lists that
-		// we already have from the shards. if this still does not provide
-		// enough docids then we will need to issue a new msg39 request to
-		// each shard to get even more docids from each shard.
-		if ( // this is coring as well on multi collection federated searches
-		     // so disable that for now too. it is because Msg3a::m_r is
-		     // NULL.
-		     m_numCollsToSearch == 1 &&
-		     // must have no streamed chunk sends out
-		     m_sendsOut == m_sendsIn &&
-		     // if we did not ask for enough docids and they were mostly
-		     // dups so they got deduped, then ask for more.
-		     // m_numDisplayed includes results before the &s=X parm.
-		     // and so does m_docsToGetVisiable, so we can compare them.
-		     m_numDisplayed < m_docsToGetVisible &&
-		     // wait for us to have exhausted the docids we have merged
-		     m_printi >= m_msg3a.m_numDocIds &&
-		     // wait for us to have available msg20s to get summaries
-		     m_numReplies == m_numRequests &&
-		     // this is true if we can get more docids from merging
-		     // more of the termlists from the shards together.
-		     // otherwise, we will have to ask each shard for a
-		     // higher number of docids.
-		     m_msg3a.m_moreDocIdsAvail &&
-		     // do not do this if client closed connection
-		     ! m_socketHadError ) { //&&
-
-			// can it cover us?
-			int32_t need = m_msg3a.m_docsToGet + 20;
-			// note it
-			log("msg40: too many summaries deduped. "
-			    "getting more docids from msg3a merge and getting summaries. "
-			    "%" PRId32" are visible, need %" PRId32". changing docsToGet from %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
-			    m_numDisplayed,
-			    m_docsToGetVisible,
-			    m_msg3a.m_docsToGet,
-			    need,
-			    m_numReplies,
-			    m_numRequests);
-			// merge more docids from the shards' termlists
-			m_msg3a.m_docsToGet = need;
-			// this should increase m_msg3a.m_numDocIds
-			m_msg3a.mergeLists();
-		}
-
-		// . wrap it up with Next 10 etc.
-		// . this is in PageResults.cpp
-		if ( ! m_printedTail &&
-		     m_printi >= m_msg3a.m_numDocIds ) {
-			m_printedTail = true;
-			printSearchResultsTail ( st );
-			if ( m_sendsIn < m_sendsOut ) { g_process.shutdownAbort(true); }
-			if ( g_conf.m_logDebugTcp )
-				log("tcp: disabling streamingMode now");
-			// this will be our final send
-			if ( st->m_socket ) st->m_socket->m_streamingMode = false;
-		}
-	} //m_si->m_streamResults
-
 
 	// do we still own this socket? i am thinking it got closed somewhere
 	// and the socket descriptor was re-assigned to another socket
@@ -1382,11 +1195,6 @@ bool Msg40::gotSummary ( ) {
 		//   do a recursive stack explosion
 		// . this returns false if still waiting on more to come back
 		if ( ! launchMsg20s ( true ) ) return false; 
-		// it won't launch now if we are bottlnecked waiting for
-		// m_printi's summary to come in
-		if ( m_si->m_streamResults ) {
-			goto complete;
-		}
 
 		// it returned true, so m_numRequests == m_numReplies and
 		// we don't need to launch any more! but that does NOT
@@ -1398,27 +1206,19 @@ bool Msg40::gotSummary ( ) {
 		goto doAgain;
 	}
 
- complete:
 
 	// . ok, now i wait for all msg20s (getsummary) to come back in.
 	// . TODO: evaluate if this hurts us
 	if ( m_numReplies < m_numRequests )
 		return false;
+	
+	return gotSummaries();
+}
 
-	// if streaming results, we are done
-	if ( m_si->m_streamResults ) {
-		// unless waiting for last transmit to complete
-		if ( m_sendsOut > m_sendsIn ) return false;
-		// delete everything! no, doneSendingWrapper9 does...
-		//mdelete(st, sizeof(State0), "msg40st0");
-		//delete st;
-		// otherwise, all done!
-		log("msg40: did not send last search result summary. this=0x%" PTRFMT" because had error: %s",
-		    (PTRTYPE)this,
-		    mstrerror(m_socketHadError));
-		return true;
-	}
 
+//We got the replies we initially requested. Now set cluster levels, and filter on clustering, family filter,
+//error/show-errors, etc. After that, the summaries are ready for realtime-classification.
+bool Msg40::gotSummaries() {
 	int64_t startTime = gettimeofdayInMilliseconds();
 
 	// loop over each clusterLevel and set it
@@ -1498,14 +1298,15 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
-		// filter simplified redirection/non-caconical document
-		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
-		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
-			if (!m_si->m_showErrors) {
-				*level = CR_EMPTY_REDIRECTION_PAGE;
-				continue;
-			}
-		}
+//              temporarily disabled: if titledb has old records with content and redirect then this ends up filtering out most results and the whole query will be very slow
+// 		// filter simplified redirection/non-caconical document
+// 		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
+// 		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
+// 			if (!m_si->m_showErrors) {
+// 				*level = CR_EMPTY_REDIRECTION_PAGE;
+// 				continue;
+// 			}
+// 		}
 
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
@@ -1722,6 +1523,7 @@ void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
 	if(incrementRealtimeClassificationsCompleted()) {
 		log(LOG_TRACE,"msg40: all URL classifications completed");
 		if(gotEnoughSummaries()) {
+			log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", m_si->m_queryId, m_si->m_query, getNumResults());
 			m_callback(m_state);
 		}
 	}
@@ -1776,26 +1578,32 @@ bool Msg40::gotEnoughSummaries() {
 	     m_docsToGet <= 1000 &&
 	     // doesn't work on multi-coll just yet, it cores
 	     m_numCollsToSearch == 1 ) {
-		// can it cover us?
-		int32_t need = m_docsToGet + 20;
-		// increase by 25 percent as well
-		need *= 1.25;
-		// note it
-		log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
-		    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
-		    visible, m_docsToGetVisible,
-		    m_msg3a.m_docsToGet, need,
-		    m_numReplies, m_numRequests);
+		if(m_deadline>0 && m_deadline>gettimeofdayInMilliseconds()) {
+			// can it cover us?
+			int32_t need = m_docsToGet + 20;
+			// increase by 25 percent as well
+			need *= 1.25;
+			// note it
+			log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
+			    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
+			    visible, m_docsToGetVisible,
+			    m_msg3a.m_docsToGet, need,
+			    m_numReplies, m_numRequests);
 
-		// get more!
-		m_docsToGet = need;
-		// reset this before launch
-		m_numReplies  = 0;
-		m_numRequests = 0;
-		// reprocess all!
-		m_lastProcessedi = -1;
-		// let's do it all from the top!
-		return getDocIds ( true ) ;
+			// get more!
+			m_docsToGet = need;
+			// reset this before launch
+			m_numReplies  = 0;
+			m_numRequests = 0;
+			// reprocess all!
+			m_lastProcessedi = -1;
+			// let's do it all from the top!
+			log(LOG_INFO, "query: Msg40 redo: query_id='%s' query='%s', visible=%d", m_si->m_queryId, m_si->m_query, visible);
+			return getDocIds ( true ) ;
+		} else {
+			log("msg40: many summaries invisible but deadline has been passed. %d are visible, wanted %d",
+			    visible, m_docsToGetVisible);
+		}
 	}
 
 	// get time now
@@ -2000,82 +1808,6 @@ static bool isVariantLikeSubDomain(const char *s , int32_t len) {
                 return false;
 	return true;
 }		
-
-// . printSearchResult into "sb"
-bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
-				 Msg20Reply *mr ) {
-
-	// . we stream results right onto the socket
-	// . useful for thousands of results... and saving mem
-	if ( ! m_si || ! m_si->m_streamResults ) { g_process.shutdownAbort(true); }
-
-	// get state0
-	State0 *st = (State0 *)m_state;
-
-	Msg40 *msg40 = &st->m_msg40;
-
-	// then print each result
-	// don't display more than docsWanted results
-	if ( m_numPrinted >= msg40->getDocsWanted() ) {
-		// i guess we can print "Next 10" link
-		m_moreToCome = true;
-		// hide if above limit
-		if ( m_printCount == 0 )
-			log(LOG_INFO,"msg40: hiding above docsWanted #%" PRId32" (%" PRIu32")(d=%" PRId64")",
-			    m_printi,mr->m_contentHash32,mr->m_docId);
-		m_printCount++;
-		if ( m_printCount == 100 ) m_printCount = 0;
-		// do not exceed what the user asked for
-		return true;
-	}
-
-	// print that out into st->m_sb safebuf
-	if ( ! printResult ( st , ix , numPrintedSoFar ) ) {
-		// oom?
-		if ( ! g_errno ) g_errno = EBADENGINEER;
-		log("query: had error: %s",mstrerror(g_errno));
-	}
-
-	// count it
-	m_numPrinted++;
-
-	return true;
-}
-	
-
-static bool printHttpMime(int32_t format, SafeBuf *sb) {
-	// reserve 1.5MB now!
-	if ( ! sb->reserve(1500000 ,"pgresbuf" ) ) // 128000) )
-		return true;
-	// just in case it is empty, make it null terminated
-	sb->nullTerm();
-
-	// defaults to FORMAT_HTML
-	const char *ct = "text/html";
-	if(format == FORMAT_JSON) {
-		ct = "application/json";
-	} else if(format == FORMAT_XML) {
-		ct = "text/xml";
-	}
-
-	// . if we haven't yet sent an http mime back to the user
-	//   then do so here, the content-length will not be in there
-	//   because we might have to call for more spiderdb data
-	HttpMime mime;
-	mime.makeMime ( -1, // totel content-lenght is unknown!
-			0 , // do not cache (cacheTime)
-			0 , // lastModified
-			0 , // offset
-			-1 , // bytesToSend
-			NULL , // ext
-			false, // POSTReply
-			ct, // "text/csv", // contenttype
-			"utf-8" , // charset
-			-1 , // httpstatus
-			NULL ); //cookie
-	sb->safeMemcpy(mime.getMime(),mime.getMimeLen() );
-	return true;
-}
 
 
 void Msg40::incrementRealtimeClassificationsStarted() {

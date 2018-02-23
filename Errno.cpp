@@ -37,6 +37,7 @@ bool isSpiderTempError(int errnum) {
 	switch (errnum) {
 		case EDNSTIMEDOUT:
 		case ETCPTIMEDOUT:
+		case EUDPTIMEDOUT:
 		case EDNSDEAD:
 		case EBADIP:
 		case EDNSSERVFAIL:
@@ -150,6 +151,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc conversion error";
 			case EDOCTOOBIG:
 				return "Doc is too big";
+			case EDOCBLOCKEDIP:
+				return "Doc blocked by ip block list";
 			case EDOCUNCHANGED    :
 				return "Doc unchanged";
 			case EDOCDUP          :
@@ -368,7 +371,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCBADREDIRECTURL ),
 	STRINGIFY( EDOCCONVERTFAILED ),
 	STRINGIFY( EDOCTOOBIG ),
-	STRINGIFY( EUNUSED17 ),
+	STRINGIFY( EDOCBLOCKEDIP ),
 	STRINGIFY( EUNUSED18 ),
 	STRINGIFY( EUNUSED19 ),
 	STRINGIFY( EDOCUNCHANGED ),
@@ -450,7 +453,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCIDCOLLISION ),
 	STRINGIFY( ESSLERROR ),
 	STRINGIFY( EPERMDENIED ),
-	STRINGIFY( EUNUSED47 ),
+	STRINGIFY( ENOLINKTEXT_AREATAG ),
 	STRINGIFY( EUNUSED47A ),
 	STRINGIFY( EUNUSED47B ),
 	STRINGIFY( EUNUSED47C ),

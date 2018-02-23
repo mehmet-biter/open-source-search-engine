@@ -17,6 +17,7 @@
 #include "RdbMerge.h"
 #include "Collectiondb.h"
 #include "UrlBlockCheck.h"
+#include "SpiderdbSqlite.h"
 #include "max_niceness.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -61,7 +62,6 @@ static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 
 		s_rdbs[s_nsr++] = g_titledb2.getRdb    ();
 		s_rdbs[s_nsr++] = g_posdb2.getRdb    ();
-		s_rdbs[s_nsr++] = g_spiderdb2.getRdb   ();
 		s_rdbs[s_nsr++] = g_clusterdb2.getRdb  ();
 		s_rdbs[s_nsr++] = g_linkdb2.getRdb     ();
 		s_rdbs[s_nsr++] = g_tagdb2.getRdb      ();
@@ -90,7 +90,6 @@ Repair::Repair() {
 	m_recsCorruptErrors = 0;
 	m_recsDupDocIds = 0;
 	m_recsNegativeKeys = 0;
-	m_recsUnassigned = 0;
 	m_recsWrongGroupId = 0;
 	m_recsInjected = 0;
 	m_nonIndexableExtensions = 0;
@@ -269,8 +268,16 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Starting repair scan.");
 		// advance
 		g_repairMode = REPAIR_MODE_4;
-		// now start calling the loop. returns false if blocks
-		if ( ! g_repair.loop() ) return;
+
+		// only trigger repair loop on spider hosts
+		if (g_hostdb.getMyHost()->m_spiderEnabled) {
+			// now start calling the loop. returns false if blocks
+			if (!g_repair.loop()) return;
+		} else {
+			// assume we have completed scan
+			g_repair.m_completedFirstScan = true;
+			g_repair.m_completedSpiderdbScan = true;
+		}
 	}
 
 	// we can only enter mode 4 once we have completed the repairs
@@ -421,7 +428,6 @@ void Repair::initScan ( ) {
 	m_recsetErrors     = 0;
 	m_recsCorruptErrors = 0;
 	m_recsDupDocIds     = 0;
-	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
 	m_nonIndexableExtensions = 0;
 	m_urlBlocked = 0;
@@ -541,8 +547,6 @@ void Repair::initScan ( ) {
 
 	if ( m_rebuildClusterdb )
 		if ( ! g_clusterdb2.init2  ( clusterdbMem  ) ) goto hadError;
-	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall )
-		if ( ! g_spiderdb2.init2   ( spiderdbMem   ) ) goto hadError;
 	if ( m_rebuildLinkdb )
 		if ( ! g_linkdb2.init2     ( linkdbMem     ) ) goto hadError;
 
@@ -647,11 +651,6 @@ void Repair::getNextCollToRepair ( ) {
 
 	if ( m_rebuildClusterdb ) {
 		if ( ! g_clusterdb2.getRdb()->addRdbBase1 ( coll ) &&
-		     g_errno != EEXIST ) goto hadError;
-	}
-
-	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall ) {
-		if ( ! g_spiderdb2.getRdb()->addRdbBase1 ( coll ) &&
 		     g_errno != EEXIST ) goto hadError;
 	}
 
@@ -881,7 +880,6 @@ bool Repair::loop() {
 	    " corrupt=%" PRId64
 	    " dup=%" PRId64
 	    " negative=%" PRId64
-	    " unassigned=%" PRId64
 	    " wrong-group=%" PRId64
 	    " injected=%" PRId64
 	    " m_nonIndexableExtensions=%" PRId64
@@ -892,7 +890,6 @@ bool Repair::loop() {
 	    m_recsCorruptErrors,
 	    m_recsDupDocIds,
 	    m_recsNegativeKeys,
-	    m_recsUnassigned,
 	    m_recsWrongGroupId,
 	    m_recsInjected,
 	    m_nonIndexableExtensions,
@@ -934,16 +931,13 @@ void Repair::updateRdbs ( ) {
 		rdb2 = g_clusterdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
-	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall ) {
-		rdb1 = g_spiderdb.getRdb();
-		rdb2 = g_spiderdb2.getRdb();
-		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
-	}
 	if ( m_rebuildLinkdb ) {
 		rdb1 = g_linkdb.getRdb();
 		rdb2 = g_linkdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
+	if(m_rebuildSpiderdb || m_rebuildSpiderdbSmall)
+		SpiderdbSqlite::swapinSecondarySpiderdb(m_collnum, m_cr->m_coll);
 }
 
 void Repair::resetSecondaryRdbs ( ) {
@@ -953,6 +947,7 @@ void Repair::resetSecondaryRdbs ( ) {
 		Rdb *rdb = rdbs[i];
 		rdb->reset();
 	}
+	//g_spiderdb2 has alraedy closed the the collection as a side-effect of SpiderdbSqlite::swapinSecondarySpiderdb()
 }
 
 
@@ -1103,32 +1098,9 @@ bool Repair::gotScanRecList ( ) {
 		return true;
 	}
 
-	// . if one of our twins is responsible for it...
-	// . is it assigned to us? taken from assigendToUs() in SpiderCache.cpp
-	// . get our group from our hostId
-	int32_t  numHosts;
-	Host *hosts = g_hostdb.getShard ( shardNum , &numHosts );
-	int32_t  ii =  docId % numHosts ;
-	// . are we the host this url is meant for?
-	// . however, if you are rebuilding tfndb, each twin must scan all
-	//   title recs and make individual entries for those title recs
-	if ( hosts[ii].m_hostId != g_hostdb.m_myHostId ){
-		m_recsUnassigned++;
-		m_stage = STAGE_TITLEDB_0;
-		return true;
-	}
-
-	bool isDelete = false;
 	// is it a negative titledb key?
 	if(KEYNEG(tkey)) {
-		// count it
 		m_recsNegativeKeys++;
-		// otherwise, we need to delete this
-		// docid from tfndb...
-		isDelete = true;
-	}
-
-	if ( isDelete ) {
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
@@ -1194,7 +1166,7 @@ bool Repair::injectTitleRec ( ) {
 	}
 
 	if(m_rebuildSpiderdbSmall) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Jumping to injectTitleRecSmall", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"Jumping to injectTitleRecSmall");
 		return injectTitleRecSmall(titleRec,titleRecSize);
 	}
 	
@@ -1253,18 +1225,14 @@ bool Repair::injectTitleRec ( ) {
 	// or whatever, we want to add that to tagdb
 	xd->m_useTagdb     = true;
 
+	if (!g_conf.m_rebuildAddOutlinks) {
+		xd->m_spiderLinks2 = 0;
+	}
+
 	// not if rebuilding link info though! we assume the old link info is
 	// bad...
 	if ( m_rebuildLinkdb ) {
 		xd->m_useTagdb = false;
-
-		// also need to preserve the "lost link" flag somehow
-		// from the old linkdb...
-		//log("repair: would lose linkdb lost flag.");
-		// core until we find a way to preserve the old discovery
-		// date from the old linkdb!
-		//log("repair: fix linkdb rebuild. coring.");
-		//g_process.shutdownAbort(true);
 	}
 
 	if ( ! g_conf.m_rebuildRecycleLinkInfo ) {
@@ -1302,6 +1270,14 @@ bool Repair::injectTitleRec ( ) {
 		xd->m_tagRecDataValid = false;
 	}
 
+	// don't recalculate isAdult flag when only rebuilding spiderdb
+	if (xd->m_useSpiderdb && !xd->m_useClusterdb && !xd->m_useTitledb) {
+		xd->m_isAdultValid = true;
+	}
+
+	if (!g_conf.m_rebuildUseTitleRecTagRec) {
+		xd->m_tagRecDataValid = false;
+	}
 
 	xd->m_priority = -1;
 	xd->m_priorityValid = true;
@@ -1343,14 +1319,14 @@ struct SmallInjectState {
 
 
 bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 	
 	//decompress+decode xmldoc
 	XmlDoc xd;
 	if(!xd.set2(titleRec,titleRecSize, m_cr->m_coll, NULL, MAX_NICENESS))  {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. XmlDoc->set2 failed", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
 		return true;
 	}
 	
@@ -1358,17 +1334,17 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	const Url *url = xd.getFirstUrl();
 	if(url->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
 		m_nonIndexableExtensions++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. hasNonIndexableExtension", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. hasNonIndexableExtension");
 		return true;
 	}
 	if(isUrlBlocked(*url)) {
 		m_urlBlocked++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlBlocked", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. isUrlBlocked");
 		return true;
 	}
 	if(isUrlUnwanted(*url)) {
 		m_urlUnwanted++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlUnwanted", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. isUrlUnwanted");
 		return true;
 	}
 	
@@ -1378,10 +1354,10 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 		sis = new SmallInjectState();
 	} catch(std::bad_alloc&) {
 		m_recsetErrors++; //sort of
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. std::bad_alloc", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. std::bad_alloc");
 		return true;
 	}
-	
+
 	sis->sreq.reset();
 	strcpy(sis->sreq.m_url, url->getUrl());
 	sis->sreq.setKey(*xd.getFirstIp(), 0, false);
@@ -1389,20 +1365,18 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	sis->sreq.m_hostHash32    = url->getHostHash32();
 	sis->sreq.m_domHash32     = url->getDomainHash32();
 	sis->sreq.m_siteHash32    = url->getHostHash32();
-	sis->sreq.m_hopCount      = xd.m_hopCountValid ? xd.m_hopCount : 0;
-	sis->sreq.m_hopCountValid = xd.m_hopCountValid;
 	sis->sreq.m_addedTime     = xd.m_firstIndexedDate;
 	if(xd.m_siteNumInlinksValid)
 		sis->sreq.m_siteNumInlinks = xd.m_siteNumInlinks;
 	
-	if(sis->msg4.addMetaList((const char*)&sis->sreq,sis->sreq.getRecSize(), m_collnum, sis,smallInjectCallback, RDB2_SPIDERDB2)) {
+	if(sis->msg4.addMetaList((const char*)&sis->sreq,sis->sreq.getRecSize(), m_collnum, sis,smallInjectCallback, RDB2_SPIDERDB2_DEPRECATED)) {
 		//failed or immediateley succeeded
 		delete sis;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. addMetaList", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. addMetaList");
 		return true;
 	}
 	//blocked
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. blocked", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END, return true. blocked");
 	return false;
 }
 
@@ -1451,12 +1425,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 		m_recsetErrors   +
 		m_recsCorruptErrors +
 		m_recsDupDocIds    ;
-
-	// the spiderdb scan stats (phase 2)
-	int64_t ns2     = m_spiderRecsScanned ;
-	int64_t nr2     = g_spiderdb.getRdb()->getNumTotalRecs() ;
-	float     ratio2  = nr2 ? ((float)ns2 * 100.0) / (float)nr2 : 0.0;
-	int64_t errors2 = m_spiderRecSetErrors;
 
 	const char *newColl = " &nbsp; ";
 
@@ -1573,8 +1541,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; negative keys</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr class=\"bg0\"><td> &nbsp; twin's responsibility</td>"
-			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; wrong shard</td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; non-indexable extension</td>"
@@ -1593,39 +1559,10 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 m_recsCorruptErrors  ,
 			 m_recsDupDocIds ,
 			 m_recsNegativeKeys ,
-			 m_recsUnassigned ,
 			 m_recsWrongGroupId,
 			 m_nonIndexableExtensions,
 			 m_urlBlocked,
 			 m_urlUnwanted
-			 );
-
-
-	sb->safePrintf(
-			 // spider recs done
-			 "<tr><td>spider recs scanned</td>"
-			 "<td>%" PRId64" of %" PRId64" (%.2f%%)</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr><td>spider rec not "
-			 "assigned to us</td>"
-			 "<td>%" PRId32"</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr><td>spider rec errors</td>"
-			 "<td>%" PRId64"</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr><td>spider rec bad tld</td>"
-			 "<td>%" PRId32"</td></tr>\n"
-
-			 ,
-			 ns2    ,
-			 nr2    ,
-			 ratio2 ,
-			 m_spiderRecNotAssigned ,
-			 errors2,
-			 m_spiderRecBadTLD
 			 );
 
 

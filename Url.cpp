@@ -5,7 +5,6 @@
 #include "FxCheckAdult.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
-#include "Unicode.h"
 #include "SafeBuf.h"
 #include "Sanity.h"
 #include "GbMutex.h"
@@ -2419,14 +2418,6 @@ const char *getDomFast ( const char *url , int32_t *domLen , bool hasHttp ) {
 	// set domain length
 	*domLen = hostEnd - udom;
 	return udom;
-}
-
-// Is it a ping server? It might respond with huge documents with thousands of
-// links, which would normally be detected as link spam. This function is kept
-// around until we have a better way of handling it  than hardcoded URLs in a
-// source file.
-bool Url::isPingServer ( ) const {
-	return false;
 }
 
 

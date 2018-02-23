@@ -525,7 +525,7 @@ bool RdbBase::setFiles ( ) {
 		return false;
 
 	// spiderdb should start with file 0001.dat or 0000.dat
-	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
+	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB_DEPRECATED ) {
 		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
 		//good thing but I don't see why it should affect spiderdb especially bad.
 		return fixNonfirstSpiderdbFiles();
@@ -1249,8 +1249,8 @@ static int32_t getMaxLostPositivesPercentage(rdbid_t rdbId) {
 		case RDB_TITLEDB:
 		case RDB2_TITLEDB2:
 			return g_conf.m_titledbMaxLostPositivesPercentage;
-		case RDB_SPIDERDB:
-		case RDB2_SPIDERDB2:
+		case RDB_SPIDERDB_DEPRECATED:
+		case RDB2_SPIDERDB2_DEPRECATED:
 			return g_conf.m_spiderdbMaxLostPositivesPercentage;
 		case RDB_LINKDB:
 		case RDB2_LINKDB2:
@@ -1730,7 +1730,7 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 				result = cr->m_titledbMinFilesToMerge;
 				logTrace(g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %d", m_minToMerge);
 				break;
-			case RDB_SPIDERDB:
+			case RDB_SPIDERDB_DEPRECATED:
 				result = cr->m_spiderdbMinFilesToMerge;
 				logTrace(g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %d", m_minToMerge);
 				break;
@@ -1800,7 +1800,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	if (forceMergeAll) {
 		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 
-		if (m_rdb->getRdbId() == RDB_SPIDERDB) {
+		if (m_rdb->getRdbId() == RDB_SPIDERDB_DEPRECATED) {
 			minMergeFileCount = 0;
 		}
 	}
@@ -1962,7 +1962,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		}
 
 		if (mergeFileCount == 1) {
-			int logLevel = (m_rdb->getRdbId() == RDB_SPIDERDB) ? LOG_INFO : LOG_LOGIC;
+			int logLevel = (m_rdb->getRdbId() == RDB_SPIDERDB_DEPRECATED) ? LOG_INFO : LOG_LOGIC;
 			log(logLevel,"merge:attemptMerge:resuming: filename with single file merge for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
 		}
 
@@ -2791,6 +2791,7 @@ void RdbBase::generateGlobalIndex() {
 	// replace with new index
 	ScopedLock sl2(m_docIdFileIndexMtx);
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+	log(LOG_INFO, "db: Generated global index for %s", m_rdb->getDbname());
 }
 
 void RdbBase::printGlobalIndex() {

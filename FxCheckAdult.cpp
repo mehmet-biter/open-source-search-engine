@@ -298,11 +298,11 @@ bool CheckAdult::isDocAdult() {
 
 			char *mtag = m_xml->getMetaContentPointer( "keywords", 8, "name", &mtlen );
 			if( mtlen > 0 ) {
-				metaw.set(mtag, mtlen, true);
+				metaw.set(mtag, mtlen);
 			}
 			mtag = m_xml->getMetaContentPointer( "description", 11, "name", &mtlen );
 			if( mtlen > 0 ) {
-				metaw.addWords(mtag, mtlen, true);
+				metaw.addWords(mtag, mtlen);
 			}
 			if( metaw.getNumWords() ) {
 				if( !metab.set(&metaw) ) {
@@ -327,7 +327,7 @@ bool CheckAdult::isDocAdult() {
 			Bits urlb;
 			Phrases urlp;
 
-			urlw.set(m_url->getUrl(), m_url->getUrlLen(), true);
+			urlw.set(m_url->getUrl(), m_url->getUrlLen());
 			if( !urlb.set(&urlw) ) {
 				log(LOG_ERROR,"isDocAdult: Could not set bits for URL words");
 			}

@@ -149,7 +149,7 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 		if ( msg[0] == 'n' ) return g_conf.m_logTimingNet;
 		if ( msg[0] == 'q' ) return g_conf.m_logTimingQuery;
 		if ( msg[0] == 'r' ) return g_conf.m_logTimingRobots;
-		if ( msg[0] == 's' ) return g_conf.m_logTimingSpcache;
+		if ( msg[0] == 'l' ) return g_conf.m_logTimingLinkInfo;
 		return false;
 	}
 	if ( type != LOG_DEBUG ) return true;

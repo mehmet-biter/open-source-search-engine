@@ -8,6 +8,7 @@
 #include "Tagdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
+#include "utf8_convert.h"
 #include "Sections.h"
 #include "Spider.h"
 #include "SpiderColl.h"
@@ -34,6 +35,7 @@
 #include "CountryCode.h"
 #include "File.h"
 #include "Docid2Siteflags.h"
+#include "PageTemperatureRegistry.h"
 #include "UrlRealtimeClassification.h"
 #include "InstanceInfoExchange.h"
 #include "WantedChecker.h"
@@ -45,7 +47,6 @@
 #include "DocDelete.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
-#include "SpiderdbHostDelete.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -60,7 +61,6 @@ extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetAbbrTable     ( );
-extern void resetUnicode       ( );
 
 // our global instance
 Process g_process;
@@ -72,12 +72,16 @@ static const char * const g_files[] = {
 
 	//"hosts.conf",
 
-	"ucdata/kd_data.dat",
-	"ucdata/kdmap.dat",
-	"ucdata/lowermap.dat",
-	"ucdata/properties.dat",
-	"ucdata/scripts.dat",
-	"ucdata/uppermap.dat",
+	"ucdata/unicode_canonical_decomposition.dat",
+	"ucdata/unicode_general_categories.dat",
+	"ucdata/unicode_is_alphabetic.dat",
+	"ucdata/unicode_is_lowercase.dat",
+	"ucdata/unicode_is_uppercase.dat",
+	"ucdata/unicode_properties.dat",
+	"ucdata/unicode_scripts.dat",
+	"ucdata/unicode_to_lowercase.dat",
+	"ucdata/unicode_to_uppercase.dat",
+	"ucdata/unicode_wordchars.dat",
 
 	"gbstart.sh",
 	"gbconvert.sh",
@@ -232,6 +236,7 @@ bool Process::checkFiles ( const char *dir ) {
 static void heartbeatWrapper(int fd, void *state);
 static void processSleepWrapper(int fd, void *state);
 static void reloadDocid2SiteFlags(int fd, void *state);
+static void reloadPageTemperatureRegistry(int fd, void *state);
 
 
 Process::Process ( ) {
@@ -268,7 +273,7 @@ bool Process::init ( ) {
 	//   followed by titledb perhaps...
 	m_rdbs[m_numRdbs++] = g_titledb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_posdb.getRdb     ();
-	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb    ();
+	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb_deprecated();
 	m_rdbs[m_numRdbs++] = g_clusterdb.getRdb   (); 
 	m_rdbs[m_numRdbs++] = g_tagdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
@@ -277,7 +282,7 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_posdb2.getRdb    ();
-	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb   ();
+	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb_deprecated();
 	m_rdbs[m_numRdbs++] = g_clusterdb2.getRdb  ();
 	m_rdbs[m_numRdbs++] = g_linkdb2.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_tagdb2.getRdb      ();
@@ -327,6 +332,9 @@ bool Process::init ( ) {
 		return false;
 	}
 
+	if(!g_loop.registerSleepCallback(60000, NULL, reloadPageTemperatureRegistry, "Process::reloadPageTemperatureRegistry", 0))
+		return false;
+
 	// success
 	return true;
 }
@@ -365,6 +373,10 @@ void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 
 static void reloadDocid2SiteFlags(int fd, void *state) {
 	g_d2fasm.reload_if_needed();
+}
+
+static void reloadPageTemperatureRegistry(int fd, void *state) {
+	g_pageTemperatureRegistry.reload_if_needed();
 }
 
 
@@ -619,8 +631,6 @@ bool Process::shutdown2() {
 		g_docRebuildUrl.finalize();
 		g_docReindex.finalize();
 		g_docReindexUrl.finalize();
-
-		SpiderdbHostDelete::finalize();
 
 		log("gb: disabling threads");
 
@@ -947,7 +957,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// . these are records in the middle of being added to rdbs across
 	//   the cluster
 	// . saves to "addsinprogress.saving" and moves to .saved
-	// . eventually this may replace "spiderrestore.dat"
 	if (g_repair.isRepairActive()) {
 		saveAddsInProgress("repair-");
 	} else {
@@ -993,10 +1002,8 @@ void Process::resetAll ( ) {
 	g_speller         .reset();
 	g_spiderCache     .reset();
 	g_jobScheduler    .finalize();
-	g_ucUpperMap      .reset();
-	g_ucLowerMap      .reset();
-	g_ucProps         .reset();
-	g_ucScripts       .reset();
+	UnicodeMaps::unload_maps();
+	utf8_convert_finalize();
 	g_profiler        .reset();
 
 	// reset disk page caches
@@ -1013,7 +1020,7 @@ void Process::resetAll ( ) {
 	s_clusterdbQuickCache.reset();
 	s_hammerCache.reset();
 
-	resetDecompTables();
+	UnicodeMaps::unload_maps();
 	resetPageAddUrl();
 	resetHttpMime();
 	reset_iana_charset();
@@ -1021,7 +1028,7 @@ void Process::resetAll ( ) {
 	resetEntities();
 	resetQuery();
 	resetAbbrTable();
-	resetUnicode();
+	UnicodeMaps::unload_maps();
 
 	// reset other caches
 	g_dns.reset();

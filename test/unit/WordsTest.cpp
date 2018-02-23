@@ -28,3 +28,130 @@ TEST(WordsTest, VerifySize) {
 	// is that punct
 	EXPECT_TRUE(is_punct_utf8(p));
 }
+
+TEST(WordsTest, simple_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"hello");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),1);
+	}
+	{
+		strcpy(buf,"  ");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),1);
+	}
+	{
+		strcpy(buf,"hello ");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),2);
+	}
+	{
+		strcpy(buf," hello");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),2);
+	}
+	{
+		strcpy(buf,"hello world");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),3);
+	}
+	{
+		strcpy(buf,"Hello world!");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),4);
+		EXPECT_EQ(words.getWordLen(0),5);
+		EXPECT_EQ(words.getWordLen(1),1);
+		EXPECT_EQ(words.getWordLen(2),5);
+		EXPECT_EQ(words.getWordLen(3),1);
+	}
+	{
+		strcpy(buf,"Hello, world");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),3);
+		EXPECT_EQ(words.getWordLen(0),5);
+		EXPECT_EQ(words.getWordLen(1),2);
+		EXPECT_EQ(words.getWordLen(2),5);
+	}
+}
+
+TEST(WordsTest, latin1_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"Æbleflæsk og øl");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),5);
+		EXPECT_EQ(words.getWordLen(0),11);
+		EXPECT_EQ(words.getWordLen(1),1);
+		EXPECT_EQ(words.getWordLen(2),2);
+		EXPECT_EQ(words.getWordLen(3),1);
+		EXPECT_EQ(words.getWordLen(4),3);
+	}
+}
+
+TEST(WordsTest, mixed_script_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"Æbleflæsk og γιαούρτι");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),5);
+		EXPECT_EQ(words.getWordLen(0),11);
+		EXPECT_EQ(words.getWordLen(1),1);
+		EXPECT_EQ(words.getWordLen(2),2);
+		EXPECT_EQ(words.getWordLen(3),1);
+		EXPECT_EQ(words.getWordLen(4),16);
+	}
+	{
+		strcpy(buf,"Æbleflæskγιαούρτι");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),2);
+		EXPECT_EQ(words.getWordLen(0),11);
+		EXPECT_EQ(words.getWordLen(1),16);
+	}
+}
+
+TEST(WordsTest, buffer_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"Hello world");
+		Words words;
+		EXPECT_TRUE(words.set(buf,8));
+		EXPECT_EQ(words.getNumWords(),3);
+		EXPECT_EQ(words.getWordLen(0),5);
+		EXPECT_EQ(words.getWordLen(1),1);
+		EXPECT_EQ(words.getWordLen(2),2);
+	}
+}
+
+TEST(WordsTest, html_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"<p>Hello <em>world</em>!</p>");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),13);
+		EXPECT_EQ(words.getWordLen( 0),1);
+		EXPECT_EQ(words.getWordLen( 1),1);
+		EXPECT_EQ(words.getWordLen( 2),1);
+		EXPECT_EQ(words.getWordLen( 3),5);
+		EXPECT_EQ(words.getWordLen( 4),2);
+		EXPECT_EQ(words.getWordLen( 5),2);
+		EXPECT_EQ(words.getWordLen( 6),1);
+		EXPECT_EQ(words.getWordLen( 7),5);
+		EXPECT_EQ(words.getWordLen( 8),2);
+		EXPECT_EQ(words.getWordLen( 9),2);
+		EXPECT_EQ(words.getWordLen(10),4);
+		EXPECT_EQ(words.getWordLen(11),1);
+		EXPECT_EQ(words.getWordLen(12),1);
+	}
+}

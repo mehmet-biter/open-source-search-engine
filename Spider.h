@@ -264,8 +264,7 @@ void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status
 // stores one entry for each unique IP, so it tries to store
 // the entry with the earliest computed scheduled spider time, but if 
 // some times are all BEFORE the current time, it will resolve conflicts
-// by preferring those with the highest priority. Tied spider priorities
-// should be resolved by minimum hopCount probably. 
+// by preferring those with the highest priority.
 //
 // If the spidertime of the URL is overdue then evalIpLoop() will NOT add
 // it to waiting tree, but will add it to doledb directly to make it available
@@ -357,7 +356,8 @@ public:
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	Rdb *getRdb  ( ) { return &m_rdb; }
+//	Rdb *getRdb  ( ) { return &m_rdb; }
+	Rdb *getRdb_deprecated() { return &m_rdb; }
 
 	static int64_t getUrlHash48(const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
@@ -450,11 +450,7 @@ public:
 	// taken from the # of SpiderRequests.
 	uint8_t    m_pageNumInlinks;
 
-	// . this is copied from the most recent SpiderReply into here
-	// . its so XMlDoc.cpp can increment it and add it to the new
-	//   SpiderReply it adds in case there is another download error ,
-	//   like ETCPTIMEDOUT or EDNSTIMEDOUT
-	uint8_t    m_sameErrCount;
+	uint8_t    m_reservedb3;
 
 
 	uint8_t    m_version;
@@ -471,19 +467,13 @@ public:
 	// when we scan all of the SpiderRequests it has.
 	int32_t m_discoveryTime;
 
-	// Used to compare previous errcode with current errcode, for counting
-	// sameErrCode value.
-	int32_t m_prevErrCode;	// m_reservedc2;
+	int32_t m_reservedc2;
 
 	// . replace this with something we need for smart compression
 	// . this is zero if none or invalid
 	int32_t    m_contentHash32;
 
-	// . each request can have a different hop count
-	// . this is only valid if m_hopCountValid is true!
-	// . i made this a int16_t from int32_t to support m_parentLangId etc above
-	int16_t   m_hopCount;
-	
+	int16_t   m_reservedb7a;
 	uint8_t m_reservedb8;
 
 	unsigned char    m_reserved2k:1;
@@ -500,7 +490,7 @@ public:
 	// our bit flags
 	//
 
-	unsigned    m_hopCountValid:1;
+	unsigned    m_reserved2l:1;
 
 	// are we a request/reply from the add url page?
 	unsigned    m_isAddUrl:1;
@@ -607,11 +597,7 @@ public:
 	//   the priority we used!
 	char    m_priority;
 
-	// . this is copied from the most recent SpiderReply into here
-	// . its so XMlDoc.cpp can increment it and add it to the new
-	//   SpiderReply it adds in case there is another download error ,
-	//   like ETCPTIMEDOUT or EDNSTIMEDOUT
-	char    m_errCount;
+	char    m_reserved4;
 
 	// we really only need store the url for *requests* and not replies
 	char    m_url[MAX_URL_LEN+1];
@@ -778,7 +764,7 @@ public:
 	// was the page a permalink?
 	unsigned    m_isPermalink:1;
 
-	unsigned    m_reserved4a; //m_isPingServer:1;
+	unsigned    m_reserved4a;
 
 	// was it in the index when we were done?
 	unsigned    m_isIndexed:1;
@@ -813,18 +799,11 @@ public:
 
 	// was the request an injection request
 	unsigned    m_fromInjectionRequest    :1;
+	unsigned    m_fromPageReindex         :1;
 
-	unsigned    m_reserved008             :1;
 	unsigned    m_reserved009             :1;
-
-	// . was it in the index when we started?
-	// . we use this with m_isIndexed above to adjust quota counts for
-	//   this m_siteHash32 which is basically just the subdomain/host
-	//   for SpiderColl::m_quotaTable
-	unsigned    m_reserved010             :1; //m_wasIndexed
-
-	// this also pertains to m_isIndexed as well:
-	unsigned    m_reserved011             :1; //m_wasIndexedValid
+	unsigned    m_reserved010             :1;
+	unsigned    m_reserved011             :1;
 
 	// how much buf will we need to serialize ourselves?
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
@@ -891,13 +870,11 @@ int32_t getUrlFilterNum(const class SpiderRequest *sreq,
 void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
-			  int32_t *hopCount,
 			  int64_t  *spiderTimeMS ,
 			  int64_t *uh48 );
 
 key192_t makeWinnerTreeKey ( int32_t firstIp ,
 			     int32_t priority ,
-			     int32_t hopCount,
 			     int64_t spiderTimeMS ,
 			     int64_t uh48 );
 

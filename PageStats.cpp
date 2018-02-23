@@ -23,7 +23,7 @@
 #include "Msg13.h"
 #include "Msg3.h"
 #include "Mem.h"
-#include <math.h>
+#include <cmath>
 
 
 static bool printNumAbbr(SafeBuf &p, int64_t vvv) {
@@ -294,161 +294,145 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// print cache table
 	// columns are the caches
 	//
-
+	static const size_t max_caches = 20;
+	struct {
+		unsigned long hits;
+		unsigned long misses;
+		double hit_ratio; //only defined if hits+misses>0
+		unsigned long inserts;
+		unsigned long removes;
+		unsigned long max_slots;
+		unsigned long used_slots;
+		size_t max_memory;
+		size_t used_memory;
+		const char *name;
+	} cacheStatistics[max_caches];
+	//fill out the cache statistics
 	int32_t numCaches = 0;
-	const RdbCache *caches[20];
-	caches[numCaches++] = Msg13::getHttpCacheRobots();
-	caches[numCaches++] = Msg13::getHttpCacheOthers();
-	caches[numCaches++] = g_dns.getCache();
-	caches[numCaches++] = g_dns.getCacheLocal();
-	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
-
-	if ( format == FORMAT_HTML ) {
-		p.safePrintf (
-		  "<table %s>"
-		  "<tr class=hdrow>"
-		  "<td colspan=%" PRId32">"
-		  "<center><b>Caches"
-		  "</b></td></tr>\n",
-		  TABLE_STYLE,
-		  numCaches+2 );
-
-		// 1st column is empty
-		p.safePrintf ("<tr class=poo><td>&nbsp;</td>");  
+	for(auto rdbcache : {Msg13::getHttpCacheRobots(),Msg13::getHttpCacheOthers(),g_dns.getCache(),g_dns.getCacheLocal()}) {
+		cacheStatistics[numCaches].hits = rdbcache->getNumHits();
+		cacheStatistics[numCaches].misses = rdbcache->getNumMisses();
+		cacheStatistics[numCaches].inserts = rdbcache->getNumAdds();
+		cacheStatistics[numCaches].removes = rdbcache->getNumDeletes();
+		cacheStatistics[numCaches].max_slots = rdbcache->getNumTotalNodes();
+		cacheStatistics[numCaches].used_slots = rdbcache->getNumUsedNodes();
+		cacheStatistics[numCaches].max_memory = rdbcache->getMaxMem();
+		cacheStatistics[numCaches].used_memory = rdbcache->getMemOccupied();
+		cacheStatistics[numCaches].name = rdbcache->getDbname();
+		numCaches++;
 	}
-
-	for ( int32_t i = 0 ; format == FORMAT_XML && i < numCaches ; i++ ) {
-		p.safePrintf("\t<cacheStats>\n");
-		p.safePrintf("\t\t<name>%s</name>\n",caches[i]->getDbname());
-		int64_t a = caches[i]->getNumHits();
-		int64_t b = caches[i]->getNumMisses();
-		double r = 100.0 * (double)a / (double)(a+b);
-		p.safePrintf("\t\t<hitRatio>");
-		if ( a+b > 0.0 ) p.safePrintf("%.1f%%",r);
-		p.safePrintf("</hitRatio>\n");
-		p.safePrintf("\t\t<numHits>%" PRId64"</numHits>\n",a);
-		p.safePrintf("\t\t<numMisses>%" PRId64"</numMisses>\n",b);
-		p.safePrintf("\t\t<numTries>%" PRId64"</numTries>\n",a+b);
-
-		p.safePrintf("\t\t<numUsedSlots>%" PRId32"</numUsedSlots>\n",
-			     caches[i]->getNumUsedNodes());
-		p.safePrintf("\t\t<numTotalSlots>%" PRId32"</numTotalSlots>\n",
-			     caches[i]->getNumTotalNodes());
-		p.safePrintf("\t\t<bytesUsed>%" PRId32"</bytesUsed>\n",
-			     caches[i]->getMemOccupied());
-		p.safePrintf("\t\t<maxBytes>%" PRId32"</maxBytes>\n",
-			     caches[i]->getMaxMem());
-		p.safePrintf("\t\t<saveToDisk>%" PRId32"</saveToDisk>\n",
-			     (int32_t)caches[i]->useDisk());
-		p.safePrintf("\t</cacheStats>\n");
-	}
-
-	for ( int32_t i = 0 ; format == FORMAT_JSON && i < numCaches ; i++ ) {
-		p.safePrintf("\t\"cacheStats\":{\n");
-		p.safePrintf("\t\t\"name\":\"%s\",\n",caches[i]->getDbname());
-		int64_t a = caches[i]->getNumHits();
-		int64_t b = caches[i]->getNumMisses();
-		double r = 100.0 * (double)a / (double)(a+b);
-		p.safePrintf("\t\t\"hitRatio\":\"");
-		if ( a+b > 0.0 ) p.safePrintf("%.1f%%",r);
-		p.safePrintf("\",\n");
-		p.safePrintf("\t\t\"numHits\":%" PRId64",\n",a);
-		p.safePrintf("\t\t\"numMisses\":%" PRId64",\n",b);
-		p.safePrintf("\t\t\"numTries\":%" PRId64",\n",a+b);
-
-		p.safePrintf("\t\t\"numUsedSlots\":%" PRId32",\n",
-			     caches[i]->getNumUsedNodes());
-		p.safePrintf("\t\t\"numTotalSlots\":%" PRId32",\n",
-			     caches[i]->getNumTotalNodes());
-		p.safePrintf("\t\t\"bytesUsed\":%" PRId32",\n",
-			     caches[i]->getMemOccupied());
-		p.safePrintf("\t\t\"maxBytes\":%" PRId32",\n",
-			     caches[i]->getMaxMem());
-		p.safePrintf("\t\t\"saveToDisk\":%" PRId32"\n",
-			     (int32_t)caches[i]->useDisk());
-		p.safePrintf("\t},\n");
-	}
-
-
-	// do not print any more if xml or json
-	if ( format == FORMAT_XML || format == FORMAT_JSON )
-		goto skip1;
-
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		p.safePrintf("<td><b>%s</b></td>",caches[i]->getDbname() );
-	}
-	//p.safePrintf ("<td><b><i>Total</i></b></td></tr>\n" );
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hit ratio</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumHits();
-		int64_t b = caches[i]->getNumMisses();
-		double r = 100.0 * (double)a / (double)(a+b);
-		if ( a+b > 0.0 ) 
-			p.safePrintf("<td>%.1f%%</td>",r);
+	auto const winnerlist_statistics = g_spiderLoop.m_winnerListCache.query_statistics();
+	cacheStatistics[numCaches].hits = winnerlist_statistics.lookup_hits;
+	cacheStatistics[numCaches].misses = winnerlist_statistics.lookup_misses;
+	cacheStatistics[numCaches].inserts = winnerlist_statistics.inserts;
+	cacheStatistics[numCaches].removes = winnerlist_statistics.removes;
+	cacheStatistics[numCaches].max_slots = winnerlist_statistics.max_items;
+	cacheStatistics[numCaches].used_slots = winnerlist_statistics.items;
+	cacheStatistics[numCaches].max_memory = winnerlist_statistics.max_memory;
+	cacheStatistics[numCaches].used_memory = winnerlist_statistics.memory_used;
+	cacheStatistics[numCaches].name = "winnerlistcache";
+	numCaches++;
+	//calculate hit ratios
+	for(int i=0; i<numCaches; i++) {
+		auto &s = cacheStatistics[i];
+		if(s.hits+s.misses>0)
+			s.hit_ratio = 100.0*s.hits/double(s.hits+s.misses);
 		else
-			p.safePrintf("<td>--</td>");
+			s.hit_ratio = NAN;
 	}
+	
+	switch(format) {
+		case FORMAT_XML:
+			for(int32_t i = 0; i < numCaches; i++) {
+				p.safePrintf("\t<cacheStats>\n");
+				p.safePrintf("\t\t<name>%s</name>\n",cacheStatistics[i].name);
+				p.safePrintf("\t\t<hitRatio>");
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
+					p.safePrintf("%.1f%%",cacheStatistics[i].hit_ratio);
+				p.safePrintf("</hitRatio>\n");
+				p.safePrintf("\t\t<numHits>%lu</numHits>\n",cacheStatistics[i].hits);
+				p.safePrintf("\t\t<numMisses>%lu</numMisses>\n",cacheStatistics[i].misses);
+				p.safePrintf("\t\t<numTries>%lu</numTries>\n",cacheStatistics[i].hits+cacheStatistics[i].misses);
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hits</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumHits();
-		p.safePrintf("<td>%" PRId64"</td>",a);
+				p.safePrintf("\t\t<numUsedSlots>%lu</numUsedSlots>\n", cacheStatistics[i].used_slots);
+				p.safePrintf("\t\t<numTotalSlots>%lu</numTotalSlots>\n", cacheStatistics[i].max_slots);
+				p.safePrintf("\t\t<bytesUsed>%zu</bytesUsed>\n", cacheStatistics[i].used_memory);
+				p.safePrintf("\t\t<maxBytes>%zu</maxBytes>\n", cacheStatistics[i].max_memory);
+				p.safePrintf("\t</cacheStats>\n");
+			}
+			break;
+		case FORMAT_JSON:
+			for(int32_t i = 0; i < numCaches; i++) {
+				p.safePrintf("\t\"cacheStats\":{\n");
+				p.safePrintf("\t\t\"name\":\"%s\",\n", cacheStatistics[i].name);
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
+					p.safePrintf("\t\t\"hitRatio\":\"%.1f%%\",\n", cacheStatistics[i].hit_ratio);
+				p.safePrintf("\t\t\"numHits\":%lu,\n", cacheStatistics[i].hits);
+				p.safePrintf("\t\t\"numMisses\":%lu,\n", cacheStatistics[i].misses);
+				p.safePrintf("\t\t\"numTries\":%lu,\n", cacheStatistics[i].hits+cacheStatistics[i].misses);
+
+				p.safePrintf("\t\t\"numUsedSlots\":%lu,\n", cacheStatistics[i].used_slots);
+				p.safePrintf("\t\t\"numTotalSlots\":%lu,\n", cacheStatistics[i].max_slots);
+				p.safePrintf("\t\t\"bytesUsed\":%zu,\n", cacheStatistics[i].used_memory);
+				p.safePrintf("\t\t\"maxBytes\":%zu,\n", cacheStatistics[i].max_memory);
+				p.safePrintf("\t},\n");
+			}
+			break;
+		case FORMAT_HTML:
+			p.safePrintf("<table class=\"main\" width=100%%>\n");
+			p.safePrintf("<tr class=\"level1\">"
+			             "<th colspan=\"30\">"
+			             "Caches"
+			             "</th></tr>\n");
+
+			// 1st column is empty
+			p.safePrintf ("<tr><td>&nbsp;</td>");
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td><b>%s</b></td>", cacheStatistics[i].name);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>hit ratio</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++) {
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
+					p.safePrintf("<td>%.1f%%</td>", cacheStatistics[i].hit_ratio);
+				else
+					p.safePrintf("<td>--</td>");
+			}
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>hits</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].hits);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>tries</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].hits+cacheStatistics[i].misses);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>used slots</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].used_slots);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>max slots</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].max_slots);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>used bytes</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%zu</td>", cacheStatistics[i].used_memory);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>max bytes</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%zu</td>", cacheStatistics[i].max_memory);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>dropped recs</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].removes);
+
+			p.safePrintf ("</tr>\n<tr><td><b><nobr>added recs</nobr></b></td>" );
+			for(int32_t i = 0; i < numCaches; i++)
+				p.safePrintf("<td>%lu</td>", cacheStatistics[i].inserts);
+
+			// end the table now
+			p.safePrintf ( "</tr>\n</table><br><br>" );
 	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>tries</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumHits();
-		int64_t b = caches[i]->getNumMisses();
-		p.safePrintf("<td>%" PRId64"</td>",a+b);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used slots</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumUsedNodes();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max slots</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumTotalNodes();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used bytes</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getMemOccupied();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max bytes</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getMaxMem();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>dropped recs</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumDeletes();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>added recs</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->getNumAdds();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>save to disk</nobr></b></td>" );
-	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->useDisk();
-		p.safePrintf("<td>%" PRId64"</td>",a);
-	}
-
-	// end the table now
-	p.safePrintf ( "</tr>\n</table><br><br>" );
-
- skip1:
 
 	// 
 	// General Info Table
@@ -1423,13 +1407,13 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	const Rdb *rdbs[] = {
 		g_posdb.getRdb(),
 		g_titledb.getRdb(),
-		g_spiderdb.getRdb(),
 		g_doledb.getRdb() ,
 		g_tagdb.getRdb(),
 		g_clusterdb.getRdb(),
 		g_linkdb.getRdb(),
 	};
 	int32_t nr = sizeof(rdbs) / sizeof(Rdb *);
+	//TODO: sqlite: show statistics for sqlite database(s)
 
 	// print dbname
 	p.safePrintf("<tr class=poo><td>&nbsp;</td>");

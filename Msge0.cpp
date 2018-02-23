@@ -140,51 +140,58 @@ bool Msge0::launchRequests() {
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// if url is same host as the tagrec provided, just reference that!
 		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMESITE) && m_baseTagRec) {
-			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+			m_tagRecPtrs[m_n] = m_baseTagRec;
 			m_numRequests++;
 			m_numReplies++;
 			m_n++;
 			continue;
 		}
 
-		// . get the next url
-		const char *p = m_urlPtrs[m_n];
-		
 		Url url;
-		url.set(p);
-		if(isUrlBlocked(url)) {
-			//if(g_conf.m_logDebug...something...)
-			//	log("...something...: skipping tagrec lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
-			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+		url.set(m_urlPtrs[m_n]);
+		if (isUrlBlocked(url)) {
+			// skip tagrec lookup if url is blocked
+			m_tagRecPtrs[m_n] = nullptr;
 			m_numRequests++;
 			m_numReplies++;
 			m_n++;
 			continue;
 		}
 
-		// get the length
-		int32_t  plen = strlen(p);
 		// . grab a slot
 		int32_t i;
-		for ( i = 0; i < MAX_OUTSTANDING_MSGE0 ; i++ )
-			if ( ! m_used[i] ) break;
+		for (i = 0; i < MAX_OUTSTANDING_MSGE0; i++) {
+			if (!m_used[i]) {
+				break;
+			}
+		}
+
 		// sanity check
-		if ( i >= MAX_OUTSTANDING_MSGE0 ) { g_process.shutdownAbort(true); }
+		if (i >= MAX_OUTSTANDING_MSGE0) {
+			g_process.shutdownAbort(true);
+		}
+
 		// normalize the url
-		m_urls[i].set( p, plen );
+		m_urls[i].set(m_urlPtrs[m_n]);
+
 		// save the url number, "n"
-		m_ns  [i] = m_n++;
+		m_ns[i] = m_n;
+
 		// claim it
 		m_used[i] = true;
 
 		// . start it off
 		// . this will start the pipeline for this url
 		m_numRequests++;
+		m_n++;
+
 		sendMsg8a(i);
 	}
 
-	if( m_n >= m_numUrls )
+	if (m_n >= m_numUrls) {
 		return m_numRequests == m_numReplies;
+	}
+
 	return false;
 }
 

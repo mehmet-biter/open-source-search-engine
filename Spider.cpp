@@ -74,7 +74,7 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 	SafeBuf tmp;
 	SafeBuf *sb = sbarg ? sbarg : &tmp;
 
-	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB ) ) );
+	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB_SQLITE ) ) );
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
@@ -109,7 +109,6 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 	strftime ( time , 256 , "%Y%m%d-%H%M%S UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
-	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
 	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
@@ -128,7 +127,7 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
 
-	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
+	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB_SQLITE, this );
 	sb->safePrintf("shardnum=%" PRIu32" ",(uint32_t)shardNum);
 
 	sb->safePrintf("url=%s",m_url);
@@ -228,10 +227,6 @@ int32_t SpiderReply::print(SafeBuf *sbarg) const {
  * }
  */
 int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const {
-	if (row != 0) {
-		sb->safePrintf("\t\t,\n");
-	}
-
 	sb->safePrintf("\t\t{\n");
 
 	int64_t elapsedMS = 0;
@@ -247,11 +242,8 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 
 	char ipbuf[16];
 	sb->safePrintf("\t\t\t\"firstIp\": \"%s\",\n", iptoa(m_firstIp,ipbuf));
-	sb->safePrintf("\t\t\t\"errCount\": %hhd,\n", m_errCount);
-	sb->safePrintf("\t\t\t\"sameErrCount\": %hhd,\n", m_sameErrCount);
 	sb->safePrintf("\t\t\t\"urlHash48\": %" PRId64",\n", getUrlHash48());
 	sb->safePrintf("\t\t\t\"siteInLinks\": %" PRId32",\n", m_siteNumInlinks);
-	sb->safePrintf("\t\t\t\"hops\": %" PRId16",\n", m_hopCount);
 	sb->safePrintf("\t\t\t\"addedTime\": %" PRIu32",\n", m_addedTime);
 	sb->safePrintf("\t\t\t\"pageNumInLinks\": %" PRIu8",\n", m_pageNumInlinks);
 	sb->safePrintf("\t\t\t\"parentDocId\": %" PRId64"\n", getParentDocId());
@@ -268,6 +260,7 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 //	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
 	sb->safePrintf("\t\t}\n");
+	sb->safePrintf("\t\t,\n");
 
 	return sb->length();
 }
@@ -298,11 +291,8 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDo
 
 	char ipbuf[16];
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp,ipbuf) );
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_sameErrCount );
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
 	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
 	// print time format: 7/23/1971 10:45:32
 	struct tm *timeStruct ;
@@ -357,11 +347,8 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 	sb->safePrintf(" <th>ufn</th>\n");
 
 	sb->safePrintf(" <th>firstIp</th>\n");
-	sb->safePrintf(" <th>errCount</th>\n");
-	sb->safePrintf(" <th>sameErrCount</th>\n");
 	sb->safePrintf(" <th>urlHash48</th>\n");
 	sb->safePrintf(" <th>siteInlinks</th>\n");
-	sb->safePrintf(" <th>hops</th>\n");
 	sb->safePrintf(" <th>addedTime</th>\n");
 	sb->safePrintf(" <th>pageNumInLinks</th>\n");
 	sb->safePrintf(" <th>parentDocId</th>\n");
@@ -514,7 +501,7 @@ key128_t Spiderdb::makeKey ( int32_t      firstIp     ,
 // key bitmap (192 bits):
 //
 // ffffffff ffffffff ffffffff ffffffff  f=firstIp
-// pppppppp pppppppp HHHHHHHH HHHHHHHH  p=255-priority  H=hopcount
+// pppppppp pppppppp 00000000 00000000  p=255-priority
 // tttttttt tttttttt tttttttt tttttttt  t=spiderTimeMS
 // tttttttt tttttttt tttttttt tttttttt  h=urlHash48
 // hhhhhhhh hhhhhhhh hhhhhhhh hhhhhhhh 
@@ -522,7 +509,6 @@ key128_t Spiderdb::makeKey ( int32_t      firstIp     ,
 
 key192_t makeWinnerTreeKey ( int32_t firstIp ,
 			     int32_t priority ,
-			     int32_t hopCount,
 			     int64_t spiderTimeMS ,
 			     int64_t uh48 ) {
 	key192_t k;
@@ -530,11 +516,6 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 	k.n2 <<= 16;
 	k.n2 |= (255-priority);
 	k.n2 <<= 16;
-	// query reindex is still using hopcount -1...
-	if ( hopCount == -1 ) hopCount = 0;
-	if ( hopCount < 0 ) { g_process.shutdownAbort(true); }
-	if ( hopCount > 0xffff ) hopCount = 0xffff;
-	k.n2 |= hopCount;
 
 	k.n1 = spiderTimeMS;
 
@@ -547,12 +528,10 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
-			  int32_t *hopCount,
 			  int64_t  *spiderTimeMS ,
 			  int64_t *uh48 ) {
 	*firstIp = (k->n2) >> 32;
 	*priority = 255 - ((k->n2 >> 16) & 0xffff);
-	*hopCount = (k->n2 & 0xffff);
 
 	*spiderTimeMS = k->n1;
 
@@ -564,19 +543,16 @@ static void testWinnerTreeKey() {
 	int32_t priority = 123;
 	int64_t spiderTimeMS = 456789123LL;
 	int64_t uh48 = 987654321888LL;
-	int32_t hc = 4321;
-	key192_t k = makeWinnerTreeKey (firstIp,priority,hc,spiderTimeMS,uh48);
+	key192_t k = makeWinnerTreeKey (firstIp,priority,spiderTimeMS,uh48);
 	int32_t firstIp2;
 	int32_t priority2;
 	int64_t spiderTimeMS2;
 	int64_t uh482;
-	int32_t hc2;
-	parseWinnerTreeKey(&k,&firstIp2,&priority2,&hc2,&spiderTimeMS2,&uh482);
+	parseWinnerTreeKey(&k,&firstIp2,&priority2,&spiderTimeMS2,&uh482);
 	if ( firstIp != firstIp2 ) { g_process.shutdownAbort(true); }
 	if ( priority != priority2 ) { g_process.shutdownAbort(true); }
 	if ( spiderTimeMS != spiderTimeMS2 ) { g_process.shutdownAbort(true); }
 	if ( uh48 != uh482 ) { g_process.shutdownAbort(true); }
-	if ( hc != hc2 ) { g_process.shutdownAbort(true); }
 }
 
 /////////////////////////
@@ -998,7 +974,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB))
+	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB_DEPRECATED))
 		return false;
 	else {
 		delete spiderReqBuf;
@@ -1230,7 +1206,7 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 	// 2) put all the strings we got into the list of Needles
 	// 3) then generate the list of needles the SpiderRequest/url matches
 	// 4) then reduce each line to a list of needles to have, a
-	//    min/max/equal siteNumInlinks, min/max/equal hopCount,
+	//    min/max/equal siteNumInlinks
 	//    and a bitMask to match the bit flags in the SpiderRequest
 
 	// stop at first regular expression it matches
@@ -1976,32 +1952,6 @@ checkNextRule:
 			// come here if we did not match the tld
 		}
 
-		// hopcount == 20 [&&]
-		if ( *p=='h' && strncmp(p, "hopcount", 8) == 0){
-			// skip if not valid
-			if ( ! sreq->m_hopCountValid ) continue;
-			// shortcut
-			int32_t a = sreq->m_hopCount;
-			// make it point to the priority
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
 		// selector using the first time it was added to the Spiderdb
 		// added by Sam, May 5th 2015
 		if ( *p=='u' && strncmp(p,"urlage",6) == 0 ) {
@@ -2622,19 +2572,14 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 			// skip us if previous guy is better
 
-			// resort to added time if hopcount is tied
-			// . if the same check who has the most recentaddedtime
 			// . if we are not the most recent, just do not add us
-			// . no, now i want the oldest so we can do gbssDiscoveryTime and set sreq->m_discoveryTime accurately, above
-			if ((sreq->m_hopCount > prevReq->m_hopCount) ||
-				((sreq->m_hopCount == prevReq->m_hopCount) && (sreq->m_addedTime >= prevReq->m_addedTime))) {
+			if (sreq->m_addedTime >= prevReq->m_addedTime) {
 				skipUs = true;
 				break;
 			}
 
 			// TODO: for pro, base on parentSiteNumInlinks here,
-			// and hash hopcounts, but only 0,1,2,3. use 3
-			// for all that are >=3. we can also have two hashes,
+			// we can also have two hashes,
 			// m_srh and m_srh2 in the Link class, and if your
 			// new secondary hash is unique we can let you in
 			// if your parentpageinlinks is the highest of all.
@@ -2865,14 +2810,7 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	m_fakeFirstIp   = 1;
 	//m_probDocId     = probDocId;
 	m_firstIp       = firstIp;
-	m_hopCount      = 0;
 
-	// new: validate it?
-	m_hopCountValid = 1;
-
-	// its valid if root
-	Url uu; uu.set ( url );
-	if ( uu.isRoot() ) m_hopCountValid = true;
 	// too big?
 	if ( strlen(url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOLONG;
@@ -2900,11 +2838,14 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	}
 
 	m_domHash32 = hash32 ( dom , dlen );
-	// and "site"
+
 	int32_t hlen = 0;
-	const char *host = getHostFast ( url , &hlen );
-	m_siteHash32 = hash32 ( host , hlen );
-	m_hostHash32 = m_siteHash32;
+	const char *host = getHostFast(url, &hlen);
+	m_hostHash32 = hash32(host, hlen);
+
+	SiteGetter sg;
+	sg.getSite(url, nullptr, 0, 0, 0);
+	m_siteHash32 = hash32(sg.getSite(), sg.getSiteLen());
 
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return true;
@@ -2925,11 +2866,6 @@ bool SpiderRequest::setFromInject(const char *url) {
 
 bool SpiderRequest::isCorrupt() const {
 	// more corruption detection
-	if ( m_hopCount < -1 ) {
-		log(LOG_WARN, "spider: got corrupt 5 spiderRequest");
-		return true;
-	}
-
 	if ( m_dataSize > (int32_t)sizeof(SpiderRequest) ) {
 		log(LOG_WARN, "spider: got corrupt oversize spiderrequest %i", (int)m_dataSize);
 		return true;

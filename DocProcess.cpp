@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <algorithm>
+#include <arpa/inet.h>
 
 static GbThreadQueue s_docProcessFileThreadQueue;
 static GbThreadQueue s_docProcessDocThreadQueue;
@@ -42,9 +43,10 @@ struct DocProcessFileItem {
 	std::string m_lastPos;
 };
 
-DocProcessDocItem::DocProcessDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
+DocProcessDocItem::DocProcessDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
 	: m_docProcess(docProcess)
 	, m_key(key)
+	, m_firstIp(firstIp)
 	, m_lastPos(lastPos)
 	, m_xmlDoc(new XmlDoc()) {
 }
@@ -69,7 +71,7 @@ static bool docProcessDisabled() {
 	return g_hostdb.hasDeadHostCached();
 }
 
-DocProcess::DocProcess(const char *filename, bool isUrl)
+DocProcess::DocProcess(const char *filename, bool isUrl, bool hasFirstIp)
 	: m_isUrl(isUrl)
 	, m_filename(filename)
 	, m_tmpFilename(filename)
@@ -78,7 +80,8 @@ DocProcess::DocProcess(const char *filename, bool isUrl)
 	, m_pendingDocItems()
 	, m_pendingDocItemsMtx()
 	, m_pendingDocItemsCond(PTHREAD_COND_INITIALIZER)
-	, m_stop(false) {
+	, m_stop(false)
+	, m_hasFirstIp(hasFirstIp) {
 	m_tmpFilename.append(".processing");
 	m_lastPosFilename.append(".lastpos");
 }
@@ -176,13 +179,19 @@ void DocProcess::reload(int /*fd*/, void *state) {
 	s_docProcessFileThreadQueue.addItem(new DocProcessFileItem(that, lastPos));
 }
 
-DocProcessDocItem* DocProcess::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocProcessDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocProcess::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocProcessDocItem(docProcess, key, firstIp, lastPos);
+}
+
+size_t DocProcess::getPendingDocCount() {
+	ScopedLock sl(m_pendingDocItemsMtx);
+	return m_pendingDocItems.size();
 }
 
 void DocProcess::waitPendingDocCount(unsigned maxCount) {
 	ScopedLock sl(m_pendingDocItemsMtx);
 	while (!m_stop && m_pendingDocItems.size() > maxCount) {
+		logTrace(g_conf.m_logTraceDocProcess, "Waiting for max pending=%zu to fall below maxCount=%u", m_pendingDocItems.size(), maxCount);
 		pthread_cond_wait(&m_pendingDocItemsCond, &m_pendingDocItemsMtx.mtx);
 	}
 }
@@ -214,9 +223,16 @@ void DocProcess::removePendingDoc(DocProcessDocItem *docItem) {
 	pthread_cond_signal(&m_pendingDocItemsCond);
 }
 
-bool DocProcess::addKey(const std::string &key, int64_t currentFilePos) {
+bool DocProcess::hasPendingFirstIp(uint32_t firstIp) {
+	ScopedLock sl(m_pendingDocItemsMtx);
+
+	auto it = std::find_if(m_pendingDocItems.begin(), m_pendingDocItems.end(), [firstIp](const DocProcessDocItem *item) -> bool { return item->m_firstIp == firstIp; });
+	return (it != m_pendingDocItems.end());
+}
+
+bool DocProcess::addKey(const std::string &key, uint32_t firstIp, int64_t currentFilePos) {
 	logTrace(g_conf.m_logTraceDocProcess, "Processing key='%s'", key.c_str());
-	DocProcessDocItem *docItem = createDocItem(this, key, currentFilePos);
+	DocProcessDocItem *docItem = createDocItem(this, key, firstIp, currentFilePos);
 
 	if (m_isUrl) {
 		SpiderRequest sreq;
@@ -230,6 +246,7 @@ bool DocProcess::addKey(const std::string &key, int64_t currentFilePos) {
 
 		if (docId == 0) {
 			// ignore invalid docId
+			logTrace(g_conf.m_logTraceDocProcess, "Ignoring invalid docid=%" PRId64, docId);
 			return false;
 		}
 
@@ -276,17 +293,55 @@ void DocProcess::processFile(void *item) {
 
 	int64_t currentFilePos = file.tellg();
 	std::string line;
+	int64_t lastAddTimeMs = 0;
 	while (std::getline(file, line)) {
 		// ignore empty lines
 		if (line.length() == 0) {
 			continue;
 		}
 
-		std::string key = fileItem->m_docProcess->m_isUrl ? line : line.substr(0, line.find('|'));
+		std::string key;
+		std::string firstIpStr;
+		uint32_t firstIp = 0;
+
+		if (fileItem->m_docProcess->m_isUrl) {
+			key = line;
+
+			// we can't have first IP when it's a url
+			if (fileItem->m_docProcess->m_hasFirstIp) {
+				gbshutdownLogicError();
+			}
+		} else {
+			auto firstColEnd = line.find_first_of('|');
+			key = line.substr(0, firstColEnd);
+
+			if (fileItem->m_docProcess->m_hasFirstIp) {
+				auto secondColEnd = line.find_first_of('|', firstColEnd + 1);
+				firstIpStr = line.substr(firstColEnd + 1, secondColEnd - firstColEnd - 1);
+
+				in_addr addr;
+
+				if (inet_pton(AF_INET, firstIpStr.c_str(), &addr) != 1) {
+					// invalid ip
+					logTrace(g_conf.m_logTraceDocProcess, "Ignoring invalid firstIp=%s", firstIpStr.c_str());
+					continue;
+				}
+
+				firstIp = addr.s_addr;
+			}
+		}
 
 		if (foundLastPos) {
-			if (fileItem->m_docProcess->addKey(key, currentFilePos)) {
-				fileItem->m_docProcess->waitPendingDocCount(10);
+			if (fileItem->m_docProcess->m_hasFirstIp) {
+				// wait until docItem with the same firstIp is processed
+				while (!fileItem->m_docProcess->m_stop && fileItem->m_docProcess->hasPendingFirstIp(firstIp)) {
+					logTrace(g_conf.m_logTraceDocProcess, "Waiting for firstIp=%s in queue to be processed", firstIpStr.c_str());
+					fileItem->m_docProcess->waitPendingDocCount(fileItem->m_docProcess->getPendingDocCount() - 1);
+				}
+			}
+			if (fileItem->m_docProcess->addKey(key, firstIp, currentFilePos)) {
+				lastAddTimeMs = gettimeofdayInMilliseconds();
+				fileItem->m_docProcess->waitPendingDocCount(g_conf.m_docProcessMaxPending);
 			}
 		} else if (lastPosKey.compare(key) == 0) {
 			foundLastPos = true;
@@ -299,8 +354,17 @@ void DocProcess::processFile(void *item) {
 		}
 
 		currentFilePos = file.tellg();
+
+		// add delay if needed
+		if (lastAddTimeMs != 0) {
+			int64_t currentDelayMs = gettimeofdayInMilliseconds() - lastAddTimeMs;
+			if (currentDelayMs < g_conf.m_docProcessDelayMs) {
+				usleep((g_conf.m_docProcessDelayMs - currentDelayMs) * 1000);
+			}
+		}
 	}
 
+	logTrace(g_conf.m_logTraceDocProcess, "Waiting for all pending doc in queue to be processed");
 	fileItem->m_docProcess->waitPendingDocCount(0);
 
 	if (isInterrupted || fileItem->m_docProcess->m_stop) {

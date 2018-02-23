@@ -36,15 +36,19 @@ pipeline {
 						])
 					},
 					'pywebtest': {
-						checkout([
-							$class: 'GitSCM',
-							branches: [[name: '*/master']],
-							doGenerateSubmoduleConfigurations: false,
-							extensions: [[$class: 'RelativeTargetDirectory',
-							              relativeTargetDir: "${env.PYWEBTEST_DIR}"]] +
-							            [[$class: 'CleanBeforeCheckout']],
-							userRemoteConfigs: [[url: 'https://github.com/privacore/pywebtest.git']]
-						])
+						dir("${env.PYWEBTEST_DIR}") {
+							checkout resolveScm(
+								source: [
+									$class: 'GitSCMSource',
+									remote: 'https://github.com/privacore/pywebtest.git',
+									traits: [
+										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+										[$class: 'CleanBeforeCheckoutTrait']
+									]
+								],
+								targets: ["${env.BRANCH_NAME}", 'master']
+							)
+						}
 					}
 				)
 			}
@@ -100,8 +104,7 @@ pipeline {
 
 	post {
 		always {
-			sh "cd ${env.PYWEBTEST_DIR} && ./shutdown_instances.py --num-instances=1 --num-shards=1 --offset=0"
-			sh "cd ${env.PYWEBTEST_DIR} && ./shutdown_instances.py --num-instances=4 --num-shards=2 --offset=1"
+			sh "killall -u \$(whoami) -s SIGINT gb || true"
 		}
 
 		changed {

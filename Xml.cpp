@@ -3,7 +3,6 @@
 #include "Xml.h"
 
 #include "Mem.h"     // mfree(), mmalloc()
-#include "Unicode.h" // for html entities that return unicode
 #include "Titledb.h"
 #include "Words.h"
 #include "Pos.h"
@@ -599,9 +598,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, char contentType ) {
 	return true;
 }
 
-// for translating HTML entities to an iso char
-#include "Entities.h"
-
 // . replaces line-breaking html tags with 2 returns if "includeTags" is false
 // . stores tags too if "includeTags" is true
 // . returns # chars written to buf
@@ -990,12 +986,12 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					s[len] = saved;
 				}
 
-				if ( ( !wp.set(&xml, true) ) ) {
+				if ( ( !wp.set(&xml) ) ) {
 					// unable to allocate buffer
 					return false;
 				}
 			} else {
-				if ( !wp.set(this, true, i, end_node ) ) {
+				if ( !wp.set(this, i, end_node ) ) {
 					// unable to allocate buffer
 					return false;
 				}
