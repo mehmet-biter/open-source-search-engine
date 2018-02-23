@@ -9318,10 +9318,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log timing messages for spcache";
-	m->m_desc  = "Log various timing related messages.";
+	m->m_title = "log timing messages for linkinfo";
 	m->m_cgi   = "ltspc";
-	simple_m_set(Conf,m_logTimingSpcache);
+	simple_m_set(Conf,m_logTimingLinkInfo);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

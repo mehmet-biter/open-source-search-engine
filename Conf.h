@@ -425,7 +425,7 @@ class Conf {
 	bool m_logTimingDb;
 	bool m_logTimingNet;
 	bool m_logTimingQuery;
-	bool m_logTimingSpcache;
+	bool m_logTimingLinkInfo;
 	bool m_logTimingRobots;
 
 	// programmer reminders.

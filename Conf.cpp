@@ -272,7 +272,7 @@ Conf::Conf ( ) {
 	m_logTimingDb = false;
 	m_logTimingNet = false;
 	m_logTimingQuery = false;
-	m_logTimingSpcache = false;
+	m_logTimingLinkInfo = false;
 	m_logTimingRobots = false;
 	m_logReminders = false;
 	memset(m_redirect, 0, sizeof(m_redirect));

@@ -473,6 +473,12 @@ public:
 	uint64_t m_ipStartTime;
 	uint64_t m_ipEndTime;
 
+	int64_t m_getLinkInfoStartTime;
+	int64_t m_getLinkInfoEndTime;
+
+	int64_t m_getSiteLinkInfoStartTime;
+	int64_t m_getSiteLinkInfoEndTime;
+
 	bool m_updatedMetaData;
 
 	void copyFromOldDoc ( class XmlDoc *od ) ;

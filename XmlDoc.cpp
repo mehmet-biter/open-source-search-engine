@@ -151,6 +151,12 @@ void XmlDoc::reset ( ) {
 	m_ipStartTime = 0;
 	m_ipEndTime   = 0;
 
+	m_getLinkInfoStartTime = 0;
+	m_getLinkInfoEndTime = 0;
+
+	m_getSiteLinkInfoStartTime = 0;
+	m_getSiteLinkInfoEndTime = 0;
+
 	m_isImporting = false;
 
 	m_printedMenu = false;
@@ -6933,11 +6939,17 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 
 	setStatus ( "getting site link info" );
 
-	if ( m_siteLinkInfoValid )
-	{
-		//return msg25.m_linkInfo;
+	if ( m_siteLinkInfoValid ) {
+		if (m_getSiteLinkInfoEndTime == 0) {
+			m_getSiteLinkInfoEndTime = gettimeofdayInMilliseconds();
+
+			log(LOG_TIMING, "linkinfo: Got site link info. Took %" PRId64" msec", m_getSiteLinkInfoEndTime - m_getSiteLinkInfoStartTime);
+		}
+
 		return (LinkInfo *)m_mySiteLinkInfoBuf.getBufStart();
 	}
+
+	m_getSiteLinkInfoStartTime = gettimeofdayInMilliseconds();
 
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 )
@@ -7770,6 +7782,8 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	//   stuff in this collection, but if doing it in another collection
 	//   the msg25 will look up the root in that collection...
 	if ( ! m_calledMsg25 ) {
+		m_getLinkInfoStartTime = gettimeofdayInMilliseconds();
+
 		// get this
 		int32_t lastUpdateTime = getTimeGlobal();
 
@@ -7856,6 +7870,12 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 
 	// we should free it
 	m_freeLinkInfo1 = true;
+
+	if (m_getLinkInfoEndTime == 0) {
+		m_getLinkInfoEndTime = gettimeofdayInMilliseconds();
+
+		log(LOG_TIMING, "linkinfo: Got link info. Took %" PRId64" msec", m_getLinkInfoEndTime - m_getLinkInfoStartTime);
+	}
 
 	// this can not be NULL!
 	if ( ! ptr_linkInfo1 || size_linkInfo1 <= 0 ) {
