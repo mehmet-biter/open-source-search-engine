@@ -1480,9 +1480,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;
-	int32_t requestNum = msg8aState->m_requestNum;
-	key128_t startKey = msg8aState->m_startKey;
-	key128_t endKey = msg8aState->m_endKey;
 	mdelete( msg8aState, sizeof(*msg8aState), "msg8astate" );
 	delete msg8aState;
 
@@ -1491,14 +1488,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	// error?
 	if ( g_errno ) {
 		msg8a->m_errno = g_errno;
-	} else {
-		log( LOG_DEBUG, "tagdb: adding key=%s to cache", KEYSTR(&startKey, sizeof(startKey)) );
-
-		// only add to cache when we don't have error for this reply
-		RdbList *list = &(msg8a->m_tagRec->m_lists[requestNum]);
-
-		/// @todo hack to get addList working (verify if there will be issue)
-		list->setLastKey((char*)&endKey);
 	}
 
 	msg8a->m_replies++;
