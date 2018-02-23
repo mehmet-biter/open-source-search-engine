@@ -2845,10 +2845,7 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 
 	SiteGetter sg;
 	sg.getSite(url, nullptr, 0, 0, 0);
-
-	int32_t slen = 0;
-	const char *site = sg.getSite();
-	m_siteHash32 = hash32(site, slen);
+	m_siteHash32 = hash32(sg.getSite(), sg.getSiteLen());
 
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return true;
