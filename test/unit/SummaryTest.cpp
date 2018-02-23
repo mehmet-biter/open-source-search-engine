@@ -32,7 +32,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	url.set(urlStr);
 
 	Sections sections;
-	ASSERT_TRUE(sections.set(&words, &bits, &url, "", CT_HTML));
+	ASSERT_TRUE(sections.set(&words, &bits, &url, CT_HTML));
 
 	Query query;
 	ASSERT_TRUE(query.set2(queryStr, langEnglish, 1.0, 1.0, nullptr, false, true, ABS_MAX_QUERY_TERMS));
