@@ -114,7 +114,7 @@ public:
 	int32_t m_senta;
 	int32_t m_sentb;
 
-	Section *m_nextSent;
+	Section *m_nextSentence;
 
 	// hash of this tag's baseHash and all its parents baseHashes combined
 	uint32_t  m_tagHash;
@@ -186,7 +186,6 @@ private:
 
 	void setNextBrotherPtrs ( bool setContainer ) ;
 
-	// this is used by Events.cpp Section::m_nextSent
 	void setNextSentPtrs();
 
 	static void printFlags(SafeBuf *sbuf , const Section *sn );
@@ -261,7 +260,7 @@ private:
 public:
 	// kinda like m_rootSection, the first sentence section that occurs
 	// in the document, is NULL iff no sentences in document
-	Section *m_firstSent;
+	Section *m_firstSentence;
 };
 
 #endif // GB_SECTIONS_H

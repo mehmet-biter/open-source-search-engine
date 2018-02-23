@@ -35,7 +35,7 @@ void Sections::reset() {
 	m_lastSection      = NULL;
 	m_lastAdded        = NULL;
 	m_nw = 0;
-	m_firstSent = NULL;
+	m_firstSentence = NULL;
 	m_sectionPtrs = NULL;
 	
 	// Coverity
@@ -2218,7 +2218,7 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 
 void Sections::setNextSentPtrs ( ) {
 	// kinda like m_rootSection
-	m_firstSent = NULL;
+	m_firstSentence = NULL;
 
 	Section *finalSec = NULL;
 
@@ -2233,17 +2233,17 @@ void Sections::setNextSentPtrs ( ) {
 		}
 
 		// first one?
-		if ( ! m_firstSent ) {
-			m_firstSent = sk;
+		if ( ! m_firstSentence ) {
+			m_firstSentence = sk;
 		}
 	}
 
 	Section *lastSent = NULL;
 
-	// now set "m_nextSent" of each section
+	// now set "m_nextSentence" of each section
 	for ( Section *sk = finalSec ; sk ; sk = sk->m_prev ) {
 		// set this
-		sk->m_nextSent = lastSent;
+		sk->m_nextSentence = lastSent;
 
 		// need sentence
 		if ( ! ( sk->m_flags & SEC_SENTENCE ) ) {

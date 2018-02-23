@@ -3530,9 +3530,9 @@ static bool setLangVec ( Words *words ,
 
 	// get first sentence in doc
 	Section *si = NULL;
-	if ( ss ) si = ss->m_firstSent;
+	if ( ss ) si = ss->m_firstSentence;
 	// scan the sentence sections and or in the bits we should
-	for ( ; si ; si = si->m_nextSent ) {
+	for ( ; si ; si = si->m_nextSentence ) {
 		// reset vec
 		int64_t bits = LANG_BIT_MASK;
 		// get lang 64 bit vec for each wid in sentence
@@ -20238,10 +20238,10 @@ bool getDensityRanks ( const int64_t *wids ,
 
 	// scan the sentences if we got those
 	Section *ss = NULL;
-	if ( sections ) ss = sections->m_firstSent;
+	if ( sections ) ss = sections->m_firstSentence;
 	// sanity
 	//if ( sections && wordStart != 0 ) { g_process.shutdownAbort(true); }
-	for ( ; ss ; ss = ss->m_nextSent ) {
+	for ( ; ss ; ss = ss->m_nextSentence ) {
 		// count of the alnum words in sentence
 		int32_t count = ss->m_alnumPosB - ss->m_alnumPosA;
 		// start with one word!
