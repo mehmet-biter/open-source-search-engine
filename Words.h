@@ -15,10 +15,6 @@
 // make sure it does not slow us down!!
 #define WORDS_LOCALBUFSIZE 80
 
-char *getFieldValue ( char *s ,int32_t  slen, const char *field , int32_t *valueLen ) ;
-
-unsigned char getCharacterLanguage ( const char *utf8Char ) ;
-
 class Xml;
 
 
