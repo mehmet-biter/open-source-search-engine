@@ -11,6 +11,7 @@ UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_is_alph
 UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_is_uppercase_map;
 UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_is_lowercase_map;
 UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_wordchars_map;
+UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_is_ignorable_map;
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_uppercase_map;
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_lowercase_map;
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_canonical_decomposition_map;
@@ -45,7 +46,8 @@ bool UnicodeMaps::load_maps(const char *dir, const char **errstr) {
 	       load_map(&g_unicode_general_category_map,dir,"unicode_general_categories.dat",errstr) &&
 	       load_map(&g_unicode_properties_map,dir,"unicode_properties.dat",errstr) &&
 	       load_map(&g_unicode_wordchars_map,dir,"unicode_wordchars.dat",errstr) &&
-	       load_map(&g_unicode_is_alphabetic_map,dir,"unicode_is_alphabetic.dat",errstr) &&
+	       load_map(&g_unicode_wordchars_map,dir,"unicode_wordchars.dat",errstr) &&
+	       load_map(&g_unicode_is_ignorable_map,dir,"unicode_is_ignorable.dat",errstr) &&
 	       load_map(&g_unicode_is_uppercase_map,dir,"unicode_is_uppercase.dat",errstr) &&
 	       load_map(&g_unicode_is_lowercase_map,dir,"unicode_is_lowercase.dat",errstr) &&
 	       load_map(&g_unicode_uppercase_map,dir,"unicode_to_uppercase.dat",errstr) &&
@@ -60,6 +62,7 @@ void UnicodeMaps::unload_maps() {
 	g_unicode_general_category_map.clear();
 	g_unicode_properties_map.clear();
 	g_unicode_wordchars_map.clear();
+	g_unicode_is_ignorable_map.clear();
 	g_unicode_is_alphabetic_map.clear();
 	g_unicode_is_uppercase_map.clear();
 	g_unicode_is_lowercase_map.clear();

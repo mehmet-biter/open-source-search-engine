@@ -12,6 +12,7 @@ extern FullMap<bool>                        g_unicode_is_alphabetic_map;
 extern FullMap<bool>                        g_unicode_is_uppercase_map;
 extern FullMap<bool>                        g_unicode_is_lowercase_map;
 extern FullMap<bool>                        g_unicode_wordchars_map;
+extern FullMap<bool>                        g_unicode_is_ignorable_map;
 extern SparseMap<UChar32>                   g_unicode_uppercase_map;
 extern SparseMap<UChar32>                   g_unicode_lowercase_map;
 extern SparseMap<UChar32>                   g_unicode_canonical_decomposition_map;
@@ -66,6 +67,10 @@ static inline UChar32 to_lower(UChar32 c) {
 
 static inline bool is_wordchar(UChar32 c) {
 	return g_unicode_wordchars_map.lookup2(c);
+}
+
+static inline bool is_ignorable(UChar32 c) {
+	return g_unicode_is_ignorable_map.lookup2(c);
 }
 
 static inline bool is_alfanumeric(UChar32 c) {

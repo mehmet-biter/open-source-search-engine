@@ -17,7 +17,7 @@ last_codepoint = max(UnicodeData.data.keys())
 print "Last codepoint: %d"%last_codepoint
 
 def is_interesting(codepoint):
-	return codepoint in [0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083]
+	return codepoint in [0x00A0, 0x00AD, 0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083]
 
 ## Generate codepoint->script mapping
 script_name_to_code_mapping = {
@@ -223,6 +223,7 @@ with open("unicode_properties.dat","w") as f:
 	for codepoint in range(0,last_codepoint+1):
 		if codepoint in UnicodeData.data:
 			cpi = UnicodeData.data[codepoint]
+			if is_interesting(codepoint): print "U+%04X: props: %s"%(codepoint,cpi.props)
 			prop_bits = 0
 			for p in cpi.props:
 				if p in property_to_bit_mapping:
@@ -314,6 +315,27 @@ with open("unicode_wordchars.dat","w") as f:
 			f.write('\0')
 print "Done."
 
+
+#ignorable codepoints. used in conjunction with is_alfanum and script checks. If a codepoint is ignoreable then it can be skipped or included or whatever. It doesn't matter.
+print "Generating unicode_is_ignorable.dat"
+with open("unicode_is_ignorable.dat","w") as f:
+	for codepoint in range(0,last_codepoint+1):
+		is_ignorable = False
+		if codepoint in UnicodeData.data:
+			cpi = UnicodeData.data[codepoint]
+			if "Default_Ignorable_Code_Point" in cpi.derived_core_props:
+				is_ignorable = True
+			else:
+				is_ignorable = False
+		else:
+			is_ignorable = False #missing codepoint
+		if is_interesting(codepoint): print "U+%04X: '%s' : is_ignorable=%s"%(codepoint,unichr(codepoint),is_ignorable)
+		if is_ignorable:
+			f.write('\1')
+		else:
+			f.write('\0')
+				
+print "Done"
 
 print "Generating unicode_is_alphabetic.dat"
 with open("unicode_is_alphabetic.dat","w") as f:

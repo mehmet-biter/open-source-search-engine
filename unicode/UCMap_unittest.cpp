@@ -98,6 +98,19 @@ int main() {
 	}
 	
 	{
+		UnicodeMaps::FullMap<bool> m;
+		assert(m.load("unicode_is_ignorable.dat"));
+		assert(!m.lookup2('A'));
+		assert(!m.lookup2(' '));
+		assert(!m.lookup2('9'));
+		assert(!m.lookup2(0x00E6)); //æ
+		assert(m.lookup2(0x00AD)); //soft hyphen
+		assert(m.lookup2(0x034F)); //combining grapheme joiner
+		assert(m.lookup2(0x2064)); //invisible plus
+		assert(!m.lookup2(0x0306)); //combining breve
+	}
+	
+	{
 		UnicodeMaps::SparseMap<UChar32> m;
 		assert(m.load("unicode_to_lowercase.dat"));
 		{
