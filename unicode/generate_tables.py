@@ -16,6 +16,9 @@ last_codepoint = max(UnicodeData.data.keys())
 
 print "Last codepoint: %d"%last_codepoint
 
+def is_interesting(codepoint):
+	return codepoint in [0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083]
+
 ## Generate codepoint->script mapping
 script_name_to_code_mapping = {
 	"Adlam":1,
@@ -295,18 +298,16 @@ with open("unicode_wordchars.dat","w") as f:
 			cpi = UnicodeData.data[codepoint]
 			if "Alphabetic" in cpi.derived_core_props or \
 			   "Grapheme_Extend" in cpi.derived_core_props:
-				#if codepoint<1024*9: print "U+%04X: '%s' = true"%(codepoint,unichr(codepoint))
 				is_wordchar = True
 			elif cpi.general_category=='Nd' or \
 			     cpi.general_category=='Nl' or \
 			     cpi.general_category=='No':
 				is_wordchar = True
 			else:
-				#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
 				is_wordchar = False
 		else:
-			#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
 			is_wordchar = False #missing codepoint
+		if is_interesting(codepoint): print "U+%04X: '%s' : wordchar=%s"%(codepoint,unichr(codepoint),is_wordchar)
 		if is_wordchar:
 			f.write('\1')
 		else:
@@ -389,4 +390,38 @@ with open("unicode_canonical_decomposition.dat","w") as f:
 			f.write(struct.pack("@I",len(cpi.decomposition)))
 			for decomposition_codepoint in cpi.decomposition:
 				f.write(struct.pack("@I",decomposition_codepoint))
+print "Done"
+
+
+#findx-specific decomposition
+#This is used for decomposing codepoints, then examining which combining marks should be removed, and then composing again.
+#This includes the canonical and compatible decompositions, except:
+#  - compatibility-decompositions to a single codepoint, eg. microsign μ (U+00B5) ->  u (U+03BC),
+#  - any decomposition that doesn't result in at least one combining mark/diacritic
+#  - isn't alphabetic
+#The other marks categories:
+#  - "Mc" are spacing marks and mostly used for vowel signs.
+#  - "Me" enclosing marks cyrillic hundred/thousand/million/... modifiers to letters apparently used in church slavonic, or they are enclosing circle/diamond/square/...
+def any_combining_marks(decomposition):
+	for codepoint in decomposition:
+		if codepoint in UnicodeData.data and UnicodeData.data[codepoint].general_category=="Mn":
+			return True #nonspacing mark
+	return False
+
+print "Generating unicode_combining_mark_decomposition.dat"
+with open("unicode_combining_mark_decomposition.dat","w") as f:
+	for codepoint,cpi in UnicodeData.data.iteritems():
+		if "Alphabetic" in cpi.derived_core_props and cpi.decomposition and len(cpi.decomposition)>1:
+			generate_decomposition = False
+			if cpi.decomposition_type==None: #canonical
+				generate_decomposition = True
+			elif cpi.decomposition_type=="compat":
+				if any_combining_marks(cpi.decomposition):
+					generate_decomposition = True
+			if generate_decomposition:
+				if is_interesting(codepoint): print "U+%04X: '%s' : decompose"%(codepoint,unichr(codepoint))
+				f.write(struct.pack("@I",codepoint))
+				f.write(struct.pack("@I",len(cpi.decomposition)))
+				for decomposition_codepoint in cpi.decomposition:
+					f.write(struct.pack("@I",decomposition_codepoint))
 print "Done"

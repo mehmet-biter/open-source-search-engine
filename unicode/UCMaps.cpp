@@ -14,6 +14,7 @@ UnicodeMaps::FullMap<bool>                        UnicodeMaps::g_unicode_wordcha
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_uppercase_map;
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_lowercase_map;
 UnicodeMaps::SparseMap<UChar32>                   UnicodeMaps::g_unicode_canonical_decomposition_map;
+UnicodeMaps::SparseBiMap<UChar32>                 UnicodeMaps::g_unicode_combining_mark_decomposition_map;
 
 
 namespace {
@@ -49,7 +50,8 @@ bool UnicodeMaps::load_maps(const char *dir, const char **errstr) {
 	       load_map(&g_unicode_is_lowercase_map,dir,"unicode_is_lowercase.dat",errstr) &&
 	       load_map(&g_unicode_uppercase_map,dir,"unicode_to_uppercase.dat",errstr) &&
 	       load_map(&g_unicode_lowercase_map,dir,"unicode_to_lowercase.dat",errstr) &&
-	       load_map(&g_unicode_canonical_decomposition_map,dir,"unicode_canonical_decomposition.dat",errstr);
+	       load_map(&g_unicode_canonical_decomposition_map,dir,"unicode_canonical_decomposition.dat",errstr) &&
+	       load_map(&g_unicode_combining_mark_decomposition_map,dir,"unicode_combining_mark_decomposition.dat",errstr);
 }
 
 
@@ -64,4 +66,5 @@ void UnicodeMaps::unload_maps() {
 	g_unicode_uppercase_map.clear();
 	g_unicode_lowercase_map.clear();
 	g_unicode_canonical_decomposition_map.clear();
+	g_unicode_combining_mark_decomposition_map.clear();
 }

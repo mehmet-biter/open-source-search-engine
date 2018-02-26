@@ -78,6 +78,49 @@ private:
 };
 
 
+//sparse map, but also provides reversemapping. Limited to to entries in Entry.values[]
+template<class V>
+class SparseBiMap {
+	SparseBiMap(const SparseBiMap&) = delete;
+	SparseBiMap& operator=(const SparseBiMap&) = delete;
+public:
+	SparseBiMap() : m(), mmap_ptr(nullptr), bytes(0) {}
+	~SparseBiMap() { clear(); }
+	
+	void clear();
+	
+	bool empty() const { return m.empty(); }
+	size_t size() const { return m.size(); }
+	
+	struct Entry {
+		uint32_t count;
+		V values[];
+	};
+	const Entry *lookup(UChar32 c) const {
+		auto iter = m.find(c);
+		if(iter!=m.end())
+			return iter->second;
+		else
+			return nullptr;
+	}
+	UChar32 reverse_lookup(UChar32 c0, UChar32 c1) const {
+		uint64_t x = (((uint64_t)c0)<<32) | c1;
+		auto iter = m2.find(x);
+		if(iter!=m2.end())
+			return iter->second;
+		else
+			return (V)0;
+	}
+	
+	bool load(const char *filename);
+private:
+	std::map<UChar32,const Entry*> m;
+	std::map<uint64_t,UChar32> m2;
+	void *mmap_ptr;
+	size_t bytes;
+};
+
+
 } //namespace
 
 #endif
