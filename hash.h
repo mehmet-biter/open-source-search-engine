@@ -149,7 +149,7 @@ static inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t s
 		//	continue;
 		//}
 		// otherwise, lower case it
-		x = utf8Decode((char *)p);
+		x = utf8Decode(p);
 		// convert to lower
 		y = UnicodeMaps::to_lower(x);
 		// back to utf8
@@ -199,7 +199,7 @@ static inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  )
 			continue;
 		}
 		// otherwise, lower case it
-		x = utf8Decode((char *)p);
+		x = utf8Decode(p);
 		// convert to lower
 		y = UnicodeMaps::to_lower(x);
 		// back to utf8
@@ -251,7 +251,7 @@ static inline uint64_t hash64Lower_utf8_cont ( const char *p,
 		}
 
 		// otherwise, lower case it
-		x = utf8Decode((char *)p);
+		x = utf8Decode(p);
 
 		// convert to lower
 		y = UnicodeMaps::to_lower(x);
@@ -330,7 +330,7 @@ static inline uint64_t hash64Lower_utf8 ( const char *p ) {
 		y = UnicodeMaps::to_lower(x);
 		// back to utf8
 		char tmp[4];
-		char ncs = utf8Encode ( y , (char *)tmp );
+		char ncs = utf8Encode(y, tmp);
 		// sanity check
 		if ( ncs > 4 ) { gbshutdownAbort(true); }
 		// i've seen this happen for 4 byte char =
