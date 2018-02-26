@@ -80,7 +80,7 @@ bool Matches::isMatchableTerm(const QueryTerm *qt) const {
 	return true;
 }
 
-void Matches::setQuery ( Query *q ) { 
+void Matches::setQuery(const Query *q) {
 	reset();
 	// save it
 	m_q       = q;

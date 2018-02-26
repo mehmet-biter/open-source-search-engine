@@ -25,7 +25,7 @@ public:
 
 	void setTitle(const std::string &title);
 
-	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, Query *query, LinkInfo *linkInfo, Url *firstUrl,
+	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, const Query *query, LinkInfo *linkInfo, const Url *firstUrl,
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
 				   uint8_t langId );
 

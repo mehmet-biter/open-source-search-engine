@@ -74,7 +74,7 @@ class Matches {
 
  public:
 
-	void setQuery ( Query *q );
+	void setQuery(const Query *q);
 
 	bool set( Words *bodyWords, Phrases *bodyPhrases,
 			  Sections *bodySections, Bits *bodyBits, Pos *bodyPos, Xml *xml,
@@ -122,7 +122,7 @@ private:
 	int32_t      m_qtableWordNums [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	char      m_qtableFlags    [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	int32_t      m_numSlots;
-	Query    *m_q;
+	const Query *m_q;
 	int32_t      m_numAlnums;
 
 	int32_t m_qwordAllocSize;
