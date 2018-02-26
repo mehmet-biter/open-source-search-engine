@@ -434,7 +434,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 
 		// who is the winning match?
 		maxm = &matches->getMatch(maxi);
-		Words *ww = maxm->m_words;
+		const Words *ww = maxm->m_words;
 
 		// we now use "m_swbits" for the summary bits since they are
 		// of size sizeof(swbit_t), a int16_t at this point
@@ -627,7 +627,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	int32_t matchWordNum = m->m_wordNum;
 
 	// what Words/Pos/Bits classes is this match in?
-	Words *words = m->m_words;
+	const Words *words = m->m_words;
 	Section **sp = NULL;
 	int32_t *pos = m->m_pos->m_pos;
 
