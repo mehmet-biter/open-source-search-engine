@@ -215,22 +215,7 @@ class Words {
 		if ( m_wordIds[n] == 0LL ) {
 			return false;
 		}
-
-		const char *p = m_words[n];
-		const char *pend = p + m_wordLens[n];
-		char cs;
-		for ( ; p < pend; p += cs ) {
-			cs = getUtf8CharSize( p );
-			if ( is_digit( *p ) ) {
-				continue;
-			}
-
-			if ( is_lower_utf8( p ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		return is_upper_utf8_string(m_words[n], m_words[n]+m_wordLens[n]);
 	}
 
 	bool isCapitalized( int32_t n ) const {
