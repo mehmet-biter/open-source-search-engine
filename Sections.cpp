@@ -16,6 +16,7 @@
 #include "Bits.h"
 #include "sort.h"
 #include "Abbreviations.h"
+#include "StopWords.h"
 #include "Process.h"
 #include "Posdb.h"
 
@@ -2968,7 +2969,7 @@ bool Sections::setHeadingBit ( ) {
 				continue;
 			}
 			// skip stop words
-			if ( m_words->isStopWord(i) ) continue;
+			if(isStopWord(m_wptrs[i], m_wlens[i], m_wids[i])) continue;
 			// . skip short words
 			// . November 4<sup>th</sup> for facebook.com
 			if ( m_wlens[i] <= 2 ) continue;

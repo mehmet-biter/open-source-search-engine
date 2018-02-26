@@ -11,6 +11,7 @@
 #include "HttpMime.h"
 #include "Linkdb.h"
 #include "TitleSummaryCodepointFilter.h"
+#include "StopWords.h"
 #include "Process.h"
 #include "Conf.h"
 #include "Xml.h"
@@ -1040,7 +1041,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
 			// skip stop words
-			if ( w->isQueryStopWord( j, langId ) ) {
+			if(isQueryStopWord(w->getWord(j), w->getWordLen(i), w->getWordId(i), langId)) {
 				continue;
 			}
 

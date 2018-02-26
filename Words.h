@@ -8,7 +8,6 @@
 #define GB_WORDS_H
 
 #include "max_words.h"
-#include "StopWords.h"
 #include "XmlNode.h"
 #include <inttypes.h>
 
@@ -99,14 +98,6 @@ class Words {
 	// . this is only for alnum "words"
 	int64_t getWordId( int32_t n ) const {
 		return m_wordIds [n];
-	}
-
-	bool isStopWord ( int32_t n ) const {
-		return ::isStopWord( m_words[n], m_wordLens[n], m_wordIds[n] );
-	}
-
-	bool isQueryStopWord ( int32_t n , int32_t langId ) const {
-		return ::isQueryStopWord( m_words[n], m_wordLens[n], m_wordIds[n], langId );
 	}
 
 	// . how many quotes in the nth word?
