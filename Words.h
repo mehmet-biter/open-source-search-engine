@@ -23,8 +23,6 @@ unsigned char getCharacterLanguage ( const char *utf8Char ) ;
 class Xml;
 
 
-#define NUM_LANGUAGE_SAMPLES 1000
-
 // this bit is set in the tag id to indicate a back tag
 #define BACKBIT     ((nodeid_t)0x8000)
 #define BACKBITCOMP ((nodeid_t)0x7fff)
