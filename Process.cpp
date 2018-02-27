@@ -620,7 +620,7 @@ bool Process::shutdown2() {
 	if (m_try == 0) {
 		InstanceInfoExchange::finalize();
 
-		finalizeRealtimeUrlClassification();
+		g_urlRealtimeClassification.finalize();
 
 		WantedChecker::finalize();
 

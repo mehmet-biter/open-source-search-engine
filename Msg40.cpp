@@ -1460,7 +1460,7 @@ struct UrlClassificationContext {
 
 //start classifying the URLs of the results
 bool Msg40::submitUrlRealtimeClassification() {
-	if(!realtimeUrlClassificationWorks()) {
+	if(!g_urlRealtimeClassification.realtimeUrlClassificationWorks()) {
 		log(LOG_DEBUG,"Bypassing URL realtime classification because it is diabled or not working");
 		return true; //done
 	}
@@ -1479,13 +1479,11 @@ bool Msg40::submitUrlRealtimeClassification() {
 			std::string url(m->m_r->ptr_ubuf,m->m_r->size_ubuf);
 			UrlClassificationContext *ucc = new UrlClassificationContext(this,i);
 			incrementRealtimeClassificationsStarted();
-			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc)) {
-				if(g_conf.m_logTraceUrlClassification)
-					log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
+			if(g_urlRealtimeClassification.classifyUrl(url.c_str(),&urlClassificationCallback0,ucc)) {
+				logTrace(g_conf.m_logTraceUrlClassification, "URL classification of '%s' started", url.c_str());
 				num_started++;
 			} else {
-				if(g_conf.m_logTraceUrlClassification)
-					log(LOG_TRACE,"URL classification of '%s' NOT started",url.c_str());
+				logTrace(g_conf.m_logTraceUrlClassification, "URL classification of '%s' NOT started", url.c_str());
 				incrementRealtimeClassificationsCompleted();
 				delete ucc;
 			}
@@ -1498,10 +1496,7 @@ bool Msg40::submitUrlRealtimeClassification() {
 	{
 		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
 		m_realtimeClassificationsSubmitted = false;
-		if(m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted)
-			done = true;
-		else
-			done = false;
+		done = (m_numRealtimeClassificationsCompleted == m_numRealtimeClassificationsStarted);
 	}
 	
 	return done;

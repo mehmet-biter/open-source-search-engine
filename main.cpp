@@ -1445,7 +1445,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	initializeRealtimeUrlClassification();
+	g_urlRealtimeClassification.initialize();
 	
 	if(!WantedChecker::initialize())
 		return 0;
