@@ -142,7 +142,7 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 			}
 			return false;
 		case url_match_queryparam:
-			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != NULL) {
+			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != nullptr) {
 				// not the most efficient, but there is already parsing logic for query parameter in UrlParser
 				auto queryMatches = urlParser.matchQueryParam(UrlComponent::Matcher(m_param->m_name.c_str()));
 				if (m_param->m_value.empty()) {
@@ -159,7 +159,7 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 		case url_match_path:
 			return matchStringPrefix(m_str->m_str, url.getPath(), url.getPathLenWithCgi());
 		case url_match_pathparam:
-			if (strncasestr(url.getPath(), m_param->m_name.c_str(), url.getPathLen()) != NULL) {
+			if (strncasestr(url.getPath(), m_param->m_name.c_str(), url.getPathLen()) != nullptr) {
 				// not the most efficient, but there is already parsing logic for path parameter in UrlParser
 				auto pathParamMatches = urlParser.matchPathParam(UrlComponent::Matcher(m_param->m_name.c_str()));
 				if (m_param->m_value.empty()) {
@@ -173,6 +173,8 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 				}
 			}
 			break;
+		case url_match_pathpartial:
+			return (strncasestr(url.getPath(), m_str->m_str.c_str(), url.getPathLen()) != nullptr);
 		case url_match_regex:
 			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() && matchString(m_regex->m_domain, url.getDomain(), url.getDomainLen()))) {
 				return m_regex->m_regex.match(url.getUrl());
@@ -228,6 +230,10 @@ void UrlMatch::logMatch(const Url &url) const {
 		case url_match_pathparam:
 			type = "pathparam";
 			value = m_param->m_name.c_str();
+			break;
+		case url_match_pathpartial:
+			type = "pathpartial";
+			value = m_str->m_str.c_str();
 			break;
 		case url_match_regex:
 			type = "regex";

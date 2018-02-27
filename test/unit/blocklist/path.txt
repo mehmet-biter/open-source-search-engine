@@ -1,4 +1,5 @@
 path    /wp-admin/
+pathpartial	/wishlist/index/add/
 file	wp-login.php
 regex   *   https?://[^/]+/file1.html
 queryparam	url

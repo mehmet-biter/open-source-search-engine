@@ -282,6 +282,9 @@ bool UrlMatchList::load() {
 					} else if (firstColEnd == 9 && memcmp(line.data(), "pathparam", 9) == 0) {
 						// path param
 						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_pathparam, col2, col3)));
+					} else if (firstColEnd == 11 && memcmp(line.data(), "pathpartial", 11) == 0) {
+						// path
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_pathpartial, col2)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;

@@ -14,6 +14,7 @@ enum urlmatchtype_t {
 	url_match_hostsuffix,
 	url_match_path,
 	url_match_pathparam,
+	url_match_pathpartial,
 	url_match_queryparam,
 	url_match_regex,
 	url_match_tld

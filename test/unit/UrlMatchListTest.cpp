@@ -235,6 +235,14 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/nindex=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=addp/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=dadd/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+
+	//pathpartial /wishlist/index/add
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/INDEX/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index1/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/nindex/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/addp/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/dadd/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 }
 
 TEST(UrlMatchListTest, Multi) {
