@@ -1,5 +1,6 @@
 #include "utf8_fast.h"
 #include "unicode/UCMaps.h"
+#include "Log.h"
 
 const unsigned char g_map_to_lower[256] = {
 	  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
@@ -262,6 +263,26 @@ bool is_alnum_utf8_string(const char *s, const char *send) {
 				return false;
 		} else {
 			if(!is_alnum_utf8(s) )
+				return false;
+		}
+	}
+	return true;
+}
+
+bool is_upper_utf8_string(const char *s, const char *send) {
+	//todo: what about titlecase?
+	char cs = 0;
+	for( ; s < send; s += cs) {
+		if(is_digit(*s)) {
+			cs=1;
+			continue;
+		}
+		cs = getUtf8CharSize(s);
+		if(cs == 1) {
+			if(is_lower_a(*s))
+				return false;
+		} else {
+			if(is_lower_utf8(s))
 				return false;
 		}
 	}

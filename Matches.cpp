@@ -80,7 +80,7 @@ bool Matches::isMatchableTerm(const QueryTerm *qt) const {
 	return true;
 }
 
-void Matches::setQuery ( Query *q ) { 
+void Matches::setQuery(const Query *q) {
 	reset();
 	// save it
 	m_q       = q;
@@ -249,8 +249,8 @@ void Matches::setQuery ( Query *q ) {
 // . we can also use this to replace the proximity algo setup where it
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
-bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
-				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo ) {
+bool Matches::set(const Words *bodyWords, Phrases *bodyPhrases, const Sections *bodySections, const Bits *bodyBits,
+		  const Pos *bodyPos, Xml *bodyXml, const Title *tt, const Url *firstUrl, LinkInfo *linkInfo ) {
 	// don't reset query info!
 	reset2();
 
@@ -428,7 +428,7 @@ bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 // . TODO: support stemming later. each word should then have multiple ids.
 // . add to our m_matches[] array iff addToMatches is true, otherwise we just
 //   set the m_foundTermVector for doing the BIG HACK described in Summary.cpp
-bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bits *bits, Pos *pos, mf_t flags ) {
+bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *sections, const Bits *bits, const Pos *pos, mf_t flags ) {
 	// if no query term, bail.
 	if ( m_numSlots <= 0 ) {
 		return true;
@@ -740,7 +740,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 }
 
 // . word #i in the doc matches slot #n in the hash table
-int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				    bool allowPunctInPhrase) {
 	// is it a two-word synonym?
 	if ( m_qtableFlags[n] & 0x08 ) {

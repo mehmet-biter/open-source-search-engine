@@ -11,6 +11,7 @@
 #include "HttpMime.h"
 #include "Linkdb.h"
 #include "TitleSummaryCodepointFilter.h"
+#include "StopWords.h"
 #include "Process.h"
 #include "Conf.h"
 #include "Xml.h"
@@ -171,8 +172,8 @@ static bool isWordQualified(const char *wp, int32_t wlen) {
 
 
 // returns false and sets g_errno on error
-bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query,
-                       LinkInfo *linkInfo, Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
+bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query *query,
+                       LinkInfo *linkInfo, const Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
                        uint8_t contentType, uint8_t langId ) {
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
@@ -754,16 +755,16 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 	{
 		// now add the last url path to contain underscores or hyphens
-		char *pstart = firstUrl->getPath();
+		const char *pstart = firstUrl->getPath();
 
 		// get first url
-		Url *fu = firstUrl;
+		const Url *fu = firstUrl;
 
 		// start at the end
-		char *p = fu->getUrl() + fu->getUrlLen();
+		const char *p = fu->getUrl() + fu->getUrlLen();
 
 		// end pointer
-		char *pend = NULL;
+		const char *pend = NULL;
 
 		// come up here for each path component
 		while ( p >= pstart ) {
@@ -1040,7 +1041,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
 			// skip stop words
-			if ( w->isQueryStopWord( j, langId ) ) {
+			if(isQueryStopWord(w->getWord(j), w->getWordLen(i), w->getWordId(i), langId)) {
 				continue;
 			}
 

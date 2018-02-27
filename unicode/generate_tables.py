@@ -280,31 +280,37 @@ print "Done."
 #  but what "superscript two", "circled digit three" ... ?
 #Not so easy. We chose to use anything that is marked as alphabetic or digits
 #and combining diacritics in case we enounter a decomposed codepoint
-#It happens that alphabetic+ID_Start+ID_Continue covers it all
+#It happens that alphabetic+grapheme-extend+number covers it all
 #Except underscore (makes sense in some identifiers) and middle-dot (what?).
 #Non-decimal numbers are up for debate, should the codepoints 216B (roman numeral twelve)
-#or 0BF1 (tamil number one hundred) be included? Probably not. If it turns out that an
-#ancient Roman shop was called "Ⅶ-Undecim" then we will deal with that later on.
+#or 0BF1 (tamil number one hundred) be included? Probably. If it turns out that an
+#ancient Roman shop was called "Ⅶ-Undecim" then that will be treated as a word string
 print "Generating unicode_wordchars.dat"
 with open("unicode_wordchars.dat","w") as f:
 	for codepoint in range(0,last_codepoint+1):
+		is_wordchar = False
 		if codepoint==0x005F or codepoint==0x00B7: #underscore and middle-dot are special
-			f.write('\0')
+			is_wordchar = False
 		elif codepoint in UnicodeData.data:
 			cpi = UnicodeData.data[codepoint]
 			if "Alphabetic" in cpi.derived_core_props or \
-			   "ID_Start" in cpi.derived_core_props or \
-			   "ID_Continue" in cpi.derived_core_props or \
-			   "XID_Start" in cpi.derived_core_props or \
-			   "XID_Continue" in cpi.derived_core_props:
+			   "Grapheme_Extend" in cpi.derived_core_props:
 				#if codepoint<1024*9: print "U+%04X: '%s' = true"%(codepoint,unichr(codepoint))
-				f.write('\1')
+				is_wordchar = True
+			elif cpi.general_category=='Nd' or \
+			     cpi.general_category=='Nl' or \
+			     cpi.general_category=='No':
+				is_wordchar = True
 			else:
 				#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
-				f.write('\0')
+				is_wordchar = False
 		else:
 			#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
-			f.write('\0') #missing codepoint
+			is_wordchar = False #missing codepoint
+		if is_wordchar:
+			f.write('\1')
+		else:
+			f.write('\0')
 print "Done."
 
 

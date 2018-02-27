@@ -8,7 +8,6 @@
 #define GB_WORDS_H
 
 #include "max_words.h"
-#include "StopWords.h"
 #include "XmlNode.h"
 #include <inttypes.h>
 
@@ -16,14 +15,8 @@
 // make sure it does not slow us down!!
 #define WORDS_LOCALBUFSIZE 80
 
-char *getFieldValue ( char *s ,int32_t  slen, const char *field , int32_t *valueLen ) ;
-
-unsigned char getCharacterLanguage ( const char *utf8Char ) ;
-
 class Xml;
 
-
-#define NUM_LANGUAGE_SAMPLES 1000
 
 // this bit is set in the tag id to indicate a back tag
 #define BACKBIT     ((nodeid_t)0x8000)
@@ -101,14 +94,6 @@ class Words {
 	// . this is only for alnum "words"
 	int64_t getWordId( int32_t n ) const {
 		return m_wordIds [n];
-	}
-
-	bool isStopWord ( int32_t n ) const {
-		return ::isStopWord( m_words[n], m_wordLens[n], m_wordIds[n] );
-	}
-
-	bool isQueryStopWord ( int32_t n , int32_t langId ) const {
-		return ::isQueryStopWord( m_words[n], m_wordLens[n], m_wordIds[n], langId );
 	}
 
 	// . how many quotes in the nth word?
@@ -217,22 +202,7 @@ class Words {
 		if ( m_wordIds[n] == 0LL ) {
 			return false;
 		}
-
-		const char *p = m_words[n];
-		const char *pend = p + m_wordLens[n];
-		char cs;
-		for ( ; p < pend; p += cs ) {
-			cs = getUtf8CharSize( p );
-			if ( is_digit( *p ) ) {
-				continue;
-			}
-
-			if ( is_lower_utf8( p ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		return is_upper_utf8_string(m_words[n], m_words[n]+m_wordLens[n]);
 	}
 
 	bool isCapitalized( int32_t n ) const {

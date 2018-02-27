@@ -274,11 +274,26 @@ bool UrlMatchList::load() {
 					break;
 				case 'p':
 					if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
-						// param
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
+						// query param
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_queryparam, col2, col3)));
 					} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
 						// path
 						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
+					} else if (firstColEnd == 9 && memcmp(line.data(), "pathparam", 9) == 0) {
+						// path param
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_pathparam, col2, col3)));
+					} else if (firstColEnd == 11 && memcmp(line.data(), "pathpartial", 11) == 0) {
+						// path
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_pathpartial, col2)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 'q':
+					if (firstColEnd == 10 && memcmp(line.data(), "queryparam", 10) == 0) {
+						// query param
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_queryparam, col2, col3)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;

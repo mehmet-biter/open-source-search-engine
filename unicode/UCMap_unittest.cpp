@@ -78,7 +78,7 @@ int main() {
 		assert(m.lookup2('9'));
 		assert(m.lookup2(0x00E6)); //æ
 		assert(m.lookup2(0x0391)); //Α
-		assert(m.lookup2(0x03A9)); //Ω
+		assert(m.lookup2(0x03A9)); //Ω 03A9;GREEK CAPITAL LETTER OMEGA
 		assert(!m.lookup2(' '));
 		assert(!m.lookup2('`'));
 		assert(!m.lookup2(0x00A4)); //¤
@@ -88,6 +88,13 @@ int main() {
 		assert(!m.lookup2('_')); //underscore/low-line
 		assert(!m.lookup2(0x00B7)); //00B7;MIDDLE DOT
 		assert(!m.lookup2(0x201c)); //201C;LEFT DOUBLE QUOTATION MARK
+		assert(m.lookup2(0x2126)); //Ω 2126;OHM SIGN
+		assert(!m.lookup2(0x2121)); //℡ 2121;TELEPHONE SIGN
+		
+		assert(m.lookup2(0x00B2)); //00B2;SUPERSCRIPT TWO
+		assert(m.lookup2(0x2070)); //2070;SUPERSCRIPT ZERO
+		assert(!m.lookup2(0x207D)); //207D;SUPERSCRIPT LEFT PARENTHESIS
+		assert(m.lookup2(0x2082)); //2082;SUBSCRIPT TWO
 	}
 	
 	{

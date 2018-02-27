@@ -29,8 +29,9 @@ urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	}
 }
 
-urlmatchparam_t::urlmatchparam_t(const std::string &name, const std::string &value)
-	: m_name(name)
+urlmatchparam_t::urlmatchparam_t(urlmatchtype_t type, const std::string &name, const std::string &value)
+	: m_type(type)
+	, m_name(name)
 	, m_value(value) {
 }
 
@@ -61,7 +62,7 @@ UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
 }
 
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam)
-	: m_type(url_match_param)
+	: m_type(urlmatchparam->m_type)
 	, m_param(urlmatchparam) {
 }
 
@@ -140,8 +141,8 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 				}
 			}
 			return false;
-		case url_match_param:
-			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != NULL) {
+		case url_match_queryparam:
+			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != nullptr) {
 				// not the most efficient, but there is already parsing logic for query parameter in UrlParser
 				auto queryMatches = urlParser.matchQueryParam(UrlComponent::Matcher(m_param->m_name.c_str()));
 				if (m_param->m_value.empty()) {
@@ -157,6 +158,23 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 			break;
 		case url_match_path:
 			return matchStringPrefix(m_str->m_str, url.getPath(), url.getPathLenWithCgi());
+		case url_match_pathparam:
+			if (strncasestr(url.getPath(), m_param->m_name.c_str(), url.getPathLen()) != nullptr) {
+				// not the most efficient, but there is already parsing logic for path parameter in UrlParser
+				auto pathParamMatches = urlParser.matchPathParam(UrlComponent::Matcher(m_param->m_name.c_str()));
+				if (m_param->m_value.empty()) {
+					return (!pathParamMatches.empty());
+				}
+
+				for (auto &pathParamMatch : pathParamMatches) {
+					if (matchString(m_param->m_value, pathParamMatch->getValue(), pathParamMatch->getValueLen())) {
+						return true;
+					}
+				}
+			}
+			break;
+		case url_match_pathpartial:
+			return (strncasestr(url.getPath(), m_str->m_str.c_str(), url.getPathLen()) != nullptr);
 		case url_match_regex:
 			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() && matchString(m_regex->m_domain, url.getDomain(), url.getDomainLen()))) {
 				return m_regex->m_regex.match(url.getUrl());
@@ -201,12 +219,20 @@ void UrlMatch::logMatch(const Url &url) const {
 			type = "hostsuffix";
 			value = m_str->m_str.c_str();
 			break;
-		case url_match_param:
+		case url_match_queryparam:
 			type = "param";
 			value = m_param->m_name.c_str();
 			break;
 		case url_match_path:
 			type = "path";
+			value = m_str->m_str.c_str();
+			break;
+		case url_match_pathparam:
+			type = "pathparam";
+			value = m_param->m_name.c_str();
+			break;
+		case url_match_pathpartial:
+			type = "pathpartial";
 			value = m_str->m_str.c_str();
 			break;
 		case url_match_regex:

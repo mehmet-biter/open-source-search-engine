@@ -25,28 +25,21 @@ public:
 
 	void setTitle(const std::string &title);
 
-	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, Query *query, LinkInfo *linkInfo, Url *firstUrl,
+	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, const Query *query, LinkInfo *linkInfo, const Url *firstUrl,
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
 				   uint8_t langId );
 
 	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType);
 
-	char *getTitle() {
-		return m_title;
-	}
+	char       *getTitle()       { return m_title; }
+	const char *getTitle() const { return m_title; }
 
 	// does NOT include \0
-	int32_t getTitleLen() {
-		return m_titleLen;
-	}
+	int32_t getTitleLen() const { return m_titleLen; }
 
-	int32_t getTitleTagStart() {
-		return m_titleTagStart;
-	}
+	int32_t getTitleTagStart() const { return m_titleTagStart; }
 
-	int32_t getTitleTagEnd() {
-		return m_titleTagEnd;
-	}
+	int32_t getTitleTagEnd() const { return m_titleTagEnd; }
 
 private:
 	bool copyTitle(Words *words, int32_t t0, int32_t t1);

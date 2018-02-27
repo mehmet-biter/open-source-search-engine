@@ -64,21 +64,21 @@ class Match {
 
 	// . for convenience, these four class ptrs are used by Summary.cpp
 	// . m_wordNum is relative to this "words" class (and scores,bits,pos)
-	Words    *m_words;
-	Sections *m_sections;
-	Bits     *m_bits;
-	Pos      *m_pos;
+	const Words    *m_words;
+	const Sections *m_sections;
+	const Bits     *m_bits;
+	const Pos      *m_pos;
 };
 
 class Matches {
 
  public:
 
-	void setQuery ( Query *q );
+	void setQuery(const Query *q);
 
-	bool set( Words *bodyWords, Phrases *bodyPhrases,
-			  Sections *bodySections, Bits *bodyBits, Pos *bodyPos, Xml *xml,
-			  Title *tt, Url *firstUrl, LinkInfo *linkInfo );
+	bool set(const Words *bodyWords, Phrases *bodyPhrases,
+		 const Sections *bodySections, const Bits *bodyBits, const Pos *bodyPos, Xml *xml,
+		 const Title *tt, const Url *firstUrl, LinkInfo *linkInfo);
 
 	bool addMatches(const char *s, int32_t slen, mf_t flags );
 
@@ -86,8 +86,8 @@ class Matches {
 	// . m_matches[i] is -1 if it matches no term in the query
 	// . m_matches[i] is X if it matches term #X in the query
 	// . returns false and sets errno on error
-	bool addMatches( Words *words, Phrases *phrases = NULL, Sections *sections = NULL,
-					 Bits *bits = NULL, Pos *pos = NULL, mf_t flags = 0 );
+	bool addMatches(const Words *words, Phrases *phrases = NULL, const Sections *sections = NULL,
+			const Bits *bits = NULL, const Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
 	int32_t getNumMatches() const {
@@ -105,7 +105,7 @@ class Matches {
 private:
 	void reset2();
 	bool isMatchableTerm(const QueryTerm *qt) const;
-	int32_t getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+	int32_t getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				   bool allowPunctInPhrase = true);
 
 	// . 1-1 with Query::m_qwords[] array of QWords
@@ -122,7 +122,7 @@ private:
 	int32_t      m_qtableWordNums [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	char      m_qtableFlags    [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	int32_t      m_numSlots;
-	Query    *m_q;
+	const Query *m_q;
 	int32_t      m_numAlnums;
 
 	int32_t m_qwordAllocSize;

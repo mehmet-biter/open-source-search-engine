@@ -12,8 +12,10 @@ enum urlmatchtype_t {
 	url_match_file,
 	url_match_host,
 	url_match_hostsuffix,
-	url_match_param,
 	url_match_path,
+	url_match_pathparam,
+	url_match_pathpartial,
+	url_match_queryparam,
 	url_match_regex,
 	url_match_tld
 };
@@ -48,8 +50,9 @@ struct urlmatchhost_t {
 };
 
 struct urlmatchparam_t {
-	urlmatchparam_t(const std::string &name, const std::string &value);
+	urlmatchparam_t(urlmatchtype_t type, const std::string &name, const std::string &value);
 
+	urlmatchtype_t m_type;
 	std::string m_name;
 	std::string m_value;
 };
