@@ -458,6 +458,27 @@ std::vector<UrlComponent *> UrlParser::matchPathParam(const UrlComponent::Matche
 	return result;
 }
 
+std::vector<const UrlComponent *> UrlParser::matchPathParam(const UrlComponent::Matcher &matcher) const {
+	std::vector<const UrlComponent *> result;
+
+	// don't need to loop if it's all deleted
+	if (m_pathsDeleteCount == m_paths.size()) {
+		return result;
+	}
+
+	for (auto &path : m_paths) {
+		if (path.isDeleted()) {
+			continue;
+		}
+
+		if (path.hasValue() && matcher.isMatching(path)) {
+			result.push_back(&path);
+		}
+	}
+
+	return result;
+}
+
 bool UrlParser::removePathParam(const std::vector<UrlComponent *> &urlComponents, const UrlComponent::Validator &validator) {
 	return removeComponent(urlComponents, validator);
 }
