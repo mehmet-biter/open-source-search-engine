@@ -8,7 +8,8 @@
 #define GB_WORDS_H
 
 #include "max_words.h"
-#include "XmlNode.h"
+#include "nodeid_t.h"
+#include "utf8_fast.h"
 #include <inttypes.h>
 
 // now Matches.h has 300 Words classes handy... try to do away with this

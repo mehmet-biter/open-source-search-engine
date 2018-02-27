@@ -210,7 +210,7 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com/file1.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/file1.html"));
 
-	//param url
+	//queryparam url
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?URL=abc"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?url=abcde"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?uRl=abcde"));
@@ -218,7 +218,7 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?urlz=http://www.example.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?zurl=http://www.example.com"));
 
-	//param action  buy_now
+	//queryparam action  buy_now
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_now&product_id=123"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?ACTION=buy_now&product_id=123"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?product_id=123&action=buy_now"));
@@ -227,6 +227,22 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?daction=buy_now&product_id=123"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=dbuy_now&product_id=123"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_nowd&product_id=123"));
+
+	//pathparam index   add
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/INDEX=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index1=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/nindex=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=addp/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=dadd/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+
+	//pathpartial /wishlist/index/add
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/INDEX/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index1/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/nindex/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/addp/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/dadd/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 }
 
 TEST(UrlMatchListTest, Multi) {

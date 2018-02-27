@@ -2,7 +2,7 @@
 #define GB_SECTIONS_H
 
 #include "SafeBuf.h"
-#include "XmlNode.h"
+#include "nodeid_t.h"
 
 class Words;
 class Bits;

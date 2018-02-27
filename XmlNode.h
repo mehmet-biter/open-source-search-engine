@@ -5,7 +5,7 @@
 
 // . an xml node can be text or tag (html or xml tag)
 
-typedef int16_t nodeid_t;
+#include "nodeid_t.h"
 
 // . get how many xml/html tags we have classified in our g_nodes[] array
 int32_t getNumXmlNodes ( ) ;

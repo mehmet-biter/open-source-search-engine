@@ -22,6 +22,7 @@ public:
 
 	// path param
 	std::vector<UrlComponent*> matchPathParam( const UrlComponent::Matcher &keyMatch );
+	std::vector<const UrlComponent*> matchPathParam( const UrlComponent::Matcher &keyMatch ) const;
 
 	bool removePathParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 	bool removePathParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator );

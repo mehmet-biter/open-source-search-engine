@@ -4,6 +4,7 @@
 #include "StopWords.h"
 #include "fctypes.h"
 #include "Abbreviations.h"
+#include "XmlNode.h"
 #include "Mem.h"
 #include "Sections.h"
 #include "Process.h"

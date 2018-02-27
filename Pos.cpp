@@ -2,6 +2,7 @@
 
 #include "Pos.h"
 #include "Words.h"
+#include "XmlNode.h"
 #include "Sections.h"
 #include "TitleSummaryCodepointFilter.h"
 #include "Conf.h"
