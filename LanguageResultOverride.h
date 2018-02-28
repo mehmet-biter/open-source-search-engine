@@ -23,6 +23,7 @@ class LanguageResultOverride {
 public:
 	explicit LanguageResultOverride(const char *filename);
 	explicit LanguageResultOverride(languageresultoverridemap_ptr_t languageResultOverrideMap);
+	virtual ~LanguageResultOverride() = default;
 
 	virtual std::string getTitle(const std::string &lang, const Url &url) const;
 	virtual std::string getSummary(const std::string &lang, const Url &url) const;

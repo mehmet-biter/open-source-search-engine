@@ -30,7 +30,7 @@ class DocProcess;
 
 struct DocProcessDocItem {
 	DocProcessDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos);
-	virtual ~DocProcessDocItem();
+	virtual ~DocProcessDocItem() = default;
 
 	DocProcess *m_docProcess;
 	std::string m_key;
@@ -42,6 +42,7 @@ struct DocProcessDocItem {
 class DocProcess {
 public:
 	DocProcess(const char *filename, bool isUrl, bool hasFirstIp);
+	virtual ~DocProcess() = default;
 
 	bool init();
 	void finalize();
