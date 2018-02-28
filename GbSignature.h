@@ -4,7 +4,7 @@
 //Macros for inserting a signature into critical structs for verification and
 //early and (relatively) cheap detection of memory clobbering
 
-extern void signature_verification_failed();
+[[ noreturn ]] extern void signature_verification_failed();
 
 #if 1
 
