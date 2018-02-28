@@ -751,7 +751,7 @@ static lang_t convertLangCLD3(std::string &language) {
 	try {
 		CLD2::Language langCLD2 = s_langCLD3toCLD2.at(language);
 		return convertLangCLD2(langCLD2);
-	} catch (std::out_of_range &e) {
+	} catch (std::out_of_range &) {
 		return langUnknown;
 	}
 }
