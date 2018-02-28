@@ -191,6 +191,8 @@ CPPFLAGS += -Wno-missing-field-initializers
 CPPFLAGS += -Wno-covered-switch-default
 CPPFLAGS += -Wno-date-time
 CPPFLAGS += -Wno-format-nonliteral
+CPPFLAGS += -Wno-zero-as-null-pointer-constant
+CPPFLAGS += -Wno-cast-qual
 
 else ifeq ($(findstring g++, $(CXX)),g++)
 # dependencies

@@ -51,9 +51,6 @@ DocProcessDocItem::DocProcessDocItem(DocProcess *docProcess, const std::string &
 	, m_xmlDoc(new XmlDoc()) {
 }
 
-DocProcessDocItem::~DocProcessDocItem(){
-}
-
 static bool docProcessDisabled() {
 	CollectionRec *collRec = g_collectiondb.getRec("main");
 	if (g_conf.m_spideringEnabled) {

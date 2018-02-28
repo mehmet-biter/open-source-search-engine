@@ -21,7 +21,7 @@ FxBlobCache<K>::FxBlobCache()
 
 
 template<typename K>
-void FxBlobCache<K>::configure(unsigned max_items, size_t max_memory, time_t) {
+void FxBlobCache<K>::configure(unsigned max_items, size_t max_memory, time_t max_age) {
 	this->max_items = max_items;
 	this->max_memory = max_memory;
 	this->max_age = max_age;

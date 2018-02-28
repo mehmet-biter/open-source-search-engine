@@ -564,14 +564,17 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 					"ENCTYPE=\"multipart/form-data\" "
 					"action=\"/%s\">\n",
 					s_pages[page].m_filename);
+			break;
 		case page_method_t::page_method_post_url:
 			sb->safePrintf ("<form name=\"SubmitInput\" method=\"post\" "
 					"action=\"/%s\">\n",
 					s_pages[page].m_filename);
+			break;
 		case page_method_t::page_method_get:
 			sb->safePrintf ("<form name=\"SubmitInput\" method=\"get\" "
 					"action=\"/%s\">\n",
 					s_pages[page].m_filename);
+			break;
 	}
 
 	// pass on this stuff

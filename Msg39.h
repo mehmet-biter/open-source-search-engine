@@ -201,8 +201,6 @@ private:
 	void        controlLoop();
 	static void intersectListsThreadFunction(void *state);
 
-	int32_t m_docIdSplitNumber; //next split range to do
-	
 	void        estimateHitsAndSendReply(double pctSearched);
 	void        getClusterRecs();
 	bool        gotClusterRecs ();
