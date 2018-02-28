@@ -2094,7 +2094,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	static const int32_t minSize = 18;
 	char gzip_id1 = mime.getContent()[0];
 	char gzip_id2 = mime.getContent()[1];
-	if (mime.getContentEncoding() != ET_GZIP || gzip_id1 != 0x1f || gzip_id2 == 0x8b || zipLen < minSize) {
+	if (mime.getContentEncoding() != ET_GZIP || gzip_id1 != 0x1f || static_cast<unsigned char>(gzip_id2) == 0x8b || zipLen < minSize) {
 		m_bytesDownloaded += zipLen;
 		m_uncompressedBytes += zipLen;
 		return s;
