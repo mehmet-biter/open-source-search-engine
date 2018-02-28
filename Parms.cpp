@@ -9457,7 +9457,7 @@ void Parms::init ( ) {
 			log("parms: bad page in parameter \"%s\"",m_parms[i].m_title);
 			g_process.shutdownAbort(true);
 		}
-		if ( m_parms[i].m_obj == -1 ) {
+		if ( m_parms[i].m_obj == OBJ_UNSET ) {
 			log("parms: bad obj in parameter \"%s\"",m_parms[i].m_title);
 			g_process.shutdownAbort(true);
 		}
@@ -9542,7 +9542,7 @@ void Parms::init ( ) {
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
-		if ( m_parms[i].m_obj == -1 ) {
+		if ( m_parms[i].m_obj == OBJ_UNSET ) {
 			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no object.",
 			    i,m_parms[i].m_title);
 			exit(-1);
