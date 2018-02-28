@@ -40,6 +40,7 @@ typedef std::shared_ptr<FxClientRequest> fxclient_request_ptr_t;
 class FxClient {
 protected:
 	FxClient();
+	virtual ~FxClient() = default;
 
 	bool initialize(const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace);
 	void reinitializeSettings(const char *hostname, int port, unsigned max_outstanding, bool log_trace);
