@@ -491,5 +491,42 @@ int main(void) {
 		assert(t.str(6)=="Noel");
 	}
 	
+	//posessive-s
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John's dog",langUnknown); //U+0027 Apostrophe
+		assert(t.token_count()==6);
+		assert(t.str(5)=="Johns");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John`s dog",langUnknown); //U+0060 grave
+		assert(t.token_count()==6);
+		assert(t.str(5)=="Johns");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John´s dog",langUnknown); //U+00B4 acute accent
+		assert(t.token_count()==6);
+		assert(t.str(5)=="Johns");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John’s dog",langUnknown); //U+2019 Right single quotation mark
+		assert(t.token_count()==6);
+		assert(t.str(5)=="Johns");
+		//according to unicode NamesList.txt this is actually the preferred codepoint. Uhm, okay....
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John′s dog",langUnknown); //U+2032 Prime
+		assert(t.token_count()==6);
+		assert(t.str(5)=="Johns");
+	}
+	
 	return 0;
 }

@@ -11,6 +11,7 @@ static const size_t max_word_codepoints = 128; //longest word we will consider w
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
+static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -23,6 +24,7 @@ void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, 
 	decompose_stylistic_ligatures(tr);
 	//TODO: language-specific ligatures
 	remove_combining_marks(tr,lang);
+	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
 	//TODO: subscript
 	//TODO: superscript
@@ -155,3 +157,62 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 		}
 	}
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+//Join word-with-possesive-s into a single token
+//Also take care of misused/abused other marks, such as modifier letters, prime marks, etc. Even in native English text
+//the apostrophe is sometimes morphed into weird codepoints. So we take all codepoints whose glyphs look like a blotch
+//that could conceivably stand in for apostrophe. We do this in all languages because the abuse seem to know no language barrier
+static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
+	//Loop through original tokens, looking for <word> <blotch> "s". Combine the word with the letter s.
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i+2<org_token_count; i++) {
+		const auto &t0 = (*tr)[i];
+		const auto &t1 = (*tr)[i+1];
+		const auto &t2 = (*tr)[i+2];
+		//must be word-nonword-word
+		if(!t0.is_alfanum)
+			continue;
+		if(t1.is_alfanum)
+			continue;
+		if(!t2.is_alfanum)
+			continue;
+		//t2 must be "s"
+		if(t2.token_len!=1 || *t2.token_start!='s')
+			continue;
+		//t1 must be a single blotch
+		if(t1.token_len>4)
+			continue;
+		UChar32 uc[2];
+		int ucs = decode_utf8_string(t1.token_start,t1.token_len,uc);
+		if(ucs!=1)
+			continue;
+		if(uc[0]!=0x0027 && //APOSTROPHE
+		   uc[0]!=0x0060 && //GRAVE ACCENT
+		   uc[0]!=0x00B4 && //ACUTE ACCENT
+		   uc[0]!=0x2018 && //LEFT SINGLE QUOTATION MARK
+		   uc[0]!=0x2019 && //RIGHT SINGLE QUOTATION MARK
+		   uc[0]!=0x201B && //SINGLE HIGH-REVERSED-9 QUOTATION MARK
+		   uc[0]!=0x2032 && //PRIME
+		   uc[0]!=0x2035)   //REVERSED PRIME
+		continue;
+		
+		size_t combined_token_length = t0.token_len + 1;
+		char *s = (char*)tr->egstack.alloc(combined_token_length);
+		memcpy(s, t0.token_start, t0.token_len);
+		s[t0.token_len] = 's';
+		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, true);
+	}
+}
+
+//note about above: We don't check for:
+// 		   uc[0]!=0x02B9 && //MODIFIER LETTER PRIME
+// 		   uc[0]!=0x02BB && //MODIFIER LETTER TURNED COMMA
+// 		   uc[0]!=0x02BC && //MODIFIER LETTER APOSTROPHE
+// 		   uc[0]!=0x02BD && //MODIFIER LETTER REVERSED COMMA
+// 		   uc[0]!=0x02CA && //MODIFIER LETTER ACUTE ACCENT
+// 		   uc[0]!=0x02CB && //MODIFIER LETTER GRAVE ACCENT
+// 		   uc[0]!=0x02D9 && //DOT ABOVE
+//because they are classifed as word-chars because they are used by IPA
