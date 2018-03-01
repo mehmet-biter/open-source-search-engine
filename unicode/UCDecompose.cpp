@@ -1,7 +1,7 @@
 #include "UCDecompose.h"
 #include "UCMaps.h"
 
-//Unicode defines canonical decomposition as a way to decompose a codepoint into multiple codepoitns, typically a base character and some modifiers.
+//Unicode defines canonical decomposition as a way to decompose a codepoint into multiple codepoints, typically a base character and some modifiers.
 //Eg.:
 //  0x0041 (A)	is already canonical
 //  0x00C7 (Ç)	decomposes into 0x0043 (C) and 0x0327 (cedilla)
