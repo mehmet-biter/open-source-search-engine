@@ -186,4 +186,10 @@ static inline int32_t utf8Size(UChar32 codepoint) {
 	return 4;
 }
 
+
+//Decode utf8 string of length 'utf8len', put into uc[] array (which must be big enough). Returns number of codepoints
+int decode_utf8_string(const char *utf8, size_t utf8len, UChar32 uc[]);
+//Encode codepoints into utf8. Returns length of utf8 string
+size_t encode_utf8_string(UChar32 uc[], unsigned codepoints, char *utf8);
+
 #endif //UTF8_H_

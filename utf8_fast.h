@@ -130,5 +130,11 @@ static inline bool ucIsWordChar_fast(UChar32 c) {
 	return UnicodeMaps::is_wordchar(c);
 }
 
+static inline bool is_ignorable_fast(UChar32 c) {
+	if(c<0x034F) {
+		return c==0x00AD; //soft-hyphen is the only ignorable codepoint in the low range
+	} else
+		return UnicodeMaps::is_ignorable(c);
+}
 
 #endif //UTF8_FAST_H_
