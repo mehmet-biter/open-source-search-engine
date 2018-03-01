@@ -17,7 +17,7 @@ last_codepoint = max(UnicodeData.data.keys())
 print "Last codepoint: %d"%last_codepoint
 
 def is_interesting(codepoint):
-	return codepoint in [0x00A0, 0x00AD, 0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083]
+	return codepoint in [0x00A0, 0x00AD, 0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083, 0x01C6]
 
 ## Generate codepoint->script mapping
 script_name_to_code_mapping = {
@@ -428,6 +428,11 @@ def any_combining_marks(decomposition):
 	for codepoint in decomposition:
 		if codepoint in UnicodeData.data and UnicodeData.data[codepoint].general_category=="Mn":
 			return True #nonspacing mark
+		if codepoint in UnicodeData.data:
+			if UnicodeData.data[codepoint].decomposition:
+				#multi-layer decomposition. Guess that it does have one or more combining marks.
+				#this case only appears for 4 codepoints in unicode v10.0 data (Ǆ/ǅ/ǆ/ﬅ)
+				return True
 	return False
 
 print "Generating unicode_combining_mark_decomposition.dat"
@@ -446,4 +451,8 @@ with open("unicode_combining_mark_decomposition.dat","w") as f:
 				f.write(struct.pack("@I",len(cpi.decomposition)))
 				for decomposition_codepoint in cpi.decomposition:
 					f.write(struct.pack("@I",decomposition_codepoint))
+			else:
+				if is_interesting(codepoint): print "U+%04X: '%s' : no decomposition"%(codepoint,unichr(codepoint))
+		else:
+			if is_interesting(codepoint): print "U+%04X: '%s' : no decomposition entry (non-alfa/no-comp/comp-len<2"%(codepoint,unichr(codepoint))
 print "Done"
