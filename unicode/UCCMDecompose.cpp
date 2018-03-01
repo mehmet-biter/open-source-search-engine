@@ -49,4 +49,3 @@ unsigned Unicode::iterative_combining_mark_compose(UChar32 src[], unsigned srcle
 	
 	return dstlen;
 }
-
