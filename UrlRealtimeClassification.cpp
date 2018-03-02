@@ -6,10 +6,8 @@
 //	<query-id>:<url><NL>
 // (The client must escape-encode the URL)
 //
-// Supports both pipelining and streaming
-//
 // The server responses:
-//	<query-id>:[<flag>['+'<flag>...]]
+//	<query-id>:[<flag>['+'<flag>...]]<NL>
 
 UrlRealtimeClassification g_urlRealtimeClassification;
 
@@ -52,7 +50,7 @@ void UrlRealtimeClassification::processResponse(fxclient_request_ptr_t base_requ
 
 	std::shared_ptr<UrlRealtimeClassificationRequest> request = std::dynamic_pointer_cast<UrlRealtimeClassificationRequest>(base_request);
 
-	logTrace(g_conf.m_logTraceUrlClassification, "client: Got classification %08x or %s", classification, request->m_url.c_str());
+	logTrace(g_conf.m_logTraceUrlClassification, "Got classification %08x for %s", classification, request->m_url.c_str());
 
 	(request->m_callback)(request->m_context, classification);
 }
