@@ -9,12 +9,20 @@
 
 struct TokenRange {
 	TokenRange(size_t start_pos_, size_t end_pos_, const char *token_start_, size_t token_len_, bool is_alfanum_)
-		: start_pos(start_pos_), end_pos(end_pos_),
-		token_start(token_start_), token_len(token_len_),
-		is_alfanum(is_alfanum_),
-		token_hash(0),
-		nodeid(0),
-		xml_node_index(0)
+	  : start_pos(start_pos_), end_pos(end_pos_),
+	    token_start(token_start_), token_len(token_len_),
+	    is_alfanum(is_alfanum_),
+	    token_hash(0),
+	    nodeid(0),
+	    xml_node_index(0)
+	  { }
+	TokenRange(size_t start_pos_, size_t end_pos_, const char *token_start_, size_t token_len_, nodeid_t node_id, int32_t xml_node_index_)
+	  : start_pos(start_pos_), end_pos(end_pos_),
+	    token_start(token_start_), token_len(token_len_),
+	    is_alfanum(false),
+	    token_hash(0),
+	    nodeid(node_id),
+	    xml_node_index(xml_node_index_)
 	  { }
 	
 	size_t          start_pos, end_pos;    //[start..end[ in source text
@@ -41,7 +49,11 @@ public:
 
 
 void plain_tokenizer_phase_1(const char *str, size_t len, TokenizerResult *tr);
+void plain_tokenizer_phase_1_downcall(const char *str, size_t len, size_t pos_base, TokenizerResult *tr);
 void plain_tokenizer_phase_2(const char *str, size_t len, lang_t lang, const char *country_code, TokenizerResult *tr);
+class Xml;
+void xml_tokenizer_phase_1(const Xml *xml, TokenizerResult *tr);
+void xml_tokenizer_phase_2(const Xml *xml, const char *country_code, TokenizerResult *tr);
 
 
 #endif

@@ -15,6 +15,13 @@ default: run
 tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer_unittest.o
 	g++ -g tokenizer.o tokenizer2.o tokenizer_unittest.o ../unicode/libunicode.a ../utf8_fast.o ../utf8.o ../EGStack.o -o $@
 
+xml_tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer3.o xml_tokenizer_unittest.o
+	g++ -g tokenizer.o tokenizer2.o tokenizer3.o xml_tokenizer_unittest.o ../unicode/libunicode.a ../libgb.a -lm -lpthread -lssl -lcrypto -lz -lpcre -lsqlite3 -ldl -L../ -lcld2_full -lcld3 -lprotobuf -lced -lcares -o $@
+
 PHONY: run
 run: tokenizer_unittest
 	LD_LIBRARY_PATH=.. ./tokenizer_unittest
+
+PHONY: xml_run
+xml_run: xml_tokenizer_unittest
+	LD_LIBRARY_PATH=.. ./xml_tokenizer_unittest
