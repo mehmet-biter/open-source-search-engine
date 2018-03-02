@@ -102,7 +102,7 @@ void SearchInput::copy ( class SearchInput *si ) {
 	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
-bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
+bool SearchInput::set(TcpSocket *sock, HttpRequest *r) {
 	// store list of collection #'s to search here. usually just one.
 	m_collnumBuf.reset();
 
@@ -160,12 +160,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		// get default collection rec
 		cr = g_collectiondb.getRec (coll);
 		// add to our list
-		if ( cr &&
-		     !m_collnumBuf.safeMemcpy(&cr->m_collnum,
-					      sizeof(collnum_t)))
+		if ( cr && !m_collnumBuf.safeMemcpy(&cr->m_collnum, sizeof(collnum_t))) {
 			return false;
+		}
 	}
-		
 
 
 	/////
