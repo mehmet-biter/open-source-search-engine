@@ -1,6 +1,6 @@
 #include "GbSignature.h"
 #include "Sanity.h"
 
-void signature_verification_failed() {
+[[ noreturn ]] void signature_verification_failed() {
 	gbshutdownCorrupted();
 }

@@ -383,14 +383,14 @@ class Query {
 
 	// . returns false and sets g_errno on error
 	// . after calling this you can call functions below
-	bool set2 ( const char *query    , 
-		    lang_t  langId ,
-		    float  bigramWeight,
-		    float  synonymWeight,
-		    const WordVariationsConfig *wordVariationsConfig, //NULL=disable variations
-		    bool     useQueryStopWords,
-	        bool allowHighFreqTermCache,
-		    int32_t  maxQueryTerms);
+	bool set(const char *query,
+	         lang_t langId,
+	         float bigramWeight,
+	         float synonymWeight,
+	         const WordVariationsConfig *wordVariationsConfig, //NULL=disable variations
+	         bool useQueryStopWords,
+	         bool allowHighFreqTermCache,
+	         int32_t maxQueryTerms);
 
 	const char *getQuery() const { return m_originalQuery.getBufStart(); }
 	int32_t     getQueryLen() const { return m_originalQuery.length(); }

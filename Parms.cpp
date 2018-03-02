@@ -4763,17 +4763,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "queryCharset";
-	m->m_desc  = "Charset in which the query is encoded";
-	m->m_off   = offsetof(SearchInput,m_queryCharset);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = "utf-8";
-	m->m_cgi   = "qcs";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	// buzz
 	m->m_title = "display inlinks";
 	m->m_desc  = "Display all inlinks of each result.";
@@ -9457,7 +9446,7 @@ void Parms::init ( ) {
 			log("parms: bad page in parameter \"%s\"",m_parms[i].m_title);
 			g_process.shutdownAbort(true);
 		}
-		if ( m_parms[i].m_obj == -1 ) {
+		if ( m_parms[i].m_obj == OBJ_UNSET ) {
 			log("parms: bad obj in parameter \"%s\"",m_parms[i].m_title);
 			g_process.shutdownAbort(true);
 		}
@@ -9542,7 +9531,7 @@ void Parms::init ( ) {
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
-		if ( m_parms[i].m_obj == -1 ) {
+		if ( m_parms[i].m_obj == OBJ_UNSET ) {
 			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no object.",
 			    i,m_parms[i].m_title);
 			exit(-1);

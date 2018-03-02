@@ -381,7 +381,7 @@ bool CheckAdult::isDocAdult() {
         //Title 18 U.S.C. 2257 Compliance Statement
         //Compliance with 18 U.S.C. &sect; 2257
 
-        //<meta http-equiv="PICS-Label" content='(pics-1.1 "http://www.icra.org/ratingsv02.html" comment "ICRAonline EN v2.0" l gen true for "" r (nb 1 nc 1 nd 1 ne 1 nh 1 ni 1 vz 1 la 1 oz 1 cz 1) "http://www.rsac.org/ratingsv01.html" l gen true for "" r (n 3 s 3 v 0 l 4))' />
+        // <meta http-equiv="PICS-Label" content='(pics-1.1 "http://www.icra.org/ratingsv02.html" comment "ICRAonline EN v2.0" l gen true for "" r (nb 1 nc 1 nd 1 ne 1 nh 1 ni 1 vz 1 la 1 oz 1 cz 1) "http://www.rsac.org/ratingsv01.html" l gen true for "" r (n 3 s 3 v 0 l 4))' />
 
         //Beskyt dine børn mod erotiske sites med
         //Protect your children against Adult Content with

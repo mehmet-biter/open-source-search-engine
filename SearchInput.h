@@ -109,8 +109,6 @@ public:
 
 	// do not include these in makeKey()
 
-	const char  *m_queryCharset;
-
 	// advanced query parms
 	const char  *m_url; // for url: search
 	const char  *m_sites;

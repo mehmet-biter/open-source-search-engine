@@ -32,6 +32,7 @@ template <typename T> using blocklistconst_ptr_t = std::shared_ptr<const std::ve
 template<class T> class BlockList {
 public:
 	explicit BlockList(const char *filename);
+	virtual ~BlockList() = default;
 
 	virtual bool init();
 

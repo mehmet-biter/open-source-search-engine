@@ -25,9 +25,6 @@
 #include <fstream>
 #include <sys/stat.h>
 
-
-TermCheckList g_TermCheckList;
-
 TermCheckList::TermCheckList() : m_initialized(false) {}
 
 TermCheckList::~TermCheckList(){}

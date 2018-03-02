@@ -330,14 +330,14 @@ void Msg39::getDocIds2() {
 	}
 
 	// . set our m_query instance
-	if ( ! m_query.set2 ( m_msg39req->ptr_query,
-			      (lang_t)m_msg39req->m_language ,
-		              m_msg39req->m_baseScoringParameters.m_bigramWeight,
-		              m_msg39req->m_baseScoringParameters.m_synonymWeight,
-			      &m_msg39req->m_word_variations_config,
-			      m_msg39req->m_useQueryStopWords ,
-	              m_msg39req->m_allowHighFrequencyTermCache,
-			      m_msg39req->m_maxQueryTerms ) ) {
+	if ( !m_query.set(m_msg39req->ptr_query,
+	                  (lang_t)m_msg39req->m_language,
+	                  m_msg39req->m_baseScoringParameters.m_bigramWeight,
+	                  m_msg39req->m_baseScoringParameters.m_synonymWeight,
+	                  &m_msg39req->m_word_variations_config,
+	                  m_msg39req->m_useQueryStopWords,
+	                  m_msg39req->m_allowHighFrequencyTermCache,
+	                  m_msg39req->m_maxQueryTerms) ) {
 		log("query: msg39: setQuery: %s." , 
 		    mstrerror(g_errno) );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );

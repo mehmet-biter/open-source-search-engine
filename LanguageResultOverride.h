@@ -11,7 +11,7 @@
 //Not to be confused with RobotsBlockedResultOverride which deals with blocked URLs.
 
 
-struct ResultOverride;
+class ResultOverride;
 
 typedef std::map<std::string, ResultOverride> languageresultoverridemap_t;
 typedef std::shared_ptr<languageresultoverridemap_t> languageresultoverridemap_ptr_t;
@@ -23,6 +23,7 @@ class LanguageResultOverride {
 public:
 	explicit LanguageResultOverride(const char *filename);
 	explicit LanguageResultOverride(languageresultoverridemap_ptr_t languageResultOverrideMap);
+	virtual ~LanguageResultOverride() = default;
 
 	virtual std::string getTitle(const std::string &lang, const Url &url) const;
 	virtual std::string getSummary(const std::string &lang, const Url &url) const;

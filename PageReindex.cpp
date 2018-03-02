@@ -267,7 +267,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_niceness = MAX_NICENESS;
 
 	// langunknown?
-	m_qq.set2(query, langId, 1.0, 1.0, NULL, true, false, ABS_MAX_QUERY_TERMS);
+	m_qq.set(query, langId, 1.0, 1.0, NULL, true, false, ABS_MAX_QUERY_TERMS);
 
 	// sanity fix
 	if ( endNum - startNum > MAXDOCIDSTOCOMPUTE )

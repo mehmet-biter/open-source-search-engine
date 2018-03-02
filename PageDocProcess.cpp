@@ -112,6 +112,7 @@ bool sendPageDocProcess(TcpSocket *s, HttpRequest *r) {
 					docProcess = &g_docReindex;
 				}
 			}
+			break;
 		default:
 			break;
 	}
