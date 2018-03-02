@@ -367,25 +367,26 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// . the query to use for highlighting... can be overriden with "hq"
 	// . we need the language id for doing synonyms
-	if ( m_prepend && m_prepend[0] )
-		m_hqq.set2(m_prepend, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
-	else if ( m_highlightQuery && m_highlightQuery[0] )
-		m_hqq.set2(m_highlightQuery,m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
-	else if ( m_query && m_query[0] )
-		m_hqq.set2(m_query, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+	if (m_prepend && m_prepend[0]) {
+		m_hqq.set(m_prepend, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+	} else if (m_highlightQuery && m_highlightQuery[0]) {
+		m_hqq.set(m_highlightQuery, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+	} else if (m_query && m_query[0]) {
+		m_hqq.set(m_query, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+	}
 
 	// log it here
 	log(LOG_INFO, "query: got query %s (len=%i)" ,m_sbuf1.getBufStart() ,m_sbuf1.length());
 
 	// . now set from m_qbuf1, the advanced/composite query buffer
 	// . returns false and sets g_errno on error (?)
-	if ( ! m_q.set2 ( m_sbuf1.getBufStart(),
-			  m_queryLangId ,
-			  1.0, 1.0,
-		          &m_word_variations_config,
-			  true , // use QUERY stopwords?
-			  m_allowHighFrequencyTermCache,
-			  maxQueryTerms ) ) {
+	if ( !m_q.set(m_sbuf1.getBufStart(),
+	              m_queryLangId,
+	              1.0, 1.0,
+	              &m_word_variations_config,
+	              true, // use QUERY stopwords?
+	              m_allowHighFrequencyTermCache,
+	              maxQueryTerms) ) {
 		g_msg = " (error: query has too many operands)";
 		return false;
 	}

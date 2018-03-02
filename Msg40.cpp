@@ -390,12 +390,12 @@ bool Msg40::federatedLoop ( ) {
 		//Make a temporary query instance so we can calculate if site clustering should be turned off. We cannot use m_si->m_q because that could affect word highlighting
 		Query tmpQuery;
 		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
-		tmpQuery.set2(m_si->m_query,
-			      m_si->m_queryLangId,
-			      1.0, 1.0, NULL,
-			      true,
-			      m_si->m_allowHighFrequencyTermCache,
-			      cr->m_maxQueryTerms);
+		tmpQuery.set(m_si->m_query,
+		             m_si->m_queryLangId,
+		             1.0, 1.0, NULL,
+		             true,
+		             m_si->m_allowHighFrequencyTermCache,
+		             cr->m_maxQueryTerms);
 		
 		DerivedScoringWeights dsw; //don't care about the values.
 		tmpQuery.modifyQuery(&dsw, *cr, &m_si->m_doSiteClustering);

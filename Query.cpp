@@ -97,15 +97,15 @@ void Query::reset ( ) {
 //   it is a boolean operator (IGNORE_BOOLOP), fieldname (IGNORE_FIELDNAME)
 //   a punct word (IGNORE_DEFAULT) or part of one field value (IGNORE_DEFAULT)
 //   This is used for term highlighting (Highlight.cpp and Summary.cpp)
-bool Query::set2 ( const char *query        , 
-		   // need language for doing synonyms
-		   lang_t  langId ,
-		   float  bigramWeight,
-		   float  synonymWeight,
-		   const WordVariationsConfig *wordVariationsConfig,
-		   bool     useQueryStopWords ,
-           bool allowHighFreqTermCache,
-		   int32_t  maxQueryTerms  )
+bool Query::set(const char *query,
+	// need language for doing synonyms
+	            lang_t langId,
+	            float bigramWeight,
+	            float synonymWeight,
+	            const WordVariationsConfig *wordVariationsConfig,
+	            bool useQueryStopWords,
+	            bool allowHighFreqTermCache,
+	            int32_t maxQueryTerms)
 {
 	static const WordVariationsConfig defaultWordVariationsConfig;
 	if(!wordVariationsConfig)
