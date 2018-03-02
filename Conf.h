@@ -100,6 +100,11 @@ class Conf {
 	int32_t  m_numRns;
 	int32_t  m_rnsIps[MAX_RNSIPS];
 
+	char m_queryLanguageServerName[64];
+	int32_t m_queryLanguageServerPort;
+	unsigned m_maxOutstandingQueryLanguage;
+	unsigned m_queryLanguageTimeout;
+
 	char m_urlClassificationServerName[64];
 	int32_t m_urlClassificationServerPort;
 	unsigned m_maxOutstandingUrlClassifications;
@@ -390,6 +395,7 @@ class Conf {
 	bool m_logTracePos;
 	bool m_logTracePosdb;
 	bool m_logTraceQuery;
+	bool m_logTraceQueryLanguage;
 	bool m_logTraceRdb;
 	bool m_logTraceRdbBase;
 	bool m_logTraceRdbBuckets;

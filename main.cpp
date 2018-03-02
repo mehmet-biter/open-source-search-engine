@@ -103,6 +103,7 @@
 #include "FxExplicitKeywords.h"
 #include "IpBlockList.h"
 #include "SpiderdbSqlite.h"
+#include "QueryLanguage.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1445,7 +1446,9 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
+	// initialize clients
 	g_urlRealtimeClassification.initialize();
+	g_queryLanguage.initialize();
 	
 	if(!WantedChecker::initialize())
 		return 0;

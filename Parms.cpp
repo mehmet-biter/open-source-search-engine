@@ -5443,6 +5443,54 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Query language server name";
+	m->m_desc  = "";
+	m->m_cgi   = "query_lang_server_name";
+	m->m_off   = offsetof(Conf,m_queryLanguageServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_urlClassificationServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Query language server port";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "query_lang_server_port";
+	simple_m_set(Conf,m_queryLanguageServerPort);
+	m->m_def   = "8079";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "Query language max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "query_lang_server_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingQueryLanguage);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "Query language timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "query_lang_timeout";
+	simple_m_set(Conf,m_queryLanguageTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+
 	m->m_title = "URL realtime classification server name";
 	m->m_desc  = "";
 	m->m_cgi   = "url_class_server_name";
@@ -9090,6 +9138,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Query";
 	m->m_cgi   = "ltrc_query";
 	simple_m_set(Conf,m_logTraceQuery);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for QueryLanguage";
+	m->m_cgi   = "ltrc_querylang";
+	simple_m_set(Conf,m_logTraceQueryLanguage);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
