@@ -88,4 +88,19 @@ int main(void) {
 		
 		//good enough
 	}
+	
+	{
+		static const char html[] = "<html><title>zzz</title><body><h1>aaa</h2><p>H<sub>2</sub>O</p></body></html>";
+		Xml xml;
+		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
+		TokenizerResult tr;
+		xml_tokenizer_phase_1(&xml,&tr);
+		assert(!tr.tokens.empty());
+		assert(has_token(tr,"zzz"));
+		assert(has_token(tr,"H"));
+		assert(has_token(tr,"2"));
+		assert(has_token(tr,"O"));
+		//assert(has_token(tr,"H2O")); //not implemented yet
+		//assert(has_token(tr,"H₂O")); //not implemented yet
+	}
 }

@@ -50,10 +50,10 @@ public:
 
 void plain_tokenizer_phase_1(const char *str, size_t len, TokenizerResult *tr);
 void plain_tokenizer_phase_1_downcall(const char *str, size_t len, size_t pos_base, TokenizerResult *tr);
-void plain_tokenizer_phase_2(const char *str, size_t len, lang_t lang, const char *country_code, TokenizerResult *tr);
+void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr);
 class Xml;
 void xml_tokenizer_phase_1(const Xml *xml, TokenizerResult *tr);
-void xml_tokenizer_phase_2(const Xml *xml, const char *country_code, TokenizerResult *tr);
+void xml_tokenizer_phase_2(const Xml *xml, lang_t lang, const char *country_code, TokenizerResult *tr);
 
 
 #endif

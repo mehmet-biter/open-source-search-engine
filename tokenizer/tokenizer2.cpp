@@ -24,7 +24,7 @@ static void tokenize_subscript(TokenizerResult *tr);
 //If we furthermore knew the locale then we could recognize numbers, phone numbers, post codes. But we
 //don't know the locale with certainty, so we take the language as a hint.
 //Also joins words separated with hyphen (all 10 of them)
-void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, const char *country_code, TokenizerResult *tr) {
+void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr) {
 	decompose_stylistic_ligatures(tr);
 	//TODO: language-specific ligatures
 	remove_combining_marks(tr,lang);
@@ -144,7 +144,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 				continue;
 			}
 			
-			//compose the codepoint again 8if possible)
+			//compose the codepoint again (if possible)
 			UChar32 final[16];
 			unsigned final_len = Unicode::iterative_combining_mark_compose(tmp,tmpl,final);
 			

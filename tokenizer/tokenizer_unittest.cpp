@@ -38,7 +38,7 @@ public:
 		for(unsigned i=0; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
 		size_t p1tokens = tr.size();
-		plain_tokenizer_phase_2(s,strlen(s),lang,country_code,&tr);
+		plain_tokenizer_phase_2(lang,country_code,&tr);
 		printf("phase2-tokens: %u\n", (unsigned)(tr.size()-p1tokens));
 		for(unsigned i=p1tokens; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
