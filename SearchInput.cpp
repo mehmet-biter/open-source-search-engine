@@ -33,7 +33,6 @@ SearchInput::SearchInput()
 	m_wcache = -1;		// default from Param.cc
 	m_debug = false;
 	m_displayMetas = NULL;
-	m_queryCharset = NULL;
 	m_url = NULL;
 	m_sites = NULL;
 	m_plus = NULL;
@@ -453,16 +452,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	m_sbuf1.reset();
 	m_sbuf2.reset();
-
-	int16_t qcs = csUTF8;
-	if (m_queryCharset && m_queryCharset[0]){
-		// we need to convert the query string to utf-8
-		int32_t qclen = strlen(m_queryCharset);
-		qcs = get_iana_charset(m_queryCharset, qclen );
-		if (qcs == csUnknown) {
-			qcs = csUTF8;
-		}
-	}
 
 	// prepend
 	const char *qp = hr->getString("prepend",NULL,NULL);
