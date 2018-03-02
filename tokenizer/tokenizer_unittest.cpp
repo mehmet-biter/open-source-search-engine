@@ -607,5 +607,62 @@ int main(void) {
 		assert(t.token_count()==8);
 		assert(t.str(7)=="70270431");
 	}
+
+	// subscript, phase 2
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("H₂O",langUnknown); //water
+		assert(t.token_count()==2);
+		assert(t.str(1)=="H2O");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("H₂O₂",langUnknown); //hydrogen peroxide
+		assert(t.token_count()==2);
+		assert(t.str(1)=="H2O2");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("H₂SO₄",langUnknown); //sulphuric acid
+		assert(t.token_count()==2);
+		assert(t.str(1)=="H2SO4");
+	}
+
+	// superscript, phase 2
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo²boo",langUnknown);
+		assert(!t.empty());
+		assert(t.token_count()==2);
+		assert(t.str(0)=="foo²boo");
+		assert(t.str(1)=="foo2boo");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("E=mc²",langUnknown);
+		assert(!t.empty());
+		assert(t.token_count()==6);
+		assert(t.str(0)=="E");
+		assert(t.str(1)=="=");
+		assert(t.str(2)=="mc²");
+		assert(t.str(3)=="mc2");
+		assert(t.str(4)=="mc");
+		assert(t.str(5)=="2");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("j*=σT⁴",langUnknown);
+		assert(!t.empty());
+		assert(t.token_count()==7);
+		assert(t.str(0)=="j");
+		assert(t.str(1)=="*=");
+		assert(t.str(2)=="σ");
+		assert(t.str(3)=="T⁴");
+		assert(t.str(4)=="T4");
+		assert(t.str(5)=="T");
+		assert(t.str(6)=="4");
+	}
 	return 0;
 }

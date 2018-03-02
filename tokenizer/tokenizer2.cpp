@@ -14,6 +14,8 @@ static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code);
+static void tokenize_superscript(TokenizerResult *tr);
+static void tokenize_subscript(TokenizerResult *tr);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -28,8 +30,8 @@ void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, 
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
-	//TODO: subscript
-	//TODO: superscript
+	tokenize_subscript(tr);
+	tokenize_superscript(tr);
 	combine_hyphenated_words(tr);
 	recognize_telephone_numbers(tr,lang,country_code);
 
@@ -259,7 +261,7 @@ static bool is_hyphen(const TokenRange &tr) {
 static void combine_hyphenated_words(TokenizerResult *tr) {
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i<org_token_count; ) {
-		auto const &first_token = (*tr)[0];
+		auto const &first_token = (*tr)[i];
 		if(!first_token.is_alfanum) {
 			i++;
 			continue;
@@ -398,5 +400,208 @@ static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
 		//p += t6.token_len;
 		
 		tr->tokens.emplace_back(t0.start_pos, t6.end_pos, s, sl, true);
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Superscript and subscript
+static void tokenize_superscript(TokenizerResult *tr) {
+	//The phase-1 tokenizer considers "E=mc²" three tokens.
+	//Because people normally don't type the superscript-2 we generate a variant with plain digit
+	//If the superscript is at the end of the token then we also generate two tokens split. this is
+	//a workaround for footnote numbers directly attached to the preceeding word
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		auto const &t = (*tr)[i];
+		if(!t.is_alfanum)
+			continue;
+		if(t.token_len>max_word_codepoints)
+			continue;
+		UChar32 org_uc[max_word_codepoints];
+		int ucs = decode_utf8_string(t.token_start,t.token_len,org_uc);
+		if(ucs<=0)
+			continue;
+		UChar32 new_uc[max_word_codepoints];
+		bool any_changed = false;
+		int num_changed=0;
+		int change_pos=-1;
+		for(int j=0; j<ucs; j++) {
+			//UnicodeData.txt has many entries with <super< but we only look for a subset of those (we don't care abotu API extensions ideagraphic annotations, ...)
+			UChar32  n = org_uc[j];
+			switch(org_uc[j]) {
+				case 0x00AA: //FEMININE ORDINAL INDICATOR
+					n = 0x0061; break;
+				case 0x00B2: //SUPERSCRIPT TWO
+					n = 0x0032; break;
+				case 0x00B3: //SUPERSCRIPT THREE
+					n = 0x0033; break;
+				case 0x00B9: //SUPERSCRIPT ONE
+					n = 0x0031; break;
+				case 0x00BA: //MASCULINE ORDINAL INDICATOR
+					n = 0x006F; break;
+				case 0x2070: //SUPERSCRIPT ZERO
+					n = 0x0030; break;
+				case 0x2071: //SUPERSCRIPT LATIN SMALL LETTER I
+					n = 0x0069; break;
+				case 0x2074: //SUPERSCRIPT FOUR
+					n = 0x0034; break;
+				case 0x2075: //SUPERSCRIPT FIVE
+					n = 0x0035; break;
+				case 0x2076: //SUPERSCRIPT SIX
+					n = 0x0036; break;
+				case 0x2077: //SUPERSCRIPT SEVEN
+					n = 0x0037; break;
+				case 0x2078: //SUPERSCRIPT EIGHT
+					n = 0x0038; break;
+				case 0x2079: //SUPERSCRIPT NINE
+					n = 0x0039; break;
+// 				case 0x207A: //SUPERSCRIPT PLUS SIGN
+// 					n = 0x002B; break;
+// 				case 0x207B: //SUPERSCRIPT MINUS;Sm;0
+// 					n = 0x2212; break;
+// 				case 0x207C: //SUPERSCRIPT EQUALS SIGN
+// 					n = 0x003D; break;
+// 				case 0x207D: //SUPERSCRIPT LEFT PARENTHESIS
+// 					n = 0x0028; break;
+// 				case 0x207E: //SUPERSCRIPT RIGHT PARENTHESIS
+// 					n = 0x0029; break;
+				case 0x207F: //SUPERSCRIPT LATIN SMALL LETTER N
+					n = 0x006E; break;
+				default:
+					break;
+			}
+			new_uc[j] = n;
+			if(n!=org_uc[j]) {
+				any_changed = true;
+				num_changed++;
+				change_pos = j;
+			}
+		}
+		if(any_changed) {
+			char *s = (char*)tr->egstack.alloc(ucs*4);
+			size_t sl = encode_utf8_string(new_uc,ucs,s);
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+			if(num_changed==1 && change_pos==ucs-1) {
+				//footnote special (and spanish/portuguese ordinal)
+				s = (char*)tr->egstack.alloc((ucs-1)*4);
+				sl = encode_utf8_string(new_uc,ucs-1,s);
+				tr->tokens.emplace_back(t.start_pos,t.start_pos+sl, s,sl, true);
+				s = (char*)tr->egstack.alloc(4);
+				sl = encode_utf8_string(new_uc+ucs-1,1,s);
+				tr->tokens.emplace_back(t.end_pos-sl,t.end_pos, s,sl, true);
+			}
+		}
+	}
+}
+
+static void tokenize_subscript(TokenizerResult *tr) {
+	//The phase-1 tokenizer considers "H₂O" a single token
+	//We generate the variant without the subcsript, "H2O"
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		auto const &t = (*tr)[i];
+		if(!t.is_alfanum)
+			continue;
+		if(t.token_len>max_word_codepoints)
+			continue;
+		UChar32 org_uc[max_word_codepoints];
+		int ucs = decode_utf8_string(t.token_start,t.token_len,org_uc);
+		if(ucs<=0)
+			continue;
+		UChar32 new_uc[max_word_codepoints];
+		bool any_changed = false;
+		for(int j=0; j<ucs; j++) {
+			//we should really be using UnicodeData.txt's <sub> decompositions, but it's currently hardly worth it.
+			UChar32  n = org_uc[j];
+			switch(org_uc[j]) {
+				case 0x1D62: //LATIN SUBSCRIPT SMALL LETTER I
+					n = 0x0069; break;
+				case 0x1D63: //LATIN SUBSCRIPT SMALL LETTER R
+					n = 0x0072; break;
+				case 0x1D64: //LATIN SUBSCRIPT SMALL LETTER U
+					n = 0x0075; break;
+				case 0x1D65: //LATIN SUBSCRIPT SMALL LETTER V
+					n = 0x0076; break;
+				case 0x1D66: //GREEK SUBSCRIPT SMALL LETTER BETA
+					n = 0x03B2; break;
+				case 0x1D67: //GREEK SUBSCRIPT SMALL LETTER GAMMA
+					n = 0x03B3; break;
+				case 0x1D68: //GREEK SUBSCRIPT SMALL LETTER RHO
+					n = 0x03C1; break;
+				case 0x1D69: //GREEK SUBSCRIPT SMALL LETTER PHI
+					n = 0x03C6; break;
+				case 0x1D6A: //GREEK SUBSCRIPT SMALL LETTER CHI
+					n = 0x03C7; break;
+				case 0x2080: //SUBSCRIPT ZERO
+					n = 0x0030; break;
+				case 0x2081: //SUBSCRIPT ONE
+					n = 0x0031; break;
+				case 0x2082: //SUBSCRIPT TWO
+					n = 0x0032; break;
+				case 0x2083: //SUBSCRIPT THREE
+					n = 0x0033; break;
+				case 0x2084: //SUBSCRIPT FOUR
+					n = 0x0034; break;
+				case 0x2085: //SUBSCRIPT FIVE
+					n = 0x0035; break;
+				case 0x2086: //SUBSCRIPT SIX
+					n = 0x0036; break;
+				case 0x2087: //SUBSCRIPT SEVEN
+					n = 0x0037; break;
+				case 0x2088: //SUBSCRIPT EIGHT
+					n = 0x0038; break;
+				case 0x2089: //SUBSCRIPT NINE
+					n = 0x0039; break;
+				case 0x208A: //SUBSCRIPT PLUS SIGN
+					n = 0x002B; break;
+				case 0x208B: //SUBSCRIPT MINUS
+					n = 0x2212; break;
+				case 0x208C: //SUBSCRIPT EQUALS SIGN
+					n = 0x003D; break;
+				case 0x208D: //SUBSCRIPT LEFT PARENTHESIS
+					n = 0x0028; break;
+				case 0x208E: //SUBSCRIPT RIGHT PARENTHESIS
+					n = 0x0029; break;
+				case 0x2090: //LATIN SUBSCRIPT SMALL LETTER A
+					n = 0x0061; break;
+				case 0x2091: //LATIN SUBSCRIPT SMALL LETTER E
+					n = 0x0065; break;
+				case 0x2092: //LATIN SUBSCRIPT SMALL LETTER O
+					n = 0x006F; break;
+				case 0x2093: //LATIN SUBSCRIPT SMALL LETTER X
+					n = 0x0078; break;
+				case 0x2094: //LATIN SUBSCRIPT SMALL LETTER SCHWA
+					n = 0x0259; break;
+				case 0x2095: //LATIN SUBSCRIPT SMALL LETTER H
+					n = 0x0068; break;
+				case 0x2096: //LATIN SUBSCRIPT SMALL LETTER K
+					n = 0x006B; break;
+				case 0x2097: //LATIN SUBSCRIPT SMALL LETTER L
+					n = 0x006C; break;
+				case 0x2098: //LATIN SUBSCRIPT SMALL LETTER M
+					n = 0x006D; break;
+				case 0x2099: //LATIN SUBSCRIPT SMALL LETTER N
+					n = 0x006E; break;
+				case 0x209A: //LATIN SUBSCRIPT SMALL LETTER P
+					n = 0x0070; break;
+				case 0x209B: //LATIN SUBSCRIPT SMALL LETTER S
+					n = 0x0073; break;
+				case 0x209C: //LATIN SUBSCRIPT SMALL LETTER T
+					n = 0x0074; break;
+				case 0x2C7C: //LATIN SUBSCRIPT SMALL LETTER J
+					n = 0x006A; break;
+				default:
+					break;
+			}
+			new_uc[j] = n;
+			if(n!=org_uc[j])
+				any_changed = true;
+		}
+		if(any_changed) {
+			char *s = (char*)tr->egstack.alloc(ucs*4);
+			size_t sl = encode_utf8_string(new_uc,ucs,s);
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+		}
 	}
 }
