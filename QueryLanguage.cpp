@@ -138,7 +138,7 @@ void QueryLanguage::errorCallback(fxclient_request_ptr_t base_request) {
 }
 
 bool QueryLanguage::initialize() {
-	return FxClient::initialize("qlang", g_conf.m_queryLanguageServerName, g_conf.m_queryLanguageServerPort,
+	return FxClient::initialize("query language", "qlang", g_conf.m_queryLanguageServerName, g_conf.m_queryLanguageServerPort,
 	                            g_conf.m_maxOutstandingQueryLanguage, g_conf.m_logTraceQueryLanguage);
 }
 

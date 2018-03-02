@@ -42,7 +42,7 @@ protected:
 	FxClient();
 	virtual ~FxClient() = default;
 
-	bool initialize(const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace);
+	bool initialize(const char *servicename, const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace);
 	void reinitializeSettings(const char *hostname, int port, unsigned max_outstanding, bool log_trace);
 	bool sendRequest(fxclient_request_ptr_t request);
 	void finalize();
@@ -75,6 +75,7 @@ private:
 	std::atomic<bool> m_communication_works;
 	std::atomic<unsigned> m_outstanding_request_count;
 
+	const char *m_servicename;
 	const char *m_hostname;
 	int m_port;
 	unsigned m_max_outstanding;

@@ -61,7 +61,7 @@ void UrlRealtimeClassification::errorCallback(fxclient_request_ptr_t base_reques
 }
 
 bool UrlRealtimeClassification::initialize() {
-	return FxClient::initialize("urlclass", g_conf.m_urlClassificationServerName, g_conf.m_urlClassificationServerPort,
+	return FxClient::initialize("url classification", "urlclass", g_conf.m_urlClassificationServerName, g_conf.m_urlClassificationServerPort,
 	                            g_conf.m_maxOutstandingUrlClassifications, g_conf.m_logTraceUrlClassification);
 }
 

@@ -69,6 +69,7 @@ FxClient::FxClient()
 	, m_next_connect_attempt(0)
 	, m_communication_works(false)
 	, m_outstanding_request_count(0)
+	, m_servicename(nullptr)
 	, m_hostname(nullptr)
 	, m_port(0) {
 }
@@ -112,7 +113,7 @@ int FxClient::runConnectLoop() {
 	addrinfo *res;
 	int rc = getaddrinfo(m_hostname, port_number_str, &hints, &res);
 	if (rc != 0) {
-		log(LOG_ERROR, "client: getaddrinfo(%s...) failed with rc=%d (%s)", m_hostname, rc, gai_strerror(rc));
+		log(LOG_ERROR, "client(%s): getaddrinfo(%s...) failed with rc=%d (%s)", m_servicename, m_hostname, rc, gai_strerror(rc));
 		return -1;
 	}
 
@@ -162,7 +163,7 @@ int FxClient::runConnectLoop() {
 			}
 			//connected
 			freeaddrinfo(res);
-			log(LOG_INFO, "client: connected to %s:%d", m_hostname, m_port);
+			log(LOG_INFO, "client(%s): connected to %s:%d", m_servicename, m_hostname, m_port);
 			return fd;
 		}
 		if (m_stop) {
@@ -172,7 +173,7 @@ int FxClient::runConnectLoop() {
 	}
 	freeaddrinfo(res);
 	//we ran through all the resolved addresses and failed to connect to any of them
-	log(LOG_ERROR, "Could not connect to url classification services, most recent errno=%d (%s)", most_recent_error,
+	log(LOG_ERROR, "client(%s): Could not connect to server, most recent errno=%d (%s)", m_servicename, most_recent_error,
 	    strerror(most_recent_error));
 
 	return -1;
@@ -207,7 +208,7 @@ int FxClient::calculateEarliestTimeout(const std::map<uint32_t, fxclient_request
 }
 
 void FxClient::processInBuffer(IOBuffer *in_buffer, std::map<uint32_t, fxclient_request_ptr_t> *outstanding_requests) {
-	logTrace(m_log_trace, "client:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
+	logTrace(m_log_trace, "client(%s): in_buffer: %*.*s", m_servicename, (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
 
 	while (!in_buffer->empty()) {
 		char *nl = (char *)memchr(in_buffer->begin(), '\n', in_buffer->used());
@@ -230,11 +231,11 @@ void FxClient::processInBuffer(IOBuffer *in_buffer, std::map<uint32_t, fxclient_
 					outstanding_requests->erase(iter);
 					--m_outstanding_request_count;
 				} else {
-					log(LOG_WARN, "client: Got unmatched response for seq %08x", seq);
+					log(LOG_WARN, "client(%s): Got unmatched response for seq %08x", m_servicename, seq);
 				}
 			}
 		} else {
-			log(LOG_WARN, "client: received incorrectly formatted response: %s", response_start);
+			log(LOG_WARN, "client(%s): received incorrectly formatted response: %s", m_servicename, response_start);
 		}
 
 		in_buffer->pop_front(nl + 1 - response_start);
@@ -264,7 +265,7 @@ void FxClient::runCommunicationLoop(int fd) {
 
 		int rc = poll(pfd, 2, timeout);
 		if (rc < 0) {
-			log(LOG_ERROR, "client: poll() failed with errno=%d (%s)", errno, strerror(errno));
+			log(LOG_ERROR, "client(%s): poll() failed with errno=%d (%s)", m_servicename, errno, strerror(errno));
 			continue;
 		}
 
@@ -272,14 +273,14 @@ void FxClient::runCommunicationLoop(int fd) {
 			in_buffer.reserve_extra(8192);
 			ssize_t bytes_read = ::read(fd, in_buffer.end(), in_buffer.spare());
 			if (bytes_read < 0) {
-				log(LOG_ERROR, "client: read(%d) failed with errno=%d (%s)", fd, errno, strerror(errno));
+				log(LOG_ERROR, "client(%s): read(%d) failed with errno=%d (%s)", m_servicename, fd, errno, strerror(errno));
 				break;
 			}
 			if (bytes_read == 0) {
-				log(LOG_INFO, "client: read(%d) returned 0 (server closed socket)", fd);
+				log(LOG_INFO, "client(%s): read(%d) returned 0 (server closed socket)", m_servicename, fd);
 				break;
 			}
-			logTrace(m_log_trace, "client: Received %zd bytes from classification server", bytes_read);
+			logTrace(m_log_trace, "client(%s): Received %zd bytes from server", m_servicename, bytes_read);
 			in_buffer.push_back((size_t)bytes_read);
 			processInBuffer(&in_buffer, &outstanding_requests);
 		}
@@ -287,10 +288,10 @@ void FxClient::runCommunicationLoop(int fd) {
 		if (pfd[0].revents & POLLOUT && !out_buffer.empty()) {
 			ssize_t bytes_written = ::write(fd, out_buffer.begin(), out_buffer.used());
 			if (bytes_written < 0) {
-				log(LOG_ERROR, "client: write(%d) failed with errno=%d (%s)", fd, errno, strerror(errno));
+				log(LOG_ERROR, "client(%s): write(%d) failed with errno=%d (%s)", m_servicename, fd, errno, strerror(errno));
 				break;
 			}
-			logTrace(m_log_trace, "Sent %zu bytes to classification server", bytes_written);
+			logTrace(m_log_trace, "client(%s): Sent %zu bytes to server", m_servicename, bytes_written);
 			out_buffer.pop_front((size_t)bytes_written);
 		}
 
@@ -368,7 +369,7 @@ void *FxClient::communicationThread(void *args) {
 }
 
 
-bool FxClient::initialize(const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace) {
+bool FxClient::initialize(const char *servicename, const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace) {
 	reinitializeSettings(hostname, port, max_outstanding, log_trace);
 
 	if (pipe(m_wakeup_fd) != 0) {
@@ -382,6 +383,8 @@ bool FxClient::initialize(const char *threadname, const char *hostname, int port
 		close(m_wakeup_fd[1]);
 		return false;
 	}
+
+	m_servicename = servicename;
 
 	int rc = pthread_create(&m_tid, nullptr, communicationThread, this);
 	if (rc != 0) {
