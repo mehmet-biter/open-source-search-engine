@@ -19,10 +19,6 @@
 class Xml;
 
 
-// this bit is set in the tag id to indicate a back tag
-#define BACKBIT     ((nodeid_t)0x8000)
-#define BACKBITCOMP ((nodeid_t)0x7fff)
-
 class Words {
 
  public:
