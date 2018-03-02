@@ -528,5 +528,44 @@ int main(void) {
 		assert(t.str(5)=="Johns");
 	}
 	
+	//hyphenation
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("cd-rom",langUnknown); //U+002D Hypen-minus
+		assert(t.token_count()==4);
+		assert(t.str(3)=="cdrom");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("cd -rom",langUnknown);
+		assert(t.token_count()==3);
+	}
+	
+	//no test on soft-hypen because that is caught in other logic because it is default-ignorable codepoint
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("cd‐rom",langUnknown); //U+2010 Hypen
+		assert(t.token_count()==4);
+		assert(t.str(3)=="cdrom");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("cd‑rom",langUnknown); //U+2011 non-breaking hypen
+		assert(t.token_count()==4);
+		assert(t.str(3)=="cdrom");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Newcastle-Upon-Tyne",langUnknown);
+		assert(t.token_count()==8);
+		assert(t.str(5)=="NewcastleUpon");
+		assert(t.str(6)=="UponTyne");
+		assert(t.str(7)=="NewcastleUponTyne");
+	}
+	
 	return 0;
 }

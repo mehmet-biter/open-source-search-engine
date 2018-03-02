@@ -17,7 +17,7 @@ last_codepoint = max(UnicodeData.data.keys())
 print "Last codepoint: %d"%last_codepoint
 
 def is_interesting(codepoint):
-	return codepoint in [0x00A0, 0x00AD, 0x00b2,0x00b3,0x2074, 0x2080,0x2081,0x2082,0x2083, 0x01C6,0x2019]
+	return codepoint in [0x002D, 0x00AD, 0x2010, 0x2011]
 
 ## Generate codepoint->script mapping
 script_name_to_code_mapping = {

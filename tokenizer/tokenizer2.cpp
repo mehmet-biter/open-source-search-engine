@@ -12,6 +12,7 @@ static const size_t max_word_codepoints = 128; //longest word we will consider w
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
+static void combine_hyphenated_words(TokenizerResult *tr);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -28,7 +29,7 @@ void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, 
 	//TODO: chemical formulae
 	//TODO: subscript
 	//TODO: superscript
-	//possessive-s
+	combine_hyphenated_words(tr);
 
 }
 
@@ -161,7 +162,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-//Join word-with-possesive-s into a single token
+//Join word-with-possessive-s into a single token
 //Also take care of misused/abused other marks, such as modifier letters, prime marks, etc. Even in native English text
 //the apostrophe is sometimes morphed into weird codepoints. So we take all codepoints whose glyphs look like a blotch
 //that could conceivably stand in for apostrophe. We do this in all languages because the abuse seem to know no language barrier
@@ -216,3 +217,87 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 // 		   uc[0]!=0x02CB && //MODIFIER LETTER GRAVE ACCENT
 // 		   uc[0]!=0x02D9 && //DOT ABOVE
 //because they are classifed as word-chars because they are used by IPA
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Combining hyphenated words
+//Eg. if the source text contains:
+//	aaa-bbb-ccc ddd eee
+//it will be level-1-tokenized into:
+//	'aaa' '-' 'bbb' '-' 'ccc' ' ' 'ddd' ' ' 'eee'
+//and the upper layer will generate the bigrams:
+//	aaa bbb
+//	bbb ccc
+//	ccc ddd
+//	ddd eee
+//however, for better search results we'd like to get bigrams over more words, because in most languages hyphenation doesn't
+//have hard rules. Eg. for "smurf cd-rom" we would liek the bigram "smurfcdrom". So we look for hyphenated words and treat them
+//as a single word, allowign the upper layer to generate larger bigrams. One challange is if there are obscenely long hyphenated words,
+//eg. some chemical components "1-Methyl-2-pyrrolidinone"
+//should be generate all possible joins, or just prefix joins, or just suffix joins, og just a single join?
+//We chose 2-grams and then the whole word.
+
+static bool is_hyphen(const TokenRange &tr) {
+	if(tr.token_len<1 || tr.token_len>4)
+		return false;
+	if(tr.token_len==1)
+		return *tr.token_start == '-'; //002D Hypen-minus
+	if(*tr.token_start < (char)0x80)
+		return false;
+	UChar32 uc[4];
+	int codepoints = decode_utf8_string(tr.token_start,tr.token_len,uc);
+	if(codepoints!=1)
+		return false;
+	return uc[0]==0x00AD || //Soft hypen
+	       uc[0]==0x2010 || //Hypen
+	       uc[0]==0x2011;   //Non-breaking hypen
+}
+
+static void combine_hyphenated_words(TokenizerResult *tr) {
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; ) {
+		auto const &first_token = (*tr)[0];
+		if(!first_token.is_alfanum) {
+			i++;
+			continue;
+		}
+		size_t j = i+1;
+		for( ; j+1<org_token_count; ) {
+			if(!is_hyphen((*tr)[j]))
+				break;
+			if(!(*tr)[j+1].is_alfanum)
+				break;
+			j += 2;
+		}
+		//we now have a potential range [i..j[
+		if(j-i >= 3) {
+			//we have multiple words
+			//make bigram-joins
+			for(size_t k=i; k+2<j; k+=2) {
+				auto const &t0 = (*tr)[k];
+				auto const &t1 = (*tr)[k+2];
+				size_t sl = t0.token_len + t1.token_len;
+				char *s = (char*)tr->egstack.alloc(sl);
+				memcpy(s, t0.token_start, t0.token_len);
+				memcpy(s+t0.token_len, t1.token_start, t1.token_len);
+				tr->tokens.emplace_back(t0.start_pos, t1.end_pos, s, sl, true);
+			}
+			if(j-i > 3) {
+				//make whole-join
+				size_t sl=0;
+				for(size_t k=i; k<j; k+=2)
+					sl += (*tr)[k].token_len;
+				char *s = (char*)tr->egstack.alloc(sl);
+				char *p=s;
+				for(size_t k=i; k<j; k+=2) {
+					memcpy(p, (*tr)[k].token_start, (*tr)[k].token_len);
+					p += (*tr)[k].token_len;
+				}
+				tr->tokens.emplace_back((*tr)[i].start_pos, (*tr)[j-1].end_pos, s, sl, true);
+			}
+		}
+		
+		i = j;
+	}
+}
