@@ -593,13 +593,19 @@ int main(void) {
 	}
 	printf("Test line %d\n",__LINE__);
 	{
- 		T2 t("foo 70 27 04 31 boo",langUnknown,"no");
+		T2 t("foo 70 27 04 31 boo",langUnknown,"it");
 		assert(t.token_count()==11);
 	}
 	printf("Test line %d\n",__LINE__);
 	{
- 		T2 t("lottotallene 70 27 04 31 42 17 fup",langDanish,"dk");
-		assert(t.token_count()==15);
+		T2 t("lottotallene 70 27 04 31 42 17 er fup",langDanish,"dk");
+		assert(t.token_count()==17);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("70 27 04 31",langDanish,"dk");
+		assert(t.token_count()==8);
+		assert(t.str(7)=="70270431");
 	}
 	return 0;
 }

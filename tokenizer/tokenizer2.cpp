@@ -343,10 +343,11 @@ static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
 	//Closed numbering plan, 8 digits.
 	//recommended format "9999 9999" (already handled as bigram)
 	//most common format: "99 99 99 99"
+	//less common: "99-99-99-99" (handled by whyphenation logic)
 	//number may be prefixed with "+45"
 	
 	const size_t org_token_count = tr->size();
-	for(size_t i=0; i+7<org_token_count; i++) {
+	for(size_t i=0; i+6<org_token_count; i++) {
 		const auto &t0 = (*tr)[i+0];
 		const auto &t1 = (*tr)[i+1];
 		const auto &t2 = (*tr)[i+2];
