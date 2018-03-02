@@ -30,7 +30,7 @@ class T2 {
 	const char *s;
 	TokenizerResult tr;
 public:
-	   T2(const char *str_, lang_t lang)
+	   T2(const char *str_, lang_t lang, const char *country_code=0)
 	  : s(str_)
 	{
 		plain_tokenizer_phase_1(s,strlen(s),&tr);
@@ -38,7 +38,7 @@ public:
 		for(unsigned i=0; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
 		size_t p1tokens = tr.size();
-		plain_tokenizer_phase_2(s,strlen(s),lang,&tr);
+		plain_tokenizer_phase_2(s,strlen(s),lang,country_code,&tr);
 		printf("phase2-tokens: %u\n", (unsigned)(tr.size()-p1tokens));
 		for(unsigned i=p1tokens; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
@@ -567,5 +567,39 @@ int main(void) {
 		assert(t.str(7)=="NewcastleUponTyne");
 	}
 	
+	// phone numbers
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 70 27 04 31 boo",langUnknown);
+		assert(t.token_count()==11);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 70 27 04 31 boo",langDanish);
+		assert(t.token_count()==12);
+		assert(t.str(11)=="70270431");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 70 27 04 31 boo",langDanish); //U+00AD non-breaking space
+		assert(t.token_count()==12);
+		assert(t.str(11)=="70270431");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 70 27 04 31 boo",langUnknown,"dk");
+		assert(t.token_count()==12);
+		assert(t.str(11)=="70270431");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+ 		T2 t("foo 70 27 04 31 boo",langUnknown,"no");
+		assert(t.token_count()==11);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+ 		T2 t("lottotallene 70 27 04 31 42 17 fup",langDanish,"dk");
+		assert(t.token_count()==15);
+	}
 	return 0;
 }

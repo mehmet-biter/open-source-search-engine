@@ -13,6 +13,7 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
+static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -21,7 +22,7 @@ static void combine_hyphenated_words(TokenizerResult *tr);
 //If we furthermore knew the locale then we could recognize numbers, phone numbers, post codes. But we
 //don't know the locale with certainty, so we take the language as a hint.
 //Also joins words separated with hyphen (all 10 of them)
-void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, TokenizerResult *tr) {
+void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, const char *country_code, TokenizerResult *tr) {
 	decompose_stylistic_ligatures(tr);
 	//TODO: language-specific ligatures
 	remove_combining_marks(tr,lang);
@@ -30,6 +31,7 @@ void plain_tokenizer_phase_2(const char * /*str*/, size_t /*len*/, lang_t lang, 
 	//TODO: subscript
 	//TODO: superscript
 	combine_hyphenated_words(tr);
+	recognize_telephone_numbers(tr,lang,country_code);
 
 }
 
@@ -299,5 +301,101 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 		}
 		
 		i = j;
+	}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Telephone recognition stuff
+
+static void recognize_telephone_numbers_denmark(TokenizerResult *tr);
+
+static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
+	if(!country_code)
+		country_code="";
+	if(lang==langDanish || strcmp(country_code,"dk")==0)
+		recognize_telephone_numbers_denmark(tr);
+}
+
+static bool is_ascii_digits(const TokenRange &tr) {
+	for(size_t i=0; i<tr.token_len; i++)
+		if(!is_digit(*(tr.token_start+i)))
+			return false;
+	return true;
+}
+
+static bool is_whitespace(const TokenRange &tr) {
+	const char *p = tr.token_start;
+	const char *end = tr.token_start+tr.token_len;
+	while(p<end) {
+		int cs = getUtf8CharSize(p);
+		if(p+cs>end)
+			return -1; //decode error
+		if(!is_wspace_utf8(p))
+			return false;
+		p += cs;
+	}
+	return true;
+}
+
+static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
+	//Closed numbering plan, 8 digits.
+	//recommended format "9999 9999" (already handled as bigram)
+	//most common format: "99 99 99 99"
+	//number may be prefixed with "+45"
+	
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i+7<org_token_count; i++) {
+		const auto &t0 = (*tr)[i+0];
+		const auto &t1 = (*tr)[i+1];
+		const auto &t2 = (*tr)[i+2];
+		const auto &t3 = (*tr)[i+3];
+		const auto &t4 = (*tr)[i+4];
+		const auto &t5 = (*tr)[i+5];
+		const auto &t6 = (*tr)[i+6];
+		if(!t0.is_alfanum ||
+		    t1.is_alfanum ||
+		   !t2.is_alfanum ||
+		    t3.is_alfanum ||
+		   !t4.is_alfanum ||
+		    t5.is_alfanum ||
+		   !t6.is_alfanum)
+			continue;
+		if(t0.token_len!=2 ||
+		   t2.token_len!=2 ||
+		   t4.token_len!=2 ||
+		   t6.token_len!=2)
+			continue;
+		if(!is_ascii_digits(t0) ||
+		   !is_whitespace(t1) ||
+		   !is_ascii_digits(t2) ||
+		   !is_whitespace(t3) ||
+		   !is_ascii_digits(t4) ||
+		   !is_whitespace(t5) ||
+		   !is_ascii_digits(t6))
+			continue;
+		//ok, looks like a danish phone number in format "99 99 99 99"
+		if(i>=2 &&
+		   (*tr)[i-2].is_alfanum &&
+		   is_ascii_digits((*tr)[i-2]))
+			continue; //preceeding token is also a number. Don't index this. It could be lottery number or similar.
+		if(i+8<org_token_count &&
+		   (*tr)[i+8].is_alfanum &&
+		   is_ascii_digits((*tr)[i+8]))
+			continue; //succeding token is also a number. Don't index this. It could be lottery number or similar.
+		size_t sl = t0.token_len+t2.token_len+t4.token_len+t6.token_len;
+		char *s = (char *)tr->egstack.alloc(sl);
+		char *p=s;
+		memcpy(p, t0.token_start, t0.token_len);
+		p += t0.token_len;
+		memcpy(p, t2.token_start, t2.token_len);
+		p += t2.token_len;
+		memcpy(p, t4.token_start, t4.token_len);
+		p += t4.token_len;
+		memcpy(p, t6.token_start, t6.token_len);
+		//p += t6.token_len;
+		
+		tr->tokens.emplace_back(t0.start_pos, t6.end_pos, s, sl, true);
 	}
 }

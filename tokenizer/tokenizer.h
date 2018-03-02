@@ -41,7 +41,7 @@ public:
 
 
 void plain_tokenizer_phase_1(const char *str, size_t len, TokenizerResult *tr);
-void plain_tokenizer_phase_2(const char *str, size_t len, lang_t lang, TokenizerResult *tr);
+void plain_tokenizer_phase_2(const char *str, size_t len, lang_t lang, const char *country_code, TokenizerResult *tr);
 
 
 #endif
