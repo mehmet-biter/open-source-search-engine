@@ -32,9 +32,10 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	//TODO: chemical formulae
 	tokenize_subscript(tr);
 	tokenize_superscript(tr);
+	//TODO: detect circumflex used for power, eg m^2
 	combine_hyphenated_words(tr);
 	recognize_telephone_numbers(tr,lang,country_code);
-
+	//TODO: recognize_numbers(tr,lang,country_code)
 }
 
 
