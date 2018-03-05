@@ -36,15 +36,15 @@ public:
 		return m_version;
 	}
 
-	char *getContent() {
+	const char *getContent() const {
 		return m_xml;
 	}
 
-	char *getContentEnd() {
+	const char *getContentEnd() const {
 		return m_xml + m_xmlLen;
 	}
 
-	int32_t getContentLen() {
+	int32_t getContentLen() const {
 		return m_xmlLen;
 	}
 

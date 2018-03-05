@@ -691,7 +691,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 	int32_t     n       = tmpXml.getNumNodes();
 	XmlNode *nodes   = tmpXml.getNodes();
 	// Xml class may have converted to utf16
-	content    = tmpXml.getContent();
+	content    = const_cast<char*>(tmpXml.getContent()); //we are modifying the buffer in-place, and Xml just poitns into the source buffer so it is safe to cast away const and modify.
 	contentLen = tmpXml.getContentLen();
 	char    *x       = content;
 	char    *xend    = content + contentLen;
