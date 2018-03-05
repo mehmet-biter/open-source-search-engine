@@ -5459,7 +5459,7 @@ void Parms::init ( ) {
 	m->m_desc  = "(0=disable)";
 	m->m_cgi   = "query_lang_server_port";
 	simple_m_set(Conf,m_queryLanguageServerPort);
-	m->m_def   = "8079";
+	m->m_def   = "8078";
 	m->m_smin  = 0;
 	m->m_smax  = 65535;
 	m->m_group = false;
