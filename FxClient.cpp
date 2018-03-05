@@ -173,8 +173,8 @@ int FxClient::runConnectLoop() {
 	}
 	freeaddrinfo(res);
 	//we ran through all the resolved addresses and failed to connect to any of them
-	log(LOG_ERROR, "client(%s): Could not connect to server, most recent errno=%d (%s)", m_servicename, most_recent_error,
-	    strerror(most_recent_error));
+	log(LOG_ERROR, "client(%s): Could not connect to server(%s:%d), most recent errno=%d (%s)",
+	    m_servicename, m_hostname, m_port, most_recent_error, strerror(most_recent_error));
 
 	return -1;
 }
