@@ -20,6 +20,8 @@ class TcpSocket;
 
 class State0 {
 public:
+	State0();
+
 	// store results page in this safebuf
 	SafeBuf      m_sb;
 
@@ -39,6 +41,8 @@ public:
 
 	XmlDoc *m_xd;
 	int64_t m_socketStartTimeHack;
+
+	lang_t m_queryLanguage;
 };
 
 

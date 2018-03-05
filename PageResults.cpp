@@ -32,6 +32,8 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "RobotsBlockedResultOverride.h"
+#include "QueryLanguage.h"
+#include "FxLanguage.h"
 
 
 static bool printSearchResultsHeader(State0 *st);
@@ -40,8 +42,10 @@ static bool printSearchResultsTail(State0 *st);
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
+static void gotQueryLanguageWrapper(void *state, std::vector<std::pair<lang_t, int>> languages);
+static bool gotQueryLanguage(void *state);
+
 static void gotResultsWrapper  ( void *state ) ;
-static void gotState           ( void *state ) ;
 static bool gotResults         ( void *state ) ;
 
 static bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) ;
@@ -62,6 +66,24 @@ static bool printTermPairs(SafeBuf *sb, const Query *q, const PairScore *ps);
 
 static bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, const SearchInput *si );
 
+State0::State0()
+	: m_sb()
+	, m_header(true)
+	, m_collnum(-1)
+	, m_si()
+	, m_msg40()
+	, m_socket(nullptr)
+	, m_startTime(0)
+	, m_gotResults(false)
+	, m_errno(0)
+	, m_numDocIds(0)
+	, m_took(0)
+	, m_hr()
+	, m_qesb()
+	, m_xd(nullptr)
+	, m_socketStartTimeHack(0)
+	, m_queryLanguage(langUnknown) {
+}
 
 static bool sendReply(State0 *st, char *reply) {
 
@@ -217,7 +239,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// make a new state
 	State0 *st;
 	try {
-		st = new (State0);
+		st = new State0();
 	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_ERROR, "query: Query failed. "
@@ -229,14 +251,12 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		                                        "Query failed. Could not allocate memory to execute a search. Please try later.");
 	}
 
-	mnew ( st , sizeof(State0) , "PageResults2" );
-
-	// init some stuff
-	st->m_xd               = NULL;
+	mnew(st, sizeof(State0), "PageResults2");
 
 	// copy yhits
-	if ( ! st->m_hr.copy ( hr ) )
-		return sendReply ( st , NULL );
+	if (!st->m_hr.copy(hr)) {
+		return sendReply(st, nullptr);
+	}
 
 	// set this in case SearchInput::set fails!
 	st->m_socket = s;
@@ -244,50 +264,106 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// record timestamp so we know if we got our socket closed and swapped
 	st->m_socketStartTimeHack = s->m_startTime;
 
+	// you have to say "&header=1" to get back the header for json now.
+	// later on maybe it will default to on.
+	st->m_header = hr->getLong("header", 1);
+
+	// get query parameters
+	const char *query = hr->getString("q");
+	size_t queryLen = strlen(query);
+
+	const char *fx_qlang = hr->getString("fx_qlang", nullptr, "");
+	const char *fx_blang = hr->getString("fx_blang", nullptr, "");
+	const char *fx_country = hr->getString("fx_country", nullptr, "");
+	const char *fx_fetld = hr->getString("fx_fetld", nullptr, "");
+
+	if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
+		// blocked
+		return false;
+	}
+
+	// fallback to normal language detection
+	std::string contentLanguage;
+	if (strlen(fx_qlang) && getLangIdFromAbbr(fx_qlang) != langUnknown) {
+		contentLanguage = fx_qlang;
+	} else if (strlen(fx_blang)) {
+		std::vector<std::pair<lang_t, double>> langIdBlangs;
+
+		std::string blangStr(fx_blang);
+		auto items = split(blangStr, ',');
+		for (const auto &item : items) {
+			auto pairs = split(item, ';');
+			if (pairs[0].length() == 2) {
+				if (!contentLanguage.empty()) {
+					contentLanguage.append(",");
+				}
+
+				contentLanguage.append(pairs[0]);
+			} else if (pairs[0].length() > 2 && pairs[0][2] == '-') {
+				if (!contentLanguage.empty()) {
+					contentLanguage.append(",");
+				}
+
+				contentLanguage.append(pairs[0], 0, 2);
+			}
+		}
+	}
+
+	const char *tld_hint = fx_fetld;
+	if (!tld_hint || strlen(tld_hint) == 0) {
+		tld_hint = fx_country;
+	}
+
+	st->m_queryLanguage = FxLanguage::getLangIdCLD2(true, query, queryLen, contentLanguage.c_str(), contentLanguage.size(),
+	                                                tld_hint, strlen(tld_hint), true);
+
+	return gotQueryLanguage(st);
+}
+
+static void gotQueryLanguageWrapper(void *state, std::vector<std::pair<lang_t, int>> languages) {
+	if (!languages.empty()) {
+		/// @todo ALC currently we only cater for one result (assume first result is the best)
+		State0 *st = (State0 *) state;
+		st->m_queryLanguage = languages.front().first;
+	}
+
+	gotQueryLanguage(state);
+}
+
+static bool gotQueryLanguage(void *state) {
+	// cast our State0 class from this
+	State0 *st = (State0 *) state;
 
 	// . parse it up
 	// . this returns false and sets g_errno and, maybe, g_msg on error
 	SearchInput *si = &st->m_si;
 
 	// si just copies the ptr into the httprequest
-    // into stuff like SearchInput::m_defaultSortLanguage
-    // so do not use the "hr" on the stack. SearchInput::
-    // m_hr points to the hr we pass into
-    // SearchInput::set
-	if ( ! si->set ( s , &st->m_hr ) ) {
+	// into stuff like SearchInput::m_defaultSortLanguage
+	// so do not use the "hr" on the stack. SearchInput::
+	// m_hr points to the hr we pass into
+	// SearchInput::set
+	if (!si->set(st->m_socket, &st->m_hr, st->m_queryLanguage)) {
 		log("query: set search input: %s",mstrerror(g_errno));
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		return sendReply ( st, NULL );
 	}
 
-	// allow up to 1000 results per query for paying clients
-	CollectionRec *cr = si->m_cr;
-
 	// save collnum now
-	if ( cr ) st->m_collnum = cr->m_collnum;
-	else      st->m_collnum = -1;
-
-	// you have to say "&header=1" to get back the header for json now.
-	// later on maybe it will default to on.
-	st->m_header = hr->getLong("header",1);
+	st->m_collnum = si->m_cr ? si->m_cr->m_collnum : -1;
 
 	st->m_numDocIds = si->m_docsWanted;
 
 	// add query stat
 	st->m_startTime = gettimeofdayInMilliseconds();
-	// reset
-	st->m_errno = 0;
 
 	// debug msg
 	log(LOG_DEBUG, "query: Getting search results for q=%s", st->m_si.m_displayQuery);
 
-	// assume we'll block
-	st->m_gotResults = false;
-
 	// for now disable queries
-	if ( ! g_conf.m_queryingEnabled ) {
+	if (!g_conf.m_queryingEnabled) {
 		g_errno = EQUERYINGDISABLED;
-		return sendReply(st,NULL);
+		return sendReply(st, nullptr);
 	}
 
 	// LAUNCH RESULTS
@@ -301,11 +377,12 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// . we print out matching docIds to int32_t if m_isDebug is true
 	// . no longer forward this, since proxy will take care of evenly
 	//   distributing its msg 0xfd "forward" requests now
-	st->m_gotResults=st->m_msg40.getResults(si,false,st,gotResultsWrapper);
+	st->m_gotResults = st->m_msg40.getResults(si, false, st, gotResultsWrapper);
+
 	// save error
 	st->m_errno = g_errno;
 
-	// wait for spellcheck and results?
+	// wait for results?
 	if (!st->m_gotResults) {
 		return false;
 	}
@@ -318,22 +395,14 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 static void gotResultsWrapper ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
+
 	// save error
 	st->m_errno = g_errno;
+
 	// mark as gotten
 	st->m_gotResults = true;
-	gotState (st);
-}
 
-static void gotState ( void *state ) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	if (!st->m_gotResults) {
-		return;
-	}
-
-	// we're ready to go
-	gotResults ( state );
+	gotResults(st);
 }
 
 // . make a web page from results stored in msg40

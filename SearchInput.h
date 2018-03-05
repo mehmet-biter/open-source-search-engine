@@ -26,7 +26,7 @@ class SearchInput {
 public:
 
 	// why provide query here, it is in "hr"
-	bool set ( class TcpSocket *s , class HttpRequest *hr );
+	bool set(class TcpSocket *s, class HttpRequest *hr, lang_t queryLang);
 
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 
