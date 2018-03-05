@@ -195,9 +195,10 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r) {
 	//////
 
 	// get the format. "html" "json" --> FORMAT_HTML, FORMAT_JSON ...
-	char tmpFormat = m_hr.getReplyFormat();
+	m_format = m_hr.getReplyFormat();
+
 	// now override automatic defaults for special cases
-	if ( tmpFormat != FORMAT_HTML ) {
+	if ( m_format != FORMAT_HTML ) {
 		m_doQueryHighlighting = false;
 		m_getDocIdScoringInfo = false;
 	}
@@ -211,10 +212,6 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r) {
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
 
 	m_coll = coll;
-
-	// it sets m_formatStr above, but we gotta set this...
-	m_format = tmpFormat;
-
 
 	//////
 	//
