@@ -758,7 +758,7 @@ static lang_t convertLangCLD3(std::string &language) {
 
 lang_t FxLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
                                  const char *contentLanguage, int32_t contentLanguageLen,
-                                 const char *tld, int32_t tldLen) {
+                                 const char *tld, int32_t tldLen, bool bestEffort) {
 	if (contentLen == 0) {
 		return langUnknown;
 	}
@@ -780,7 +780,9 @@ lang_t FxLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	CLD2::CLDHints cldhints = {content_language_hint.c_str(), tld_hint.c_str(), encoding_hint, language_hint};
 
 	int flags = 0;
-	//flags |= CLD2::kCLDFlagBestEffort;
+	if (bestEffort) {
+		flags |= CLD2::kCLDFlagBestEffort;
+	}
 
 	CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE};
 	int percent3[3] = {};

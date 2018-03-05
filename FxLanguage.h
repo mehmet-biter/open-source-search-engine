@@ -25,7 +25,7 @@ namespace FxLanguage {
 	// CLD2/CLD3
 	lang_t getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
 	                     const char *contentLanguage, int32_t contentLanguageLen,
-	                     const char *tld, int32_t tldLen);
+	                     const char *tld, int32_t tldLen, bool bestEffort = false);
 
 	lang_t getLangIdCLD3(const char *content, int32_t contentLen);
 
