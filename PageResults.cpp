@@ -232,9 +232,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	mnew ( st , sizeof(State0) , "PageResults2" );
 
 	// init some stuff
-	st->m_didRedownload    = false;
 	st->m_xd               = NULL;
-	st->m_oldContentHash32 = 0;
 
 	// copy yhits
 	if ( ! st->m_hr.copy ( hr ) )
@@ -246,8 +244,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// record timestamp so we know if we got our socket closed and swapped
 	st->m_socketStartTimeHack = s->m_startTime;
 
-	// save this count so we know if TcpServer.cpp calls destroySocket(s)
-	st->m_numDestroys = s->m_numDestroys;
 
 	// . parse it up
 	// . this returns false and sets g_errno and, maybe, g_msg on error
@@ -271,11 +267,9 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	if ( cr ) st->m_collnum = cr->m_collnum;
 	else      st->m_collnum = -1;
 
-	int32_t defHdr = 1;
-
 	// you have to say "&header=1" to get back the header for json now.
 	// later on maybe it will default to on.
-	st->m_header = hr->getLong("header",defHdr);
+	st->m_header = hr->getLong("header",1);
 
 	st->m_numDocIds = si->m_docsWanted;
 
@@ -285,26 +279,16 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	st->m_errno = 0;
 
 	// debug msg
-	log ( LOG_DEBUG , "query: Getting search results for q=%s",
-	      st->m_si.m_displayQuery);
+	log(LOG_DEBUG, "query: Getting search results for q=%s", st->m_si.m_displayQuery);
 
 	// assume we'll block
 	st->m_gotResults = false;
-	st->m_gotSpell   = false;
-
-	// reset
-	st->m_printedHeaderRow = false;
 
 	// for now disable queries
 	if ( ! g_conf.m_queryingEnabled ) {
 		g_errno = EQUERYINGDISABLED;
 		return sendReply(st,NULL);
 	}
-
-	// LAUNCH SPELLER
-	// get our spelling correction if we should (spell checker)
-	st->m_gotSpell = true;
-	st->m_spell[0] = '\0';
 
 	// LAUNCH RESULTS
 
@@ -321,16 +305,14 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// save error
 	st->m_errno = g_errno;
 
-	//log("results: debug: new state=%" PTRFMT,(PTRTYPE)st);
-
 	// wait for spellcheck and results?
-	if ( !st->m_gotSpell || !st->m_gotResults )
+	if (!st->m_gotResults) {
 		return false;
+	}
+
 	// otherwise call gotResults which returns false if blocked, true else
 	// and sets g_errno on error
-	bool status2 = gotResults ( st );
-
-	return status2;
+	return gotResults(st);
 }
 
 static void gotResultsWrapper ( void *state ) {
@@ -346,8 +328,10 @@ static void gotResultsWrapper ( void *state ) {
 static void gotState ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
-	if ( !st->m_gotSpell || !st->m_gotResults )
+	if (!st->m_gotResults) {
 		return;
+	}
+
 	// we're ready to go
 	gotResults ( state );
 }
@@ -898,21 +882,6 @@ static bool printSearchResultsHeader(State0 *st) {
 		sb->safePrintf("\"moreResultsFollow\":%" PRId32",\n",
 				(int32_t)moreFollow);
 
-	// . did he get a spelling recommendation?
-	// . do not use htmlEncode() on this anymore since receiver
-	//   of the XML feed usually does not want that.
-	if ( si->m_format == FORMAT_XML && st->m_spell[0] ) {
-		sb->safePrintf ("\t<spell><![CDATA[");
-		sb->safeStrcpy(st->m_spell);
-		sb->safePrintf ("]]></spell>\n");
-	}
-
-	if ( si->m_format == FORMAT_JSON && st->m_spell[0] ) {
-		sb->safePrintf ("\t\"spell\":\"");
-		sb->jsonEncode(st->m_spell);
-		sb->safePrintf ("\"\n,");
-	}
-
 	// print individual query term info
 	if ( si->m_format == FORMAT_XML ) {
 		const Query *q = &si->m_q;
@@ -1277,33 +1246,6 @@ static bool printSearchResultsHeader(State0 *st) {
 		sb->safePrintf("<table cellpadding=0 cellspacing=0>"
 			      "<tr><td valign=top>");
 	}
-
-	// two pane table
-	//if ( si->m_format == FORMAT_HTML ) 
-	//	sb->safePrintf("</td><td valign=top>");
-
-	// did we get a spelling recommendation?
-	if ( si->m_format == FORMAT_HTML && st->m_spell[0] ) {
-		// encode the spelling recommendation
-		int32_t len = strlen ( st->m_spell );
-		char qe2[MAX_FRAG_SIZE];
-		urlEncode(qe2, MAX_FRAG_SIZE, st->m_spell, len);
-		sb->safePrintf ("<font size=+0 color=\"#c62939\">Did you mean:"
-			       "</font> <font size=+0>"
-			       "<a href=\"/search?q=%s",
-			       qe2 );
-		// close it up
-		sb->safePrintf ("\"><i><b>");
-		sb->utf8Encode2(st->m_spell, len);
-		// then finish it off
-		sb->safePrintf ("</b></i></a></font>\n<br><br>\n");
-	}
-
-	// . Wrap results in a table if we are using ads. Easier to display.
-	//Ads *ads = &st->m_ads;
-	//if ( ads->hasAds() )
-        //        sb->safePrintf("<table width=\"100%%\">\n"
-        //                    "<tr><td style=\"vertical-align:top;\">\n");
 
 	// debug
 	if ( si->m_debug )
