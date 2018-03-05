@@ -214,15 +214,6 @@ static bool printCSSHead(SafeBuf *sb) {
 // . sets g_errno on error
 // . "msg" will be inserted into the access log for this request
 bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
-	// . check for sdirt=4, this a site search on the given directory id
-	// . need to pre-query the directory first to get the sites to search
-	//   this will likely have just been cached so it should be quick
-	// . then need to construct a site search query
-	//int32_t xml = hr->getLong("xml",0);
-
-	// what format should search results be in? default is html
-	char format = hr->getReplyFormat();
-
 	// make a new state
 	State0 *st;
 	try {
@@ -234,11 +225,8 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		    "Returning HTTP status of 500.",(int32_t)sizeof(State0));
 		Statistics::register_query_time(0, langUnknown, g_errno, 0);
 
-		return g_httpServer.sendQueryErrorReply
-			(s,500,mstrerror(g_errno),
-			 format, g_errno, "Query failed.  "
-			 "Could not allocate memory to execute a search.  "
-			 "Please try later." );
+		return g_httpServer.sendQueryErrorReply(s, 500, mstrerror(g_errno), hr->getReplyFormat(), g_errno,
+		                                        "Query failed. Could not allocate memory to execute a search. Please try later.");
 	}
 
 	mnew ( st , sizeof(State0) , "PageResults2" );
