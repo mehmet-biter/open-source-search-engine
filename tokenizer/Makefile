@@ -11,12 +11,15 @@ CPPFLAGS += -I.. -I../unicode
 .PHONY: default
 default: run
 
+libtokenizer.a: tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o
+	ar rcs $@ tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o
+
 
 tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer_unittest.o
 	g++ -g tokenizer.o tokenizer2.o tokenizer_unittest.o ../unicode/libunicode.a ../utf8_fast.o ../utf8.o ../EGStack.o -o $@
 
-xml_tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer3.o xml_tokenizer_unittest.o
-	g++ -g tokenizer.o tokenizer2.o tokenizer3.o xml_tokenizer_unittest.o ../unicode/libunicode.a ../libgb.a -lm -lpthread -lssl -lcrypto -lz -lpcre -lsqlite3 -ldl -L../ -lcld2_full -lcld3 -lprotobuf -lced -lcares -o $@
+xml_tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer_util.o xml_tokenizer_unittest.o
+	g++ -g tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer_util.o xml_tokenizer_unittest.o ../unicode/libunicode.a ../libgb.a -lm -lpthread -lssl -lcrypto -lz -lpcre -lsqlite3 -ldl -L../ -lcld2_full -lcld3 -lprotobuf -lced -lcares -o $@
 
 PHONY: run
 run: tokenizer_unittest

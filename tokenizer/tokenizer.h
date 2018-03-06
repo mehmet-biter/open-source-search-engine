@@ -42,6 +42,11 @@ public:
 	size_t size() const { return tokens.size(); }
 	TokenRange& operator[](size_t i) { return tokens[i]; }
 	const TokenRange& operator[](size_t i) const { return tokens[i]; }
+	
+	void clear() {
+		tokens.clear();
+		egstack.clear();
+	}
 
 	std::vector<TokenRange> tokens;
 	EGStack egstack; //heap for extra tokens
@@ -54,6 +59,8 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 class Xml;
 void xml_tokenizer_phase_1(const Xml *xml, TokenizerResult *tr);
 void xml_tokenizer_phase_2(const Xml *xml, lang_t lang, const char *country_code, TokenizerResult *tr);
+
+void calculate_tokens_hashes(TokenizerResult *tr);
 
 
 #endif

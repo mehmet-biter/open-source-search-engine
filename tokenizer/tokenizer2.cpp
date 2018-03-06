@@ -4,6 +4,7 @@
 #include "UCCMDecompose.h"
 #include "utf8_fast.h"
 #include "ligature_decomposition.h"
+#include "tokenizer_util.h"
 #include <string.h>
 
 

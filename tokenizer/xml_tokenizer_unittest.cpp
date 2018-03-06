@@ -100,7 +100,9 @@ int main(void) {
 		assert(has_token(tr,"H"));
 		assert(has_token(tr,"2"));
 		assert(has_token(tr,"O"));
-		//assert(has_token(tr,"H2O")); //not implemented yet
-		//assert(has_token(tr,"H₂O")); //not implemented yet
+		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
+		assert(has_token(tr,"H₂"));
+		assert(has_token(tr,"H2O")); //not implemented yet
+		assert(has_token(tr,"H₂O")); //not implemented yet
 	}
 }
