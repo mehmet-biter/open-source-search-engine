@@ -102,7 +102,7 @@ void QueryLanguage::convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t se
 // en=100|da=60|no=60
 void QueryLanguage::processResponse(fxclient_request_ptr_t base_request, char *response) {
 	std::shared_ptr<QueryLanguageRequest> request = std::dynamic_pointer_cast<QueryLanguageRequest>(base_request);
-	logTrace(g_conf.m_logTraceQueryLanguage, "Got languages %s for %s", response, request->m_query.c_str());
+	logTrace(g_conf.m_logTraceQueryLanguage, "Got result='%s' for query='%s'", response, request->m_query.c_str());
 
 	std::vector<std::pair<lang_t, int>> languages;
 
