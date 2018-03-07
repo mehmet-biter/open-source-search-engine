@@ -61,7 +61,7 @@ public:
 // User configured values for these parms need to be adjusted to internal ranges
 //
 const struct {
-	char *name;
+	const char *name;
 	float div_by;
 } static g_fxui_parms[] = {
 	{"diversityweightmin", 100.0},
