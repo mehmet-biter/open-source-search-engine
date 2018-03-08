@@ -1,15 +1,10 @@
-#include "gb-include.h"
-
 #include "Synonyms.h"
-#include "HttpServer.h"
-#include "StopWords.h"
-#include "Speller.h"
 #include "Words.h"
 #include "Bits.h"
 #include "Phrases.h"
-#include "sort.h"
 #include "Wiktionary.h"
-#include "Process.h"
+#include "Lang.h"
+#include "Sanity.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -65,7 +60,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		return 0;
 
 	// sanity check
-	if ( wordNum > words->getNumWords() ) { g_process.shutdownAbort(true); }
+	if ( wordNum > words->getNumWords() ) gbshutdownLogicError();
 
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
@@ -116,7 +111,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIds = (uint8_t *)bufPtr;
 	bufPtr += maxSyns ;
 
-	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) { g_process.shutdownAbort(true); }
+	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) gbshutdownLogicError();
 
 	// cursors
 	m_aidsPtr  = m_aids;
@@ -293,7 +288,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// zh_ch?
 		if ( *pipe == '_' ) pipe += 3;
 		// sanity
-		if ( *pipe != '|' ) { g_process.shutdownAbort(true); }
+		if ( *pipe != '|' ) gbshutdownAbort(true);
 
 		// is it "en" or "zh_ch" etc.
 		int synLangAbbrLen = pipe - ss;
@@ -341,7 +336,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 		// store the lang as a bit in a bit vector for the query term
 		// so it can be from multiple langs.
-		if ( synLangAbbrLen > 30 ) { g_process.shutdownAbort(true); }
+		if ( synLangAbbrLen > 30 ) gbshutdownAbort(true);
 		gbmemcpy ( tmp , synLangAbbr , synLangAbbrLen );
 		tmp[synLangAbbrLen] = '\0';
 		langId = getLangIdFromAbbr ( tmp ); // order is linear
@@ -458,7 +453,8 @@ bool Synonyms::addWithoutApostrophe(const Words *words, int32_t wordNum, HashTab
 
 
 // just index the first bigram for now to give a little bonus
-bool Synonyms::addAmpPhrase(const Words *words, int32_t wordNum, HashTableX *dt) {
+bool Synonyms::addAmpPhrase(const Words* words, int32_t wordNum, class HashTableX* dt)
+{
 	// . "D & B" --> dandb
 	// . make the "andb" a suffix
 	//char tbuf[100];

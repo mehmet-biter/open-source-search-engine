@@ -3,10 +3,7 @@
 #ifndef GB_SYNONYMS_H
 #define GB_SYNONYMS_H
 
-#include "Xml.h"
 #include "SafeBuf.h"
-#include "StopWords.h"
-#include "fctypes.h"
 
 #define SOURCE_NONE       0
 #define SOURCE_PRESET     1
@@ -25,6 +22,9 @@
 
 const char *getSourceString ( char source );
 
+class Words;
+class HashTableX;
+
 class Synonyms {
 
  public:
@@ -34,10 +34,10 @@ class Synonyms {
 
 	void reset();
 
-	int32_t getSynonyms ( const class Words *words , 
-			   int32_t wordNum , 
-			   uint8_t langId ,
-			   char *tmpBuf ) ;
+	int32_t getSynonyms(const Words *words,
+			    int32_t wordNum,
+			    uint8_t langId,
+			    char *tmpBuf);
 
 	
 
@@ -58,8 +58,8 @@ class Synonyms {
 	uint8_t    *m_langIds;
 
 private:
-	bool addWithoutApostrophe(const class Words *words, int32_t wordNum , class HashTableX *dt);
-	bool addAmpPhrase(const class Words *words, int32_t wordNum , class HashTableX *dt);
+	bool addWithoutApostrophe(const Words *words, int32_t wordNum, HashTableX *dt);
+	bool addAmpPhrase(const Words *words, int32_t wordNum, HashTableX *dt);
 	
 	char       *m_src;
 	
