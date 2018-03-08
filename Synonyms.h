@@ -40,10 +40,6 @@ class Synonyms {
 			   char *tmpBuf ) ;
 
 	
-	bool addWithoutApostrophe ( int32_t wordNum , class HashTableX *dt ) ;
-	bool addAmpPhrase ( int32_t wordNum , class HashTableX *dt ) ;
-
-	const class Words *m_words;
 
 	// temporarily store all synonyms here of the word for synonyms
 	// like the accent-stripped version of the word. otherwise we
@@ -63,6 +59,9 @@ class Synonyms {
 	uint8_t    *m_langIds;
 
 private:
+	bool addWithoutApostrophe(const class Words *words, int32_t wordNum , class HashTableX *dt);
+	bool addAmpPhrase(const class Words *words, int32_t wordNum , class HashTableX *dt);
+	
 	int64_t *m_aidsPtr;
 	int64_t *m_wids0Ptr;
 	int64_t *m_wids1Ptr;
