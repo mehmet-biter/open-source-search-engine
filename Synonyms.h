@@ -55,12 +55,13 @@ class Synonyms {
 	int32_t       *m_termLens;
 	int32_t       *m_numAlnumWords;
 	int32_t       *m_numAlnumWordsInBase;
-	char       *m_src;
 	uint8_t    *m_langIds;
 
 private:
 	bool addWithoutApostrophe(const class Words *words, int32_t wordNum , class HashTableX *dt);
 	bool addAmpPhrase(const class Words *words, int32_t wordNum , class HashTableX *dt);
+	
+	char       *m_src;
 	
 	int64_t *m_aidsPtr;
 	int64_t *m_wids0Ptr;
