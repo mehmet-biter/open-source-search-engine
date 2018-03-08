@@ -1,15 +1,10 @@
-#include "gb-include.h"
-
 #include "Synonyms.h"
-#include "HttpServer.h"
-#include "StopWords.h"
-#include "Speller.h"
 #include "Words.h"
 #include "Bits.h"
 #include "Phrases.h"
-#include "sort.h"
 #include "Wiktionary.h"
-#include "Process.h"
+#include "Lang.h"
+#include "Sanity.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -19,7 +14,6 @@ Synonyms::Synonyms() {
 	m_synWordBuf.setLabel("syswbuf");
 	
 	// Coverity
-	m_words = NULL;
 	m_aids = NULL;
 	m_wids0 = NULL;
 	m_wids1 = NULL;
@@ -65,11 +59,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	if ( ! words->getWordId(wordNum) )
 		return 0;
 
-	// store these
-	m_words     = words;
-
 	// sanity check
-	if ( wordNum > m_words->getNumWords() ) { g_process.shutdownAbort(true); }
+	if ( wordNum > words->getNumWords() ) gbshutdownLogicError();
 
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
@@ -120,7 +111,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIds = (uint8_t *)bufPtr;
 	bufPtr += maxSyns ;
 
-	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) { g_process.shutdownAbort(true); }
+	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) gbshutdownLogicError();
 
 	// cursors
 	m_aidsPtr  = m_aids;
@@ -135,8 +126,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIdsPtr = m_langIds;
 
 	
-	const char *w = m_words->getWord(wordNum);
-	int32_t  wlen = m_words->getWordLen(wordNum);
+	const char *w = words->getWord(wordNum);
+	int32_t  wlen = words->getWordLen(wordNum);
 
 	//
 	// NOW hit wiktionary
@@ -184,14 +175,14 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 	// try looking up bigram so "new jersey" gets "nj" as synonym
 	if ( wikiLangId && 
-	     wordNum+2< m_words->getNumWords() &&
-	     m_words->getWordId(wordNum+2)) {
+	     wordNum+2< words->getNumWords() &&
+	     words->getWordId(wordNum+2)) {
 		// get phrase id bigram then
 		int32_t conti = 0;
 		bwid = hash64Lower_utf8_cont(w,wlen,0,&conti);
 		// then the next word
-		const char *wp2 = m_words->getWord(wordNum+2);
-		int32_t  wlen2 = m_words->getWordLen(wordNum+2);
+		const char *wp2 = words->getWord(wordNum+2);
+		int32_t  wlen2 = words->getWordLen(wordNum+2);
 		bwid = hash64Lower_utf8_cont(wp2,wlen2,bwid,&conti);
 		baseNumAlnumWords = 2;
 		ss = g_wiktionary.getSynSet( bwid, wikiLangId );
@@ -200,7 +191,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	// need a language for wiktionary to work with
 	if ( wikiLangId && ! ss ) {
 		// get raw word id
-		bwid = m_words->getWordId(wordNum);
+		bwid = words->getWordId(wordNum);
 		baseNumAlnumWords = 1;
 		//if ( bwid == 1424622907102375150LL)
 		//	log("a");
@@ -297,7 +288,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// zh_ch?
 		if ( *pipe == '_' ) pipe += 3;
 		// sanity
-		if ( *pipe != '|' ) { g_process.shutdownAbort(true); }
+		if ( *pipe != '|' ) gbshutdownAbort(true);
 
 		// is it "en" or "zh_ch" etc.
 		int synLangAbbrLen = pipe - ss;
@@ -345,7 +336,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 		// store the lang as a bit in a bit vector for the query term
 		// so it can be from multiple langs.
-		if ( synLangAbbrLen > 30 ) { g_process.shutdownAbort(true); }
+		if ( synLangAbbrLen > 30 ) gbshutdownAbort(true);
 		gbmemcpy ( tmp , synLangAbbr , synLangAbbrLen );
 		tmp[synLangAbbrLen] = '\0';
 		langId = getLangIdFromAbbr ( tmp ); // order is linear
@@ -408,7 +399,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	if ( m_aidsPtr - m_aids > maxSyns ) return m_aidsPtr - m_aids;
 
 	// returns false with g_errno set
-	if ( ! addAmpPhrase ( wordNum, &dt ) ) return m_aidsPtr - m_aids;
+	if ( ! addAmpPhrase(words, wordNum, &dt) ) return m_aidsPtr - m_aids;
 
 	// do not breach
 	if ( m_aidsPtr - m_aids > maxSyns ) return m_aidsPtr - m_aids;
@@ -417,17 +408,17 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	if ( wlen>= 3 &&
 	     w[wlen-1] == 's' && 
 	     w[wlen-2]=='\'' &&
-	     ! addWithoutApostrophe ( wordNum, &dt ) )
+	     ! addWithoutApostrophe(words, wordNum, &dt) )
 		return m_aidsPtr - m_aids;
 
 	return m_aidsPtr - m_aids;
 }
 
 
-bool Synonyms::addWithoutApostrophe ( int32_t wordNum , HashTableX *dt ) {
+bool Synonyms::addWithoutApostrophe(const Words *words, int32_t wordNum, HashTableX *dt) {
 
-	int32_t  wlen = m_words->getWordLen(wordNum);
-	const char *w    = m_words->getWord(wordNum);
+	int32_t  wlen = words->getWordLen(wordNum);
+	const char *w    = words->getWord(wordNum);
 
 	wlen -= 2;
 	
@@ -462,17 +453,18 @@ bool Synonyms::addWithoutApostrophe ( int32_t wordNum , HashTableX *dt ) {
 
 
 // just index the first bigram for now to give a little bonus
-bool Synonyms::addAmpPhrase ( int32_t wordNum , HashTableX *dt ) {
+bool Synonyms::addAmpPhrase(const Words* words, int32_t wordNum, class HashTableX* dt)
+{
 	// . "D & B" --> dandb
 	// . make the "andb" a suffix
 	//char tbuf[100];
-	if ( wordNum +2 >= m_words->getNumWords() ) return true;
-	if ( ! m_words->getWordId(wordNum+2)     ) return true;
-	if ( m_words->getWordLen(wordNum+2) > 50 ) return true;
-	if ( ! m_words->hasChar(wordNum+1,'&')   ) return true;
+	if ( wordNum +2 >= words->getNumWords() ) return true;
+	if ( ! words->getWordId(wordNum+2)     ) return true;
+	if ( words->getWordLen(wordNum+2) > 50 ) return true;
+	if ( ! words->hasChar(wordNum+1,'&')   ) return true;
 
-	int32_t  wlen = m_words->getWordLen(wordNum);
-	const char *w    = m_words->getWord(wordNum);
+	int32_t  wlen = words->getWordLen(wordNum);
+	const char *w    = words->getWord(wordNum);
 
 	// need this for hash continuation procedure
 	int32_t conti = 0;

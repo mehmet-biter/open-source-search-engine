@@ -3,10 +3,7 @@
 #ifndef GB_SYNONYMS_H
 #define GB_SYNONYMS_H
 
-#include "Xml.h"
 #include "SafeBuf.h"
-#include "StopWords.h"
-#include "fctypes.h"
 
 #define SOURCE_NONE       0
 #define SOURCE_PRESET     1
@@ -25,6 +22,9 @@
 
 const char *getSourceString ( char source );
 
+class Words;
+class HashTableX;
+
 class Synonyms {
 
  public:
@@ -34,16 +34,12 @@ class Synonyms {
 
 	void reset();
 
-	int32_t getSynonyms ( const class Words *words , 
-			   int32_t wordNum , 
-			   uint8_t langId ,
-			   char *tmpBuf ) ;
+	int32_t getSynonyms(const Words *words,
+			    int32_t wordNum,
+			    uint8_t langId,
+			    char *tmpBuf);
 
 	
-	bool addWithoutApostrophe ( int32_t wordNum , class HashTableX *dt ) ;
-	bool addAmpPhrase ( int32_t wordNum , class HashTableX *dt ) ;
-
-	const class Words *m_words;
 
 	// temporarily store all synonyms here of the word for synonyms
 	// like the accent-stripped version of the word. otherwise we
@@ -59,10 +55,14 @@ class Synonyms {
 	int32_t       *m_termLens;
 	int32_t       *m_numAlnumWords;
 	int32_t       *m_numAlnumWordsInBase;
-	char       *m_src;
 	uint8_t    *m_langIds;
 
 private:
+	bool addWithoutApostrophe(const Words *words, int32_t wordNum, HashTableX *dt);
+	bool addAmpPhrase(const Words *words, int32_t wordNum, HashTableX *dt);
+	
+	char       *m_src;
+	
 	int64_t *m_aidsPtr;
 	int64_t *m_wids0Ptr;
 	int64_t *m_wids1Ptr;
