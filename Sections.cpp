@@ -10,7 +10,7 @@
 
 #include "Sections.h"
 #include "Url.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Conf.h"
 #include "XmlDoc.h"
 #include "Bits.h"
@@ -19,6 +19,7 @@
 #include "StopWords.h"
 #include "Process.h"
 #include "Posdb.h"
+#include "GbUtil.h"
 
 Sections::Sections ( ) {
 	m_sections = NULL;
@@ -40,14 +41,10 @@ void Sections::reset() {
 	m_sectionPtrs = NULL;
 	
 	// Coverity
-	m_words = NULL;
+	m_tr = NULL;
 	m_contentType = 0;
 	m_isRSSExt = false;
 	m_maxNumSections = 0;
-	m_wids = NULL;
-	m_wlens = NULL;
-	m_wptrs = NULL;
-	m_tids = NULL;
 }
 
 Sections::~Sections ( ) {
@@ -79,39 +76,29 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentType ) {
+bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_t contentType ) {
 	reset();
 
-	if ( ! w ) return true;
+	if ( ! tr ) return true;
 
-	if ( w->getNumWords() > 1000000 ) {
+	if ( tr->size() > 1000000 ) {
 		log("sections: over 1M words. skipping sections set for "
 		    "performance.");
 		return true;
 	}
 
 	// save it
-	m_words           = w;
+	m_tr              = tr;
 	m_bits            = bits;
 	m_contentType     = contentType;
 
 	// reset this just in case
 	g_errno = 0;
 
-	if ( w->getNumWords() <= 0 ) return true;
+	if ( tr->empty() ) return true;
 
 	// shortcuts
-	const int64_t      *wids  = w->getWordIds  ();
-	const nodeid_t     *tids  = w->getTagIds   ();
-	int32_t           nw  = w->getNumWords ();
-	const char * const *wptrs  = w->getWordPtrs();
-	const int32_t      *wlens = w->getWordLens ();
-
-	// set these up
-	m_wids  = wids;
-	m_wlens = wlens;
-	m_wptrs = wptrs;
-	m_tids  = tids;
+	int32_t           nw  = tr->size();
 
 	m_isRSSExt = false;
 	const char *ext = url->getExtension();
@@ -122,19 +109,20 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 	// . init at one to count the root section
 	int32_t max = 1;
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// . count all front tags
 
 		// count back tags too since some url 
 		// http://www.tedxhz.com/tags.asp?id=3919&id2=494 had a bunch
 		// of </p> tags with no front tags and it cored us because
 		// m_numSections > m_maxNumSections!
-		if ( tids[i] ) {
+		if ( token.nodeid ) {
 			max += 2;
 		// . any punct tag could have a bullet in it...
 		// . or if its a period could make a sentence section
-		} else if ( ! wids[i] ) {
+		} else if ( !token.is_alfanum ) {
 			// only do not count simple spaces
-			if ( m_wlens[i] == 1 && is_wspace_a(m_wptrs[i][0]))
+			if ( token.token_len == 1 && is_wspace_a(token.token_start[0]))
 				continue;
 			// otherwise count it as sentence delimeter
 			max++;
@@ -210,7 +198,8 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 
 	// Sections are no longer 1-1 with words, just with front tags
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		nodeid_t fullTid = tids[i];
+		const auto &token = (*tr)[i];
+		nodeid_t fullTid = token.nodeid;
 
 		// are we a non-tag?
 		if ( ! fullTid ) { 
@@ -268,16 +257,17 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 			// scan for whole sequence
 			int32_t lastBrPos = i;
 			for ( int32_t j = i + 1 ; j < nw ; j++ ) {
+				const auto &token2 = (*tr)[j];
 				// claim br tags
-				if ( tids[j] == TAG_BR ) { 
+				if ( token2.nodeid == TAG_BR ) { 
 					lastBrPos = j;
 					brcnt++; 
 					continue; 
 				}
 				// break on words
-				if ( wids[j] ) break;
+				if ( token2.is_alfanum ) break;
 				// all spaces is ok
-				if ( w->isSpaces(j) ) continue;
+				if ( is_wspace_utf8_string(token2.token_start,token2.token_end()) ) continue;
 				// otherwise, stop on other punct
 				break;
 			}
@@ -306,8 +296,8 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		//   for parsing out events
 		// . make excpetion for <p> tag too! most ppl use </p>
 		if ( ( ! hasBackTag ( tid ) || 
-		       wptrs[i][1] =='!'    || // <!ENTITY rdfns...>
-		       wptrs[i][1] =='?'    ) &&
+		       token.token_start[1] =='!'    || // <!ENTITY rdfns...>
+		       token.token_start[1] =='?'    ) &&
 		     tid != TAG_P &&
 		     tid != TAG_LI )
 			continue;
@@ -316,7 +306,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		// . <description />
 		// . fixes inconsistency in 
 		//   www.trumba.com/calendars/KRQE_Calendar.rss
-		if ( wptrs[i][wlens[i]-2] == '/' && tid == TAG_XMLTAG )
+		if ( token.token_start[token.token_len-2] == '/' && tid == TAG_XMLTAG )
 			continue;
 
 		// do not breach the stack
@@ -643,8 +633,9 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 
 		// get it
 		int32_t ws = sn->m_a;
+		const auto &token = (*m_tr)[ws];
 		// shortcut
-		nodeid_t tid = tids[ws];
+		nodeid_t tid = token.nodeid;
 
 		if (tid == TAG_IFRAME) {
 			inIFrame = true;
@@ -670,8 +661,8 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		// custom xml tag, hash the tag itself
 		if ( tid != TAG_XMLTAG ) continue;
 		// stop at first space to avoid fields!!
-		const char *p    =     m_wptrs[ws] + 1;
-		const char *pend = p + m_wlens[ws];
+		const char *p    =     token.token_start + 1;
+		const char *pend = p + token.token_len;
 		// skip back tags
 		if ( *p == '/' ) continue;
 		// reset hash
@@ -710,7 +701,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		}
 
 		// assume end is end of doc
-		int32_t end = m_words->getNumWords();
+		int32_t end = m_tr->size();
 		// get end of parent
 		if ( ps ) end = ps->m_b;
 
@@ -723,7 +714,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		// . get our tag type
 		// . use int32_t instead of nodeid_t so we can re-set this
 		//   to the xml tag hash if we need to
-		int32_t tid1 = m_tids[si->m_a];
+		int32_t tid1 = (*m_tr)[si->m_a].nodeid;
 		// use the tag hash if this is an xml tag
 		if ( tid1 == TAG_XMLTAG ) {
 			// we computed this above
@@ -757,7 +748,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 			// fix sunsetpromotions.com bug. see above.
 			if ( sj->m_parent != si->m_parent ) continue;
 			// get its tid
-			int32_t tid2 = tids[a];
+			int32_t tid2 = (*m_tr)[a].nodeid;
 			// use base hash if xml tag
 			if ( tid2 == TAG_XMLTAG )
 				tid2 = sj->m_xmlNameHash;
@@ -848,8 +839,9 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		Section *sn = &m_sections[i];
 		// get word start into "ws"
 		int32_t ws = sn->m_a;
+		const auto &token = (*m_tr)[ws];
 		// shortcut
-		nodeid_t tid = tids[ws];
+		nodeid_t tid = token.nodeid;
 		// sanity check, <a> guys are not sections
 		//if ( tid == TAG_A &&
 		//     !(sn->m_flags & SEC_SENTENCE) ) { g_process.shutdownAbort(true); }
@@ -857,7 +849,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		int64_t mtid = tid;
 		// custom xml tag, hash the tag itself
 		if ( tid == TAG_XMLTAG )
-			mtid = hash32 ( wptrs[ws], wlens[ws] );
+			mtid = hash32 ( token.token_start,token.token_len );
 		// an unknown tag like <!! ...->
 		if ( tid == 0 )
 			mtid = 1;
@@ -878,7 +870,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		     tid == TAG_P    || // <p class="pstrg"> stjohnscollege.edu
 		     tid == TAG_SPAN ) {
 			// get ptr
-		        uint8_t *p = (uint8_t *)wptrs[ws];
+		        const char *p = token.token_start;
 			// skip <
 			p++;
 			// skip following alnums, that is the tag name
@@ -891,7 +883,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 			//   causing "The Remains" to be paired up with
 			//   "Aug 7, 2010" in an implied section which was
 			//   just wrong. it was 20, i made it 100...
-			uint8_t *pend = p + 100;
+			const char *pend = p + 100;
 			// position ptr
 			unsigned char cnt = 0;
 			// a flag
@@ -971,7 +963,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 	// now set position of first word each section contains
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// skip if not alnum word
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get smallest section containing
 		Section *si = m_sectionPtrs[i];
 		// do each parent as well
@@ -987,7 +979,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 	// and last word position
 	for ( int32_t i = m_nw - 1 ; i > 0 ; i-- ) {
 		// skip if not alnum word
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get smallest section containing
 		Section *si = m_sectionPtrs[i];
 		// do each parent as well
@@ -1123,8 +1115,8 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		//   below the calendar.
 
 		// get the style tag in there and check it for "display: none"!
-		int32_t  slen = wlens[wn];
-		const char *s    = wptrs[wn];
+		int32_t  slen = (*m_tr)[wn].token_len;
+		const char *s    = (*m_tr)[wn].token_start;
 		const char *send = s + slen;
 
 		// check out any div tag that has a style
@@ -1155,9 +1147,9 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 	// now set the content hash of each section
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// must be an alnum word
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get its section
-		m_sectionPtrs[i]->m_contentHash64 ^= m_wids[i];
+		m_sectionPtrs[i]->m_contentHash64 ^= (*m_tr)[i].token_hash;
 		// fix "smooth smooth!"
 		if ( m_sectionPtrs[i]->m_contentHash64 == 0 )
 			m_sectionPtrs[i]->m_contentHash64 = 123456;
@@ -1191,7 +1183,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 		int32_t b = sn->m_sentb;
 		for ( int32_t j = a ; j < b ; j++ ) {
 			// must be an alnum word
-			if ( ! m_wids[j] ) continue;
+			if ( ! (*m_tr)[j].is_alfanum ) continue;
 			// alnumcount
 			alnumCount2++;
 		}
@@ -1335,13 +1327,13 @@ bool Sections::addSentenceSections ( ) {
 
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// need a wid
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get section we are currently in
 		Section *cs = m_sectionPtrs[i];
 		// skip if its bad! i.e. style or script or whatever
 		if ( cs->m_flags & badFlags ) continue;
 		// set that
-		int64_t prevWid = m_wids[i];
+		int64_t prevWid = (*m_tr)[i].token_hash;
 		int64_t prevPrevWid = 0LL;
 		// flag
 		int32_t lastWidPos = i;//-1;
@@ -1354,15 +1346,17 @@ bool Sections::addSentenceSections ( ) {
 		int32_t upper = 0;
 		int32_t numAlnums = 0;
 		// scan for sentence end
-		int32_t j; for ( j = i ; j < m_nw ; j++ ) {
+		int32_t j;
+		for ( j = i ; j < m_nw ; j++ ) {
+			const auto &token2 = (*m_tr)[j];
 			// skip words
-			if ( m_wids[j] ) {
+			if ( token2.is_alfanum ) {
 				// prev prev
 				prevPrevWid = prevWid;
 				// assume not a word like "vs."
 				hasWordAfter = false;
 				// set prev
-				prevWid = m_wids[j];
+				prevWid = token2.token_hash;
 				lastWidPos = j;
 				lastWasComma = false;
 				endOnBr = false;
@@ -1371,16 +1365,16 @@ bool Sections::addSentenceSections ( ) {
 				// skip if stop word and need not be
 				// capitalized
 				if ( bb[j] & D_IS_STOPWORD ) continue;
-				if ( m_wlens[j] <= 1 ) continue;
-				if ( is_digit(m_wptrs[j][0]) ) continue;
-				if ( !is_upper_utf8(m_wptrs[j])) capped=false;
+				if ( token2.token_len <= 1 ) continue;
+				if ( is_digit(token2.token_start[0]) ) continue;
+				if ( !is_upper_utf8(token2.token_start)) capped=false;
 				else                           upper++;
 				continue;
 			}
 			// tag?
-			if ( m_tids[j] ) {
+			if ( token2.nodeid ) {
 				// shortcut
-				nodeid_t tid = m_tids[j] & BACKBITCOMP;
+				nodeid_t tid = token2.nodeid & BACKBITCOMP;
 
 				// treat nobr as breaking to fix ceder.net
 				// which has it after the group title
@@ -1397,9 +1391,9 @@ bool Sections::addSentenceSections ( ) {
 				// fixes http://chuckprophet.com/gigs/ 
 				if ( (tid == TAG_DIV ||
 				      tid == TAG_SPAN ) &&
-				     m_wlens[j] > 14 &&
-				     strncasestr(m_wptrs[j],"display:none",
-						 m_wlens[j]) )
+				    token2.token_len > 14 &&
+				     strncasestr(token2.token_start,"display:none",
+						 token2.token_len) )
 					break;
 				// ok, treat span as non-breaking for a second
 				if ( tid == TAG_SPAN ) continue;
@@ -1429,7 +1423,7 @@ bool Sections::addSentenceSections ( ) {
 					// the first street address, 
 					// 5013 Miramar
 					if ( includedTag == tid &&
-					     (m_tids[j] & BACKBIT) ) {
+					     (token2.nodeid & BACKBIT) ) {
 						// reset it in case next
 						// <span> tag is not connective
 						includedTag = -2;
@@ -1444,15 +1438,15 @@ bool Sections::addSentenceSections ( ) {
 					//  Cruise Night..." and we allow
 					// "<span>" because it follows "a",
 					// but we were breaking on </span>!
-					if ( !(m_tids[j]&BACKBIT))
+					if ( !(token2.nodeid&BACKBIT))
 						includedTag = tid;
 					// if prev punct was comma and not
 					// an alnum word
 					if ( lastWasComma ) continue;
 					// get punct words bookcasing this tag
-					if ( ! m_wids[j+1] && 
-					     ! m_tids[j+1] &&
-					     m_words->hasChar(j+1,',') )
+					if ( ! (*m_tr)[j+1].is_alfanum && 
+					     ! (*m_tr)[j+1].nodeid &&
+					     has_char((*m_tr)[j+1].token_start,(*m_tr)[j+1].token_end(),',') )
 						continue;
 					// if prevwid is like "vs." then
 					// that means keep going even if
@@ -1467,10 +1461,10 @@ bool Sections::addSentenceSections ( ) {
 					int32_t maxaw = j + 12;
 					if ( maxaw > m_nw ) maxaw = m_nw;
 					for ( ; aw < maxaw ; aw++ )
-						if ( m_wids[aw] ) break;
+						if ( (*m_tr)[aw].is_alfanum ) break;
 					bool isLower = false;
 					if ( aw < maxaw &&
-					     is_lower_utf8(m_wptrs[aw]) ) 
+					     is_lower_utf8((*m_tr)[aw].token_start) ) 
 						isLower = true;
 
 					// http or https is not to be
@@ -1479,15 +1473,15 @@ bool Sections::addSentenceSections ( ) {
 					// sentences continued by an http://
 					// url below them.
 					if ( aw < maxaw &&
-					     (m_wids[aw] == h_http ||
-					      m_wids[aw] == h_https) )
+					     ((*m_tr)[aw].token_hash == h_http ||
+					      (*m_tr)[aw].token_hash == h_https) )
 						isLower = false;
 
 					if ( tid == TAG_P &&
 					     isLower &&
 					     // Oscar G<p>along with xxxx
-					     m_wids[aw] != h_along &&
-					     m_wids[aw] != h_with )
+					     (*m_tr)[aw].token_hash != h_along &&
+					     (*m_tr)[aw].token_hash != h_with )
 						isLower = false;
 
 					if ( isLower ) continue;
@@ -1526,7 +1520,7 @@ bool Sections::addSentenceSections ( ) {
 				// the line but ppl maybe configure them to
 				if ( tid == TAG_SPAN ) break;
 				// if like <font> ignore it
-				if ( ! isBreakingTagId(m_tids[j]) ) continue;
+				if ( ! isBreakingTagId(token2.nodeid) ) continue;
 				// only break on xml tags if in rss feed to
 				// fix <st1:State w:st="on">Arizona</st1>
 				// for gwair.org
@@ -1535,7 +1529,7 @@ bool Sections::addSentenceSections ( ) {
 				break;
 			}
 			// skip simple spaces for speed
-			if ( m_wlens[j] == 1 && is_wspace_a(m_wptrs[j][0]))
+			if ( token2.token_len == 1 && is_wspace_a(token2.token_start[0]))
 				continue;
 
 			// do not allow punctuation that is in a url
@@ -1550,8 +1544,8 @@ bool Sections::addSentenceSections ( ) {
 			// was last punct containing a comma?
 			lastWasComma = false;
 			// scan the punct chars, stop if we hit a sent breaker
-			const char *p    =     m_wptrs[j];
-			const char *pend = p + m_wlens[j];
+			const char *p    =     token2.token_start;
+			const char *pend = p + token2.token_len;
 			for ( ; p < pend ; p++ ) {
 				// punct word...
 				if ( *p == '.' ) break;
@@ -1567,12 +1561,12 @@ bool Sections::addSentenceSections ( ) {
 				     lastWidPos >= 0 &&
 				     ! m_isRSSExt &&
 				     j+1<m_nw &&
-				     m_wids[j+1] &&
+				     (*m_tr)[j+1].is_alfanum &&
 				     //( ! (bb[lastWidPos] & D_IS_IN_DATE) ||
 				     //  ! (bb[j+1] & D_IS_IN_DATE)       ) &&
 				     // fix for $10 - $12
-				     ( ! is_digit ( m_wptrs[lastWidPos][0]) ||
-				       ! is_digit ( m_wptrs[j+1][0]) ) )
+				     ( ! is_digit ( (*m_tr)[lastWidPos].token_start[0]) ||
+				       ! is_digit ( (*m_tr)[j+1].token_start[0]) ) )
 					break;
 				// . treat colon like comma now
 				// . for unm.edu we have 
@@ -1609,10 +1603,10 @@ bool Sections::addSentenceSections ( ) {
 
 					// or prev word was tag! like
 					// "blah</b>:..."
-					bool tagAfter=(j-1>=0&&m_tids[j-1]);
+					bool tagAfter = (j-1>=0 && (*m_tr)[j-1].nodeid);
 
 					// do not allow if next word is tag
-					bool tagBefore=(j+1<m_nw&&m_tids[j+1]);
+					bool tagBefore = (j+1<m_nw && (*m_tr)[j+1].nodeid);
 
 					// do not allow 
 					// "<br>...:<br>" or
@@ -1684,18 +1678,18 @@ bool Sections::addSentenceSections ( ) {
 				int32_t max  = next + 10;
 				if ( max > m_nw ) max = m_nw;
 				for ( ; next < max ; next++ ) {
-					if ( ! m_wids[next] ) continue;
+					if ( ! (*m_tr)[next].is_alfanum ) continue;
 					break;
 				}
 
 				// was previous word/abbr capitalized?
 				// if so, assume period does not end sentence.
-				if ( m_words->isCapitalized(lastWidPos) )
+				if ( is_capitalized_utf8((*m_tr)[lastWidPos].token_start) )
 					goto redo;
 				// if next word is NOT capitalized, assume
 				// period does not end sentence...
 				if ( next < max &&
-				     ! m_words->isCapitalized ( next ) )
+				     ! is_capitalized_utf8((*m_tr)[next].token_start) )
 					goto redo;
 				// otherwise, abbr is NOT capitalized and
 				// next word IS capitalized, so assume the
@@ -1703,9 +1697,11 @@ bool Sections::addSentenceSections ( ) {
 			}
 			// fix "1. library name" for cabq.gov
 			if ( *p == '.' && 
-			     lastWidPos == i &&
-			     m_words->isNum(lastWidPos) )
-				goto redo;
+			     lastWidPos == i) {
+				auto const &t = (*m_tr)[lastWidPos];
+				if(is_ascii_digit_string(t.token_start, t.token_end()))
+					goto redo;
+			}
 			// ok, stop otherwise
 			break;
 		}
@@ -1713,7 +1709,7 @@ bool Sections::addSentenceSections ( ) {
 		// do not include tag at end. try to fix sentence flip flop.
 		for ( ; j > i ; j-- ) 
 			// stop when we just contain the last word
-			if ( m_wids[j-1] ) break;
+			if ( (*m_tr)[j-1].is_alfanum ) break;
 
 		// make our sentence endpoints now
 		int32_t senta = i;
@@ -1758,7 +1754,7 @@ bool Sections::addSentenceSections ( ) {
 				goto addit;
 			}
 			// need a real alnum word
-			if ( ! m_wids[k] ) continue;
+			if ( ! (*m_tr)[k].is_alfanum ) continue;
 			// get his parent
 			pp = m_sectionPtrs[k];
 			// set parent if need to
@@ -1793,7 +1789,7 @@ bool Sections::addSentenceSections ( ) {
 				//if ( pp->m_a <= senta ) break;
 			}
 			// mark it
-			if ( m_wids[k] ) lastk = k;
+			if ( (*m_tr)[k].token_hash ) lastk = k;
 			// ok, keep chugging
 			continue;
 
@@ -1831,7 +1827,7 @@ bool Sections::addSentenceSections ( ) {
 				// check
 				if ( adda < 0 ) break;
 				// how can this happen?
-				if ( m_wids[adda] ) { g_process.shutdownAbort(true); }
+				if ( (*m_tr)[adda].is_alfanum ) { g_process.shutdownAbort(true); }
 			}
 			// sanity
 			if ( adda < 0 ) { g_process.shutdownAbort(true); }
@@ -1889,7 +1885,7 @@ bool Sections::addSentenceSections ( ) {
 				// stop if addb 
 				if ( addb >= m_nw ) break;
 				// how can this happen?
-				if ( m_wids[addb] ) { g_process.shutdownAbort(true); }
+				if ( (*m_tr)[addb].is_alfanum ) { g_process.shutdownAbort(true); }
 			}
 			// sanity
 			if ( addb >= m_nw ) { g_process.shutdownAbort(true); }
@@ -2073,7 +2069,7 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	// set sk->m_firstWordPos
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// and first/last word pos
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// mark this
 		sk->m_firstWordPos = i;
 		break;
@@ -2082,7 +2078,7 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	// set sk->m_lastWordPos
 	for ( int32_t i = b-1 ; i >= a ; i-- ) {
 		// and first/last word pos
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// mark this
 		sk->m_lastWordPos = i;
 		break;
@@ -2327,7 +2323,7 @@ bool Sections::isHardSection(const Section *sn) const {
 	//   the header dates are in span tags and if that is seen as a hard
 	//   section bad things happen
 	//if ( m_tids[a] == TAG_SPAN ) return true;
-	if ( ! isBreakingTagId(m_tids[a]) ) {
+	if ( ! isBreakingTagId((*m_tr)[a].nodeid) ) {
 		// . if first child is hard that works!
 		// . fixes "<blockquote><p>..." for collectorsguide.com
 		if ( sn->m_next && 
@@ -2342,11 +2338,11 @@ bool Sections::isHardSection(const Section *sn) const {
 	}
 	// trumba.com has sub dates in br-based implied sections that need
 	// to telescope to their parent above
-	if ( m_tids[a] == TAG_BR ) return false;
+	if ( (*m_tr)[a].nodeid == TAG_BR ) return false;
 	if ( sn->m_flags & SEC_SENTENCE ) return false;
 
 	// xml tag exception for gwair.org. treat <st1:Place>... as soft
-	if ( (m_tids[a] & BACKBITCOMP) == TAG_XMLTAG && ! m_isRSSExt )
+	if ( ((*m_tr)[a].nodeid & BACKBITCOMP) == TAG_XMLTAG && ! m_isRSSExt )
 		return false;
 
 	return true;
@@ -2365,7 +2361,7 @@ bool Sections::setMenus ( ) {
 	// set SEC_PLAIN_TEXT and SEC_LINK_TEXT for all sections
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// need alnum word
-		if ( ! m_wids[i] ) continue;
+		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get our flag
 		if ( bb[i] & D_IN_LINK ) flag = SEC_LINK_TEXT;
 		else                     flag = SEC_PLAIN_TEXT;
@@ -2402,8 +2398,8 @@ bool Sections::setMenus ( ) {
 
 		// . if it is a mailto link forget it
 		// . fixes abtango.com from detecting a bad menu
-		const char *ptr  = m_wptrs[si->m_a];
-		int32_t  plen = m_wlens[si->m_a];
+		const char *ptr  = (*m_tr)[si->m_a].token_start;
+		int32_t  plen = (*m_tr)[si->m_a].token_len;
 
 		const char *mailto = strncasestr(ptr,plen,"mailto:");
 		if ( mailto ) {
@@ -2477,14 +2473,14 @@ bool Sections::setMenus ( ) {
 	// a preceeding copyright sign. mark such years as DF_COPYRIGHT
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// skip if tag
-		if ( m_tids[i] ) continue;
+		if ( (*m_tr)[i].nodeid ) continue;
 		// do we have an alnum word before us here?
-		if ( m_wids[i] ) {
+		if ( (*m_tr)[i].is_alfanum ) {
 			// if word check for copyright
-			if ( m_wids[i] != h_copyright ) continue;
+			if ( (*m_tr)[i].token_hash != h_copyright ) continue;
 		}
 		// must have copyright sign in it i guess
-		else if ( ! gb_strncasestr(m_wptrs[i],m_wlens[i],(char*)copy)) 
+		else if ( ! gb_strncasestr((*m_tr)[i].token_start, (*m_tr)[i].token_len, (char*)copy)) 
 			continue;
 		// mark section as copyright section then
 		Section *sp = m_sectionPtrs[i];
@@ -2566,7 +2562,7 @@ bool Sections::setMenus ( ) {
 		//
 		// get word before first item in list
 		int32_t r = sk->m_a - 1;
-		for ( ; r >= 0 && !m_wids[r]; r-- )
+		for ( ; r >= 0 && !(*m_tr)[r].is_alfanum; r-- )
 			;
 
 		// if no header, skip
@@ -2710,41 +2706,42 @@ bool Sections::setMenus ( ) {
 		int32_t i;
 		// scan words if any
 		for ( i = a ; i < b ; i++ ) {
+			const auto &token = (*m_tr)[i];
 			// skip if not word
-			if ( ! m_wids[i] ) continue;
+			if ( ! token.is_alfanum ) continue;
 			// assume bad
 			bad = true;
 			// certain words are indicative of menus
-			if ( m_wids[i] == h_close ) break;
-			if ( m_wids[i] == h_send ) break;
-			if ( m_wids[i] == h_map ) break;
-			if ( m_wids[i] == h_maps ) break;
-			if ( m_wids[i] == h_directions ) break;
-			if ( m_wids[i] == h_driving ) break;
-			if ( m_wids[i] == h_help ) break;
-			if ( m_wids[i] == h_more ) break;
-			if ( m_wids[i] == h_log ) break; // log in
-			if ( m_wids[i] == h_sign ) break; // sign up/in
-			if ( m_wids[i] == h_change ) break; // change my loc.
-			if ( m_wids[i] == h_write ) break; // write a review
-			if ( m_wids[i] == h_save ) break;
-			if ( m_wids[i] == h_share ) break;
-			if ( m_wids[i] == h_forgot ) break; // forgot your pwd
-			if ( m_wids[i] == h_home ) break;
-			if ( m_wids[i] == h_sitemap ) break;
-			if ( m_wids[i] == h_advanced ) break; // adv search
-			if ( m_wids[i] == h_go ) break; // go to top of page
-			if ( m_wids[i] == h_website ) break;
-			if ( m_wids[i] == h_view ) break;
-			if ( m_wids[i] == h_add ) break;
-			if ( m_wids[i] == h_submit ) break;
-			if ( m_wids[i] == h_get ) break;
-			if ( m_wids[i] == h_about ) break;
-			if ( m_wids[i] == h_back ) break;
-			if ( m_wids[i] == h_next ) break;
-			if ( m_wids[i] == h_buy ) break;
-			if ( m_wids[i] == h_english ) break;
-			if ( m_wids[i] == h_click ) break;
+			if ( token.token_hash == h_close ) break;
+			if ( token.token_hash == h_send ) break;
+			if ( token.token_hash == h_map ) break;
+			if ( token.token_hash == h_maps ) break;
+			if ( token.token_hash == h_directions ) break;
+			if ( token.token_hash == h_driving ) break;
+			if ( token.token_hash == h_help ) break;
+			if ( token.token_hash == h_more ) break;
+			if ( token.token_hash == h_log ) break; // log in
+			if ( token.token_hash == h_sign ) break; // sign up/in
+			if ( token.token_hash == h_change ) break; // change my loc.
+			if ( token.token_hash == h_write ) break; // write a review
+			if ( token.token_hash == h_save ) break;
+			if ( token.token_hash == h_share ) break;
+			if ( token.token_hash == h_forgot ) break; // forgot your pwd
+			if ( token.token_hash == h_home ) break;
+			if ( token.token_hash == h_sitemap ) break;
+			if ( token.token_hash == h_advanced ) break; // adv search
+			if ( token.token_hash == h_go ) break; // go to top of page
+			if ( token.token_hash == h_website ) break;
+			if ( token.token_hash == h_view ) break;
+			if ( token.token_hash == h_add ) break;
+			if ( token.token_hash == h_submit ) break;
+			if ( token.token_hash == h_get ) break;
+			if ( token.token_hash == h_about ) break;
+			if ( token.token_hash == h_back ) break;
+			if ( token.token_hash == h_next ) break;
+			if ( token.token_hash == h_buy ) break;
+			if ( token.token_hash == h_english ) break;
+			if ( token.token_hash == h_click ) break;
 			bad = false;
 			break;
 		}
@@ -2935,17 +2932,18 @@ bool Sections::setHeadingBit ( ) {
 		int32_t i;
 		// scan the alnum words we contain
 		for ( i = a ; i <= b ; i++ ) {
+			const auto &token = (*m_tr)[i];
 			// . did we hit a breaking tag?
 			// . "<div> blah <table><tr><td>blah... </div>"
-			if ( m_tids[i] && isBreakingTagId(m_tids[i]) ) break;
+			if ( token.nodeid && isBreakingTagId(token.nodeid) ) break;
 			// skip if not alnum word
-			if ( ! m_wids[i] ) continue;
+			if ( ! token.is_alfanum ) continue;
 			// skip digits
-			if(m_wlens[i] == 4 &&
-			   is_digit(m_wptrs[i][0]) &&
-			   is_digit(m_wptrs[i][1]) &&
-			   is_digit(m_wptrs[i][2]) &&
-			   is_digit(m_wptrs[i][3])) {
+			if(token.token_len == 4 &&
+			   is_digit(token.token_start[0]) &&
+			   is_digit(token.token_start[1]) &&
+			   is_digit(token.token_start[2]) &&
+			   is_digit(token.token_start[3])) {
 				// . but if we had a year like "2010" that
 				//   is allowed to be a header.
 				// . this fixes 770kob.com because the events
@@ -2954,7 +2952,7 @@ bool Sections::setHeadingBit ( ) {
 				//   section, when they should have been in
 				//   their own section! and now they are in
 				//   their own implied section...
-				int32_t num = atol2(m_wptrs[i],m_wlens[i]);
+				int32_t num = atol2(token.token_start,token.token_len);
 				if ( num < 1800 ) continue;
 				if ( num > 2100 ) continue;
 				// mark it
@@ -2964,17 +2962,17 @@ bool Sections::setHeadingBit ( ) {
 			// mark this
 			hadAlpha = true;
 			// is it upper?
-			if ( is_upper_utf8(m_wptrs[i]) ) {
+			if ( is_upper_utf8(token.token_start) ) {
 				hadUpper = true;
 				continue;
 			}
 			// skip stop words
-			if(isStopWord(m_wptrs[i], m_wlens[i], m_wids[i])) continue;
+			if(isStopWord(token.token_start, token.token_len, token.token_hash)) continue;
 			// . skip short words
 			// . November 4<sup>th</sup> for facebook.com
-			if ( m_wlens[i] <= 2 ) continue;
+			if ( token.token_len <= 2 ) continue;
 			// is it lower?
-			if ( is_lower_utf8(m_wptrs[i]) ) lowerCount++;
+			if ( is_lower_utf8(token.token_start) ) lowerCount++;
 			// stop now if bad
 			//if ( hadUpper ) break;
 			if ( lowerCount >= 2 ) break;
@@ -3074,9 +3072,7 @@ bool Sections::print(PrintData *pd) const {
 
 	//verifySections();
 
-	const char * const *wptrs = m_words->getWordPtrs();
-	const int32_t *wlens = m_words->getWordLens ();
-	int32_t    nw    = m_words->getNumWords ();
+	int32_t    nw    = m_tr->size();
 
 	// check words
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
@@ -3185,8 +3181,8 @@ bool Sections::print(PrintData *pd) const {
 		char   truncated = 0;
 		// do not print last word/tag in section
 		for ( int32_t i = a ; i < b - 1 && count < max ; i++ ) {
-			const char *s = wptrs[i];
-			int32_t  slen = wlens[i];
+			const char *s = (*m_tr)[i].token_start;
+			int32_t  slen = (*m_tr)[i].token_len;
 			if ( count + slen > max ) {
 				truncated = 1; 
 				slen = max - count;
@@ -3202,10 +3198,10 @@ bool Sections::print(PrintData *pd) const {
 		if ( truncated ) pd->sbuf->safePrintf("<b>...</b>");
 		// then print ending tag
 		if ( b < nw ) {
-			int32_t blen = wlens[b-1];
+			int32_t blen = (*m_tr)[b-1].token_len; //TODO: doens't this risk indexing before the start of the array?
 			if ( blen>20 ) blen = 20;
 			pd->sbuf->safePrintf("<b>");
-			pd->sbuf->htmlEncode(wptrs[b-1],blen,false);
+			pd->sbuf->htmlEncode((*m_tr)[b-1].token_start,blen,false);
 			pd->sbuf->safePrintf("</b>");
 		}
 
@@ -3256,7 +3252,7 @@ bool Sections::printSectionDiv(PrintData *pd, const Section *sk) const {
 	// print word/tag #i
 	if ( !(sk->m_flags&SEC_FAKE) && sk->m_tagId && printWord )
 		// only encode if it is a tag
-		pd->sbuf->htmlEncode(m_wptrs[sk->m_a],m_wlens[sk->m_a],false );
+		pd->sbuf->htmlEncode((*m_tr)[sk->m_a].token_start, (*m_tr)[sk->m_a].token_len, false);
 
 	pd->sbuf->safePrintf("<i>");
 
@@ -3280,10 +3276,11 @@ bool Sections::printSectionDiv(PrintData *pd, const Section *sk) const {
 	int32_t a = sk->m_a;
 	int32_t b = sk->m_b;
 	for ( int32_t i = a ; i < b ; i++ ) {
+		const auto &token = (*m_tr)[i];
 		// . if its a and us, skip
 		// . BUT if we are root then really this tag belongs to
 		//   our first child, so make an exception for root!
-		if ( i == a && m_tids[i] && (sk->m_parent) ) continue;
+		if ( i == a && token.is_alfanum && (sk->m_parent) ) continue;
 
 		// . get section of this word
 		// . TODO: what if this was the tr tag we removed??? i guess
@@ -3309,34 +3306,34 @@ bool Sections::printSectionDiv(PrintData *pd, const Section *sk) const {
 
 		// ignore if in style section, etc. just print it out
 		if ( sk->m_flags & NOINDEXFLAGS ) {
-			pd->sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
+			pd->sbuf->htmlEncode(token.token_start,token.token_len,false );
 			continue;
 		}
 
 		// boldify alnum words
-		if ( m_wids[i] ) {
+		if ( token.is_alfanum ) {
 			if ( pd->wposVec[i] == pd->hiPos )
 				pd->sbuf->safePrintf("<a name=hipos></a>");
 			pd->sbuf->safePrintf("<nobr><b>");
 			if ( i <  MAXFRAGWORDS && pd->fragVec[i] == 0 )
 				pd->sbuf->safePrintf("<strike>");
 		}
-		if ( m_wids[i] && pd->wposVec[i] == pd->hiPos )
+		if ( token.is_alfanum && pd->wposVec[i] == pd->hiPos )
 			pd->sbuf->safePrintf("<blink style=\""
 					   "background-color:yellow;"
 					   "color:black;\">");
 		// print that word
-		pd->sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
-		if ( m_wids[i] && pd->wposVec[i] == pd->hiPos )
+		pd->sbuf->htmlEncode(token.token_start, token.token_len, false );
+		if ( token.is_alfanum && pd->wposVec[i] == pd->hiPos )
 			pd->sbuf->safePrintf("</blink>");
 		// boldify alnum words
-		if ( m_wids[i] ) {
+		if ( token.is_alfanum ) {
 			if ( i < MAXFRAGWORDS && pd->fragVec[i] == 0 )
 				pd->sbuf->safePrintf("</strike>");
 			pd->sbuf->safePrintf("</b>");
 		}
 		// and print out their pos/div/spam sub
-		if ( m_wids[i] ) {
+		if ( token.is_alfanum ) {
 			pd->sbuf->safePrintf("<sub "
 					   "style=\"background-color:white;"
 					   "font-size:10px;"
@@ -3370,7 +3367,7 @@ bool Sections::verifySections ( ) {
 		if ( si->m_a >  i ) { g_process.shutdownAbort(true); }
 		if ( si->m_b <= i ) { g_process.shutdownAbort(true); }
 		// must have checksum
-		if ( m_wids[i] && si->m_contentHash64==0){g_process.shutdownAbort(true);}
+		if ( (*m_tr)[i].is_alfanum && si->m_contentHash64==0) { g_process.shutdownAbort(true); }
 		// must have this set if 0
 		if ( ! si->m_contentHash64 && !(si->m_flags & SEC_NOTEXT)) {
 			g_process.shutdownAbort(true);}

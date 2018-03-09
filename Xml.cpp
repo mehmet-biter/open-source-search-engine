@@ -4,7 +4,7 @@
 
 #include "Mem.h"     // mfree(), mmalloc()
 #include "Titledb.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Pos.h"
 #include "Sanity.h"
 #include "Conf.h"
@@ -894,14 +894,14 @@ static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
 	return (*count > 0);
 }
 
-static int32_t filterContent( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength,
-							  int32_t maxLength, int32_t version ) {
+static int32_t filterContent(TokenizerResult *tr, Pos *pp, char *buf, int32_t bufLen, int32_t minLength,
+			     int32_t maxLength, int32_t version) {
 	int32_t contentLen = 0;
 
 	/// @todo ALC configurable maxNumWord so we can tweak this as needed
 	const int32_t maxNumWord = (maxLength * 2);
 
-	if ( wp->getNumWords() > maxNumWord ) {
+	if ( tr->size() > maxNumWord ) {
 		// ignore too long snippet
 		// it may not be that useful to get the first x characters from a long snippet
 		contentLen = 0;
@@ -910,7 +910,7 @@ static int32_t filterContent( Words *wp, Pos *pp, char *buf, int32_t bufLen, int
 		return contentLen;
 	}
 
-	contentLen = pp->filter( wp, 0, wp->getNumWords(), true, buf, buf + maxLength, version );
+	contentLen = pp->filter( tr, 0, tr->size(), true, buf, buf + maxLength, version );
 
 	if ( contentLen < minLength ) {
 		// ignore too short descriptions
@@ -955,7 +955,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 		if ( found ) {
 			int32_t end_node = getEndNode(i);
 
-			Words wp;
+			TokenizerResult tr;
 			Pos pp;
 
 			if (end_node < 0) {
@@ -986,23 +986,18 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					s[len] = saved;
 				}
 
-				if ( ( !wp.set(&xml) ) ) {
-					// unable to allocate buffer
-					return false;
-				}
+				xml_tokenizer_phase_1(&xml,&tr);
 			} else {
-				if ( !wp.set(this, i, end_node ) ) {
-					// unable to allocate buffer
-					return false;
-				}
+				xml_tokenizer_phase_1_subset(this, i,end_node, &tr);
 			}
+			calculate_tokens_hashes(&tr);
 
-			if ( !pp.set( &wp ) ) {
+			if ( !pp.set( &tr ) ) {
 				// unable to allocate buffer
 				return false;
 			}
 
-			contentLen = filterContent( &wp, &pp, buf, bufLen, minLength, maxLength, m_version );
+			contentLen = filterContent( &tr, &pp, buf, bufLen, minLength, maxLength, m_version );
 			if ( contentLen > 0 ) {
 				if (contentLenPtr) {
 					*contentLenPtr = contentLen;

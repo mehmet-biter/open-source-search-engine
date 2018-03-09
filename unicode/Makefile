@@ -19,7 +19,7 @@ all: $(ALL)
 
 
 libunicode.a: UCMap.o UCMaps.o UCDecompose.o UCCMDecompose.o
-	ar rcs $@ UCMap.o UCMaps.o UCCMDecompose.o
+	ar rcs $@ UCMap.o UCMaps.o UCDecompose.o UCCMDecompose.o
 
 UCMap.o: UCMap.h UCMap.cpp
 UCMap_unittest.o: UCMap.h UCMap_unittest.cpp

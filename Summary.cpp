@@ -166,7 +166,7 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *t
 }
 
 // returns false and sets g_errno on error
-bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q, int32_t maxSummaryLen,
+bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, const Query *q, int32_t maxSummaryLen,
                          int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, const Url *f,
                          const Matches *matches, const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
@@ -198,7 +198,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 
 	// Nothing to match...print beginning of content as summary
 	if ( matches->getNumMatches() == 0 && maxNumLines > 0 ) {
-		bool status = getDefaultSummary(xml, words, sections, pos, maxSummaryLen);
+		bool status = getDefaultSummary(xml, tr, sections, pos, maxSummaryLen);
 		logTrace(g_conf.m_logTraceSummary, "END. getDefaultSummary. Returning %s", status ? "true" : "false");
 		return status;
 	}
@@ -319,7 +319,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 		for ( int32_t i = 0 ; i < matches->getNumMatches() ; i++ ) {
 			int32_t       a , b;
 			// reset lasta if we changed words class
-			if ( i > 0 && matches->getMatch(i-1).m_words != matches->getMatch(i).m_words ) {
+			if ( i > 0 && matches->getMatch(i-1).m_tr != matches->getMatch(i).m_tr ) {
 				lasta = -1;
 			}
 
@@ -434,25 +434,25 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 
 		// who is the winning match?
 		maxm = &matches->getMatch(maxi);
-		const Words *ww = maxm->m_words;
+		const TokenizerResult *tr = maxm->m_tr;
 
 		// we now use "m_swbits" for the summary bits since they are
 		// of size sizeof(swbit_t), a int16_t at this point
 		swbit_t *bb = maxm->m_bits->m_swbits;
 
 		// this should be impossible
-		if ( maxa > ww->getNumWords() || maxb > ww->getNumWords() ) {
+		if ( maxa > tr->size() || maxb > tr->size() ) {
 			log ( LOG_WARN,"query: summary starts or ends after "
-			      "document is over! maxa=%" PRId32" maxb=%" PRId32" nw=%" PRId32,
-			      maxa, maxb, ww->getNumWords() );
-			maxa = ww->getNumWords() - 1;
-			maxb = ww->getNumWords();
+			      "document is over! maxa=%" PRId32" maxb=%" PRId32" nw=%zu",
+			      maxa, maxb, tr->size() );
+			maxa = tr->size() - 1;
+			maxb = tr->size();
 		}
 
 		// assume we do not preceed with ellipsis "..."
 		bool needEllipsis = true;
 		
-		const char *c = ww->getWord(maxa)+0;
+		const char *c = (*tr)[maxa].token_start;
 
 		// rule of thumb, don't use ellipsis if the first letter is capital, or a non letter
 		// is punct word before us pair acrossable? if so then we probably are not the start of a sentence.
@@ -504,7 +504,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 		// . removes back to back spaces
 		// . converts html entities
 		// . filters in stores words in [a,b) interval
-		int32_t len = pos->filter( ww, maxa, maxb, false, p, pend, xml->getVersion() );
+		int32_t len = pos->filter( tr, maxa, maxb, false, p, pend, xml->getVersion() );
 
 		// break out if did not fit
 		if ( len == 0 ) {
@@ -590,7 +590,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 
 	// If we still didn't find a summary, get the default summary
 	if ( p == m_summary ) {
-		bool status = getDefaultSummary ( xml, words, sections, pos, maxSummaryLen );
+		bool status = getDefaultSummary ( xml, tr, sections, pos, maxSummaryLen );
 		if ( m_numDisplayLines > 0 ) {
 			m_displayLen = m_summaryLen;
 		}
@@ -627,7 +627,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	int32_t matchWordNum = m->m_wordNum;
 
 	// what Words/Pos/Bits classes is this match in?
-	const Words *words = m->m_words;
+	const TokenizerResult *tr = m->m_tr;
 	Section **sp = NULL;
 	int32_t *pos = m->m_pos->m_pos;
 
@@ -639,9 +639,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		sp = m->m_sections->m_sectionPtrs;
 	}
 
-	int32_t nw = words->getNumWords();
-	const int64_t *wids = words->getWordIds();
-	const nodeid_t *tids = words->getTagIds();
+	int32_t nw = tr->size();
 
 	// . sanity check
 	// . this prevents a core i've seen
@@ -697,17 +695,18 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// don't go beyond an LI, TR, P tag
-		if ( tids && ( tids[a-1] == TAG_LI ||
-		               tids[a-1] == TAG_TR ||
-		               tids[a-1] == TAG_P  ||
-		               tids[a-1] == TAG_DIV ) ) {
+		nodeid_t tid = (*tr)[a-1].nodeid;
+		if ( tid == TAG_LI ||
+		     tid == TAG_TR ||
+		     tid == TAG_P  ||
+		     tid == TAG_DIV ) {
 			goodStart = true;
 			break;
 		}
 
 		// stop if its the start of a quoted sentence
 		if ( a+1<nw && (bb[a+1] & D_IN_QUOTES) && 
-		     words->getWord(a)[0] == '\"' ){
+		     (*tr)[a].token_start[0] == '\"' ){
 			startOnQuote = true;
 			goodStart    = true;
 			break;
@@ -719,7 +718,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 			firstFrag = a;
 		}
 
-		if ( wids[a] ) {
+		if ( (*tr)[a].is_alfanum ) {
 			wordCount++;
 		}
 	}
@@ -730,8 +729,8 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	}
 
 	// don't let punct or tag word start a line, unless a quote
-	if ( a < matchWordNum && !wids[a] && words->getWord(a)[0] != '\"' ){
-		while ( a < matchWordNum && !wids[a] ) a++;
+	if ( a < matchWordNum && !(*tr)[a].is_alfanum && (*tr)[a].token_start[0] != '\"' ){
+		while ( a < matchWordNum && !(*tr)[a].is_alfanum ) a++;
 		
 		// do not break right after a "strong connector", like 
 		// apostrophe
@@ -740,7 +739,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 			a++;
 		
 		// don't let punct or tag word start a line
-		while ( a < matchWordNum && !wids[a] ) a++;
+		while ( a < matchWordNum && !(*tr)[a].is_alfanum ) a++;
 	}
 
 	// remember, b is not included in the summary, the summary is [a,b-1]
@@ -758,7 +757,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 			break;
 		}
 		
-		if ( startOnQuote && words->getWord(b)[0] == '\"' ) {
+		if ( startOnQuote && (*tr)[b].token_start[0] == '\"' ) {
 			endQuoteWordNum = b;
 		}
 
@@ -772,13 +771,13 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 			break;
 		}
 
-		if ( wids[b] ) {
+		if ( (*tr)[b].is_alfanum ) {
 			wordCount++;
 		}
 
 		// don't go beyond an LI or TR backtag
-		if ( tids && ( tids[b] == (BACKBIT|TAG_LI) ||
-		               tids[b] == (BACKBIT|TAG_TR) ) ) {
+		if ( (*tr)[b].nodeid == (BACKBIT|TAG_LI) ||
+		     (*tr)[b].nodeid == (BACKBIT|TAG_TR) ) {
 			numTagsCrossed++;
 
 			// try to have atleast 10 words in the summary
@@ -790,22 +789,22 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		// go beyond a P or DIV backtag in case the earlier char is a
 		// ':'. This came from a special case for wikipedia pages 
 		// eg. http://en.wikipedia.org/wiki/Flyover
-		if ( tids && ( tids[b] == (BACKBIT|TAG_P)  ||
-		               tids[b] == (BACKBIT|TAG_DIV) )) {
+		if ( (*tr)[b].nodeid == (BACKBIT|TAG_P)  ||
+		     (*tr)[b].nodeid == (BACKBIT|TAG_DIV) ) {
 			numTagsCrossed++;
 
 			// try to have atleast 10 words in the summary
-			if ( wordCount > 10 && words->getWord(b-1)[0] != ':' ) {
+			if ( wordCount > 10 && (*tr)[b-1].token_start[0] != ':' ) {
 				break;
 			}
 		}
 	}
 
 	// don't end on a lot of punct words
-	if ( b > matchWordNum && !wids[b-1]){
+	if ( b > matchWordNum && !(*tr)[b-1].is_alfanum) {
 		// remove more than one punct words. if we're ending on a quote
 		// keep it
-		while ( b > matchWordNum && !wids[b-2] && endQuoteWordNum != -1 && b > endQuoteWordNum ) {
+		while ( b > matchWordNum && !(*tr)[b-2].is_alfanum && endQuoteWordNum != -1 && b > endQuoteWordNum ) {
 			b--;
 		}
 		
@@ -848,12 +847,13 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 
 	// first score from the starting match down to a, including match
 	for ( int32_t i = a ; i < b ; i++ ) {
+		const auto &token = (*tr)[i];
 		// debug print out
 		if ( g_conf.m_logDebugSummary ) {
-			int32_t len = words->getWordLen(i);
+			int32_t len = tr->size();
 			char cs;
 			for (int32_t k=0;k<len; k+=cs ) {
-				const char *c = words->getWord(i)+k;
+				const char *c = token.token_start+k;
 				cs = getUtf8CharSize(c);
 				if ( is_binary_utf8 ( c ) ) {
 					continue;
@@ -869,21 +869,19 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// don't count just numeric words
-		if ( words->isNum(i) ) {
+		if ( is_ascii_digit_string(token.token_start, token.token_end()) ) {
 			continue;
 		}
 
 		// check if there is a url. best way to check for '://'
-		if ( wids && !wids[i] ) {
-			const char *wrd = words->getWord(i);
-			int32_t  wrdLen = words->getWordLen(i);
-			if ( wrdLen == 3 && wrd[0] == ':' && wrd[1] == '/' &&  wrd[2] == '/' ) {
+		if ( !token.is_alfanum ) {
+			if ( token.token_len == 3 && token.token_start[0] == ':' && token.token_start[1] == '/' &&  token.token_start[2] == '/' ) {
 				hasUrl = true;
 			}
 		}
 
 		// skip if not wid
-		if ( ! wids[i] ) {
+		if ( ! token.is_alfanum ) {
 			continue;
 		}
 
@@ -925,7 +923,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// must be a match in this class
-		if ( next->m_words != words ) {
+		if ( next->m_tr != tr ) {
 			continue;
 		}
 
@@ -1036,7 +1034,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 }
 
 // get summary when no search terms could be found
-bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, int32_t maxSummaryLen) {
+bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, int32_t maxSummaryLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	char *p    = m_summary;
@@ -1056,9 +1054,6 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
 	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE|SEC_IN_HEAD;
-	// shortcut
-	const nodeid_t  *tids = words->getTagIds();
-	const int64_t *wids = words->getWordIds();
 
 	// get the section ptr array 1-1 with the words, "sp"
 	Section **sp = NULL;
@@ -1066,21 +1061,22 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 		sp = sections->m_sectionPtrs;
 	}
 
-	for (int32_t i = 0;i < words->getNumWords(); i++){
+	for (int32_t i = 0; i < tr->size(); i++) {
+		const auto &token = (*tr)[i];
 		// skip if in bad section
 		if ( sp && (sp[i]->m_flags & badFlags) ) {
 			continue;
 		}
 
 		if (start > 0 && bestStart == start &&
-		    ( words->getWord(i) - words->getWord(start) ) >=
-		    ( maxSummaryLen - 8 )){
+		    ( token.start_pos - (*tr)[start].start_pos ) >= ( maxSummaryLen - 8 ) )
+		{
 			longestConsecutive = numConsecutive;
 			bestStart = start;
 			bestEnd = lastAlnum;//i-1;
 			break;
 		}
-		if (words->isAlnum(i) ) {
+		if (token.is_alfanum ) {
 			if (!inLink) {
 				numConsecutive++;
 			}
@@ -1088,7 +1084,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 			if (start < 0) start = i;
 			continue;
 		}
-		nodeid_t tid = tids[i] & BACKBITCOMP;
+		nodeid_t tid = token.nodeid & BACKBITCOMP;
 		// we gotta tag?
 		if ( tid ) {
 			// ignore <p> tags
@@ -1097,7 +1093,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 			}
 
 			// is it a front tag?
-			if ( ! (tids[i] & BACKBIT) ) {
+			if ( ! (token.nodeid & BACKBIT) ) {
 				if ( tid == TAG_A ) {
 					inLink = true;
 				}
@@ -1110,7 +1106,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 
 			if ( ! isBreakingTagId(tid) )	
 				continue;
-		} else if ( ! wids[i] ) {
+		} else if ( ! token.is_alfanum ) {
 			continue;
 		}
 			
@@ -1125,7 +1121,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 	}
 
 	if (bestStart >= 0 && bestEnd > bestStart){
-		p += pos->filter( words, bestStart, bestEnd, true, p, pend - 10, xml->getVersion() );
+		p += pos->filter( tr, bestStart, bestEnd, true, p, pend - 10, xml->getVersion() );
 
 		// NULL terminate
 		*p++ = '\0';

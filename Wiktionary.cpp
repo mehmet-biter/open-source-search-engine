@@ -3,7 +3,7 @@
 #include "Wiktionary.h"
 
 #include "Query.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Titledb.h"
 #include "Speller.h"
 #include "Conf.h"
@@ -118,13 +118,14 @@ bool Wiktionary::test2 ( ) {
 	//wid = hash64Lower_utf8(str);
 	//wid = hash64n(str);
 
-	Words words;
-	words.set ( str, strlen(str) );
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(str,strlen(str), &tr);
+	calculate_tokens_hashes(&tr);
 
 	int32_t wordNum = 0;
 	char tmpBuf[1000];
 	Synonyms syn;
-	int32_t naids = syn.getSynonyms ( &words,
+	int32_t naids = syn.getSynonyms(&tr,
 				       wordNum , 
 				       langId ,
 				       tmpBuf );

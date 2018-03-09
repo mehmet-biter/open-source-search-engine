@@ -32,6 +32,8 @@ struct TokenRange {
 	int64_t         token_hash;            //from hash64Lower_utf8(), 0 if !is_alfanum
 	nodeid_t        nodeid;                //html/xml tag id
 	int32_t         xml_node_index;        //index into Xml instance
+	
+	const char *token_end() const { return token_start + token_len; }
 };
 
 
@@ -58,6 +60,7 @@ void plain_tokenizer_phase_1_downcall(const char *str, size_t len, size_t pos_ba
 void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr);
 class Xml;
 void xml_tokenizer_phase_1(const Xml *xml, TokenizerResult *tr);
+void xml_tokenizer_phase_1_subset(const Xml *xml, unsigned start_node, unsigned end_node, TokenizerResult *tr);
 void xml_tokenizer_phase_2(const Xml *xml, lang_t lang, const char *country_code, TokenizerResult *tr);
 
 void calculate_tokens_hashes(TokenizerResult *tr);

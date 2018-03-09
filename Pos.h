@@ -12,7 +12,7 @@
 
 #define POS_LOCALBUFSIZE 20
 
-class Words;
+class TokenizerResult;
 
 class Pos {
 
@@ -22,13 +22,13 @@ class Pos {
 	~Pos();
 	void reset();
 
-	bool set(const Words *words, int32_t a = 0, int32_t b = -1 );
+	bool set(const TokenizerResult *tr, int32_t a = 0, int32_t b = -1);
 
 	// . filter out xml words [a,b] into plain text, stores into "f"
 	// . will not exceed "fend"
 	// . returns number of BYTES stored into "f"
-	int32_t filter( const Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
-					int32_t version = TITLEREC_CURRENT_VERSION );
+	int32_t filter(const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
+		       int32_t version = TITLEREC_CURRENT_VERSION);
 
 	// . the position in CHARACTERS of word i is given by m_pos[i]
 	// . this is NOT the byte position. you can have 2, 3 or even 4

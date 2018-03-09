@@ -312,7 +312,7 @@ void XmlDoc::reset ( ) {
 
 	// Doc.cpp:
 	m_mime.reset();
-	m_words.reset();
+	m_tokenizerResult.clear();
 	m_phrases.reset();
 	m_bits.reset();
 	m_sections.reset();
@@ -2746,11 +2746,11 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
  changed:
 	// words
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 )
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END error, getWords failed" );
-		return (int32_t *)words;
+		logTrace( g_conf.m_logTraceXmlDoc, "END error, getTokenizerResult failed" );
+		return (int32_t *)tr;
 	}
 
 	// we set the D_IS_IN_DATE flag for these bits
@@ -2781,7 +2781,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return (int32_t *)sections;
 	}
 
-	if ( sections->m_numSections == 0 && words->getNumWords() > 0 ) {
+	if ( sections->m_numSections == 0 && !tr->empty() ) {
 		m_indexCode      = EDOCBADSECTIONS;
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADSECTIONS" );
@@ -3477,13 +3477,11 @@ Xml *XmlDoc::getXml ( ) {
 	return &m_xml;
 }
 
-static bool setLangVec ( Words *words ,
+static bool setLangVec ( const TokenizerResult *tr,
 			 SafeBuf *langBuf ,
 			 Sections *ss ) {
 
-	const int64_t *wids       = words->getWordIds();
-	const char * const *wptrs = words->getWordPtrs();
-	int32_t nw                = words->getNumWords();
+	int32_t nw = tr->size();
 
 	// allocate
 	if ( ! langBuf->reserve ( nw ) ) return false;
@@ -3492,18 +3490,19 @@ static bool setLangVec ( Words *words ,
 
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// default
 		langVector[i] = langUnknown;
 		// add the word
-		if ( wids[i] == 0LL ) continue;
+		if ( !token.is_alfanum ) continue;
 		// skip if number
-		if ( is_digit(wptrs[i][0]) ) {
+		if ( is_digit(token.token_start[0]) ) {
 			langVector[i] = langTranslingual;
 			continue;
 		}
 		// get the lang bits. does not include langTranslingual
 		// or langUnknown
-		int64_t bits = g_speller.getLangBits64 ( wids[i] );
+		int64_t bits = g_speller.getLangBits64 ( token.token_hash );
 		// skip if not unique
 		char count = getNumBitsOn64 ( bits ) ;
 		// if we only got one lang we could be, assume that
@@ -3522,7 +3521,7 @@ static bool setLangVec ( Words *words ,
 		// try setting based on script. greek. russian. etc.
 		// if the word was not in the wiktionary.
 		// this will be langUnknown if not definitive.
-		langVector[i] = getCharacterLanguage(wptrs[i]);
+		langVector[i] = getCharacterLanguage(token.token_start);
 	}
 
 	// . now go sentence by sentence
@@ -3540,13 +3539,14 @@ static bool setLangVec ( Words *words ,
 		int64_t bits = LANG_BIT_MASK;
 		// get lang 64 bit vec for each wid in sentence
 		for ( int32_t j = si->m_senta ; j < si->m_sentb ; j++ ) {
+			const auto &token = (*tr)[j];
 			// skip if not alnum word
-			if ( ! wids[j] ) continue;
+			if ( ! token.is_alfanum ) continue;
 			// skip if starts with digit
-			if ( is_digit(wptrs[j][0]) ) continue;
+			if ( is_digit(token.token_start[0]) ) continue;
 			// get 64 bit lang vec. does not include
 			// langUnknown or langTransligual bits
-			bits &= g_speller.getLangBits64 ( wids[j] );
+			bits &= g_speller.getLangBits64 ( token.token_hash );
 		}
 		// bail if none
 		if ( ! bits ) continue;
@@ -3556,10 +3556,11 @@ static bool setLangVec ( Words *words ,
 		char langId = getBitPosLL((uint8_t *)&bits) + 1;
 		// ok, must be this language i guess
 		for ( int32_t j = si->m_senta ; j < si->m_sentb ; j++ ) {
+			const auto &token = (*tr)[j];
 			// skip if not alnum word
-			if ( ! wids[j] ) continue;
+			if ( ! token.is_alfanum ) continue;
 			// skip if starts with digit
-			if ( is_digit(wptrs[j][0]) ) continue;
+			if ( is_digit(token.token_start[0]) ) continue;
 			// set it
 			langVector[j] = langId;
 		}
@@ -3577,16 +3578,17 @@ static bool setLangVec ( Words *words ,
 	int32_t total = 0;
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// must be alnum
-		if ( ! wids[i] ) continue;
+		if ( ! token.is_alfanum ) continue;
 		// skip if starts with digit
-		if ( is_digit(wptrs[i][0]) ) continue;
+		if ( is_digit(token.token_start[0]) ) continue;
 		// skip if lang already set to a language
 		//if ( langVector[i] != langUnknown &&
 		//     langVector[i] != langTranslingual )
 		//	continue;
 		// get last 5
-		window[wp] = g_speller.getLangBits64 ( wids[i] );
+		window[wp] = g_speller.getLangBits64 ( token.token_hash );
 		// skip if not in dictionary!
 		if ( window[wp] == 0 ) continue;
 		// otherwise, store it
@@ -3633,15 +3635,15 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	}
 
 	// words
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (uint8_t *)words;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) return (uint8_t *)tr;
 
 	// get the sections
 	Sections *ss = getSections();
 	if ( ! ss || ss==(void *)-1) return (uint8_t *)ss;
 
 
-	if ( ! setLangVec ( words , &m_langVec , ss ) )
+	if ( ! setLangVec ( tr , &m_langVec , ss ) )
 		return NULL;
 
 	m_langVectorValid = true;
@@ -3737,9 +3739,9 @@ uint8_t *XmlDoc::getLangId ( ) {
 		return &m_langId;
 	}
 
-	Words    *words    = getWords   ();
-	if ( ! words || words == (Words *)-1 ) {
-		return (uint8_t *)words;
+	TokenizerResult    *tr    = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) {
+		return (uint8_t *)tr;
 	}
 
 	Sections *sections = getSections();
@@ -3774,7 +3776,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	}
 
 	// compute langid from vector
-	uint8_t langIdGB = computeLangId(sections, words, (char *)lv);
+	uint8_t langIdGB = computeLangId(sections, tr, (char *)lv);
 
 	if (langIdGB == langUnknown) {
 		// . try the meta description i guess
@@ -3782,24 +3784,26 @@ uint8_t *XmlDoc::getLangId ( ) {
 		//   captures the language
 		int32_t mdlen;
 		char *md = getMetaDescription(&mdlen);
-		Words mdw;
-		mdw.set(md, mdlen);
+		TokenizerResult mdtr;
+		plain_tokenizer_phase_1(md,mdlen,&mdtr);
+		calculate_tokens_hashes(&mdtr);
 
 		SafeBuf langBuf;
-		setLangVec(&mdw, &langBuf, NULL);
-		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
+		setLangVec(&mdtr, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdtr, langBuf.getBufStart());
 	}
 
 	if (langIdGB == langUnknown) {
 		// try meta keywords
 		int32_t mdlen;
 		char *md = getMetaKeywords(&mdlen);
-		Words mdw;
-		mdw.set(md, mdlen);
+		TokenizerResult mdtr;
+		plain_tokenizer_phase_1(md,mdlen,&mdtr);
+		calculate_tokens_hashes(&mdtr);
 
 		SafeBuf langBuf;
-		setLangVec(&mdw, &langBuf, NULL);
-		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
+		setLangVec(&mdtr, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdtr, langBuf.getBufStart());
 	}
 
 	// try charset
@@ -3818,7 +3822,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 
 // lv = langVec
-uint8_t XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
+uint8_t XmlDoc::computeLangId(Sections *sections, const TokenizerResult *tr, char *lv) {
 
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -3829,30 +3833,27 @@ uint8_t XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 	int32_t counts [ MAX_LANGUAGES ];
 	memset(counts, 0, sizeof(counts));
 
-
-
-	int32_t             nw    = words->getNumWords();
-	const char * const *wptrs = words->getWordPtrs();
-
+	int32_t             nw    = tr->size();
 
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if in script or style section
 		if ( sp && (sp[i]->m_flags & badFlags) ) continue;
 		//
 		// skip if in a url
 		//
 		// blah/
-		int32_t wlen = words->getWordLen(i);
-		if ( wptrs[i][wlen] == '/' ) continue;
+		int32_t wlen = token.token_len;
+		if ( i+1<nw && token.token_start[wlen] == '/' ) continue;
 		// blah.blah or blah?blah
-		if ( (wptrs[i][wlen] == '.' ||
-		      wptrs[i][wlen] == '?' ) &&
-		     is_alnum_a(wptrs[i][wlen+1]) )
+		if ( i+1<nw && (token.token_start[wlen] == '.' ||
+		                token.token_start[wlen] == '?' ) &&
+		                is_alnum_a(token.token_start[wlen+1]) ) //FIXME: risky, goes one byte past end in last tokenized word
 			continue;
 		// /blah or ?blah
-		if ( (i>0 && wptrs[i][-1] == '/') ||
-		     (i>0 && wptrs[i][-1] == '?')    )
+		if ( (i>0 && token.token_start[-1] == '/') ||
+		     (i>0 && token.token_start[-1] == '?')    )
 			continue;
 		// add it up
 		counts[(unsigned char)lv[i]]++;
@@ -3879,16 +3880,16 @@ uint8_t XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 
 
-Words *XmlDoc::getWords ( ) {
+TokenizerResult *XmlDoc::getTokenizerResult() {
 	// return it if it is set
-	if ( m_wordsValid ) {
-		return &m_words;
+	if ( m_tokenizerResultValid ) {
+		return &m_tokenizerResult;
 	}
 
 	// this will set it if necessary
 	Xml *xml = getXml();
 	// returns NULL on error, -1 if blocked
-	if ( ! xml || xml == (Xml *)-1 ) return (Words *)xml;
+	if ( ! xml || xml == (Xml*)-1 ) return (TokenizerResult*)xml;
 
 	// note it
 	setStatus ( "getting words");
@@ -3896,14 +3897,15 @@ Words *XmlDoc::getWords ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_words.set( xml ) ) {
-		return NULL;
-	}
+	xml_tokenizer_phase_1(xml,&m_tokenizerResult);
+	//TODO: when should we call phase-2 XML tokenizer?
+	//TODO: when should we calc the wordids?
+	calculate_tokens_hashes(&m_tokenizerResult);
 
 	logQueryTimingEnd( __func__, start );
 
-	m_wordsValid = true;
-	return &m_words;
+	m_tokenizerResultValid = true;
+	return &m_tokenizerResult;
 }
 
 Bits *XmlDoc::getBits ( ) {
@@ -3911,14 +3913,14 @@ Bits *XmlDoc::getBits ( ) {
 	if ( m_bitsValid ) return &m_bits;
 
 	// this will set it if necessary
-	Words *words = getWords();
+	TokenizerResult *tr = getTokenizerResult();
 	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Bits *)words;
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (Bits*)tr;
 
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_bits.set(words))
+	if ( !m_bits.set(tr))
 		return NULL;
 
 	logQueryTimingEnd( __func__, start );
@@ -3933,14 +3935,14 @@ Bits *XmlDoc::getBitsForSummary ( ) {
 	if ( m_bits2Valid ) return &m_bits2;
 
 	// this will set it if necessary
-	Words *words = getWords();
+	TokenizerResult *tr = getTokenizerResult();
 	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Bits *)words;
+	if ( ! tr || tr == (TokenizerResult *)-1 ) return (Bits *)tr;
 
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( ! m_bits2.setForSummary ( words ) ) return NULL;
+	if ( ! m_bits2.setForSummary(tr) ) return NULL;
 
 	logQueryTimingEnd( __func__, start );
 
@@ -3954,12 +3956,12 @@ Pos *XmlDoc::getPos ( ) {
 	if ( m_posValid ) return &m_pos;
 
 	// this will set it if necessary
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Pos *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (Pos *)tr;
 
 	int64_t start = logQueryTimingStart();
 
-	if ( ! m_pos.set ( ww ) ) return NULL;
+	if ( ! m_pos.set(tr) ) return NULL;
 
 	logQueryTimingEnd( __func__, start );
 
@@ -3975,9 +3977,9 @@ Phrases *XmlDoc::getPhrases ( ) {
 	}
 
 	// this will set it if necessary
-	Words *words = getWords();
+	TokenizerResult *tr = getTokenizerResult();
 	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Phrases *)words;
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (Phrases *)tr;
 
 	// get this
 	Bits *bits = getBits();
@@ -3987,7 +3989,7 @@ Phrases *XmlDoc::getPhrases ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_phrases.set( words, bits ) ) {
+	if ( !m_phrases.set(tr,bits) ) {
 		return NULL;
 	}
 
@@ -4009,9 +4011,9 @@ Sections *XmlDoc::getSections ( ) {
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (XmlDoc **)-1 ) return (Sections *)pod;
 
-	Words *words = getWords();
+	TokenizerResult *tr = getTokenizerResult();
 	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Sections *)words;
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (Sections *)tr;
 
 	// get this
 	Bits *bits = getBits();
@@ -4036,7 +4038,7 @@ Sections *XmlDoc::getSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, bits, getFirstUrl(), *ct ) ) {
+		 !m_sections.set( tr, bits, getFirstUrl(), *ct ) ) {
 		m_calledSections = true;
 		// it blocked, return -1
 		return (Sections *) -1;
@@ -4313,8 +4315,8 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	// get the stuff we need
 	Xml      *xml      = getXml     ();
 	if ( ! xml || xml == (Xml *)-1 ) return (HashTableX *)xml;
-	Words    *words    = getWords   ();
-	if ( ! words || words == (Words *)-1 ) return (HashTableX *)words;
+	TokenizerResult    *tr    = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (HashTableX *)tr;
 	Phrases  *phrases  = getPhrases ();
 	if ( ! phrases || phrases==(Phrases *)-1) return (HashTableX *)phrases;
 	Bits     *bits     = getBits    ();
@@ -4340,8 +4342,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	HashTableX *ct = &m_countTable;
 
 	// ez var
-	const nodeid_t *tids  = words->getTagIds();
-	int32_t   nw    = words->getNumWords   ();
+	int32_t   nw    = tr->size();
 	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// add 5000 slots for inlink text in hashString_ct() calls below
@@ -4355,10 +4356,11 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	//   of the individual words in the phrase and boost the score of the
 	//   phrase itself. We check for uniqueness down below.
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// add the word
-		int64_t wid = words->getWordId(i);
-		if ( wid == 0LL )
+		const auto &token = (*tr)[i];
+		if(!token.is_alfanum)
 			continue;
+		// add the word
+		int64_t wid = token.token_hash;
 
 		// . skip if in repeated fragment
 		// . unfortunately we truncate the frag vec to like
@@ -4371,7 +4373,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
-		const char *wptr = words->getWord(i+1);
+		const char *wptr = (*tr)[i+1].token_start;
 		if ( wptr[0] == ',' ) continue;
 		if ( wptr[1] == ',' ) continue;
 		if ( wptr[2] == ',' ) continue;
@@ -4381,11 +4383,12 @@ HashTableX *XmlDoc::getCountTable ( ) {
 
 	// now add each meta tag to the pot
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not a meta tag
-		if ( tids[i] != TAG_META ) continue;
+		if ( token.nodeid != TAG_META ) continue;
 		// find the "content=" word
-		const char *w    = words->getWord(i);
-		int32_t  wlen = words->getWordLen(i);
+		const char *w    = token.token_start;
+		int32_t  wlen = token.token_len;
 		const char *wend = w + wlen;
 		const char *p = strncasestr  (w,wlen,"content=");
 		// skip if we did not have any content in this meta tag
@@ -4431,21 +4434,21 @@ HashTableX *XmlDoc::getCountTable ( ) {
 // . kinda similar to XmlDoc::hashString()
 bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 
-	Words   words;
+	TokenizerResult   tr;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set(s, slen) )
+	plain_tokenizer_phase_1(s,slen,&tr);
+	calculate_tokens_hashes(&tr);
+	if ( !bits.set(&tr))
 		return false;
-	if ( !bits.set(&words))
+	if ( !phrases.set( &tr, &bits ) )
 		return false;
-	if ( !phrases.set( &words, &bits ) )
-		return false;
-	int32_t nw = words.getNumWords();
+	int32_t nw = tr.size();
 	const int64_t  *pids  = phrases.getPhraseIds2();
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// add the word
-		int64_t wid = words.getWordId(i);
+		int64_t wid = tr[i].token_hash;
 		if ( wid == 0LL ) continue;
 		// skip if in repeated fragment
 		// . NO, we do not use this for these short strings
@@ -4458,9 +4461,9 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
 		if ( i+1<nw ) {
-			const char *wptr = words.getWord(i+1);
+			const char *wptr = tr[i+1].token_start;
 			if ( wptr[0] == ',' ) continue;
-			int32_t wlen = words.getWordLen(i);
+			int32_t wlen = tr[i+1].token_len;
 			if ( wlen>=2 && wptr[1] == ',' ) continue;
 			if ( wlen>=3 && wptr[2] == ',' ) continue;
 		}
@@ -4563,14 +4566,13 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 	// only compute once
 	if ( m_tagPairHash32Valid ) return &m_tagPairHash32;
 
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (uint32_t *)words;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (uint32_t *)tr;
 
         // shortcuts
 	//int64_t *wids  = words->getWordIds  ();
-	const nodeid_t *tids  = words->getTagIds();
-	int32_t           nw  = words->getNumWords();
-	int32_t           nt  = words->getNumTags();
+	int32_t           nw  = tr->size();
+	int32_t           nt  = tr->size(); //close enough
 
 	// . get the hash of all the tag pair hashes!
 	// . we then combine that with our site hash to get our site specific
@@ -4584,12 +4586,13 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 	uint32_t lastTid = 0;
 	char val = 1;
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not tag
-		if ( tids[i] == 0LL ) continue;
+		if ( !token.nodeid ) continue;
 		// skip if back tag
-		if ( tids[i] & BACKBIT ) continue;
+		if ( token.nodeid & BACKBIT ) continue;
 		// get last tid
-		uint32_t h = hash32h ( tids[i] , lastTid );
+		uint32_t h = hash32h ( token.nodeid, lastTid );
 		//logf(LOG_DEBUG,"build: tph %" PRId32" h=%" PRIu64,i,(int64_t)h);
 		// . add to table (skip if 0, means empty bucket)
 		// . return NULL and set g_errno on error
@@ -4659,15 +4662,14 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	sb.nullTerm4();
 
 	// word-ify it
-	Words words;
-	if ( ! words.set ( sb.getBufStart() ) ) {
-		return NULL;
-	}
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(sb.getBufStart(),sb.length(),&tr);
+	calculate_tokens_hashes(&tr);
 
 	// . now set the dedup vector from big summary and title
 	// . store sample vector in here
 	// . returns size in bytes including null terminating int32_t
-	m_summaryVecSize = computeVector ( &words , (uint32_t *)m_summaryVec );
+	m_summaryVecSize = computeVector ( &tr , (uint32_t *)m_summaryVec );
 
     logQueryTimingEnd(__func__, start);
 
@@ -4680,9 +4682,9 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 // seeing if the content changed respectively
 int32_t *XmlDoc::getPageSampleVector ( ) {
 	if ( m_pageSampleVecValid ) return m_pageSampleVec;
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (int32_t *)ww;
-	m_pageSampleVecSize = computeVector( ww, (uint32_t *)m_pageSampleVec );
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (int32_t *)tr;
+	m_pageSampleVecSize = computeVector( tr, (uint32_t *)m_pageSampleVec );
 	m_pageSampleVecValid = true;
 	return m_pageSampleVec;
 }
@@ -4699,8 +4701,8 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	// set up
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (int32_t *)xml;
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (int32_t *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (int32_t *)tr;
 
 	// sanity check
 	if ( linkNode < 0 ) { g_process.shutdownAbort(true); }
@@ -4725,14 +4727,11 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	if ( linkNode >= nn ) return m_postVec;
 
 	// now convert the linkNode # to a word #, "start"
-	int32_t          nw   = ww->getNumWords();
-	const int64_t   *wids = ww->getWordIds();
-	const nodeid_t  *tids = ww->getTagIds();
-	const int32_t   *wn   = ww->getNodes();
+	int32_t          nw   = tr->size();
 	int32_t       i    = 0;
 	for ( ; i < nw ; i++ ) {
 		// stop when we got the first word in this node #
-		if ( wn[i] == linkNode ) break;
+		if ( (*tr)[i].xml_node_index == linkNode ) break;
 	}
 	// if none, bail now, size is 0
 	if ( i >= nw ) return m_postVec;
@@ -4745,21 +4744,22 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	int32_t count = 0;
 	// limit it
 	for ( i = start ; i < nw && count < 35 ; i++ ) {
+		const auto &token = (*tr)[i];
 		// get tag id
-		nodeid_t tid = tids[i] & BACKBITCOMP;
+		nodeid_t tid = token.nodeid & BACKBITCOMP;
 		// stop if certain ones
 		if ( tid     == TAG_TABLE ) break;
 		if ( tid     == TAG_UL    ) break;
 		// <a>, </a> is ok
-		if ( tids[i] == TAG_A     ) break;
+		if ( token.nodeid == TAG_A     ) break;
 		// only up to 35 words allowed in the hash
-		if ( wids[i] ) count++;
+		if ( token.is_alfanum ) count++;
 	}
 	// set the end of the words to hash
 	end = i;
 
 	// specify starting node # now
-	m_postVecSize = computeVector( ww, (uint32_t *)m_postVec, start, end );
+	m_postVecSize = computeVector( tr, (uint32_t *)m_postVec, start, end );
 
 	// return what we got
 	return m_postVec;
@@ -4776,20 +4776,20 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 // . returns NULL and sets g_errno on error
 // . TODO: if our title rec is non-empty consider getting it from that
 // . we use this vector to compare two docs to see how similar they are
-int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32_t end ) {
+int32_t XmlDoc::computeVector( const TokenizerResult *tr, uint32_t *vec, int32_t start, int32_t end ) {
 	// assume empty vector
 	vec[0] = 0;
 
 	// shortcuts
-	int32_t       nw     = words->getNumWords();
-	const int64_t *wids  = words->getWordIds();
+	int32_t       nw     = tr->size();
 
 	// set the end to the real end if it was specified as less than zero
 	if ( end < 0 ) end = nw;
 
-	// # of alnum words, about... minus the tags, then the punct words
-	// are half of what remains...
-	int32_t count = words->getNumAlnumWords();
+	int32_t alfanum_count = 0;
+	for(const auto &t : tr->tokens)
+		if(t.is_alfanum)
+			alfanum_count++;
 
 	// . Get sample vector from content section only.
 	// . This helps remove duplicate menu/ad from vector
@@ -4797,7 +4797,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// 4 bytes per hash, save the last one for a NULL terminator, 0 hash
 	int32_t maxTerms = SAMPLE_VECTOR_SIZE / 4  - 1;
 	// what portion of them do we want to mask out from the rest?
-	int32_t ratio = count / maxTerms ;
+	int32_t ratio = alfanum_count / maxTerms ;
 	// a mask of 0 means to get them all
 	unsigned char mask = 0x00;
 	// if we got twice as many terms as we need, then set mask to 0x01
@@ -4828,14 +4828,15 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// . buffer should have at least "maxTerms" in it
 	// . these should all be 12 byte keys
 	for ( int32_t i = start ; i < end ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not alnum word
-		if ( wids[i] == 0 ) continue;
+		if ( !token.is_alfanum == 0 ) continue;
 
 		// skip if mask filters it
-		if ( ((wids[i]>>(NUMTERMIDBITS-8)) & mask)!=0) {mo++;continue;}
+		if ( ((token.token_hash>>(NUMTERMIDBITS-8)) & mask)!=0) {mo++;continue;}
 
 		// make 32 bit
-		uint32_t wid32 = (uint32_t)wids[i];
+		uint32_t wid32 = (uint32_t)token.token_hash;
 
 		// do not add if we already got it
 		if ( ht.getSlot ( &wid32 ) >= 0 ) continue;
@@ -4844,7 +4845,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 		if ( ! ht.addKey (&wid32 )){g_process.shutdownAbort(true); }
 
 		// add it to our vector
-		d[nd] = (uint32_t)wids[i];
+		d[nd] = (uint32_t)token.token_hash;
 
 		// stop after 3000 for sure
 		if ( ++nd < 3000 ) continue;
@@ -8098,7 +8099,7 @@ char **XmlDoc::getHttpReply ( ) {
 		// in the html sometimes in getRedirUrl() so since we are redirecting,
 		// invalidate that xml
 		m_xmlValid                = false;
-		m_wordsValid              = false;
+		m_tokenizerResultValid    = false;
 		m_rawUtf8ContentValid     = false;
 		m_expandedUtf8ContentValid= false;
 		m_utf8ContentValid        = false;
@@ -10586,7 +10587,7 @@ char **XmlDoc::getUtf8Content ( ) {
 
 	// sabnity check
 	if ( m_xmlValid   ) { g_process.shutdownAbort(true); }
-	if ( m_wordsValid ) { g_process.shutdownAbort(true); }
+	if ( m_tokenizerResultValid ) { g_process.shutdownAbort(true); }
 
 	//
 	// convert illegal utf8 characters into spaces
@@ -11074,8 +11075,8 @@ Images *XmlDoc::getImages ( ) {
 
 	setStatus ( "getting thumbnail" );
 
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (Images *)words;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult*)-1 ) return (Images *)tr;
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Images *)xml;
 	Sections *sections = getSections();
@@ -11090,7 +11091,7 @@ Images *XmlDoc::getImages ( ) {
 	// . this does not block or anything
 	// . if we are a diffbot json reply it should just use the primary
 	//   image, if any, as the only candidate
-	m_images.setCandidates ( cu , words , xml , sections );
+	m_images.setCandidates ( cu , tr , xml , sections );
 
 	setStatus ("getting thumbnail");
 
@@ -13204,10 +13205,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return isRoot;
 	}
 
-	Words *ww = getWords();
-	if (!ww || ww == (void *)-1) {
+	TokenizerResult *tr = getTokenizerResult();
+	if (!tr || tr == (void *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getWords returned -1");
-		return (char *)ww;
+		return (char *)tr;
 	}
 
 	int64_t *pch64 = getExactContentHash64();
@@ -13288,7 +13289,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . make it nw*8 to avoid have to re-alloc the table!!!
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
-	int32_t need4 = m_words.getNumWords() * 4 + 5000;
+	int32_t need4 = m_tokenizerResult.tokens.size() * 4 + 5000;
 	if (m_usePosdb && addPosRec) {
 		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
 			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
@@ -13318,7 +13319,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		int32_t done = tt1.getNumSlots();
 		if (done != did) {
-			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
+			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%d", did, done, (int)m_tokenizerResult.tokens.size());
 		}
 	}
 
@@ -15792,8 +15793,8 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ! links || links == (Links *)-1 ) {checkPointerError(links); return (Msg20Reply *)links; }
 	Pos *pos = getPos();
 	if ( ! pos || pos == (Pos *)-1 ) { checkPointerError(pos); return (Msg20Reply *)pos; }
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) { checkPointerError(ww); return (Msg20Reply *)ww; }
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) { checkPointerError(tr); return (Msg20Reply *)tr; }
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) { checkPointerError(xml); return (Msg20Reply *)xml; }
 
@@ -16025,14 +16026,13 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	}
 
 	// convert "linkNode" into a string ptr into the document
-	char *node = xml->getNodePtr(linkNode)->m_node;
+	const char *node = xml->getNodePtr(linkNode)->m_node;
 	// . find the word index, "n" for this node
 	// . this is INEFFICIENT!!
-	const char * const *wp = ww->getWordPtrs();
-	int32_t   nw = ww->getNumWords();
+	int32_t   nw = tr->size();
 	int32_t   n;
 
-	for ( n = 0; n < nw && wp[n] < node ; n++ ) {
+	for ( n = 0; n < nw && (*tr)[n].token_start < node ; n++ ) {
 	}
 
 	// sanity check
@@ -16067,7 +16067,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( p + len + 1 < pend ) {
 		// store it
 		// FILTER the html entities!!
-		int32_t len2 = pos->filter( ww, a, b, false, p, pend, m_version );
+		int32_t len2 = pos->filter( tr, a, b, false, p, pend, m_version );
 
 		// ensure NULL terminated
 		p[len2] = '\0';
@@ -16143,8 +16143,8 @@ Matches *XmlDoc::getMatches () {
 	}
 
 	// need a buncha crap
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Matches *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) return (Matches *)tr;
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Matches *)xml;
 	Bits *bits = getBitsForSummary();
@@ -16170,7 +16170,7 @@ Matches *XmlDoc::getMatches () {
 	if(linkInfo==(LinkInfo*)-1)
 		linkInfo = NULL;
 	// returns false and sets g_errno on error
-	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo ) ) {
+	if ( !m_matches.set( tr, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo ) ) {
 		return NULL;
 	}
 
@@ -16274,9 +16274,9 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
 			return &m_htb;
 		}
 		// otherwise, set it
-		const char *a = m_words.getWord(si->m_firstWordPos);
-		const char *b = m_words.getWord(si->m_lastWordPos);
-		b += m_words.getWordLen(si->m_lastWordPos);
+		const char *a = m_tokenizerResult.tokens[si->m_firstWordPos].token_start;
+		const char *b = m_tokenizerResult.tokens[si->m_firstWordPos].token_start;
+		b += m_tokenizerResult.tokens[si->m_firstWordPos].token_len;
 
 		// copy it
 		m_htb.safeMemcpy ( a , b - a );
@@ -16341,9 +16341,9 @@ Title *XmlDoc::getTitle() {
 		return &m_title;
 	}
 
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) {
-		return (Title *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) {
+		return (Title *)tr;
 	}
 
 	Query *query = getQuery();
@@ -16360,7 +16360,7 @@ Title *XmlDoc::getTitle() {
 
 	start = logQueryTimingStart();
 
-	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
+	if ( !m_title.setTitle( xml, tr, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
 							m_filteredRootTitleBufSize, *contentTypePtr, m_langId ) ) {
 		g_errno = ETITLEERROR;
 		return NULL;
@@ -16421,10 +16421,10 @@ Summary *XmlDoc::getSummary () {
 		return &m_summary;
 	}
 
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) {
-		checkPointerError(ww);
-		return (Summary *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) {
+		checkPointerError(tr);
+		return (Summary *)tr;
 	}
 
 	Sections *sections = getSections();
@@ -16485,7 +16485,7 @@ Summary *XmlDoc::getSummary () {
 	}
 
 	// compute the summary
-	bool status = m_summary.setSummary( xml, ww, sections, pos, q, m_req->m_summaryMaxLen, numLines,
+	bool status = m_summary.setSummary( xml, tr, sections, pos, q, m_req->m_summaryMaxLen, numLines,
 	                                    m_req->m_numSummaryLines, m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
 	                                    ti->getTitle(), ti->getTitleLen() );
 
@@ -18217,9 +18217,9 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! sections) return true;
 	if (sections==(Sections *)-1)return false;
 
-	Words *words = getWords();
-	if ( ! words ) return true;
-	if ( words == (Words *)-1 ) return false;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr ) return true;
+	if ( tr == (TokenizerResult *)-1 ) return false;
 
 	Phrases *phrases = getPhrases();
 	if ( ! phrases ) return true;
@@ -18230,9 +18230,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( cnt == (void *)-1 ) return false;
 
 
-	int32_t nw = words->getNumWords();
-	const int64_t *wids = words->getWordIds();
-
 	int32_t isXml = 0;
 	if ( hr ) isXml = hr->getLong("xml",0);
 
@@ -18240,8 +18237,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	SafeBuf densBuf;
 
 	// returns false and sets g_errno on error
-	if ( ! getDensityRanks((int64_t *)wids,
-			       nw,
+	if ( ! getDensityRanks(tr,
 			       HASHGROUP_BODY,//hi->m_hashGroup,
 			       &densBuf,
 			       sections))
@@ -18252,7 +18248,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	char *fragVec = m_fragBuf.getBufStart();
 
 	SafeBuf wpos;
-	if ( ! getWordPosVec ( words ,
+	if ( ! getWordPosVec ( tr ,
 			       sections,
 			       // we save this in the titlerec, when we
 			       // start hashing the body. we have the url
@@ -18310,10 +18306,9 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			int32_t pnum = parent - sections->m_sections;
 			sb->safePrintf("\t\t<parent>%" PRId32"</parent>\n",pnum);
 		}
-		const char *byte1 = words->getWord(si->m_a);
-		const char *byte2 = words->getWord(si->m_b-1) +
-				    words->getWordLen(si->m_b-1);
-		int32_t off1 = byte1 - words->getWord(0);
+		const char *byte1 = (*tr)[si->m_a].token_start;
+		const char *byte2 = (*tr)[si->m_b-1].token_end(); //FIXME: assumes tokens are contiguous in memory
+		int32_t off1 = byte1 - (*tr)[0].token_start;
 		int32_t size = byte2 - byte1;
 		sb->safePrintf("\t\t<byteOffset>%" PRId32"</byteOffset>\n",off1);
 		sb->safePrintf("\t\t<numBytes>%" PRId32"</numBytes>\n",size);
@@ -19304,8 +19299,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (SafeBuf *)xml;
 
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (SafeBuf *)ww;
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) return (SafeBuf *)tr;
 
 	char *isIndexed = getIsIndexed();
 	if ( !isIndexed || isIndexed==(char *)-1 ) return (SafeBuf *)isIndexed;
@@ -19583,15 +19578,15 @@ char *XmlDoc::getWordSpamVec() {
 	// assume not the repeat spammer
 	m_isRepeatSpammer = false;
 
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) {
+	TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) {
 		logTrace( g_conf.m_logTraceWordSpam, "END - no Words obj" );
-		return (char *)words;
+		return (char *)tr;
 	}
 
 	m_wordSpamBuf.purge();
 
-	int32_t nw = words->getNumWords();
+	int32_t nw = tr->size();
 	if ( nw <= 0 ) {
 		m_wordSpamBufValid = true;
 		logTrace( g_conf.m_logTraceWordSpam, "END - no words" );
@@ -19637,7 +19632,7 @@ char *XmlDoc::getWordSpamVec() {
 	int32_t maxPercent = 25;
 
 	// get # of words we have to set spam for
-	int32_t numWords = words->getNumWords();
+	int32_t numWords = tr->size();
 
 	// set up the size of the hash table (number of buckets)
 	int32_t  numBuckets = numWords * 3;
@@ -19705,22 +19700,18 @@ char *XmlDoc::getWordSpamVec() {
     }
 
 
-	const int64_t *wids = words->getWordIds();
-	const char *const*wptrs = words->getWordPtrs();
-	const int32_t  *wlens = words->getWordLens();
-
-
 	//#
 	//# Register all word occurrences in our hash table
 	//#
 	for(i=0; i < numWords; i++) {
+		const auto &token = (*tr)[i];
 		// Skip punctuation, spaces and other non-word entries
-		if ( wids[i] == 0 ) {
+		if ( !token.is_alfanum ) {
 			continue;
 		}
 
 		// Get the hash of the ith word
-		int64_t h = words->getWordId(i);
+		int64_t h = token.token_hash;
 
 		// "j" is the bucket index
 		int32_t j = (uint64_t)h % numBuckets;
@@ -19764,11 +19755,11 @@ char *XmlDoc::getWordSpamVec() {
 		if ( bits->isStopWord(i) ) {
 			commonWords[j] = 1;
 		}
-		if ( words->isNum(i) ) {
+		if ( is_ascii_digit_string(token.token_start,token.token_end()) ) {
 			commonWords[j] = 1;
 		}
 
-		logTrace( g_conf.m_logTraceWordSpam, "Word[%" PRId32 "] [%.*s] (%" PRIu64 ") -> bucket %" PRId32 ", next[%" PRId32 "]=%" PRId32"", i, wlens[i], wptrs[i], wids[i], j, i, next[i]);
+		logTrace( g_conf.m_logTraceWordSpam, "Word[%" PRId32 "] [%.*s] (%" PRIu64 ") -> bucket %" PRId32 ", next[%" PRId32 "]=%" PRId32"", i, (int)token.token_len, token.token_start, token.token_hash, j, i, next[i]);
 	}
 
 
@@ -19938,7 +19929,7 @@ char *XmlDoc::getWordSpamVec() {
 
 	// now only set to 99 so each singleton usually gets hashed
 	for ( i = 0 ; i < numWords ; i++ ) {
-		if ( words->getWordId(i) && spam[i] < 99 ) {
+		if ( (*tr)[i].is_alfanum && spam[i] < 99 ) {
 			spam[i] = 99;
 		}
 	}
@@ -20130,7 +20121,7 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 }
 
 
-bool getWordPosVec ( const Words *words ,
+bool getWordPosVec ( const TokenizerResult *tr,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
@@ -20141,23 +20132,21 @@ bool getWordPosVec ( const Words *words ,
 	int32_t tagDist = 0;
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
-	const nodeid_t *tids = words->getTagIds();
-	const int32_t *wlens = words->getWordLens();
-	const char *const*wptrs = words->getWordPtrs();
-	int32_t nw = words->getNumWords();
+	unsigned nw = tr->size();
 
 	if ( ! wpos->reserve ( nw * sizeof(int32_t) ) ) return false;
 	int32_t *wposvec = (int32_t *)wpos->getBufStart();
 
 
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
+	for ( unsigned i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// save it
 		wposvec[i] = dist;
 
 		// tags affect the distance/wordposition cursor
-		if ( tids && tids[i] ) {
+		if ( token.nodeid ) {
 			// tag distance affects
-			nodeid_t tid = tids[i] & BACKBITCOMP;
+			nodeid_t tid = token.nodeid & BACKBITCOMP;
 			if ( isBreakingTagId ( tid ) ) tagDist += SENT_UNITS;
 			dist++;
 			continue;
@@ -20165,15 +20154,15 @@ bool getWordPosVec ( const Words *words ,
 		// . and so do sequences of punct
 		// . must duplicate this code in Query.cpp for setting
 		//   QueryWord::m_posNum
-		if ( ! words->getWordId(i) ) {
+		if ( !token.is_alfanum ) {
 			// simple space or sequence of just white space
-			if ( words->isSpaces(i) )
+			if ( has_wspace_utf8_string(token.token_start,token.token_end()) )
 				dist++;
 			// 'cd-rom'
-			else if ( wptrs[i][0]=='-' && wlens[i]==1 )
+			else if ( token.token_len==1 && token.token_start[0]=='-' )
 				dist++;
 			// 'mr. x'
-			else if ( wptrs[i][0]=='.' && words->isSpaces(i,1))
+			else if ( token.token_start[0]=='.' && has_wspace_utf8_string(token.token_start+1,token.token_end()))
 				dist++;
 			// animal (dog)
 			else
@@ -20219,16 +20208,15 @@ bool getWordPosVec ( const Words *words ,
 	return true;
 }
 
-bool getDensityRanks ( const int64_t *wids ,
-		       int32_t nw ,
+bool getDensityRanks ( const TokenizerResult *tr,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
 		       const Sections *sections ) {
 
-	//int32_t nw = wordEnd - wordStart;
+	size_t nw = tr->size();
 
 	// make the vector
-	if ( ! densBuf->reserve ( nw ) ) return false;
+	if ( ! densBuf->reserve ( tr->size() ) ) return false;
 
 	// convenience
 	char *densVec = densBuf->getBufStart();
@@ -20269,7 +20257,9 @@ bool getDensityRanks ( const int64_t *wids ,
 
 	// count # of alphanumeric words in this string
 	int32_t na = 0;
-	for ( int32_t i = 0 ; i < nw ; i++ ) if ( wids[i] ) na++;
+	for(const auto &t : tr->tokens)
+		if ( t.is_alfanum )
+			na++;
 	// a single alnum should map to 0 "na"
 	na--;
 	// wtf?
@@ -20279,7 +20269,7 @@ bool getDensityRanks ( const int64_t *wids ,
 	// at least 1 to not be confused with 0 which means un-set
 	if ( dr < 1 ) dr = 1;
 	// assign
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
+	for(unsigned i = 0; i < nw; i++) {
 		// assign
 		densVec[i] = dr;
 	}
@@ -20290,9 +20280,8 @@ bool getDensityRanks ( const int64_t *wids ,
 // . string is usually the document body or inlink text of an inlinker or
 //   perhaps meta keywords. it could be anything. so we need to create this
 //   vector based on that string, which is represented by words/phrases here.
-bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec ) {
-	const int64_t  *wids  = words->getWordIds ();
-	int32_t        nw    = words->getNumWords();
+bool getDiversityVec( const TokenizerResult *tr, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec ) {
+	int32_t        nw    = tr->size();
 	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// . make the vector
@@ -20309,14 +20298,15 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 	// . now consider ourselves the last word in a phrase
 	// . adjust the score of the first word in the phrase to be
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not alnum word
-		if ( ! wids[i] ) { ww[i] = 0.0; continue; }
+		if ( !token.is_alfanum ) { ww[i] = 0.0; continue; }
 		// try to inline this
 		int64_t nextWid = 0;
 		int64_t lastPid = 0;
 		// how many words in the bigram?
 		int32_t      nwp = phrases->getNumWordsInPhrase2(i);
-		if ( nwp > 0 ) nextWid = wids [i + nwp - 1] ;
+		if ( nwp > 0 ) nextWid = (*tr)[i + nwp - 1].token_hash;
 		if ( i == nexti ) lastPid = pidLast;
 		// get current pid
 		int64_t pid = pids[i];
@@ -20324,7 +20314,7 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 		float ww2;
 
 		getWordToPhraseRatioWeights ( lastPid  ,
-					      wids[i]  ,
+					      token.token_hash  ,
 					      pid      ,
 					      nextWid  ,
 					      &ww2     ,
@@ -20380,16 +20370,15 @@ char *XmlDoc::getFragVec ( ) {
 
 	setStatus("getting frag vec");
 
-	const Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (char *)words;
+	const TokenizerResult *tr = getTokenizerResult();
+	if ( ! tr || tr == (TokenizerResult *)-1 ) return (char *)tr;
 	Bits *bits = getBits();
 	if ( ! bits ) return NULL;
 
 	m_fragBuf.purge();
 
 	// ez vars
-	const int64_t *wids  = words->getWordIds ();
-	int32_t        nw    = words->getNumWords();
+	int32_t        nw    = tr->size();
 
 	// if no words, nothing to do
 	if ( nw == 0 ) {
@@ -20451,15 +20440,15 @@ char *XmlDoc::getFragVec ( ) {
 	//   number of words matching
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// skip if not alnum word
-		if ( ! wids[i] ) continue;
+		if ( !(*tr)[i].is_alfanum ) continue;
 
 		// add new to the 5 word hash
-		h ^= wids[i];
+		h ^= (*tr)[i].token_hash;
 		// . remove old from 5 word hash before adding new...
 		// . initial ring wids are 0, so should be benign at startup
 		h ^= ringWids[ringi];
 		// add to ring
-		ringWids[ringi] = wids[i];
+		ringWids[ringi] = (*tr)[i].token_hash;
 		// save our position
 		ringPos[ringi] = i;
 		// wrap the ring ptr if we need to, that is why we are a ring
@@ -20525,7 +20514,7 @@ char *XmlDoc::getFragVec ( ) {
 				if ( j >= nw ) { g_process.shutdownAbort(true); }
 				if ( j <  0 ) { g_process.shutdownAbort(true); }
 				// skip if not an alnum word
-				if ( ! wids[j] ) continue;
+				if ( ! (*tr)[j].is_alfanum ) continue;
 				// count it
 				mc++;
 				// demote it
@@ -20568,9 +20557,9 @@ char *XmlDoc::getFragVec ( ) {
 		// keep advancing k and j as long as the words match
 	matchLoop:
 		// get next wid for k and j
-		while ( k < nw && ! wids[k] ) k++;
-		while ( j < nw && ! wids[j] ) j++;
-		if ( k < nw && wids[k] == wids[j] ) {
+		while ( k < nw && !(*tr)[k].is_alfanum ) k++;
+		while ( j < nw && !(*tr)[j].is_alfanum ) j++;
+		if ( k < nw && (*tr)[k].token_hash == (*tr)[j].token_hash ) {
 			matched++;
 			k++;
 			j++;

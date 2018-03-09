@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Pos.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "XmlNode.h"
 #include "Sections.h"
 #include "TitleSummaryCodepointFilter.h"
@@ -46,17 +46,15 @@ static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
 	return ( *count > 0 );
 }
 
-int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
+int32_t Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
 	logTrace(g_conf.m_logTracePos, "BEGIN");
-
-	const nodeid_t *tids = words->getTagIds();
 
 	// save start point for filtering
 	char *fstart = f;
 
 	// -1 is the default value
 	if ( b == -1 ) {
-		b = words->getNumWords();
+		b = tr->size();
 	}
 
 	bool trunc = false;
@@ -91,13 +89,12 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	if (version >= 122) { // TITLEREC_CURRENT_VERSION
 		int32_t maxWord = b;
 
-		if (maxWord == words->getNumWords()) {
+		if (maxWord == tr->size()) {
 			maxWord -= 1;
 		}
 
-		int32_t totalLen = (words->getWord(maxWord) + words->getWordLen(maxWord)) - words->getWord(a);
-		const char *pos = words->getWord(a);
-		const char *endPos = pos + totalLen;
+		const char *pos = (*tr)[a].token_start;
+		const char *endPos = (*tr)[maxWord].token_end();
 
 		for ( ; ( pos + 3 ) < endPos; ++pos ) {
 			if (*pos == '&') {
@@ -142,25 +139,26 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 		}
 
 		// is tag?
-		if ( tids && tids[i] ) {
+		nodeid_t tid = (*tr)[i].nodeid;
+		if ( tid ) {
 			logTrace(g_conf.m_logTracePos, "tags");
 
 			// let's not get from bad tags
-			if ( inTag( tids[i], TAG_STYLE, &inBadTags ) ) {
+			if ( inTag( tid, TAG_STYLE, &inBadTags ) ) {
 				continue;
 			}
 
-			if ( inTag( tids[i], TAG_SCRIPT, &inBadTags ) ) {
+			if ( inTag( tid, TAG_SCRIPT, &inBadTags ) ) {
 				continue;
 			}
 
 			// if not breaking, does nothing
-			if ( !g_nodes[tids[i] & 0x7f].m_isBreaking ) {
+			if ( !g_nodes[tid & 0x7f].m_isBreaking ) {
 				continue;
 			}
 
 			// list tag? <li>
-			if ( tids[i] == TAG_LI ) {
+			if ( tid == TAG_LI ) {
 				if ( ( fend - f > maxCharSize ) ) {
 					*f++ = '*';
 
@@ -181,7 +179,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 			}
 
 			// if had a br tag count it as a '.'
-			if ( tids[i] ) { // <br>
+			if ( tid ) { // <br>
 				if ( f != fstart ) {
 					if ( ( fend - f > 2 * maxCharSize ) ) {
 						if ( prevChar && is_ascii(*prevChar) && (*prevChar != '.') ) {
@@ -217,8 +215,8 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 
 		// scan through all chars discounting back-to-back spaces
 		unsigned char cs = 0;
-		const char *p    = words->getWord(i) ;
-		const char *pend = words->getWord(i) + words->getWordLen(i);
+		const char *p    = (*tr)[i].token_start;
+		const char *pend = (*tr)[i].token_end();
 
 
 		const char *currentEntity = NULL;
@@ -418,6 +416,8 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	const int minCapCount = 5;
 
 	// only capitalize first letter in a word for a sentence with all caps
+	//TODO: assumes we want a us-centric title capitilization. There are other styles.
+	//FIXME: Assumes lowercasing a codepoint doesn't change its utf8-encoding length. This is not true (eg. Turkish U+0130 İ -> U+0069 i)
 	if ( capCount > minCapCount && capCount == ( f - fstart ) ) {
 		logTrace(g_conf.m_logTracePos, "all caps");
 
@@ -447,6 +447,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 
 			if ( !isFirstLetter ) {
 				to_lower_utf8(c, c);
+				//TODO: do titlecase on the first letter - don't leave it as uppercase
 			}
 		}
 	}
@@ -537,12 +538,11 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	return bytesStored;
 }
 
-bool Pos::set( const Words *words, int32_t a, int32_t b ) {
+bool Pos::set(const TokenizerResult *tr, int32_t a, int32_t b) {
 	// free m_buf in case this is a second call
 	reset();
 
-	int32_t nw = words->getNumWords();
-	const nodeid_t *tids = words->getTagIds();
+	int32_t nw = tr->size();
 
 	// -1 is the default value
 	if ( b == -1 ) {
@@ -579,15 +579,16 @@ bool Pos::set( const Words *words, int32_t a, int32_t b ) {
 		// set pos for the ith word to "pos"
 		m_pos[i] = pos;
 
+		nodeid_t tid = (*tr)[i].nodeid;
 		// is tag?
-		if ( tids && tids[i] ) {
+		if ( tid ) {
 			// if not breaking, does nothing
-			if ( !g_nodes[tids[i] & 0x7f].m_isBreaking ) {
+			if ( !g_nodes[tid & 0x7f].m_isBreaking ) {
 				continue;
 			}
 
 			// list tag? <li>
-			if ( tids[i] == TAG_LI ) {
+			if ( tid == TAG_LI ) {
 				++pos;
 				lastSpace = false;
 				continue;
@@ -600,7 +601,7 @@ bool Pos::set( const Words *words, int32_t a, int32_t b ) {
 			}
 
 			// if had a br tag count it as a '. '
-			if ( tids[i] ) { // <br>
+			if ( tid ) { // <br>
 				pos += 2;
 				lastSpace = true;
 
@@ -617,8 +618,8 @@ bool Pos::set( const Words *words, int32_t a, int32_t b ) {
 		}
 
 		// scan through all chars discounting back-to-back spaces
-		const char *wp = words->getWord(i);
-		const char *pend = wp + words->getWordLen(i);
+		const char *wp = (*tr)[i].token_start;
+		const char *pend = wp + (*tr)[i].token_len;
 		unsigned char cs = 0;
 
 		// assume filters out to the same # of chars

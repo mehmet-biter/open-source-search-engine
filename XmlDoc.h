@@ -20,6 +20,7 @@
 
 #include "Lang.h"
 #include "Words.h"
+#include "tokenizer.h"
 #include "Bits.h"
 #include "Pos.h"
 #include "Phrases.h"
@@ -73,14 +74,13 @@ namespace GbDns {
 #define MAX_SURROUNDING_TEXT_WIDTH 600
 #define MAX_RSSITEM_SIZE  30000
 
-bool getDensityRanks ( const int64_t *wids,
-		       int32_t nw,
+bool getDensityRanks ( const TokenizerResult *tr,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
 		       const Sections *sections);
 
 // diversity vector
-bool getDiversityVec ( const Words *words ,
+bool getDiversityVec ( const TokenizerResult *tr,
 		       const Phrases *phrases ,
 		       class HashTableX *countTable ,
 		       class SafeBuf *sbWordVec );
@@ -115,7 +115,7 @@ int gbcompress(unsigned char *dest,
 // . *pend must equal \0
 int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
 
-bool getWordPosVec ( const Words *words,
+bool getWordPosVec ( const TokenizerResult *tr,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
@@ -354,8 +354,8 @@ public:
 	lang_t getContentLangIdCLD2();
 	lang_t getContentLangIdCLD3();
 
-	uint8_t computeLangId ( Sections *sections ,Words *words , char *lv ) ;
-	class Words *getWords ( ) ;
+	uint8_t computeLangId(Sections *sections, const TokenizerResult *tr, char *lv);
+	TokenizerResult *getTokenizerResult();
 	class Bits *getBits ( ) ;
 	class Bits *getBitsForSummary ( ) ;
 	class Pos *getPos ( );
@@ -368,7 +368,7 @@ public:
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
-	int32_t computeVector ( class Words *words, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
+	int32_t computeVector ( const TokenizerResult *tr, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
 	int64_t *getExactContentHash64();
@@ -554,9 +554,9 @@ public:
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
 
-	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
-					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
-					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
+	bool hashWords3( class HashInfo *hi, const TokenizerResult *tr, class Phrases *phrases,
+			 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
+			 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
 	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
@@ -643,7 +643,7 @@ public:
 	// . these classes are only set on demand
 	Xml        m_xml;
 	Links      m_links;
-	Words      m_words;
+	TokenizerResult m_tokenizerResult;
 	Bits       m_bits;
 	Bits       m_bits2;
 	Pos        m_pos;
@@ -719,7 +719,7 @@ public:
 	bool m_isContentTruncatedValid;
 	bool m_xmlValid;
 	bool m_linksValid;
-	bool m_wordsValid;
+	bool m_tokenizerResultValid;
 	bool m_bitsValid;
 	bool m_bits2Valid;
 	bool m_posValid;

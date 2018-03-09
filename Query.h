@@ -8,6 +8,7 @@
 #include "SafeBuf.h"
 #include "Lang.h"
 #include "WordVariationsConfig.h"
+#include "tokenizer.h"
 class CollectionRec;
 
 
@@ -157,8 +158,6 @@ enum class opcode_t {
 	OP_PIPE       = 7,
 };
 
-// . these first two classes are functionless
-// . QueryWord, like the Phrases class, is an extension on the Words class
 // . the array of QueryWords, m_qwords[], is contained in the Query class
 // . we compute the QueryTerms (m_qterms[]) from the QueryWords
 class QueryWord {
@@ -420,13 +419,13 @@ class Query {
 private:
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
-			 class Words &words , class Phrases &phrases ) ;
+			class Phrases &phrases ) ;
 
 	// sets m_qterms[] array from the m_qwords[] array
-	bool setQTerms ( const class Words &words ) ;
+	bool setQTerms();
 
 	// helper funcs for parsing query into m_qwords[]
-	bool        isConnection(const char *s, int32_t len) const;
+	bool        isConnection(unsigned i) const;
 
 	void traceTermsToLog(const char *header);
 
@@ -464,6 +463,7 @@ public:
 	int32_t m_numTermsUntruncated;
 
 private:
+	TokenizerResult m_tr;
 	SafeBuf    m_queryTermBuf;
 public:
 	QueryTerm *m_qterms         ;

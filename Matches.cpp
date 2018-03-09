@@ -54,7 +54,7 @@ void Matches::reset2() {
 	m_numAlnums  = 0;
 	// free all the classes' buffers
 	for ( int32_t i = 0 ; i < m_numMatchGroups ; i++ ) {
-		m_wordsArray   [i].reset();
+		m_tokenizerResultArray[i].clear();
 		m_posArray     [i].reset();
 		m_bitsArray    [i].reset();
 	}
@@ -249,7 +249,7 @@ void Matches::setQuery(const Query *q) {
 // . we can also use this to replace the proximity algo setup where it
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
-bool Matches::set(const Words *bodyWords, Phrases *bodyPhrases, const Sections *bodySections, const Bits *bodyBits,
+bool Matches::set(const TokenizerResult *bodyTr, Phrases *bodyPhrases, const Sections *bodySections, const Bits *bodyBits,
 		  const Pos *bodyPos, Xml *bodyXml, const Title *tt, const Url *firstUrl, LinkInfo *linkInfo ) {
 	// don't reset query info!
 	reset2();
@@ -257,7 +257,7 @@ bool Matches::set(const Words *bodyWords, Phrases *bodyPhrases, const Sections *
 	// . first add all the matches in the body of the doc
 	// . add it first since it will kick out early if too many matches
 	//   and we get all the explicit bits matched
-	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, MF_BODY ) ) {
+	if ( !addMatches( bodyTr, bodyPhrases, bodySections, bodyBits, bodyPos, MF_BODY ) ) {
 		return false;
 	}
 
@@ -275,11 +275,11 @@ bool Matches::set(const Words *bodyWords, Phrases *bodyPhrases, const Sections *
 	int32_t  a     = tt->getTitleTagStart();
 	int32_t  b     = tt->getTitleTagEnd();
 
-	const char *start = NULL;
-	const char *end   = NULL;
 	if ( a >= 0 && b >= 0 && b>a ) {
-		start = bodyWords->getWord(a);
-		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
+		const auto &t_a = (*bodyTr)[a];
+		const auto &t_bm1 = (*bodyTr)[b-1];
+		const char *start = t_a.token_start;
+		const char *end   = t_bm1.token_end();
 		if ( !addMatches( start, end - start, MF_TITLETAG ) ) {
 			return false;
 		}
@@ -377,22 +377,22 @@ bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 	}
 
 	// get some new ptrs for this match group
-	Words    *wp = &m_wordsArray    [ m_numMatchGroups ];
+	TokenizerResult    *tr = &m_tokenizerResultArray[ m_numMatchGroups ];
 	Bits     *bp = &m_bitsArray     [ m_numMatchGroups ];
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
 	// set the words class for this match group
-	if ( !wp->set( s, slen ) ) {
-		return false;
-	}
+	plain_tokenizer_phase_1(s,slen,tr);
+	//TODO: should this just be a plain phase-1, or should we also do phase-2 tokenization?
+	calculate_tokens_hashes(tr);
 
 	// bits vector
-	if ( ! bp->setForSummary ( wp ) ) {
+	if ( ! bp->setForSummary ( tr ) ) {
 		return false;
 	}
 
 	// position vector
-	if ( ! pb->set ( wp ) ) {
+	if ( ! pb->set ( tr ) ) {
 		return false;
 	}
 
@@ -402,7 +402,7 @@ bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 	int32_t n = m_numMatchGroups;
 	// . add all the Match classes from this match group
 	// . this increments m_numMatchGroups on success
-	bool status = addMatches( wp, NULL, NULL, bp, pb, flags );
+	bool status = addMatches( tr, NULL, NULL, bp, pb, flags );
 
 	// if this matchgroup had some, matches, then keep it
 	if ( m_numMatches > startNumMatches ) {
@@ -410,7 +410,7 @@ bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 	}
 
 	// otherwise, reset it, useless
-	wp->reset();
+	tr->clear();
 	bp->reset();
 	pb->reset();
 
@@ -428,7 +428,7 @@ bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 // . TODO: support stemming later. each word should then have multiple ids.
 // . add to our m_matches[] array iff addToMatches is true, otherwise we just
 //   set the m_foundTermVector for doing the BIG HACK described in Summary.cpp
-bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *sections, const Bits *bits, const Pos *pos, mf_t flags ) {
+bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sections *sections, const Bits *bits, const Pos *pos, mf_t flags ) {
 	// if no query term, bail.
 	if ( m_numSlots <= 0 ) {
 		return true;
@@ -456,11 +456,7 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 
 	// set convenience vars
 	uint32_t mask = m_numSlots - 1;
-	const int64_t *wids = words->getWordIds();
-	const int32_t *wlens = words->getWordLens();
-	const char * const *wptrs = words->getWordPtrs();
-	const nodeid_t *tids = words->getTagIds();
-	int32_t nw = words->getNumWords();
+	int32_t nw = tr->size();
 	int32_t n;
 	int32_t matchStack = 0;
 	int64_t nextMatchWordIdMustBeThis = 0;
@@ -480,18 +476,19 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 	// . loop over all words in the document
 	//
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		//if      (tids && (tids[i]            ) == TAG_A) 
 		//	inAnchTag = true;
 		//else if (tids && (tids[i]&BACKBITCOMP) == TAG_A) 
 		//	inAnchTag = false;
 
-		if ( tids && tids[i] ){
+		if ( token.nodeid ){
 			// tagIds don't have wids and are skipped
 			continue;
 		}
 
 		// skip if wid is 0, it is not an alnum word then
-		if ( ! wids[i] ) {
+		if ( ! token.is_alfanum ) {
 			continue;
 		}
 
@@ -513,14 +510,14 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 
 		// . does it match a query term?
 		// . hash to the slot in the hash table
-		n = ((uint32_t)wids[i]) & mask;
+		n = ((uint32_t)token.token_hash) & mask;
 		//n2 = swids[i]?((uint32_t)swids[i]) & mask:n;
 	chain1:
 		// skip if slot is empty (doesn't match query term)
 		//if ( ! m_qtableIds[n] && ! m_qtableIds[n2]) continue;
 		if ( ! m_qtableIds[n] ) goto tryPhrase;
 		// otherwise chain
-		if ( (m_qtableIds[n] != wids[i]) ) {
+		if ( (m_qtableIds[n] != token.token_hash) ) {
 			if ( m_qtableIds[n] && ++n >= m_numSlots ) n = 0;
 			goto chain1;
 		}
@@ -534,14 +531,14 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 		// 
 	tryPhrase:
 		// try without 's if it had it
-		if ( wlens[i] >= 3 && 
-		     wptrs[i][wlens[i]-2] == '\'' &&
-		     to_lower_a(wptrs[i][wlens[i]-1]) == 's' ) {
+		if ( token.token_len >= 3 && 
+		     token.token_start[token.token_len-2] == '\'' &&
+		     to_lower_a(token.token_start[token.token_len-1]) == 's' ) {
 			// move 's from word hash... very tricky
-			int64_t nwid = wids[i];
+			int64_t nwid = token.token_hash;
 			// undo hash64Lower_utf8 in hash.h
-			nwid ^= g_hashtab[wlens[i]-1][(uint8_t)'s'];
-			nwid ^= g_hashtab[wlens[i]-2][(uint8_t)'\''];
+			nwid ^= g_hashtab[token.token_len-1][(uint8_t)'s'];
+			nwid ^= g_hashtab[token.token_len-2][(uint8_t)'\''];
 			n = ((uint32_t)nwid) & mask;
 		chain2:
 			if ( ! m_qtableIds[n] ) goto tryPhrase2;
@@ -583,7 +580,7 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 			if ( qw->m_phraseId == pids[i] ) {
 				// might match more if we had more query
 				// terms in the quote
-				numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, true );
+				numWords = getNumWordsInMatch( tr, i, n, &numQWords, &qwn, true );
 
 				// this is 0 if we were an unmatched quote
 				if ( numWords <= 0 ) continue;
@@ -617,7 +614,7 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 		//   in both cases will included unmatched punctuation words
 		//   and tags in between matching words.
 		numQWords = 0;
-		numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, true );
+		numWords = getNumWordsInMatch( tr, i, n, &numQWords, &qwn, true );
 		// this is 0 if we were an unmatched quote
 		if ( numWords <= 0 ) continue;
 
@@ -710,7 +707,7 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 		qw = &m_q->m_qwords[qwn];
 
 		// convenience, used by Summary.cpp
-		m->m_words    = words;
+		m->m_tr    = tr;
 		m->m_sections = sections;
 		m->m_bits     = bits;
 		m->m_pos      = pos;
@@ -740,20 +737,19 @@ bool Matches::addMatches(const Words *words, Phrases *phrases, const Sections *s
 }
 
 // . word #i in the doc matches slot #n in the hash table
-int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+int32_t Matches::getNumWordsInMatch(const TokenizerResult *tr, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				    bool allowPunctInPhrase) {
 	// is it a two-word synonym?
 	if ( m_qtableFlags[n] & 0x08 ) {
 		// get the word following this
 		int64_t wid2 = 0LL;
-		if ( wn+2 < words->getNumWords() )
-			wid2 = words->getWordId(wn+2);
+		if ( wn+2 < tr->size() )
+			wid2 = (*tr)[wn+2].token_hash;
 		// scan the synonyms...
-		const int64_t *wids = words->getWordIds();
 		for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 			QueryTerm *qt = &m_q->m_qterms[k];
 			if ( ! qt->m_synonymOf ) continue;
-			if ( qt->m_synWids0 != wids[wn] ) continue;
+			if ( qt->m_synWids0 != (*tr)[wn].token_hash ) continue;
 			if ( qt->m_synWids1 != wid2 ) continue;
 			*numQWords = 3; 
 			return 3;
@@ -771,14 +767,11 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 	if ( ! (m_qtableFlags[n] & 0x02) ) { *numQWords = 1; return 1; }
 
 	// get word ids array for the doc
-	const int64_t  *wids   = words->getWordIds();
 	//int64_t  *swids  = words->getStripWordIds();
-	const char * const *ws = words->getWordPtrs();
-	const int32_t      *wl     = words->getWordLens();
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;
 	int32_t count = 0;
-	int32_t nw    = words->getNumWords();
+	int32_t nw    = tr->size();;
 
 	// loop through all the quotes in the query and find
 	// which one we match, if any. we will have to advance the
@@ -791,7 +784,7 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 		QueryWord *qw = &m_q->m_qwords[j];
 		if ( !qw->m_rawWordId ) continue;
 		// query word must match wid of first word in quote
-		if ( (qw->m_rawWordId != wids[wn]) ) continue;
+		if ( (qw->m_rawWordId != (*tr)[wn].token_hash) ) continue;
 		//     (qw->m_rawWordId != swids[wn])) continue;
 		// skip if in field
 		// . we were doing an intitle:"fight club" query and
@@ -811,7 +804,7 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 		count = 0;
 	subloop:
 		// query word must match wid of first word in phrase
-		if ( (qw->m_rawWordId != wids[wn]) ) {
+		if ( (qw->m_rawWordId != (*tr)[wn].token_hash) ) {
 		//     (qw->m_rawWordId != swids[wn])) {
 			// reset and try another quote in the query
 			count = 0;
@@ -839,17 +832,17 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 		for ( wn++ ; wn < nw ; wn++ ) {
 			// . if NO PUNCT, IN QUOTES, AND word id is zero
 			//   then check for punctuation
-			if(!allowPunctInPhrase && qw->m_inQuotes && !wids[wn]) {
+			if(!allowPunctInPhrase && qw->m_inQuotes && !(*tr)[wn].is_alfanum) {
 				// . check if its a space [0x20, 0x00]
-				if( (wl[wn] == 2) && (ws[wn][0] == ' ') ) 
+				if( ((*tr)[wn].token_len == 2) && ((*tr)[wn].token_start[0] == ' ') ) 
 					continue;
 				// . if the length is greater than a space
-				else if( wl[wn] > 2 ) {
+				else if( (*tr)[wn].token_len > 2 ) {
 					// . increment until we find no space
 					// . increment by 2 since its utf16
-					for( int32_t i = 0; i < wl[wn]; i+=2 )
+					for( unsigned i = 0; i < (*tr)[wn].token_len; i+=2 )
 						// . if its not a space, its punc
-						if( ws[wn][i] != ' ' ) {
+						if( (*tr)[wn].token_start[i] != ' ' ) {
 							count=0; break;
 						}
 					// . if count is 0, punc found break
@@ -859,7 +852,7 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 				else { count=0; break; }
 			}
 			// . we incremented to a new word break and check
-			if ( wids[wn] ) break;
+			if ( (*tr)[wn].is_alfanum ) break;
 		}
 		// there was a following query word in the quote
 		// so there must be a following word, if not, continue
@@ -888,7 +881,7 @@ int32_t Matches::getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, i
 				QueryWord *qw = &m_q->m_qwords[j];
 				if ( !qw->m_rawWordId ) continue;
 				// query word must match wid of word
-				if ( (qw->m_rawWordId != wids[wn]) ) continue;
+				if ( (qw->m_rawWordId != (*tr)[wn].token_hash) ) continue;
 				//   (qw->m_rawWordId != swids[wn])) continue;
 				// skip if in field
 				// . fix intitle:"fight club"

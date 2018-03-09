@@ -217,3 +217,17 @@ const char *formatTimeMs(int64_t when, char buf[32]) {
 	sprintf(strchr(buf,'\0'),".%03dZ",(int)(when%1000));
 	return buf;
 }
+
+
+bool has_space(const char *start, const char *end) {
+	//Simple test only
+	for(const char *p=start; p<end; p++)
+		if(*p==' ' ||
+		   *p=='\t' ||
+		   *p=='\r' ||
+		   *p=='\n')
+			return true;
+	return false;
+}
+
+//(inline): bool has_char(const char *start, const char *end, char c);

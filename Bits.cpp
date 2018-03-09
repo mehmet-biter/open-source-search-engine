@@ -8,8 +8,8 @@
 #include "Mem.h"
 #include "Sections.h"
 #include "Process.h"
-#include "Words.h"
-
+#include "tokenizer.h"
+#include "GbUtil.h"
 
 Bits::Bits() {
 	m_bits = NULL;
@@ -35,20 +35,20 @@ void Bits::reset() {
 	// Coverity
 	m_bitsSize = 0;
 	m_swbitsSize = 0;
-	m_words = NULL;
+	m_tr = NULL;
 	m_needsFree = false;
 }
 
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::set(const Words *words) {
+bool Bits::set(const TokenizerResult *tr) {
 	reset();
 
 	// save words so printBits works
-	m_words = words;
+	m_tr = tr;
 	// how many words?
-	int32_t numBits = words->getNumWords();
+	int32_t numBits = tr->size();
 	// how much space do we need?
 	int32_t need = numBits * sizeof(wbit_t);
 	// assume no malloc
@@ -67,16 +67,14 @@ bool Bits::set(const Words *words) {
 		return false;
 	}
 
-	const nodeid_t *tagIds = words->getTagIds();
-	const char *const*w = words->getWordPtrs();
-
 	int32_t brcount = 0;
 
 	wbit_t bits;
 
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
-		if ( tagIds && tagIds[i] ) {
-			nodeid_t tid = tagIds[i] & BACKBITCOMP;
+		const auto &token = (*m_tr)[i];
+		if ( token.nodeid ) {
+			nodeid_t tid = token.nodeid & BACKBITCOMP;
 			// count the <br>s, we can't pair across more than 1
 			if ( g_nodes[tid].m_isBreaking ) {
 				bits = 0;
@@ -92,7 +90,7 @@ bool Bits::set(const Words *words) {
 				bits = D_CAN_PAIR_ACROSS;
 			}
 		}
-		else if ( is_alnum_utf8 ( w[i]+0 )) {
+		else if ( token.is_alfanum ) {
 			bits = getAlnumBits( i );
 			brcount = 0;
 		} else {
@@ -129,30 +127,29 @@ void Bits::setInLinkBits ( Sections *ss ) {
 void Bits::setInUrlBits () {
 	if ( m_inUrlBitsSet ) return;
 	m_inUrlBitsSet = true;
-	const nodeid_t *tids  = m_words->getTagIds();
-	const int64_t *wids = m_words->getWordIds();
-	const char *const*wptrs    = m_words->getWordPtrs();
-	int32_t nw = m_words->getNumWords();
-	for ( int32_t i = 0 ; i < nw; i++ ) {
+	for ( unsigned i = 0 ; i < m_tr->size(); i++ ) {
+		const auto &token = (*m_tr)[i];
 		// look for protocol
-		if ( wids[i] ) continue;
-		if ( tids[i] ) continue;
-		if ( wptrs[i][0] != ':' ) continue;
-		if ( wptrs[i][1] != '/' ) continue;
-		if ( wptrs[i][2] != '/' ) continue;
+		if(token.token_len!=3) continue;
+		if(token.is_alfanum) continue;
+		if(token.nodeid) continue;
+		if(token.token_start[0] != ':' ) continue;
+		if(token.token_start[1] != '/' ) continue;
+		if(token.token_start[2] != '/' ) continue;
 		// set them up
 		if ( i<= 0 ) continue;
 
 		// scan for end of it. stop at tag or space
-		int32_t j = i - 1;
-		for ( ; j < nw; j++ ) {
+		unsigned j = i - 1;
+		for ( ; j <  m_tr->size(); j++ ) {
+			const auto &token2 = (*m_tr)[j];
 			// check if end
-			if ( m_words->hasSpace( j ) ) {
+			if ( has_space(token2.token_start,token2.token_end()) ) {
 				break;
 			}
 
 			// or tag
-			if ( tids[j] ) {
+			if ( token2.nodeid ) {
 				break;
 			}
 			// include it
@@ -169,8 +166,9 @@ void Bits::setInUrlBits () {
 // . if we're a stop word and previous word was an apostrophe
 //   then set D_CAN_APOSTROPHE_PRECEED to true and PERIOD_PRECEED to false
 wbit_t Bits::getAlnumBits( int32_t i ) const {
+	const auto &token = (*m_tr)[i];
 	// this is not case sensitive -- all non-stop words can start phrases
-	if ( ! ::isStopWord ( m_words->getWord( i ) , m_words->getWordLen( i ) , m_words->getWordId( i ) ) )
+	if ( ! ::isStopWord ( token.token_start, token.token_len, token.token_hash ) )
 		return (D_CAN_BE_IN_PHRASE) ;
 
 	return (D_CAN_BE_IN_PHRASE | D_CAN_PAIR_ACROSS | D_IS_STOPWORD);
@@ -188,7 +186,7 @@ static bool s_init = false;
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::setForSummary ( const Words *words ) {
+bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	// clear the mem
 	reset();
 
@@ -214,10 +212,10 @@ bool Bits::setForSummary ( const Words *words ) {
 	}
 
 	// save words so printBits works
-	m_words = words;
+	m_tr = tr;
 
 	// how many words?
-	int32_t numBits = words->getNumWords();
+	int32_t numBits = tr->size();
 
 	// how much space do we need?
 	int32_t need = sizeof(swbit_t) * numBits;
@@ -245,11 +243,6 @@ bool Bits::setForSummary ( const Words *words ) {
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT
 
-	const nodeid_t *tagIds = words->getTagIds();
-	const char *const*w = words->getWordPtrs();
-	const int32_t *wlens = words->getWordLens();
-	const int64_t *wids = words->getWordIds();
-
 	bool startSent = true;
 	bool startFrag = true;
 	bool inQuote = false;
@@ -261,11 +254,9 @@ bool Bits::setForSummary ( const Words *words ) {
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
 		// assume none are set
 		m_swbits[i] = 0;
-
-		// if a breaking tag, next guy can "start a sentence"
-		if ( tagIds && tagIds[i] ) {
-			// get the tag id minus the high "back bit"
-			int32_t tid = tagIds[i] & BACKBITCOMP;
+		const auto &token = (*m_tr)[i];
+		if ( token.nodeid ) {
+			nodeid_t tid = token.nodeid & BACKBITCOMP;
 
 			// is it a "breaking tag"?
 			if ( g_nodes[tid].m_isBreaking ) {
@@ -275,7 +266,7 @@ bool Bits::setForSummary ( const Words *words ) {
 
 			// adjust flags if we should
 			if ( s_bt[tid] ) {
-				if ( tid != tagIds[i] ) {
+				if ( tid != token.nodeid ) {
 					flags &= ~s_bt[tid];
 				} else {
 					flags |= s_bt[tid];
@@ -288,7 +279,7 @@ bool Bits::setForSummary ( const Words *words ) {
 		}
 
 		// if alnum, might start sentence or fragment
-		if ( wids[i] ) {
+		if ( token.is_alfanum ) {
 			if ( startFrag ) {
 				m_swbits[i] |= D_STARTS_FRAG;
 				startFrag = false;
@@ -314,13 +305,13 @@ bool Bits::setForSummary ( const Words *words ) {
 		}
 
 		// fast ptrs
-		int32_t wlen = wlens[i];
-		const char *wp = w[i];
+		int32_t wlen = token.token_len;
+		const char *wp = token.token_start;
 		
 		// this is not 100%
-		if ( words->hasChar( i, '(' ) ) {
+		if ( has_char(wp,wp+wlen, '(' ) ) {
 			flags |= D_IN_PARENS;
-		} else if ( words->hasChar( i, ')' ) ) {
+		} else if ( has_char(wp,wp+wlen, ')' ) ) {
 			flags &= ~D_IN_PARENS;
 		}
 
@@ -348,7 +339,7 @@ bool Bits::setForSummary ( const Words *words ) {
 		// ". " denotes end of sentence
 		if ( wlen >= 2 && wp[0] == '.' && is_wspace_utf8( wp + 1 ) ) {
 			// but not if preceeded by an initial
-			if ( i > 0 && wlens[i - 1] == 1 && wids[i - 1] ) {
+			if ( i > 0 && (*tr)[i-1].token_len == 1 && (*tr)[i-1].is_alfanum ) {
 				continue;
 			}
 

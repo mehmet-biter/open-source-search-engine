@@ -482,8 +482,10 @@ bool processLoop ( void *state ) {
 	// print the query terms into our highlight buffer
 	Highlight hi;
 	// make words so we can set the scores to ignore fielded terms
-	Words qw;
-	qw.set(q, qlen);
+	TokenizerResult qtr;
+	plain_tokenizer_phase_1(q,qlen, &qtr);
+	//TODO: should the query be phase-1 or phase-2 tokenized for highlighting?
+	calculate_tokens_hashes(&qtr);
 
 	// declare up here
 	Matches m;
@@ -491,12 +493,12 @@ bool processLoop ( void *state ) {
 	// now set m.m_matches[] to those words in qw that match a query word
 	// or phrase in qq.
 	m.setQuery ( &qq );
-	m.addMatches ( &qw );
+	m.addMatches ( &qtr );
 	int32_t hilen = 0;
 
 	// and highlight the matches
 	if ( printDisclaimer ) {
-		hilen = hi.set ( sb, &qw, &m );
+		hilen = hi.set ( sb, &qtr, &m );
 		sb->safeStrcpy("</span></table></table>\n");
 	}
 
@@ -680,7 +682,7 @@ bool processLoop ( void *state ) {
 	}
 
 	Xml xml;
-	Words ww;
+	TokenizerResult doctr;
 
 	// if no highlighting, skip it
 	bool queryHighlighting = st->m_queryHighlighting;
@@ -705,15 +707,14 @@ bool processLoop ( void *state ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
-		if ( ! ww.set ( &xml ) ) {
-			return sendErrorReply ( st , g_errno );
-		}
+		xml_tokenizer_phase_1(&xml,&doctr);
+		calculate_tokens_hashes(&doctr);
 
 		Matches m;
 		m.setQuery ( &qq );
-		m.addMatches ( &ww );
+		m.addMatches ( &doctr );
 
-		hilen = hi.set ( xb, &ww, &m);
+		hilen = hi.set ( xb, &doctr, &m);
 
 		log(LOG_DEBUG, "query: Done highlighting cached page content");
 	}

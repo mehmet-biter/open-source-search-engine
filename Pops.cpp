@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Pops.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Speller.h"
 #include "Mem.h"
 #include "Sanity.h"
@@ -19,8 +19,8 @@ Pops::~Pops() {
 	}
 }
 
-bool Pops::set ( const Words *words , int32_t a , int32_t b ) {
-	int32_t nw = words->getNumWords();
+bool Pops::set ( const TokenizerResult *tr , int32_t a , int32_t b ) {
+	int32_t nw = tr->size();
 
 	int32_t need = nw * 4;
 	if ( need > POPS_BUF_SIZE ) m_pops = (int32_t *)mmalloc(need,"Pops");
@@ -29,9 +29,9 @@ bool Pops::set ( const Words *words , int32_t a , int32_t b ) {
 	m_popsSize = need;
 
 	for ( int32_t i = a ; i < b && i < nw ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not indexable
-		int64_t wid = words->getWordId(i);
-		if ( !wid ) {
+		if ( !token.is_alfanum ) {
 			m_pops[i] = 0;
 			continue;
 		}
@@ -40,8 +40,8 @@ bool Pops::set ( const Words *words , int32_t a , int32_t b ) {
 		// the way... we have to have all kinds of different hashing
 		// methods because of it...
 		uint64_t key;
-		const char *wp = words->getWord(i);
-		int32_t wlen = words->getWordLen(i);
+		const char *wp = token.token_start;
+		int32_t wlen = token.token_len;
 		key = hash64d( wp, wlen );
 		m_pops[i] = g_speller.getPhrasePopularity( wp, key, 0 );
 

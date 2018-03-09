@@ -1,5 +1,5 @@
-#CPPFLAGS += -O3 -g
-CPPFLAGS += -O0 -g
+CPPFLAGS += -O3 -g
+#CPPFLAGS += -O0 -g
 CPPFLAGS += -std=c++11
 CPPFLAGS += -Wall
 CPPFLAGS += -I.. -I../unicode

@@ -102,7 +102,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp -Iword_variations
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp -Iword_variations -Itokenizer
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -294,8 +294,9 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libunicode.a
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libtokenizer.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
+LIBS += -ltokenizer
 LIBS += -lword_variations -lsto -lunicode
 
 CLD2_SRC_DIR=third-party/cld2/internal
@@ -341,6 +342,11 @@ PHONY: libunicode.a
 libunicode.a:
 	$(MAKE) -C unicode/
 	ln -sf unicode/libunicode.a libunicode.a
+
+.PHONY: libtokenizer.a
+libtokenizer.a:
+	$(MAKE) -C tokenizer libtokenizer.a
+	ln -sf tokenizer/libtokenizer.a libtokenizer.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
 	$(CXX) WantedCheckExampleLib.o -shared -o $@
@@ -452,6 +458,7 @@ clean:
 	$(MAKE) -C word_variations/ $@
 	$(MAKE) -C sto/ $@
 	$(MAKE) -C unicode/ $@
+	$(MAKE) -C tokenizer $@
 
 
 .PHONY: cleandb

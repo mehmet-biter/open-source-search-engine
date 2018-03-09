@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include "max_words.h"
 
-class Words;
+class TokenizerResult;
 class Bits;
 
 
@@ -27,7 +27,7 @@ public:
 	// . a phraseSpam of PSKIP means word is not in a phrase
 	// . "bits" describes the words in a phrasing context
 	// . "spam" is % spam of each word (spam may be NULL)
-	bool set(const Words *words, const Bits *bits );
+	bool set(const TokenizerResult *tr, const Bits *bits );
 
 	const int64_t *getPhraseIds2() const {
 		return m_phraseIds2;
@@ -48,7 +48,7 @@ private:
 	// . called by Phrases::set() above for each i
 	// . we set phraseSpam to 0 to 100% typically
 	// . we set phraseSpam to PSKIP if word #i cannot start a phrase
-	void setPhrase(int32_t i);
+	void setPhrase(unsigned i);
 
 	char  m_localBuf [ MAX_WORDS * 14 ];
 
@@ -63,10 +63,7 @@ private:
 	int32_t m_numPhrases; // should equal the # of words
 
 	// placeholders to avoid passing to subroutine
-	const Words *m_words;
-	const int64_t *m_wids;
-	const char * const *m_wptrs;
-	const int32_t *m_wlens;
+	const TokenizerResult *m_tr;
 
 	const Bits *m_bits;
 };
