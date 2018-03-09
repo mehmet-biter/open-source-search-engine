@@ -55,7 +55,6 @@ OBJS_O2 = \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
 	UCPropTable.o UdpServer.o \
-	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
 
