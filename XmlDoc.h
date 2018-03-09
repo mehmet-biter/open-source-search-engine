@@ -552,6 +552,7 @@ public:
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
+	bool hashString(unsigned a, unsigned b, HashInfo *hi);                          //a/b = token indexes
 
 	bool hashWords3( class HashInfo *hi, const TokenizerResult *tr, class Phrases *phrases,
 			 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
@@ -559,6 +560,8 @@ public:
 
 	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
+	bool hashString3(unsigned a, unsigned b, HashInfo *hi, HashTableX *countTable,
+			 HashTableX *wts, SafeBuf *wbuf);
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );

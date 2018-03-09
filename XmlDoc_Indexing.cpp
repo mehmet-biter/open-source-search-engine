@@ -1359,15 +1359,11 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 
 	//FIXME: assumption: title tokens are the phase-1 tokens and the tokens are in contiguous memory
 	//FIXME: also grab the alternative tokens from phase 2 in the title part
-	//FIXME: also, it is stupid to pass hashString() the string and not the tokens because eventually it will call hashString3() which will re-tokenize it
-	const char *title = m_tokenizerResult[a].token_start;
-	const char *titleEnd = m_tokenizerResult[i-1].token_end();
-	int32_t   titleLen = titleEnd - title;
-	if ( ! hashString ( title, titleLen, &hi) ) return false;
+	if ( ! hashString(a, i-1, &hi) ) return false;
 
 	// now hash as without title: prefix
 	hi.m_prefix = NULL;
-	if ( ! hashString ( title, titleLen, &hi) ) return false;
+	if ( ! hashString(a, i-1, &hi) ) return false;
 
 	return true;
 }
@@ -1670,6 +1666,15 @@ bool XmlDoc::hashString( const char *s, int32_t slen, HashInfo *hi ) {
 			      &m_wbuf          );
 }
 
+bool XmlDoc::hashString(unsigned a, unsigned b, HashInfo *hi) {
+	if(!m_versionValid)
+		gbshutdownLogicError();
+	return hashString3(a, b, hi,
+			   &m_countTable,
+			   m_wts,
+			   &m_wbuf);
+}
+
 
 bool XmlDoc::hashString3( const char       *s              ,
 		  int32_t        slen           ,
@@ -1693,6 +1698,21 @@ bool XmlDoc::hashString3( const char       *s              ,
 
 	return hashWords3( hi, &tr, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
 }
+
+bool XmlDoc::hashString3(unsigned a, unsigned b, HashInfo *hi, HashTableX *countTable,
+			 HashTableX *wts, SafeBuf *wbuf)
+{
+	Bits    bits;
+	Phrases phrases;
+
+	if ( !bits.set(&m_tokenizerResult))
+		return false;
+	if ( !phrases.set( &m_tokenizerResult, &bits ) )
+		return false;
+
+	return hashWords3( hi, &m_tokenizerResult, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
+}
+
 
 bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	// sanity checks
