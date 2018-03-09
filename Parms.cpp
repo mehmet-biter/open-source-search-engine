@@ -1538,7 +1538,7 @@ bool Parms::printParm( SafeBuf* sb,
 	// what type of parameter?
 	parameter_type_t t = m->m_type;
 	// point to the data in THIS
-	char *s = THIS + m->m_off + m->m_size * j ;
+	const char *s = THIS + m->m_off + m->m_size * j ;
 
 	// if THIS is NULL then it must be GigablastRequest or something
 	// and is not really a persistent thing, but a one-shot deal.
