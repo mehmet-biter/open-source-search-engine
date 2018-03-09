@@ -19,7 +19,6 @@
 #define GB_XMLDOC_H
 
 #include "Lang.h"
-#include "Words.h"
 #include "tokenizer.h"
 #include "Bits.h"
 #include "Pos.h"

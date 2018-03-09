@@ -1,6 +1,5 @@
 #include "Summary.h"
 
-#include "Words.h"
 #include "Sections.h"
 #include "Query.h"
 #include "Xml.h"

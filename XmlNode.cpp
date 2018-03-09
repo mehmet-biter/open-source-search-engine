@@ -1075,7 +1075,6 @@ int32_t getNumXmlNodes ( ) {
 	return (int32_t)sizeof(g_nodes) / sizeof(XmlNode);
 }
 
-#include "Words.h" // BACKBITCOMP
 
 bool isBreakingTagId ( nodeid_t tagId ) {
 	return g_nodes [ tagId & BACKBITCOMP ].m_isBreaking;

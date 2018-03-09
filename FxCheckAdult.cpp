@@ -22,7 +22,6 @@
 #include "Mem.h"
 #include "termid_mask.h"
 #include "Phrases.h"
-#include "Words.h"
 #include "XmlDoc.h"
 
 TermCheckList g_checkAdultList;
