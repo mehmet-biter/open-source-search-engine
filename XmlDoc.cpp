@@ -9491,10 +9491,14 @@ char **XmlDoc::getFilteredContent ( ) {
 			Xml xml;
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
-			Words words;
-			words.set(&xml);
-			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
-				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and getNumAlnumWords too high");
+			TokenizerResult tr;
+			xml_tokenizer_phase_1(&xml,&tr);
+			int alfanum_count = 0;
+			for(const auto &t : tr.tokens)
+				if(t.is_alfanum)
+					alfanum_count++;
+			if (alfanum_count > g_conf.m_spiderFilterableMaxWordCount) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and alfanum_count too high");
 				return &m_filteredContent;
 			}
 
