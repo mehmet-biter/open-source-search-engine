@@ -1097,12 +1097,12 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 			}
 
 			// is it a front tag?
-			if ( tid && ! (tids[i] & BACKBIT) ) {
+			if ( ! (tids[i] & BACKBIT) ) {
 				if ( tid == TAG_A ) {
 					inLink = true;
 				}
 			}
-			else if ( tid ) {
+			else {
 				if ( tid == TAG_A ) {
 					inLink = false;
 				}
