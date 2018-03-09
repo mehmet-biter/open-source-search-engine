@@ -333,20 +333,12 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	//   that is set below
 	// . up here we set words that are not allowed to be in candidates,
 	//   like words that are in a link that is not a self link
-	// . alloc for it
-	char *flags = NULL;
-	char localBuf[10000];
 
 	int32_t  need = words->getNumWords();
-	if ( need <= 10000 ) {
-		flags = (char *)localBuf;
-	} else {
-		flags = (char *)mmalloc(need,"TITLEflags");
-	}
-
-	if ( ! flags ) {
+	StackBuf<10000> flagsBuf;
+	if(!flagsBuf.reserve(need))
 		return false;
-	}
+	char *flags = flagsBuf.getBufStart();
 
 	// clear it
 	memset ( flags , 0 , need );
@@ -1263,10 +1255,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		}
 	}
 
-	// free our stuff
-	if ( flags!=localBuf ) {
-		mfree (flags, need, "TITLEflags");
-	}
+	flagsBuf.purge();
 
 	// now get the highest scoring candidate title
 	float max    = -1.0;
