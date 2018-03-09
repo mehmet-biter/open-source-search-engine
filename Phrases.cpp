@@ -199,7 +199,7 @@ void Phrases::setPhrase ( int32_t i ) {
 
 			++numWordsInPhrase;
 
-			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". CAN be in phrase. Adding j's hash. numWordsInPhrase=%" PRId32 "", i, j, m_wids[i], m_wids[j], numWordsInPhrase);
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". CAN be in phrase. Adding j's hash. h=%ld. numWordsInPhrase=%" PRId32 "", i, j, m_wids[i], m_wids[j], h, numWordsInPhrase);
 
 
 			// N-word phrases?
