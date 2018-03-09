@@ -194,6 +194,8 @@ CPPFLAGS += -Wno-date-time
 CPPFLAGS += -Wno-format-nonliteral
 CPPFLAGS += -Wno-zero-as-null-pointer-constant
 CPPFLAGS += -Wno-cast-qual
+CPPFLAGS += -Wno-switch-enum
+CPPFLAGS += -Wno-undefined-func-template
 
 else ifeq ($(findstring g++, $(CXX)),g++)
 # dependencies
