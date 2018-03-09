@@ -333,20 +333,12 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	//   that is set below
 	// . up here we set words that are not allowed to be in candidates,
 	//   like words that are in a link that is not a self link
-	// . alloc for it
-	char *flags = NULL;
-	char localBuf[10000];
 
 	int32_t  need = words->getNumWords();
-	if ( need <= 10000 ) {
-		flags = (char *)localBuf;
-	} else {
-		flags = (char *)mmalloc(need,"TITLEflags");
-	}
-
-	if ( ! flags ) {
+	StackBuf<10000> flagsBuf;
+	if(!flagsBuf.reserve(need))
 		return false;
-	}
+	char *flags = flagsBuf.getBufStart();
 
 	// clear it
 	memset ( flags , 0 , need );
@@ -487,10 +479,10 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	char table[512];
 
 	// sanity check
-	if ( getNumXmlNodes() > 512 ) { g_process.shutdownAbort(true); }
+	if ( (unsigned)getNumXmlNodes() > sizeof(table) ) { g_process.shutdownAbort(true); }
 
 	// clear table counts
-	memset ( table , 0 , 512 );
+	memset(table, 0, sizeof(table));
 
 	// the first word
 	const char *wstart = NULL;
@@ -1247,26 +1239,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	//x = gettimeofdayInMilliseconds();
 
 
-	// loop over all n candidates
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// skip if not in the document body
-		if ( cptrs[i] != words ) continue;
-		// point to the words
-		int32_t       a1    = as   [i];
-		int32_t       b1    = bs   [i];
-
-		// . loop through this candidates words
-		// . TODO: use memset here?
-		for ( int32_t j = a1 ; j <= b1 && j < NW ; j++ ) {
-			// flag it
-			flags[j] |= 0x01;
-		}
-	}
-
-	// free our stuff
-	if ( flags!=localBuf ) {
-		mfree (flags, need, "TITLEflags");
-	}
+	flagsBuf.purge();
 
 	// now get the highest scoring candidate title
 	float max    = -1.0;
