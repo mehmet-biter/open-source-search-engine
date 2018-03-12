@@ -20231,31 +20231,28 @@ bool getDensityRanks ( const int64_t *wids ,
 		sections = NULL;
 
 	// scan the sentences if we got those
-	Section *ss = NULL;
-	if ( sections ) ss = sections->m_firstSentence;
-	// sanity
-	//if ( sections && wordStart != 0 ) { g_process.shutdownAbort(true); }
-	for ( ; ss ; ss = ss->m_nextSentence ) {
-		// count of the alnum words in sentence
-		int32_t count = ss->m_alnumPosB - ss->m_alnumPosA;
-		// start with one word!
-		count--;
-		// how can it be less than one alnum word
-		if ( count < 0 ) continue;
-		// . base density rank on that
-		// . count is 0 for one alnum word now
-		int32_t dr = MAXDENSITYRANK - count;
-		// ensure not negative. make it at least 1. zero means un-set.
-		if ( dr < 1 ) dr = 1;
-		// mark all in sentence then
-		for ( int32_t i = ss->m_senta ; i < ss->m_sentb ; i++ ) {
-			// assign
-			densVec[i] = dr;
+	if(sections) {
+		for(Section *ss = sections->m_firstSentence; ss; ss = ss->m_nextSentence) {
+			// count of the alnum words in sentence
+			int32_t count = ss->m_alnumPosB - ss->m_alnumPosA;
+			// start with one word!
+			count--;
+			// how can it be less than one alnum word
+			if ( count < 0 ) continue;
+			// . base density rank on that
+			// . count is 0 for one alnum word now
+			int32_t dr = MAXDENSITYRANK - count;
+			// ensure not negative. make it at least 1. zero means un-set.
+			if ( dr < 1 ) dr = 1;
+			// mark all in sentence then
+			for ( int32_t i = ss->m_senta ; i < ss->m_sentb ; i++ ) {
+				// assign
+				densVec[i] = dr;
+			}
 		}
+		// all done if using sections
+		return true;
 	}
-	// all done if using sections
-	if ( sections ) return true;
-
 
 	// count # of alphanumeric words in this string
 	int32_t na = 0;
