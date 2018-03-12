@@ -1725,7 +1725,6 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 	// shortcuts
 	const uint64_t *wids    = reinterpret_cast<const uint64_t*>(words->getWordIds());
-	const uint64_t *pids2   = reinterpret_cast<const uint64_t*>(phrases->getPhraseIds2());
 
 	HashTableX *dt = hi->m_tt;
 
@@ -2025,7 +2024,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		//
 		////////
 
-		int64_t npid = pids2[i];
+		int64_t npid = phrases->getPhraseId(i);
 		uint64_t  ph2 = 0;
 
 		// repeat for the two word hash if different!
