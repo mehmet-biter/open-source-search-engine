@@ -29,8 +29,8 @@ public:
 	// . "spam" is % spam of each word (spam may be NULL)
 	bool set(const Words *words, const Bits *bits );
 
-	const int64_t *getPhraseIds2() const {
-		return m_phraseIds2;
+	int64_t getPhraseId(int i) const {
+		return m_phraseIds2[i];
 	}
 
 	// . store phrase that starts with word #i into "buf"

@@ -183,9 +183,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 		}
 
 
-		const int64_t *pids = reinterpret_cast<const int64_t*>(p->getPhraseIds2());
-
-		if( !pids[i] ) {
+		if( !p->getPhraseId(i)) {
 			// No phrases
 			continue;
 		}
@@ -196,7 +194,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 			p->getPhrase(i, pbuf, sizeof(pbuf)-1, &plen);
 		}
 
-		int64_t phraseId = pids[i];
+		int64_t phraseId = p->getPhraseId(i);
 
 		if ( uniqueTermIds->getSlot ( &phraseId ) >= 0 ) {
 			//logTrace(g_conf.m_logTraceTermCheckList, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
