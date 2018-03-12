@@ -4342,7 +4342,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 
 	// ez var
 	int32_t   nw    = tr->size();
-	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// add 5000 slots for inlink text in hashString_ct() calls below
 	int32_t numSlots = nw * 3 + 5000;
@@ -4368,7 +4367,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		// accumulate the wid with a score of 1 each time it occurs
 		if ( ! ct->addTerm(wid) ) return (HashTableX *)NULL;
 		// skip if word #i does not start a phrase
-		if ( ! pids [i] ) continue;
+		if ( ! phrases->getPhraseId(i) ) continue;
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
@@ -4377,7 +4376,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( wptr[1] == ',' ) continue;
 		if ( wptr[2] == ',' ) continue;
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm(pids[i]) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm(phrases->getPhraseId(i)) ) return (HashTableX *)NULL;
 	}
 
 	// now add each meta tag to the pot
@@ -4443,7 +4442,6 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	if ( !phrases.set( &tr, &bits ) )
 		return false;
 	int32_t nw = tr.size();
-	const int64_t  *pids  = phrases.getPhraseIds2();
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// add the word
@@ -4455,7 +4453,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		// accumulate the wid with a score of 1 each time it occurs
 		if ( ! ct->addTerm(wid) ) return false;
 		// skip if word #i does not start a phrase
-		if ( ! pids [i] ) continue;
+		if ( ! phrases.getPhraseId(i) ) continue;
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
@@ -4467,7 +4465,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 			if ( wlen>=3 && wptr[2] == ',' ) continue;
 		}
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm(pids[i]) ) return false;
+		if ( ! ct->addTerm(phrases.getPhraseId(i)) ) return false;
 	}
 	return true;
 }
@@ -20278,7 +20276,6 @@ bool getDensityRanks ( const TokenizerResult *tr,
 //   vector based on that string, which is represented by words/phrases here.
 bool getDiversityVec( const TokenizerResult *tr, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec ) {
 	int32_t        nw    = tr->size();
-	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// . make the vector
 	// . it will be diversity ranks, so one float per word for now
@@ -20305,7 +20302,7 @@ bool getDiversityVec( const TokenizerResult *tr, const Phrases *phrases, HashTab
 		if ( nwp > 0 ) nextWid = (*tr)[i + nwp - 1].token_hash;
 		if ( i == nexti ) lastPid = pidLast;
 		// get current pid
-		int64_t pid = pids[i];
+		int64_t pid = phrases->getPhraseId(i);
 		// get the word and phrase weights for term #i
 		float ww2;
 

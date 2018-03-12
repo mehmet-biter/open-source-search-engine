@@ -1743,9 +1743,6 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
 
-	// shortcuts
-	const uint64_t *pids2   = reinterpret_cast<const uint64_t*>(phrases->getPhraseIds2());
-
 	HashTableX *dt = hi->m_tt;
 
 	// . sanity checks
@@ -1985,7 +1982,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 		//
 		////////
 
-		int64_t npid = pids2[i];
+		int64_t npid = phrases->getPhraseId(i);
 		uint64_t  ph2 = 0;
 
 		// repeat for the two word hash if different!

@@ -449,11 +449,6 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 
 	m_numMatchGroups++;
 
-	const int64_t *pids = NULL;
-	if ( phrases ) {
-		pids = phrases->getPhraseIds2();
-	}
-
 	// set convenience vars
 	uint32_t mask = m_numSlots - 1;
 	int32_t nw = tr->size();
@@ -555,11 +550,12 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 
 	tryPhrase2:
 		// try phrase first
-		if ( pids && pids[i] ) {
-			n = ((uint32_t)pids[i]) & mask;
+		int64_t pid;
+		if ( phrases && (pid=phrases->getPhraseId(i))!=0 ) {
+			n = ((uint32_t)pid) & mask;
 		chain3:
 			if ( ! m_qtableIds[n] ) continue;
-			if ( (m_qtableIds[n] != pids[i]) ) {
+			if ( (m_qtableIds[n] != pid) ) {
 				if ( m_qtableIds[n] && ++n >= m_numSlots)n = 0;
 				goto chain3;
 			}
@@ -569,7 +565,7 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 			QueryWord *qw = &m_q->m_qwords[qwn];
 			// . do we match it as a single word?
 			// . did they search for "bluetribe" ...?
-			if ( qw->m_rawWordId == pids[i] ) {
+			if ( qw->m_rawWordId == pid ) {
 				// set our # of words basically to 3
 				numWords = 3;
 				// matching a single query word
@@ -577,7 +573,7 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 				// got a match
 				goto gotMatch2;
 			}
-			if ( qw->m_phraseId == pids[i] ) {
+			if ( qw->m_phraseId == pid ) {
 				// might match more if we had more query
 				// terms in the quote
 				numWords = getNumWordsInMatch( tr, i, n, &numQWords, &qwn, true );
