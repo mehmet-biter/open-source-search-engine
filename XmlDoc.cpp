@@ -323,7 +323,6 @@ void XmlDoc::reset ( ) {
 	m_links.reset();
 	m_bits2.reset();
 	m_pos.reset();
-	m_synBuf.reset();
 	m_images.reset();
 	m_countTable.reset();
 	m_tagRec.reset();
@@ -9845,7 +9844,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 	m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize, "xdfc");
 	if (!m_filteredContent) {
 		m_errno = ENOMEM;
-		log(LOG_WARN, "gbfilter: Could not allocate %" PRId32" bytes for call to content filter.", m_filteredContentMaxSize);
+		log(LOG_WARN, "gbfilter: Could not allocate %" PRId32" bytes for call to content filter.", m_filteredContentAllocSize);
 		outputFile.close();
 		unlink(out);
 		return;
@@ -12025,13 +12024,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	// if not test coll skip this
 	//if ( strcmp(cr->m_coll,"qatest123") ) return true;
-
-	// title rec is null if we are reindexing an old doc
-	// and "unchanged" was true.
-	if ( m_unchangedValid && m_unchanged ) {
-		if ( ! m_titleRecBufValid ) return true;
-		if ( m_titleRecBuf.length()==0 ) return true;
-	}
 
 	// leave this uncommented so we can see if we are doing it
 	setStatus ( "doing consistency check" );

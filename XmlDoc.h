@@ -650,7 +650,6 @@ public:
 	Bits       m_bits2;
 	Pos        m_pos;
 	Phrases    m_phrases;
-	SafeBuf    m_synBuf;
 	Sections   m_sections;
 
 	// . for rebuild logging of what's changed
@@ -776,7 +775,6 @@ public:
 	bool m_isAdultValid;
 	bool m_isUrlPermalinkFormatValid;
 	bool m_percentChangedValid;
-	bool m_unchangedValid;
 	bool m_countTableValid;
 	bool m_tagPairHashVecValid;
 	bool m_summaryVecValid;
@@ -853,7 +851,6 @@ public:
 	int32_t m_postVecSize;
 	float m_pageSimilarity;
 	float m_percentChanged;
-	bool  m_unchanged;
 	// what docids are similar to us? docids are in this list
 	RdbList m_dupList;
 	int64_t m_exactContentHash64;
@@ -937,7 +934,6 @@ public:
 	char *m_filteredContent;
 	int32_t m_filteredContentLen;
 	int32_t m_filteredContentAllocSize;
-	int32_t m_filteredContentMaxSize;
 	bool m_calledThread;
 	int32_t m_errno;
 	int32_t m_hostHash32a;
