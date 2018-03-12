@@ -1690,7 +1690,7 @@ bool XmlDoc::hashString3( const char       *s              ,
 	calculate_tokens_hashes(&tr);
 	if ( !bits.set(&tr))
 		return false;
-	if ( !phrases.set( &tr, &bits ) )
+	if ( !phrases.set(tr,bits) )
 		return false;
 
 	// use primary langid of doc
@@ -1707,7 +1707,7 @@ bool XmlDoc::hashString3(unsigned a, unsigned b, HashInfo *hi, HashTableX *count
 
 	if ( !bits.set(&m_tokenizerResult))
 		return false;
-	if ( !phrases.set( &m_tokenizerResult, &bits ) )
+	if ( !phrases.set(m_tokenizerResult,bits) )
 		return false;
 
 	return hashWords3( hi, &m_tokenizerResult, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
@@ -2016,7 +2016,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 				// get phrase as a string
 				int32_t plen;
 				char phraseBuffer[256];
-				phrases->getPhrase(i, phraseBuffer, sizeof(phraseBuffer), &plen);
+				phrases->getPhrase(i, m_tokenizerResult, phraseBuffer, sizeof(phraseBuffer), &plen);
 				// store it
 				if(!storeTerm(phraseBuffer,plen,ph2,hi,i,
 					      wposvec[i], // wordPos

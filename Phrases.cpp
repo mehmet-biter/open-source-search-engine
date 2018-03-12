@@ -18,8 +18,6 @@ Phrases::Phrases() : m_buf(NULL) {
 	m_phraseIds2 = NULL;
 	m_numWordsTotal2 = NULL;
 	m_numPhrases = 0;
-	m_tr = NULL;
-	m_bits = NULL;
 
 	reset();
 }
@@ -37,16 +35,13 @@ void Phrases::reset() {
 
 
 // initialize this token array with the string, "s" of length, "len".
-bool Phrases::set( const TokenizerResult *tr, const Bits *bits ) {
+bool Phrases::set(const TokenizerResult &tr, const Bits &bits) {
 	// reset in case being re-used
 	reset();
 
-	// ensure we have words
-	if ( ! tr ) return true;
-
 	// . we have one phrase per word
 	// . a phrase #n is "empty" if spam[n] == PSKIP
-	m_numPhrases = tr->size();
+	m_numPhrases = tr.size();
 
 	// how much mem do we need?
 	int32_t need = m_numPhrases * (8+1);
@@ -77,19 +72,15 @@ bool Phrases::set( const TokenizerResult *tr, const Bits *bits ) {
 	// sanity
 	if ( p != m_buf + need ) gbshutdownLogicError();
 
-	// point to this info while we parse
-	m_tr           = tr;
-	m_bits         = bits;
-
 	// . set the phrases
 	// . sets m_phraseIds [i]
 	// . sets m_phraseSpam[i] to PSKIP if NO phrase exists
-	for ( unsigned i = 0; i < tr->size(); ++i ) {
-		if ( !(*tr)[i].is_alfanum ) {
+	for ( unsigned i = 0; i < tr.size(); ++i ) {
+		if ( !tr[i].is_alfanum ) {
 			continue;
 		}
 
-		setPhrase ( i );
+		setPhrase(i,tr,bits);
 	}
 
 	// success
@@ -101,7 +92,7 @@ bool Phrases::set( const TokenizerResult *tr, const Bits *bits ) {
 // . read.ofmice
 // . ofmice
 // . mice.andmen
-void Phrases::setPhrase(unsigned i) {
+void Phrases::setPhrase(unsigned i, const TokenizerResult &tr, const Bits &bits) {
 	logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 " BEGIN", i);
 
 	// hash of the phrase
@@ -113,7 +104,7 @@ void Phrases::setPhrase(unsigned i) {
 	// now look for other tokens that should follow the ith token
 	int32_t numWordsInPhrase = 1;
 
-	const auto &token1 = (*m_tr)[i];
+	const auto &token1 = tr[i];
 	
 	// we need to hash "1 / 8" differently from "1.8" from "1,000" etc.
 	bool isNum = is_digit( token1.token_start[0] );
@@ -134,7 +125,7 @@ void Phrases::setPhrase(unsigned i) {
 	//   a phrase but not be in it, then the phrase id ends up just
 	//   being the following word's id. causing the synonyms code to
 	//   give a synonym which it should not un Synonyms::set()
-	if ( ! m_bits->canBeInPhrase(i) ) {
+	if ( ! bits.canBeInPhrase(i) ) {
 		// so indeed, skip it then
 		goto nophrase;
 	}
@@ -145,10 +136,10 @@ void Phrases::setPhrase(unsigned i) {
 	pos = token1.token_len;
 
 	hasHyphen = false;
-	hasStopWord2 = m_bits->isStopWord(i);
+	hasStopWord2 = bits.isStopWord(i);
 
-	for( unsigned j = i + 1 ; j < m_tr->size(); j++ ) {
-		const auto &token2 = (*m_tr)[j];
+	for( unsigned j = i + 1 ; j < tr.size(); j++ ) {
+		const auto &token2 = tr[j];
 		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". LOOP START", i, j, token1.token_hash, token2.token_hash );
 
 		// Do not allow more than 32 alnum/punct "words" in a phrase.
@@ -164,7 +155,7 @@ void Phrases::setPhrase(unsigned i) {
 		// deal with punct words
 		if ( !token2.is_alfanum ) {
 			// if we cannot pair across word j then break
-			if ( !m_bits->canPairAcross( j ) ) {
+			if ( !bits.canPairAcross( j ) ) {
 				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Pair cannot cross. Breaking.", i, j, token1.token_hash, token2.token_hash );
 				break;
 			}
@@ -184,7 +175,7 @@ void Phrases::setPhrase(unsigned i) {
 		lastWordj = j;
 
 		// if word #j can be in phrase then incorporate it's hash
-		if ( m_bits->canBeInPhrase (j) ) {
+		if ( bits.canBeInPhrase (j) ) {
 			int32_t conti = pos;
 
 			// hash the jth word into the hash
@@ -201,7 +192,7 @@ void Phrases::setPhrase(unsigned i) {
 			if ( numWordsInPhrase == 2 ) {
 				h2 = h;
 				m_numWordsTotal2[i] = j - i + 1;
-				hasStopWord2 = m_bits->isStopWord(j);
+				hasStopWord2 = bits.isStopWord(j);
 
 				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Words in phrase is 2. Breaking.", i, j, token1.token_hash, token2.token_hash );
 				break;
@@ -213,7 +204,7 @@ void Phrases::setPhrase(unsigned i) {
 			
 
 		// if we cannot pair across word j then break
-		if ( ! m_bits->canPairAcross (j) ) {
+		if ( ! bits.canPairAcross (j) ) {
 			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Cannot pair across. Breaking.", i, j, token1.token_hash, token2.token_hash );
 			break;
 		}
@@ -261,7 +252,7 @@ void Phrases::setPhrase(unsigned i) {
 
 // . store phrase that starts with word #i into "printBuf"
 // . return bytes stored in "printBuf"
-void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) const {
+void Phrases::getPhrase(int32_t i, const TokenizerResult &tr, char *buf, size_t bufsize, int32_t *phrLen) const {
 	// return 0 if no phrase
 	if ( m_phraseIds2[i] == 0LL ) {
 		*buf='\0';
@@ -275,7 +266,7 @@ void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) c
 	char *s     = buf;
 	char *send  = buf + bufsize - 1;
 	for (int32_t w = i; w<i+n; w++) {
-		const auto &token = (*m_tr)[w];
+		const auto &token = tr[w];
 		if (!token.is_alfanum) {
 			// skip spaces for now since we has altogether now
 			*s++ = ' ';

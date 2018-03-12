@@ -190,7 +190,7 @@ bool TermCheckList::getScore(const TokenizerResult &tr, Phrases *p, HashTableX *
 		int32_t plen=0;
 		char pbuf[256]={0};
 		if( g_conf.m_logTraceTermCheckList || debbuf ) {
-			p->getPhrase(i, pbuf, sizeof(pbuf)-1, &plen);
+			p->getPhrase(i, tr, pbuf, sizeof(pbuf)-1, &plen);
 		}
 
 		int64_t phraseId = p->getPhraseId(i);

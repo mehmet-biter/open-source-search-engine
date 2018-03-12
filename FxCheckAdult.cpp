@@ -308,7 +308,7 @@ bool CheckAdult::isDocAdult() {
 				if( !metab.set(&metatr) ) {
 					log(LOG_ERROR,"isDocAdult: Could not set bits for meta words");
 				}
-				if( !metap.set(&metatr, &metab) ) {
+				if( !metap.set(metatr, metab) ) {
 					log(LOG_ERROR,"isDocAdult: Could not set phrases for meta words");
 				}
 				g_checkAdultList.getScore(metatr, &metap, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
@@ -331,7 +331,7 @@ bool CheckAdult::isDocAdult() {
 			if( !urlb.set(&urltr) ) {
 				log(LOG_ERROR,"isDocAdult: Could not set bits for URL words");
 			}
-			if( !urlp.set(&urltr, &urlb) ) {
+			if( !urlp.set(urltr, urlb) ) {
 				log(LOG_ERROR,"isDocAdult: Could not set phrases for URL words");
 			}
 			g_checkAdultList.getScore(urltr, &urlp, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);

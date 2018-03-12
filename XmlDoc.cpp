@@ -3988,7 +3988,7 @@ Phrases *XmlDoc::getPhrases ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_phrases.set(tr,bits) ) {
+	if ( !m_phrases.set(*tr,*bits) ) {
 		return NULL;
 	}
 
@@ -4439,7 +4439,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	calculate_tokens_hashes(&tr);
 	if ( !bits.set(&tr))
 		return false;
-	if ( !phrases.set( &tr, &bits ) )
+	if ( !phrases.set(tr,bits) )
 		return false;
 	int32_t nw = tr.size();
 

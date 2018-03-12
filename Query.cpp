@@ -2085,7 +2085,7 @@ bool Query::setQWords ( char boolFlag ,
 	}
 
 	// make the phrases from the words and the tweaked Bits class
-	if ( !phrases.set( &m_tr, &bits ) )
+	if ( !phrases.set(m_tr,bits) )
 		return false;
 
 	// do phrases stuff
