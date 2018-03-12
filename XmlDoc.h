@@ -934,7 +934,6 @@ public:
 	char *m_filteredContent;
 	int32_t m_filteredContentLen;
 	int32_t m_filteredContentAllocSize;
-	int32_t m_filteredContentMaxSize;
 	bool m_calledThread;
 	int32_t m_errno;
 	int32_t m_hostHash32a;

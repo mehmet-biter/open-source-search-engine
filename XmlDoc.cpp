@@ -9839,7 +9839,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 	m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize, "xdfc");
 	if (!m_filteredContent) {
 		m_errno = ENOMEM;
-		log(LOG_WARN, "gbfilter: Could not allocate %" PRId32" bytes for call to content filter.", m_filteredContentMaxSize);
+		log(LOG_WARN, "gbfilter: Could not allocate %" PRId32" bytes for call to content filter.", m_filteredContentAllocSize);
 		outputFile.close();
 		unlink(out);
 		return;
