@@ -773,7 +773,6 @@ public:
 	bool m_isAdultValid;
 	bool m_isUrlPermalinkFormatValid;
 	bool m_percentChangedValid;
-	bool m_unchangedValid;
 	bool m_countTableValid;
 	bool m_tagPairHashVecValid;
 	bool m_summaryVecValid;
@@ -850,7 +849,6 @@ public:
 	int32_t m_postVecSize;
 	float m_pageSimilarity;
 	float m_percentChanged;
-	bool  m_unchanged;
 	// what docids are similar to us? docids are in this list
 	RdbList m_dupList;
 	int64_t m_exactContentHash64;

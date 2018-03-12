@@ -12020,13 +12020,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	// if not test coll skip this
 	//if ( strcmp(cr->m_coll,"qatest123") ) return true;
 
-	// title rec is null if we are reindexing an old doc
-	// and "unchanged" was true.
-	if ( m_unchangedValid && m_unchanged ) {
-		if ( ! m_titleRecBufValid ) return true;
-		if ( m_titleRecBuf.length()==0 ) return true;
-	}
-
 	// leave this uncommented so we can see if we are doing it
 	setStatus ( "doing consistency check" );
 
