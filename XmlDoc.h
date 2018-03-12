@@ -648,7 +648,6 @@ public:
 	Bits       m_bits2;
 	Pos        m_pos;
 	Phrases    m_phrases;
-	SafeBuf    m_synBuf;
 	Sections   m_sections;
 
 	// . for rebuild logging of what's changed

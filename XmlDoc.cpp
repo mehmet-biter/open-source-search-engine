@@ -323,7 +323,6 @@ void XmlDoc::reset ( ) {
 	m_links.reset();
 	m_bits2.reset();
 	m_pos.reset();
-	m_synBuf.reset();
 	m_images.reset();
 	m_countTable.reset();
 	m_tagRec.reset();
