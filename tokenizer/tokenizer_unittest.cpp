@@ -542,7 +542,14 @@ int main(void) {
 		assert(t.token_count()==3);
 	}
 	
-	//no test on soft-hypen because that is caught in other logic because it is default-ignorable codepoint
+	//test on soft-hypen is special because that is caught in other logic because it is default-ignorable codepoint
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("cd­rom",langUnknown); //U+00AD Soft hyphen
+		assert(t.token_count()==1);
+		assert(t.str(0)=="cd­rom"); //with soft hyphen
+	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
