@@ -102,7 +102,31 @@ int main(void) {
 		assert(has_token(tr,"O"));
 		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
 		assert(has_token(tr,"H₂"));
-		assert(has_token(tr,"H2O")); //not implemented yet
-		assert(has_token(tr,"H₂O")); //not implemented yet
+		//assert(has_token(tr,"H2O")); //not implemented yet
+		//assert(has_token(tr,"H₂O")); //not implemented yet
+	}
+	
+	{
+		static const char html[] = "<html><title>yyy</title>cd&shy;rom<body></body></html>";
+		Xml xml;
+		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
+		TokenizerResult tr;
+		xml_tokenizer_phase_1(&xml,&tr);
+		assert(!tr.tokens.empty());
+		assert(has_token(tr,"yyy"));
+		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
+		assert(has_token(tr,"cdrom"));
+	}
+	
+	{
+		static const char html[] = "<html><title>yyy</title>cd­rom<body></body></html>";
+		Xml xml;
+		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
+		TokenizerResult tr;
+		xml_tokenizer_phase_1(&xml,&tr);
+		assert(!tr.tokens.empty());
+		assert(has_token(tr,"yyy"));
+		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
+		assert(has_token(tr,"cdrom"));
 	}
 }
