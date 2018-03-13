@@ -1684,41 +1684,35 @@ bool XmlDoc::hashString3( const char       *s              ,
 		  SafeBuf    *wbuf) {
 	TokenizerResult tr;
 	Bits    bits;
-	Phrases phrases;
 
 	plain_tokenizer_phase_1(s,slen,&tr);
 	calculate_tokens_hashes(&tr);
 	if ( !bits.set(&tr))
 		return false;
-	if ( !phrases.set(tr,bits) )
-		return false;
 
 	// use primary langid of doc
 	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
-	return hashWords3( hi, &tr, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
+	return hashWords3( hi, &tr, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
 }
 
 bool XmlDoc::hashString3(unsigned a, unsigned b, HashInfo *hi, HashTableX *countTable,
 			 HashTableX *wts, SafeBuf *wbuf)
 {
 	Bits    bits;
-	Phrases phrases;
 
 	if ( !bits.set(&m_tokenizerResult))
 		return false;
-	if ( !phrases.set(m_tokenizerResult,bits) )
-		return false;
 
-	return hashWords3( hi, &m_tokenizerResult, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
+	return hashWords3( hi, &m_tokenizerResult, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
 }
 
 
 bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	// sanity checks
 	if ( ! m_tokenizerResultValid   ) { g_process.shutdownAbort(true); }
-	if ( ! m_phrasesValid ) { g_process.shutdownAbort(true); }
-	if ( hi->m_useCountTable &&!m_countTableValid){g_process.shutdownAbort(true); }
+	if ( ! m_tokenizerResultValid2  ) { g_process.shutdownAbort(true); }
+	//if ( hi->m_useCountTable &&!m_countTableValid){g_process.shutdownAbort(true); }
 	if ( ! m_bitsValid ) { g_process.shutdownAbort(true); }
 	if ( ! m_sectionsValid) { g_process.shutdownAbort(true); }
 	//if ( ! m_synonymsValid) { g_process.shutdownAbort(true); }
@@ -1733,11 +1727,11 @@ bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	char *fragVec = m_fragBuf.getBufStart();
 	char *langVec = m_langVec.getBufStart();
 
-	return hashWords3(hi, &m_tokenizerResult, &m_phrases, &m_sections, &m_countTable, fragVec, wordSpamVec, langVec, m_wts, &m_wbuf);
+	return hashWords3(hi, &m_tokenizerResult, &m_sections, &m_bits, fragVec, wordSpamVec, langVec, m_wts, &m_wbuf);
 }
 
 // . this now uses posdb exclusively
-bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
+bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Sections *sectionsArg, const Bits *bits,
                          char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf) {
 	Sections *sections = sectionsArg;
 	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
@@ -1779,6 +1773,15 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 	if ( hi->m_hashGroup == HASHGROUP_INTAG      ) hashIffUnique = true;
 	HashTableX ut; ut.set ( 8,0,0,NULL,0,false,"uqtbl");
 
+	//The diversity rank was effectively disabled (minweight=maxweigt) and the algortihm was either suspect or severely limited by phrases being only 2 words (bigrams).
+	//Currently disabled until we can investigate if it is worth fixing, worth implementing in another way, or simply dropped completely.
+	//
+	//Diversityrank is currently hardcoded to be 10 for individual words, and maxdiversityrank for bigrams
+	SafeBuf dwbuf;
+	if(!dwbuf.reserve(tr->size()*sizeof(char)))
+		return false;
+	memset(dwbuf.getBufStart(), MAXDIVERSITYRANK, tr->size());
+#if 0
 	///////
 	//
 	// diversity rank vector.
@@ -1793,9 +1796,10 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 	if ( !getDiversityVec( tr, phrases, countTable, &dwbuf ) ) {
 		return false;
 	}
+#endif
 	char *wdv = dwbuf.getBufStart();
 
-	int32_t nw = tr->size();
+	size_t nw = tr->size();
 
 	/////
 	//
@@ -1832,8 +1836,9 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
 
 	bool seen_slash = false;
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
+	for(unsigned i = 0; i < nw; i++) {
 		const auto &token = (*tr)[i];
+		log(LOG_INFO,"@@@ XmlDoc::hashWords3: looking at token #%u: '%.*s', hash=%ld, nodeid=%u", i, (int)token.token_len, token.token_start, token.token_hash, token.nodeid);
 		if(token.token_len==1 && token.token_start[0]=='/')
 			seen_slash = true;
 		
@@ -1984,11 +1989,28 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 		//
 		////////
 
-		int64_t npid = phrases->getPhraseId(i);
-		uint64_t  ph2 = 0;
+		//Find the first next alfanum token that starts at or after token.end_pos
+		//Also detect if we see a dont-pair-across token while scanning
+		unsigned j;
+		bool generate_bigram = true;
+		for(j=i+1; j<nw; j++) {
+			const auto &t2 = (*tr)[j];
+			if(t2.is_alfanum && t2.start_pos>=token.end_pos)
+				break;
+			if(!bits->canPairAcross(j)) {
+				generate_bigram = false;
+				break;
+			}
+		}
+		if(j>=nw)
+			generate_bigram = false;
+		
+		if(generate_bigram) {
+			const auto &token2 = (*tr)[j];
+			int32_t pos = strnlen_utf8(token.token_start,token.token_len);
+			int64_t npid = hash64Lower_utf8_cont(token2.token_start, token2.token_len, token.token_hash, &pos);
+			uint64_t  ph2;
 
-		// repeat for the two word hash if different!
-		if ( npid ) {
 			log(LOG_INFO,"@@@ XmlDoc::hashWords3: indexing two-word phrase with h=%ld", npid);
 			// hash with prefix
 			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
@@ -2017,9 +2039,24 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 			// add to wts for PageParser.cpp display
 			if(wts) {
 				// get phrase as a string
-				int32_t plen;
+				size_t plen;
 				char phraseBuffer[256];
-				phrases->getPhrase(i, m_tokenizerResult, phraseBuffer, sizeof(phraseBuffer), &plen);
+				//TODO: Collect the intermediate tokens too. It is complicated because twe two tokens generating the bigram can beith either primary or secondary tokens from the tonizer, and the non-alfanum tokens between too.
+				//simplification: just grab the chars from token+token2
+				if(token.token_len<=sizeof(phraseBuffer)) {
+					memcpy(phraseBuffer, token.token_start, token.token_len);
+					plen = token.token_len;
+				} else {
+					memcpy(phraseBuffer, token.token_start, sizeof(phraseBuffer));
+					plen = sizeof(phraseBuffer);
+				}
+				if(token2.token_len<=sizeof(phraseBuffer)-plen) {
+					memcpy(phraseBuffer, token2.token_start, token2.token_len);
+					plen += token2.token_len;
+				} else {
+					memcpy(phraseBuffer, token2.token_start, sizeof(phraseBuffer)-plen);
+					plen = sizeof(phraseBuffer);
+				}
 				// store it
 				if(!storeTerm(phraseBuffer,plen,ph2,hi,i,
 					      wposvec[i], // wordPos

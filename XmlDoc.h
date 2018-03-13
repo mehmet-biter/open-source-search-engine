@@ -355,6 +355,7 @@ public:
 
 	uint8_t computeLangId(Sections *sections, const TokenizerResult *tr, char *lv);
 	TokenizerResult *getTokenizerResult();
+	TokenizerResult *getTokenizerResult2();
 	class Bits *getBits ( ) ;
 	class Bits *getBitsForSummary ( ) ;
 	class Pos *getPos ( );
@@ -554,8 +555,8 @@ public:
 	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString(unsigned a, unsigned b, HashInfo *hi);                          //a/b = token indexes
 
-	bool hashWords3( class HashInfo *hi, const TokenizerResult *tr, class Phrases *phrases,
-			 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
+	bool hashWords3( class HashInfo *hi, const TokenizerResult *tr,
+			 class Sections *sections, const Bits *bits, char *fragVec, char *wordSpamVec,
 			 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
 	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
@@ -721,6 +722,7 @@ public:
 	bool m_xmlValid;
 	bool m_linksValid;
 	bool m_tokenizerResultValid;
+	bool m_tokenizerResultValid2;
 	bool m_bitsValid;
 	bool m_bits2Valid;
 	bool m_posValid;

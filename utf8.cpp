@@ -83,3 +83,17 @@ size_t encode_utf8_string(UChar32 uc[], unsigned codepoints, char *utf8) {
 		utf8len += utf8Encode(uc[i], utf8+utf8len);
 	return utf8len;
 }
+
+
+size_t strnlen_utf8(const char *p, size_t maxlen) {
+	const char *pend = p+maxlen;
+	size_t count = 0;
+	while(p<pend) {
+		char cs = getUtf8CharSize(p);
+		if(p+cs>pend)
+			break;
+		count++;
+		p += cs;
+	}
+	return count;
+}

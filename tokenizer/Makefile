@@ -1,5 +1,5 @@
-CPPFLAGS += -O3 -g
-#CPPFLAGS += -O0 -g
+#CPPFLAGS += -O3 -g
+CPPFLAGS += -O0 -g
 CPPFLAGS += -std=c++11
 CPPFLAGS += -Wall
 CPPFLAGS += -I.. -I../unicode
@@ -9,10 +9,10 @@ CPPFLAGS += -I.. -I../unicode
 
 
 .PHONY: default
-default: run
+default: libtokenizer.a
 
-libtokenizer.a: tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o
-	ar rcs $@ tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o
+libtokenizer.a: tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o tokenizer_util.o
+	ar rcs $@ tokenizer.o tokenizer2.o tokenizer3.o tokenizer4.o tokenizer5.o tokenizer_util.o
 
 
 tokenizer_unittest: tokenizer.o tokenizer2.o tokenizer_unittest.o

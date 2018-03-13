@@ -3907,6 +3907,51 @@ TokenizerResult *XmlDoc::getTokenizerResult() {
 	return &m_tokenizerResult;
 }
 
+TokenizerResult *XmlDoc::getTokenizerResult2() {
+	// return it if it is set
+	if ( m_tokenizerResultValid2 ) {
+		return &m_tokenizerResult;
+	}
+
+	Xml *xml = getXml();
+	if ( ! xml || xml == (Xml*)-1 ) return (TokenizerResult*)xml;
+
+	TokenizerResult *tr = getTokenizerResult();
+	if(tr==NULL || tr==(TokenizerResult*)-1) return tr;
+	
+	uint8_t *langId = getLangId();
+	if(langId==NULL || langId==(uint8_t*)-1) return (TokenizerResult*)langId;
+	
+	uint16_t *countryId = getCountryId();
+	if(countryId==NULL || countryId==(uint16_t*)-1) return (TokenizerResult*)countryId;
+	const char *countryCode = g_countryCode.getAbbr(*countryId);
+	
+	setStatus ( "getting words (phase 2)");
+	
+	int64_t start = logQueryTimingStart();
+
+	xml_tokenizer_phase_2(xml, (lang_t)*langId, countryCode, tr);
+	//TODO: Only the phase-2 tokens need to be rehashed
+	calculate_tokens_hashes(&m_tokenizerResult);
+
+	//because the number of words may have changed m_bits/m_phrases/m_sections must be recalculated
+	m_bitsValid = false;
+	m_phrasesValid = false;
+	m_sectionsValid = false;
+	m_posValid = false;
+	//and the bigram generation in Phrases requires that the tokens are sorted by <startpos,endpos>
+	std::sort(m_tokenizerResult.tokens.begin(), m_tokenizerResult.tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
+		return tr0.start_pos < tr1.start_pos ||
+		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
+	});
+	
+	logQueryTimingEnd( __func__, start );
+
+	m_tokenizerResultValid2 = true;
+	return &m_tokenizerResult;
+}
+
+
 Bits *XmlDoc::getBits ( ) {
 	// return it if it is set
 	if ( m_bitsValid ) return &m_bits;
@@ -8097,6 +8142,7 @@ char **XmlDoc::getHttpReply ( ) {
 		// invalidate that xml
 		m_xmlValid                = false;
 		m_tokenizerResultValid    = false;
+		m_tokenizerResultValid2   = false;
 		m_rawUtf8ContentValid     = false;
 		m_expandedUtf8ContentValid= false;
 		m_utf8ContentValid        = false;
@@ -13199,7 +13245,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return isRoot;
 	}
 
-	TokenizerResult *tr = getTokenizerResult();
+	TokenizerResult *tr = getTokenizerResult2();
 	if (!tr || tr == (void *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getWords returned -1");
 		return (char *)tr;
