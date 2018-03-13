@@ -490,7 +490,18 @@ int main(void) {
 		assert(t.str(5)=="Buche");
 		assert(t.str(6)=="Noel");
 	}
-	
+
+	//diacritics hands-off
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("diaérèse française",langFrench); //note: does not actually contain a diaeresis :-)
+		assert(!t.empty());
+		assert(t.token_count()==3);
+		assert(t.str(0)=="diaérèse");
+		assert(t.str(1)==" ");
+		assert(t.str(2)=="française");
+	}
+
 	//posessive-s
 	printf("Test line %d\n",__LINE__);
 	{
@@ -671,5 +682,6 @@ int main(void) {
 		assert(t.str(5)=="T");
 		assert(t.str(6)=="4");
 	}
+	
 	return 0;
 }
