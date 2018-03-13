@@ -1936,6 +1936,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 		}
 
 		if(!skipword) {
+			log(LOG_INFO,"@@@ XmlDoc::hashWords3: indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
 			key144_t k;
 
 			Posdb::makeKey(&k,
@@ -1974,6 +1975,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 					return false;
 			}
 		} //!skipword
+		else log(LOG_INFO,"@@@ XmlDoc::hashWords3: not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
 
 
 		////////
@@ -1987,6 +1989,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 
 		// repeat for the two word hash if different!
 		if ( npid ) {
+			log(LOG_INFO,"@@@ XmlDoc::hashWords3: indexing two-word phrase with h=%ld", npid);
 			// hash with prefix
 			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
 			else            ph2 = npid;
@@ -2033,6 +2036,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const TokenizerResult *tr, Phrases *phras
 					return false;
 			}
 		}
+		else log(LOG_INFO,"@@@ XmlDoc::hashWords3: NOT indexing two-word phrase");
 	}
 
 	// between calls? i.e. hashTitle() and hashBody()
