@@ -18,6 +18,7 @@ static bool has_token(const TokenizerResult &tr, const char *s) {
 
 
 int main(void) {
+	UnicodeMaps::load_maps("../ucdata/",0);
 	{
 		static const char html[] = "";
 		Xml xml;
@@ -107,7 +108,21 @@ int main(void) {
 	}
 	
 	{
-		static const char html[] = "<html><title>yyy</title>cd&shy;rom<body></body></html>";
+		static const char html[] = "<html><body>diaérèse française</body></html>";
+		Xml xml;
+		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
+		TokenizerResult tr;
+		xml_tokenizer_phase_1(&xml,&tr);
+		assert(!tr.tokens.empty());
+		assert(has_token(tr,"diaérèse"));
+		assert(has_token(tr,"française"));
+		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
+		assert(has_token(tr,"diaérèse"));
+		assert(has_token(tr,"française"));
+	}
+	
+	{
+		static const char html[] = "<html><title>yyy</title><body>cd&shy;rom</body></html>";
 		Xml xml;
 		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
 		TokenizerResult tr;
