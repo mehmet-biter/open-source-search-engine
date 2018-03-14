@@ -314,13 +314,14 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 //////////////////////////////////////////////////////////////////////////////
 // Telephone recognition stuff
 
-static void recognize_telephone_numbers_denmark(TokenizerResult *tr);
+static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	if(!country_code)
 		country_code="";
-	if(lang==langDanish || strcmp(country_code,"dk")==0)
-		recognize_telephone_numbers_denmark(tr);
+	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
+	   lang==langNorwegian || strcmp(country_code,"no")==0)
+		recognize_telephone_numbers_denmark_norway(tr);
 }
 
 static bool is_ascii_digits(const TokenRange &tr) {
@@ -344,12 +345,15 @@ static bool is_whitespace(const TokenRange &tr) {
 	return true;
 }
 
-static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
+static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr) {
 	//Closed numbering plan, 8 digits.
-	//recommended format "9999 9999" (already handled as bigram)
-	//most common format: "99 99 99 99"
-	//less common: "99-99-99-99" (handled by whyphenation logic)
-	//number may be prefixed with "+45"
+	//Denmark:
+	//  recommended format "9999 9999" (already handled as bigram)
+	//  most common format: "99 99 99 99"
+	//  less common: "99-99-99-99" (handled by hyphenation logic)
+	//  number may be prefixed with "+45"
+	//Norway:
+	//  most common format: "99 99 99 99"
 	
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i+6<org_token_count; i++) {
@@ -381,7 +385,7 @@ static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
 		   !is_whitespace(t5) ||
 		   !is_ascii_digits(t6))
 			continue;
-		//ok, looks like a danish phone number in format "99 99 99 99"
+		//ok, looks like a danish/norwegian phone number in format "99 99 99 99"
 		if(i>=2 &&
 		   (*tr)[i-2].is_alfanum &&
 		   is_ascii_digits((*tr)[i-2]))
