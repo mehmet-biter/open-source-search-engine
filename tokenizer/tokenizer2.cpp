@@ -74,6 +74,10 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Combining marks removal
+
 static void remove_combining_marks_danish(TokenizerResult *tr);
 
 
@@ -168,6 +172,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 
 
 //////////////////////////////////////////////////////////////////////////////
+// Possessive-s handling
 
 //Join word-with-possessive-s into a single token
 //Also take care of misused/abused other marks, such as modifier letters, prime marks, etc. Even in native English text
@@ -205,7 +210,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		   uc[0]!=0x201B && //SINGLE HIGH-REVERSED-9 QUOTATION MARK
 		   uc[0]!=0x2032 && //PRIME
 		   uc[0]!=0x2035)   //REVERSED PRIME
-		continue;
+			continue;
 		
 		size_t combined_token_length = t0.token_len + 1;
 		char *s = (char*)tr->egstack.alloc(combined_token_length);
@@ -239,8 +244,8 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 //	ccc ddd
 //	ddd eee
 //however, for better search results we'd like to get bigrams over more words, because in most languages hyphenation doesn't
-//have hard rules. Eg. for "smurf cd-rom" we would liek the bigram "smurfcdrom". So we look for hyphenated words and treat them
-//as a single word, allowign the upper layer to generate larger bigrams. One challange is if there are obscenely long hyphenated words,
+//have hard rules. Eg. for "smurf cd-rom" we would like the bigram "smurfcdrom". So we look for hyphenated words and treat them
+//as a single word, allowing the upper layer to generate larger bigrams. One challenge is if there are obscenely long hyphenated words,
 //eg. some chemical components "1-Methyl-2-pyrrolidinone"
 //should be generate all possible joins, or just prefix joins, or just suffix joins, og just a single join?
 //We chose 2-grams and then the whole word.
@@ -312,15 +317,16 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 
 
 //////////////////////////////////////////////////////////////////////////////
-// Telephone recognition stuff
+// Telephone number recognition
 
-static void recognize_telephone_numbers_denmark(TokenizerResult *tr);
+static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	if(!country_code)
 		country_code="";
-	if(lang==langDanish || strcmp(country_code,"dk")==0)
-		recognize_telephone_numbers_denmark(tr);
+	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
+	   lang==langNorwegian || strcmp(country_code,"no")==0)
+		recognize_telephone_numbers_denmark_norway(tr);
 }
 
 static bool is_ascii_digits(const TokenRange &tr) {
@@ -344,12 +350,15 @@ static bool is_whitespace(const TokenRange &tr) {
 	return true;
 }
 
-static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
+static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr) {
 	//Closed numbering plan, 8 digits.
-	//recommended format "9999 9999" (already handled as bigram)
-	//most common format: "99 99 99 99"
-	//less common: "99-99-99-99" (handled by whyphenation logic)
-	//number may be prefixed with "+45"
+	//Denmark:
+	//  recommended format "9999 9999" (already handled as bigram)
+	//  most common format: "99 99 99 99"
+	//  less common: "99-99-99-99" (handled by hyphenation logic)
+	//  number may be prefixed with "+45"
+	//Norway:
+	//  most common format: "99 99 99 99"
 	
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i+6<org_token_count; i++) {
@@ -381,7 +390,7 @@ static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
 		   !is_whitespace(t5) ||
 		   !is_ascii_digits(t6))
 			continue;
-		//ok, looks like a danish phone number in format "99 99 99 99"
+		//ok, looks like a danish/norwegian phone number in format "99 99 99 99"
 		if(i>=2 &&
 		   (*tr)[i-2].is_alfanum &&
 		   is_ascii_digits((*tr)[i-2]))
@@ -412,8 +421,8 @@ static void recognize_telephone_numbers_denmark(TokenizerResult *tr) {
 static void tokenize_superscript(TokenizerResult *tr) {
 	//The phase-1 tokenizer considers "E=mc²" three tokens.
 	//Because people normally don't type the superscript-2 we generate a variant with plain digit
-	//If the superscript is at the end of the token then we also generate two tokens split. this is
-	//a workaround for footnote numbers directly attached to the preceeding word
+	//If the superscript is at the end of the token then we also generate two tokens split. This is
+	//a workaround for footnote numbers directly attached to the preceeding word.
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i<org_token_count; i++) {
 		auto const &t = (*tr)[i];
@@ -430,7 +439,8 @@ static void tokenize_superscript(TokenizerResult *tr) {
 		int num_changed=0;
 		int change_pos=-1;
 		for(int j=0; j<ucs; j++) {
-			//UnicodeData.txt has many entries with <super< but we only look for a subset of those (we don't care abotu API extensions ideagraphic annotations, ...)
+			//UnicodeData.txt has many entries with <super> decomposition but we only look for
+			//a subset of those (we don't care about IPA extensions, ideographic annotations, ...)
 			UChar32  n = org_uc[j];
 			switch(org_uc[j]) {
 				case 0x00AA: //FEMININE ORDINAL INDICATOR
@@ -461,7 +471,7 @@ static void tokenize_superscript(TokenizerResult *tr) {
 					n = 0x0039; break;
 // 				case 0x207A: //SUPERSCRIPT PLUS SIGN
 // 					n = 0x002B; break;
-// 				case 0x207B: //SUPERSCRIPT MINUS;Sm;0
+// 				case 0x207B: //SUPERSCRIPT MINUS
 // 					n = 0x2212; break;
 // 				case 0x207C: //SUPERSCRIPT EQUALS SIGN
 // 					n = 0x003D; break;

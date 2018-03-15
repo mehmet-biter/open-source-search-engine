@@ -626,6 +626,13 @@ int main(void) {
 		assert(t.str(7)=="70270431");
 	}
 
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 70 27 04 31 boo",langNorwegian);
+		assert(t.token_count()==12);
+		assert(t.str(11)=="70270431");
+	}
+
 	// subscript, phase 2
 	printf("Test line %d\n",__LINE__);
 	{
