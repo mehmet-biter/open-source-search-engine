@@ -1646,8 +1646,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 }
 
-
-
 ///////////////////
 //
 // KEYSTONE FUNCTION
@@ -1875,6 +1873,43 @@ bool SpiderColl::evalIpLoop ( ) {
 }
 
 
+void SpiderColl::getSpiderdbListWrapper(void *state) {
+	SpiderColl *sc = static_cast<SpiderColl*>(state);
+
+	if(!SpiderdbRdbSqliteBridge::getList(sc->m_cr->m_collnum,
+	                                     &sc->m_list,
+	                                     sc->m_nextKey,
+	                                     sc->m_endKey,
+	                                     SR_READ_SIZE)) {
+		if(!g_errno) {
+			g_errno = EIO; //imprecise
+		}
+		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+		return;
+	}
+}
+
+void SpiderColl::gotSpiderdbListWrapper(void *state, job_exit_t exit_type) {
+	SpiderColl *THIS = (SpiderColl *)state;
+
+	// are we trying to exit? some firstip lists can be quite long, so
+	// terminate here so all threads can return and we can exit properly
+	if (g_process.isShuttingDown()) {
+		return;
+	}
+
+	// return if that blocked
+	if (!THIS->evalIpLoop()) {
+		return;
+	}
+
+	// we are done, re-entry popuatedoledb
+	THIS->m_isPopulatingDoledb = false;
+
+	// gotta set m_isPopulatingDoledb to false lest it won't work
+	THIS->populateDoledbFromWaitingTree();
+}
+
 
 // . this is ONLY CALLED from evalIpLoop() above
 // . returns false if blocked, true otherwise
@@ -1951,17 +1986,12 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	//   end up timing out the round. so try checking for
 	//   m_gettingList in spiderDoledUrls() and setting
 	//   m_lastSpiderCouldLaunch
-	if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
-					     &m_list,
-					     m_nextKey,
-					     m_endKey,
-					     SR_READ_SIZE))
-	{
-		if(!g_errno)
-			g_errno = EIO; //imprecise
-		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
-		return true;
+	if (g_jobScheduler.submit(getSpiderdbListWrapper, gotSpiderdbListWrapper, this, thread_type_spider_read, 0)) {
+		return false;
 	}
+
+	// unable to submit job
+	getSpiderdbListWrapper(this);
 
 	// note its return
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
