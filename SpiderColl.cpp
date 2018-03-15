@@ -1047,7 +1047,23 @@ int32_t SpiderColl::getNextIpFromWaitingTree() {
 	}
 }
 
-void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5) {
+void SpiderColl::getSpiderdbWaitingTreeListWrapper(void *state) {
+	SpiderColl *sc = static_cast<SpiderColl*>(state);
+
+	if (!SpiderdbRdbSqliteBridge::getFirstIps(sc->m_cr->m_collnum,
+	                                          &sc->m_waitingTreeList,
+	                                          Spiderdb::getFirstIp(&sc->m_waitingTreeNextKey),
+	                                          -1,
+	                                          SR_READ_SIZE)) {
+		if (!g_errno) {
+			g_errno = EIO; //imprecise
+			logTrace(g_conf.m_logTraceSpider, "END, got io-error from sqlite");
+			return;
+		}
+	}
+}
+
+void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, job_exit_t exit_type) {
 	SpiderColl *THIS = (SpiderColl *)state;
 
 	// did our collection rec get deleted? since we were doing a read
@@ -1158,19 +1174,17 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		    
 		// flag it
 		m_gettingWaitingTreeList = true;
-		// make state
-		//int32_t state2 = (int32_t)m_cr->m_collnum;
+
 		// read the list from local disk
-		if (!SpiderdbRdbSqliteBridge::getFirstIps(m_cr->m_collnum,
-		                                          &m_waitingTreeList,
-		                                          Spiderdb::getFirstIp(&m_waitingTreeNextKey),
-		                                          -1,
-		                                          SR_READ_SIZE)) {
-			if(!g_errno) {
-				g_errno = EIO; //imprecise
-				logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
-				return;
-			}
+		if (g_jobScheduler.submit(getSpiderdbWaitingTreeListWrapper, gotSpiderdbWaitingTreeListWrapper, this, thread_type_spider_read, 0)) {
+			return;
+		}
+
+		// unable to submit job
+		getSpiderdbWaitingTreeListWrapper(this);
+
+		if (g_errno) {
+			return;
 		}
 	}
 
