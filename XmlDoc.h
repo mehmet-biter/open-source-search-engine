@@ -56,6 +56,9 @@
 
 // forward declaration
 class GetMsg20State;
+class HashTableX;
+class HashInfo;
+
 
 namespace GbDns {
 	struct DnsResponse;
@@ -82,7 +85,7 @@ bool getDensityRanks ( const TokenizerResult *tr,
 bool getDiversityVec ( const TokenizerResult *tr,
 		       const Phrases *phrases ,
 		       class HashTableX *countTable ,
-		       class SafeBuf *sbWordVec );
+		       SafeBuf *sbWordVec );
 
 float computeSimilarity ( const int32_t   *vec0,
 			  const int32_t   *vec1,
@@ -279,7 +282,7 @@ public:
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    const char *coll,
-		    class SafeBuf *p,
+		    SafeBuf *p,
 		    int32_t niceness ,
 		    class SpiderRequest *sreq = NULL );
 
@@ -293,7 +296,7 @@ public:
 	bool set4 ( class SpiderRequest *sreq  , 
 		    const key96_t       *doledbKey,
 		    const char      *coll      ,
-		    class SafeBuf   *pbuf      , 
+		    SafeBuf   *pbuf      , 
 		    int32_t          niceness  ,
 		    char            *utf8Content = NULL ,
 		    bool             deleteFromIndex = false ,
@@ -453,13 +456,13 @@ public:
 	int32_t *getIndexCode ( ) ;
 	SafeBuf *getNewTagBuf ( ) ;
 
-	void logIt ( class SafeBuf *bb = NULL ) ;
+	void logIt ( SafeBuf *bb = NULL ) ;
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 
 	void printMetaList() const;
 	void printMetaList ( char *metaList , char *metaListEnd ,
-			     class SafeBuf *pbuf );
+			     SafeBuf *pbuf );
 	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
 	bool hashMetaList ( class HashTableX *ht        ,
 			    char       *p         ,
@@ -500,7 +503,7 @@ public:
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
 			   int64_t docId ,
-			   class SafeBuf *buf = NULL );
+			   SafeBuf *buf = NULL );
 
 	bool addTable224 ( HashTableX *tt1 ) ;
 
@@ -553,16 +556,22 @@ public:
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
-	bool hashString(unsigned a, unsigned b, HashInfo *hi);                          //a/b = token indexes
+	bool hashString(size_t begin_token, size_t end_token, HashInfo *hi);
 
-	bool hashWords3( class HashInfo *hi, const TokenizerResult *tr,
-			 class Sections *sections, const Bits *bits, char *fragVec, char *wordSpamVec,
-			 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
-
-	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
-			  class HashTableX *wts, class SafeBuf *wbuf);
-	bool hashString3(unsigned a, unsigned b, HashInfo *hi, HashTableX *countTable,
+	bool hashString3(const char *s, int32_t slen, class HashInfo *hi,
 			 HashTableX *wts, SafeBuf *wbuf);
+	bool hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
+			 HashTableX *wts, SafeBuf *wbuf);
+	
+	bool hashWords3(HashInfo *hi, const TokenizerResult *tr,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf);
+	bool hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_token, size_t end_token,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf);
+
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
