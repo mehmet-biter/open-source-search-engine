@@ -328,9 +328,26 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 	int16_t cedCharset = convertEncodingCED(encoding);
 	const char *cedCharsetStr = EncodingName(encoding);
 
-	// we'll always use cedCharset when it's reliable or when charset is not already known
 	if (cedCharset != csUnknown && (is_reliable || charset == csUnknown)) {
-		charset = cedCharset;
+		if(charset==csUTF8 && !invalidUtf8Encoding &&
+		   (cedCharset==cswindows1250 ||
+		    cedCharset==cswindows1251 ||
+		    cedCharset==cswindows1252 ||
+		    cedCharset==cswindows1253 ||
+		    cedCharset==cswindows1254 ||
+		    cedCharset==cswindows1255 ||
+		    cedCharset==cswindows1256 ||
+		    cedCharset==cswindows1257))
+		{
+			//For short documents the ced library has a weird builtin bias for classifying utf8 as windows-xxxx codepages.
+			//Passing the http-header-char and meta-charset hints to ced makes it no longer recognize big5 reliably on
+			//incorrectly configured webservers. So if the webserver claimed it was utf8, and we could not find any
+			//illegal utf8 sequences in it and ced thinks it is a windows-xxxx codepage then we treat it as utf8.
+			charset = csUTF8;
+		} else {
+			// we'll always use cedCharset when it's reliable or when charset is not already known
+			charset = cedCharset;
+		}
 	}
 
 	// alias these charsets so iconv understands
