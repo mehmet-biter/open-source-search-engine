@@ -582,6 +582,7 @@ bool SpiderdbRdbSqliteBridge::getFirstIps(collnum_t collnum, RdbList *list, int3
 		sreq.reset();
 		sreq.m_key = Spiderdb::makeKey(firstIp,0,true,0,false);
 		sreq.m_firstIp                  = firstIp;
+		sreq.setDataSize();
 
 		if (io_buffer.spare() < (size_t)sreq.getRecSize())
 			io_buffer.reserve_extra(io_buffer.used() / 2 + sreq.getRecSize());
