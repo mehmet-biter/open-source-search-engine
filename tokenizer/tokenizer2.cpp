@@ -105,7 +105,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 			continue;
 		UChar32 uc_org_token[max_word_codepoints];
 		if(token.token_len > sizeof(uc_org_token)/4)
-			continue; //Don't decompose ligatures in words longer than <max_word_codepoints> characters
+			continue; //Don't remove diacritics in words longer than <max_word_codepoints> characters
 		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
 		if(org_codepoints<=0)
 			continue; //decode error or empty token
