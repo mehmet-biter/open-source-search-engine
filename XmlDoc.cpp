@@ -4444,14 +4444,13 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( wend - p <= 0 ) continue;
 
 		// our ouw hash
-		//const_cast because hashString_ct calls Words::set and that is still not const-sane
-		if ( ! hashString_ct ( ct , const_cast<char*>(p) , wend - p ) )
+		if ( ! hashString_ct(ct, p, wend - p) )
 			return (HashTableX *)NULL;
 	}
 	// add each incoming link text
 	for ( Inlink *k=NULL ; info1 && (k=info1->getNextInlink(k)) ; ) {
 		// shortcuts
-		char *p;
+		const char *p;
 		int32_t  plen;
 		// hash link text (was hashPwids())
 		p    = k-> getLinkText();
@@ -4461,12 +4460,12 @@ HashTableX *XmlDoc::getCountTable ( ) {
 			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
-		if ( ! hashString_ct ( ct , p , plen ) )
+		if ( ! hashString_ct(ct, p, plen) )
 		  return (HashTableX *)NULL;
 		// hash this stuff (was hashPwids())
 		p    = k->getSurroundingText();
 		plen = k->size_surroundingText - 1;
-		if ( ! hashString_ct ( ct , p , plen ) )
+		if ( ! hashString_ct(ct, p, plen) )
 		  return (HashTableX *)NULL;
 	}
 
@@ -4477,7 +4476,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 
 // . a special function used by XmlDoc::getCountTable() above
 // . kinda similar to XmlDoc::hashString()
-bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
+bool XmlDoc::hashString_ct(HashTableX *ct, const char *s, int32_t slen) {
 
 	TokenizerResult   tr;
 	Bits    bits;

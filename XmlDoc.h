@@ -367,7 +367,7 @@ public:
 	int32_t *getLinkSiteHashes ( );
 	class Links *getLinks ( bool doQuickSet = false ) ;
 	class HashTableX *getCountTable ( ) ;
-	bool hashString_ct ( class HashTableX *ht, char *s , int32_t slen ) ;
+	bool hashString_ct(HashTableX *ht, const char *s, int32_t slen);
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
