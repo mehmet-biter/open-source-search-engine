@@ -690,5 +690,27 @@ int main(void) {
 		assert(t.str(6)=="4");
 	}
 	
+	//ampersand
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("potato&carrot",langUnknown);
+		assert(!t.empty());
+		assert(t.token_count()==3);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("potato&carrot",langUnknown,"us");
+		assert(!t.empty());
+		assert(t.token_count()==4);
+		assert(t.str(3)=="and");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("kartoffel&gulerod",langDanish);
+		assert(!t.empty());
+		assert(t.token_count()==4);
+		assert(t.str(3)=="og");
+	}
+	
 	return 0;
 }

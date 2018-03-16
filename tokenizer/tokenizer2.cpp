@@ -17,6 +17,7 @@ static void combine_hyphenated_words(TokenizerResult *tr);
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void tokenize_superscript(TokenizerResult *tr);
 static void tokenize_subscript(TokenizerResult *tr);
+static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -26,6 +27,8 @@ static void tokenize_subscript(TokenizerResult *tr);
 //don't know the locale with certainty, so we take the language as a hint.
 //Also joins words separated with hyphen (all 10 of them)
 void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr) {
+	if(!country_code)
+		country_code = "";
 	decompose_stylistic_ligatures(tr);
 	//TODO: language-specific ligatures
 	remove_combining_marks(tr,lang);
@@ -39,6 +42,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	//TODO: recognize_numbers(tr,lang,country_code)
 	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
 	//TODO: rewrite ampersands to the language's equivalent of "and"
+	rewrite_ampersands(tr,lang,country_code);
 }
 
 
@@ -331,8 +335,6 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
-	if(!country_code)
-		country_code="";
 	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
 	   lang==langNorwegian || strcmp(country_code,"no")==0)
 		recognize_telephone_numbers_denmark_norway(tr);
@@ -624,6 +626,37 @@ static void tokenize_subscript(TokenizerResult *tr) {
 			char *s = (char*)tr->egstack.alloc(ucs*4);
 			size_t sl = encode_utf8_string(new_uc,ucs,s);
 			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Ampersand
+
+//In many langauges the ampersand is used in abbreviations, company names, etc for the word equivalent of "and"
+
+static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len);
+
+static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code) {
+	if(lang==langDanish || strcmp(country_code,"da")==0)
+		rewrite_ampersands(tr, "og",2);
+	else if(lang==langEnglish || strcmp(country_code,"us")==0 || strcmp(country_code,"uk")==0 || strcmp(country_code,"au")==0 || strcmp(country_code,"nz")==0)
+		rewrite_ampersands(tr, "and",3);
+	else if(lang==langGerman || strcmp(country_code,"de")==0 || strcmp(country_code,"at")==0 || strcmp(country_code,"li")==0)
+		rewrite_ampersands(tr, "und",3);
+}
+
+
+static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len) {
+	char *s = NULL;
+	for(const auto &t : tr->tokens) {
+		if(t.token_len==1 && *t.token_start=='&') {
+			if(!s) {
+				s = (char*)tr->egstack.alloc(ampersand_word_len);
+				memcpy(s,ampersand_word,ampersand_word_len);
+			}
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,ampersand_word_len, true);
 		}
 	}
 }
