@@ -84,7 +84,6 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 
 static void replace_ligature(const UChar32 original_codepoint[], unsigned original_codepoints, UChar32 ligature_codepoint, const UChar32 replacement_codepoint[], unsigned replacement_codepoints,
 			     TokenizerResult *tr, const TokenRange &token) {
-printf("replace_ligature: ligature_codepoint=0x%04X\n",ligature_codepoint);
 	bool found=false;
 	for(unsigned i=0; i<original_codepoints; i++)
 		if(original_codepoint[i]==ligature_codepoint)
@@ -124,9 +123,6 @@ static void decompose_english_specific_ligatures(TokenizerResult *tr) {
 		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
 		if(org_codepoints<=0)
 			continue; //decode error or empty token
-printf("org_codepoints(%d):",org_codepoints);
-for(int j=0; j<org_codepoints; j++) printf("0x%04X ",uc_org_token[j]);
-printf("\n");
 		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token); //LATIN CAPITAL LIGATURE OE
 		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O'},1,     tr,token); //LATIN CAPITAL LIGATURE OE
 		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token); //LATIN SMALL LIGATURE OE
