@@ -2050,7 +2050,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					// get phrase as a string
 					size_t plen;
 					char phraseBuffer[256];
-					//TODO: Collect the intermediate tokens too. It is complicated because twe two tokens generating the bigram can beith either primary or secondary tokens from the tonizer, and the non-alfanum tokens between too.
+					//TODO: Collect the intermediate tokens too. It is complicated because the two tokens generating the bigram can be either primary or secondary tokens from the tonizer, and the non-alfanum tokens between too.
 					//simplification: just grab the chars from token+token2
 					if(token.token_len<=sizeof(phraseBuffer)) {
 						memcpy(phraseBuffer, token.token_start, token.token_len);

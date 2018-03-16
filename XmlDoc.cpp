@@ -3897,9 +3897,8 @@ TokenizerResult *XmlDoc::getTokenizerResult() {
 
 	// now set what we need
 	xml_tokenizer_phase_1(xml,&m_tokenizerResult);
-	//TODO: when should we call phase-2 XML tokenizer?
-	//TODO: when should we calc the wordids?
 	calculate_tokens_hashes(&m_tokenizerResult);
+	//phase-2 tokenizer kicks in when XmlDoc::hashAll() is called, so for now we keep to phase-1 tokens
 
 	logQueryTimingEnd( __func__, start );
 
