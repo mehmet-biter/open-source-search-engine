@@ -1231,7 +1231,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// cast it
 		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(rec);
 		// get first ip
-		int32_t firstIp = sreq->m_firstIp;
+		int32_t firstIp = Spiderdb::getFirstIp(&sreq->m_key);
 
 		// if same as last, skip it
 		if ( firstIp == lastOne ) 
