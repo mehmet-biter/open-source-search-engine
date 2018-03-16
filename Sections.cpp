@@ -3195,7 +3195,7 @@ bool Sections::print(PrintData *pd) const {
 			if ( i == a ) pd->sbuf->safePrintf("</b>");
 		}
 		// if we truncated print a ...
-		if ( truncated ) pd->sbuf->safePrintf("<b>...</b>");
+		if ( truncated ) pd->sbuf->safePrintf("<b>…</b>");
 		// then print ending tag
 		if ( b < nw ) {
 			int32_t blen = (*m_tr)[b-1].token_len;             //b is from m_b and always>0 so indexing b-1 is safe
