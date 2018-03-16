@@ -2017,6 +2017,8 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 			unsigned first_match_start_pos = (*tr)[j].start_pos;
 			for( ; j<end_token && (*tr)[j].start_pos == first_match_start_pos; j++) {
 				const auto &token2 = (*tr)[j];
+				if(!token2.is_alfanum)
+					continue; //ampersand-rewrites in tokenizer2.cpp can result in non-alfanum tokens that must be ignored and skipped
 				int32_t pos = token.token_len;
 				int64_t npid = hash64Lower_utf8_cont(token2.token_start, token2.token_len, token.token_hash, &pos);
 				uint64_t  ph2;
