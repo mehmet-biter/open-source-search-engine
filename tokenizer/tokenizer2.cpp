@@ -38,6 +38,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	recognize_telephone_numbers(tr,lang,country_code);
 	//TODO: recognize_numbers(tr,lang,country_code)
 	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram
+	//TODO: rewrite ampersands to the lenguage's equivalent of "and"
 }
 
 
