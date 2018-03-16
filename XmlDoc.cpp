@@ -3930,6 +3930,7 @@ TokenizerResult *XmlDoc::getTokenizerResult2() {
 	
 	int64_t start = logQueryTimingStart();
 
+	logTrace( g_conf.m_logTraceXmlDoc, "Tokenizing document with langId=%u countryCode=%s", *langId, countryCode?countryCode:"<null>");
 	xml_tokenizer_phase_2(xml, (lang_t)*langId, countryCode, tr);
 	//TODO: Only the phase-2 tokens need to be rehashed
 	calculate_tokens_hashes(&m_tokenizerResult);
@@ -3939,7 +3940,7 @@ TokenizerResult *XmlDoc::getTokenizerResult2() {
 	m_phrasesValid = false;
 	m_sectionsValid = false;
 	m_posValid = false;
-	//and the bigram generation in Phrases requires that the tokens are sorted by <startpos,endpos>
+	//and the bigram generation in XmlDoc::hashWords3() requires that the tokens are sorted by <startpos,endpos>
 	std::sort(m_tokenizerResult.tokens.begin(), m_tokenizerResult.tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
 		return tr0.start_pos < tr1.start_pos ||
 		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
@@ -10685,83 +10686,9 @@ char **XmlDoc::getUtf8Content ( ) {
 	// sanity
 	if ( m_expandedUtf8Content[n] != '\0' ) { g_process.shutdownAbort(true); }
 
-	// finally transform utf8 apostrophe's into regular apostrophes
-	// to make parsing easier
-	uint8_t *p   = (uint8_t *)m_expandedUtf8Content;
-	uint8_t *dst = (uint8_t *)m_expandedUtf8Content;
-	uint8_t *pend = p + n;
-
-	for ( ; *p ; p += size ) {
-		size = getUtf8CharSize(p);
-
-		// quick copy
-		if ( size == 1 ) {
-			*dst++ = *p;
-			continue;
-		}
-
-		// check for crazy apostrophes
-		if ( p[0] == 0xe2 && p[1] == 0x80 &&
-		     ( p[2] == 0x98 ||    // U+2018 LEFT SINGLE QUOTATION MARK
-		       p[2] == 0x99 ||    // U+2019 RIGHT SINGLE QUOTATION MARK
-		       p[2] == 0x9b ) ) { // U+201B SINGLE HIGH-REVERSED-9 QUOTATION MARK
-			*dst++ = '\'';
-			continue;
-		}
-
-		// utf8 control character?
-		if ( p[0] == 0xc2 &&
-		     p[1] >= 0x80 && p[1] <= 0x9f ) {
-			*dst++ = ' ';
-			continue;
-		}
-
-		// double quotes in utf8
-		// DO NOT do this if type JSON!! json uses quotes as control characters
-		if (m_contentType != CT_JSON) {
-			if ( p[0] == 0xe2 && p[1] == 0x80 ) {
-				if ( p[2] == 0x9c ) {
-					*dst++ = '\"';
-					continue;
-				}
-				if ( p[2] == 0x9d ) {
-					*dst++ = '\"';
-					continue;
-				}
-			}
-		}
-
-		// and crazy hyphens (8 - 10pm)
-		if ( ( p[0] == 0xc2 && p[1] == 0xad ) ||                  // U+00AD SOFT HYPHEN
-		     ( p[0] == 0xe2 && p[1] == 0x80 && p[2] == 0x93 ) ||  // U+2013 EN DASH
-			 ( p[0] == 0xe2 && p[1] == 0x80 && p[2] == 0x94 ) ) { // U+2014 EM DASH
-			*dst++ = '-';
-			continue;
-		}
-
-		// . convert all utf8 white space to ascii white space
-		// . should benefit the string matching algo in
-		//   XmlDoc::getEventSummary() which needs to skip spaces
-		if ( ! g_map_is_ascii[(unsigned char)*p]  &&
-		     is_wspace_utf8(p) ) {
-			*dst++ = ' ';
-			continue;
-		}
-
-		// otherwise, just copy it
-		gbmemcpy(dst,p,size);
-		dst += size;
-	}
-
-	// null term
-	*dst++ = '\0';
-
 	// now set it up
 	ptr_utf8Content  = (char *)m_expandedUtf8Content;
-	size_utf8Content = (char *)dst - m_expandedUtf8Content;
-
-	// sanity -- skipped over the \0???
-	if ( p > pend ) { g_process.shutdownAbort(true); }
+	size_utf8Content = m_expandedUtf8ContentSize;
 
 	// sanity check
 	if ( ptr_utf8Content && ptr_utf8Content[size_utf8Content-1] ) {

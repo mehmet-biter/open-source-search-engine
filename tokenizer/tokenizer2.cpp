@@ -37,8 +37,8 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	combine_hyphenated_words(tr);
 	recognize_telephone_numbers(tr,lang,country_code);
 	//TODO: recognize_numbers(tr,lang,country_code)
-	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram
-	//TODO: rewrite ampersands to the lenguage's equivalent of "and"
+	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
+	//TODO: rewrite ampersands to the language's equivalent of "and"
 }
 
 
@@ -218,6 +218,14 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		memcpy(s, t0.token_start, t0.token_len);
 		s[t0.token_len] = 's';
 		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, true);
+		
+		//In the case of "John's car" we now have the tokens:
+		//  John
+		//  Johns
+		//  car
+		//and XmlDoc_indexing.cpp will generate the bigram "johns+car", but also "s+car".
+		//We remove the 's' token because it (a) causes trouble iwth weird bigrams, and (b) it has little meaning by itself.
+		tr->tokens.erase(tr->tokens.begin()+i+2);
 	}
 }
 
