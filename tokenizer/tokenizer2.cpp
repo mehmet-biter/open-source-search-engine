@@ -11,6 +11,7 @@
 static const size_t max_word_codepoints = 128; //longest word we will consider working on
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
@@ -30,7 +31,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	if(!country_code)
 		country_code = "";
 	decompose_stylistic_ligatures(tr);
-	//TODO: language-specific ligatures
+	decompose_language_specific_ligatures(tr,lang);
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
@@ -44,6 +45,9 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	rewrite_ampersands(tr,lang,country_code);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Ligature stuff
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 	const size_t org_token_count = tr->size();
@@ -77,6 +81,87 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 	}
 }
 
+
+static void replace_ligature(const UChar32 original_codepoint[], unsigned original_codepoints, UChar32 ligature_codepoint, const UChar32 replacement_codepoint[], unsigned replacement_codepoints,
+			     TokenizerResult *tr, const TokenRange &token) {
+printf("replace_ligature: ligature_codepoint=0x%04X\n",ligature_codepoint);
+	bool found=false;
+	for(unsigned i=0; i<original_codepoints; i++)
+		if(original_codepoint[i]==ligature_codepoint)
+			found=true;
+	if(!found)
+		return;
+	
+	UChar32 uc_new_token[max_word_codepoints*3]; //worst-case expansion
+	unsigned new_codepoints=0;
+	for(unsigned i=0; i<original_codepoints; i++) {
+		if(original_codepoint[i]!=ligature_codepoint)
+			uc_new_token[new_codepoints++] = original_codepoint[i];
+		else {
+			for(unsigned j=0; j<replacement_codepoints; j++)
+				uc_new_token[new_codepoints++] = replacement_codepoint[j];
+		}
+	}
+	char new_token_utf8[sizeof(uc_new_token)];
+	size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
+	char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
+	memcpy(s,new_token_utf8,new_token_utf8_len);
+	tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
+}
+
+
+static void decompose_english_specific_ligatures(TokenizerResult *tr) {
+	//The ligature Œ/œ is used in some french loanwords, and can be decomposed into oe or o (amœba -> amoeba, œconomist -> economist)
+	//The ligature Æ/æ is used in some latin loanwords, and can be decomposed into ae or e (encyclopædia -> encyclopaedia/encyclopedia)
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		const auto &token = (*tr)[i];
+		if(!token.is_alfanum)
+			continue;
+		UChar32 uc_org_token[max_word_codepoints];
+		if(token.token_len > sizeof(uc_org_token)/4)
+			continue;
+		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
+		if(org_codepoints<=0)
+			continue; //decode error or empty token
+printf("org_codepoints(%d):",org_codepoints);
+for(int j=0; j<org_codepoints; j++) printf("0x%04X ",uc_org_token[j]);
+printf("\n");
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O'},1,     tr,token); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o'},1,     tr,token); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'A','E'},2, tr,token); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'E'},1,     tr,token); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'a','e'},2, tr,token); //LATIN SMALL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'e'},1,     tr,token); //LATIN SMALL LETTER AE
+	}
+}
+
+static void decompose_french_specific_ligatures(TokenizerResult *tr) {
+	//Long story. But the essensce of it is that Œ/œ are real letters in French, but due to technical limitations OE/oe was used until unicode became widespread.
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		const auto &token = (*tr)[i];
+		if(!token.is_alfanum)
+			continue;
+		UChar32 uc_org_token[max_word_codepoints];
+		if(token.token_len > sizeof(uc_org_token)/4)
+			continue;
+		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
+		if(org_codepoints<=0)
+			continue; //decode error or empty token
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token);
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token);
+	}
+}
+
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang) {
+	if(lang==langEnglish)
+		decompose_english_specific_ligatures(tr);
+	else if(lang==langFrench)
+		decompose_french_specific_ligatures(tr);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////

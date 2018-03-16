@@ -446,6 +446,24 @@ int main(void) {
 		assert(t.str(1)=="Kerfuffle");
 	}
 	
+	//english-specific ligatures
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Encyclopædia",langEnglish);
+		assert(t.token_count()==3);
+		assert(t.str(0)=="Encyclopædia");
+		assert(t.str(1)=="Encyclopaedia" || t.str(1)=="Encyclopedia");
+		assert(t.str(2)=="Encyclopaedia" || t.str(2)=="Encyclopedia");
+	}
+	//french-specific ligatures
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("bœuf",langFrench);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="bœuf");
+		assert(t.str(1)=="boeuf");
+	}
+	
 	//danish-specific
 	printf("Test line %d\n",__LINE__);
 	{
