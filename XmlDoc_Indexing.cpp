@@ -2061,10 +2061,10 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 						plen = sizeof(phraseBuffer);
 					}
 					if(token2.token_len<=sizeof(phraseBuffer)-plen) {
-						memcpy(phraseBuffer, token2.token_start, token2.token_len);
+						memcpy(phraseBuffer+plen, token2.token_start, token2.token_len);
 						plen += token2.token_len;
 					} else {
-						memcpy(phraseBuffer, token2.token_start, sizeof(phraseBuffer)-plen);
+						memcpy(phraseBuffer+plen, token2.token_start, sizeof(phraseBuffer)-plen);
 						plen = sizeof(phraseBuffer);
 					}
 					// store it
