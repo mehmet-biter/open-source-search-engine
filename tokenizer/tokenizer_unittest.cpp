@@ -506,28 +506,28 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John's dog",langUnknown); //U+0027 Apostrophe
-		assert(t.token_count()==6);
+		assert(t.token_count()==5); //phase-2 removes the standalone 's' token
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John`s dog",langUnknown); //U+0060 grave
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John´s dog",langUnknown); //U+00B4 acute accent
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John’s dog",langUnknown); //U+2019 Right single quotation mark
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 		//according to unicode NamesList.txt this is actually the preferred codepoint. Uhm, okay....
 	}
@@ -535,7 +535,7 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John′s dog",langUnknown); //U+2032 Prime
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
