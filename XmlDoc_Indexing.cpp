@@ -1845,7 +1845,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	bool seen_slash = false;
 	for(unsigned i = begin_token; i < end_token; i++) {
 		const auto &token = (*tr)[i];
-		log(LOG_INFO,"@@@ XmlDoc::hashWords3: looking at token #%u: '%.*s', hash=%ld, nodeid=%u", i, (int)token.token_len, token.token_start, token.token_hash, token.nodeid);
+		logTrace(g_conf.m_logTraceTokenIndexing,"Looking at token #%u: '%.*s', hash=%ld, nodeid=%u", i, (int)token.token_len, token.token_start, token.token_hash, token.nodeid);
 		if(token.token_len==1 && token.token_start[0]=='/')
 			seen_slash = true;
 		
@@ -1948,7 +1948,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 		}
 
 		if(!skipword) {
-			log(LOG_INFO,"@@@ XmlDoc::hashWords3: indexing '%.*s', h=%ld, termid=%lld", (int)token.token_len, token.token_start, h, h&TERMID_MASK);
+			logTrace(g_conf.m_logTraceTokenIndexing,"Indexing '%.*s', h=%ld, termid=%lld", (int)token.token_len, token.token_start, h, h&TERMID_MASK);
 			key144_t k;
 
 			Posdb::makeKey(&k,
@@ -1986,8 +1986,9 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					      k))
 					return false;
 			}
-		} //!skipword
-		else log(LOG_INFO,"@@@ XmlDoc::hashWords3: not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
+		} else {
+			logTrace(g_conf.m_logTraceTokenIndexing,"not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
+		}
 
 
 		////////
@@ -2020,7 +2021,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 				int64_t npid = hash64Lower_utf8_cont(token2.token_start, token2.token_len, token.token_hash, &pos);
 				uint64_t  ph2;
 
-				log(LOG_INFO,"@@@ XmlDoc::hashWords3: indexing two-word phrase '%.*s'+'%.*s' with h=%ld, termid=%lld", (int)token.token_len, token.token_start, (int)token2.token_len, token2.token_start, npid, npid&TERMID_MASK);
+				logTrace(g_conf.m_logTraceTokenIndexing,"Indexing two-word phrase '%.*s'+'%.*s' with h=%ld, termid=%lld", (int)token.token_len, token.token_start, (int)token2.token_len, token2.token_start, npid, npid&TERMID_MASK);
 				// hash with prefix
 				if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
 				else            ph2 = npid;
@@ -2082,8 +2083,9 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 						return false;
 				}
 			}
+		} else {
+			logTrace(g_conf.m_logTraceTokenIndexing,"NOT indexing two-word phrase(s)");
 		}
-		else log(LOG_INFO,"@@@ XmlDoc::hashWords3: NOT indexing two-word phrase");
 	}
 
 	// between calls? i.e. hashTitle() and hashBody()
