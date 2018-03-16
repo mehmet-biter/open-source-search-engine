@@ -4413,13 +4413,15 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( ! ct->addTerm(wid) ) return (HashTableX *)NULL;
 		// skip if word #i does not start a phrase
 		if ( ! phrases->getPhraseId(i) ) continue;
+		if(i+1>=nw) continue;
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
 		const char *wptr = (*tr)[i+1].token_start;
-		if ( wptr[0] == ',' ) continue;
-		if ( wptr[1] == ',' ) continue;
-		if ( wptr[2] == ',' ) continue;
+		const size_t wlen = (*tr)[i+1].token_len;
+		if ( wlen>0 && wptr[0] == ',' ) continue;
+		if ( wlen>1 && wptr[1] == ',' ) continue;
+		if ( wlen>2 && wptr[2] == ',' ) continue;
 		// put it in, accumulate, max score is 0x7fffffff
 		if ( ! ct->addTerm(phrases->getPhraseId(i)) ) return (HashTableX *)NULL;
 	}
