@@ -3931,7 +3931,7 @@ TokenizerResult *XmlDoc::getTokenizerResult2() {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Tokenizing document with langId=%u countryCode=%s", *langId, countryCode?countryCode:"<null>");
 	xml_tokenizer_phase_2(xml, (lang_t)*langId, countryCode, tr);
-	//TODO: Only the phase-2 tokens need to be rehashed
+	//(todo): Only the phase-2 tokens need to be rehashed, but because phase-2 can remove phase-1 tokens we cannot just easily identify the phase-2 tokens
 	calculate_tokens_hashes(&m_tokenizerResult);
 
 	//because the number of words may have changed m_bits/m_phrases/m_sections must be recalculated
