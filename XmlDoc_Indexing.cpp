@@ -2005,7 +2005,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 			const auto &t2 = (*tr)[j];
 			if(t2.is_alfanum && t2.start_pos>=token.end_pos)
 				break;
-			if(!bits->canPairAcross(j)) {
+			if(!bits->canBeInPhrase(i) && !bits->canPairAcross(j)) {
 				generate_bigram = false;
 				break;
 			}
