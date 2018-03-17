@@ -11,12 +11,14 @@
 static const size_t max_word_codepoints = 128; //longest word we will consider working on
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void tokenize_superscript(TokenizerResult *tr);
 static void tokenize_subscript(TokenizerResult *tr);
+static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -26,8 +28,10 @@ static void tokenize_subscript(TokenizerResult *tr);
 //don't know the locale with certainty, so we take the language as a hint.
 //Also joins words separated with hyphen (all 10 of them)
 void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr) {
+	if(!country_code)
+		country_code = "";
 	decompose_stylistic_ligatures(tr);
-	//TODO: language-specific ligatures
+	decompose_language_specific_ligatures(tr,lang);
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
@@ -37,9 +41,13 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	combine_hyphenated_words(tr);
 	recognize_telephone_numbers(tr,lang,country_code);
 	//TODO: recognize_numbers(tr,lang,country_code)
-	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram
+	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
+	rewrite_ampersands(tr,lang,country_code);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Ligature stuff
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 	const size_t org_token_count = tr->size();
@@ -73,6 +81,83 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 	}
 }
 
+
+static void replace_ligature(const UChar32 original_codepoint[], unsigned original_codepoints, UChar32 ligature_codepoint, const UChar32 replacement_codepoint[], unsigned replacement_codepoints,
+			     TokenizerResult *tr, const TokenRange &token) {
+	bool found=false;
+	for(unsigned i=0; i<original_codepoints; i++)
+		if(original_codepoint[i]==ligature_codepoint)
+			found=true;
+	if(!found)
+		return;
+	
+	UChar32 uc_new_token[max_word_codepoints*3]; //worst-case expansion
+	unsigned new_codepoints=0;
+	for(unsigned i=0; i<original_codepoints; i++) {
+		if(original_codepoint[i]!=ligature_codepoint)
+			uc_new_token[new_codepoints++] = original_codepoint[i];
+		else {
+			for(unsigned j=0; j<replacement_codepoints; j++)
+				uc_new_token[new_codepoints++] = replacement_codepoint[j];
+		}
+	}
+	char new_token_utf8[sizeof(uc_new_token)];
+	size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
+	char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
+	memcpy(s,new_token_utf8,new_token_utf8_len);
+	tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
+}
+
+
+static void decompose_english_specific_ligatures(TokenizerResult *tr) {
+	//The ligature Œ/œ is used in some french loanwords, and can be decomposed into oe or o (amœba -> amoeba, œconomist -> economist)
+	//The ligature Æ/æ is used in some latin loanwords, and can be decomposed into ae or e (encyclopædia -> encyclopaedia/encyclopedia)
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		const auto &token = (*tr)[i];
+		if(!token.is_alfanum)
+			continue;
+		UChar32 uc_org_token[max_word_codepoints];
+		if(token.token_len > sizeof(uc_org_token)/4)
+			continue;
+		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
+		if(org_codepoints<=0)
+			continue; //decode error or empty token
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O'},1,     tr,token); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o'},1,     tr,token); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'A','E'},2, tr,token); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'E'},1,     tr,token); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'a','e'},2, tr,token); //LATIN SMALL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'e'},1,     tr,token); //LATIN SMALL LETTER AE
+	}
+}
+
+static void decompose_french_specific_ligatures(TokenizerResult *tr) {
+	//Long story. But the essensce of it is that Œ/œ are real letters in French, but due to technical limitations OE/oe was used until unicode became widespread.
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		const auto &token = (*tr)[i];
+		if(!token.is_alfanum)
+			continue;
+		UChar32 uc_org_token[max_word_codepoints];
+		if(token.token_len > sizeof(uc_org_token)/4)
+			continue;
+		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
+		if(org_codepoints<=0)
+			continue; //decode error or empty token
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token);
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token);
+	}
+}
+
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang) {
+	if(lang==langEnglish)
+		decompose_english_specific_ligatures(tr);
+	else if(lang==langFrench)
+		decompose_french_specific_ligatures(tr);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -217,6 +302,14 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		memcpy(s, t0.token_start, t0.token_len);
 		s[t0.token_len] = 's';
 		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, true);
+		
+		//In the case of "John's car" we now have the tokens:
+		//  John
+		//  Johns
+		//  car
+		//and XmlDoc_indexing.cpp will generate the bigram "johns+car", but also "s+car".
+		//We remove the 's' token because it (a) causes trouble iwth weird bigrams, and (b) it has little meaning by itself.
+		tr->tokens.erase(tr->tokens.begin()+i+2);
 	}
 }
 
@@ -322,8 +415,6 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
-	if(!country_code)
-		country_code="";
 	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
 	   lang==langNorwegian || strcmp(country_code,"no")==0)
 		recognize_telephone_numbers_denmark_norway(tr);
@@ -615,6 +706,37 @@ static void tokenize_subscript(TokenizerResult *tr) {
 			char *s = (char*)tr->egstack.alloc(ucs*4);
 			size_t sl = encode_utf8_string(new_uc,ucs,s);
 			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Ampersand
+
+//In many langauges the ampersand is used in abbreviations, company names, etc for the word equivalent of "and"
+
+static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len);
+
+static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code) {
+	if(lang==langDanish || strcmp(country_code,"da")==0)
+		rewrite_ampersands(tr, "og",2);
+	else if(lang==langEnglish || strcmp(country_code,"us")==0 || strcmp(country_code,"uk")==0 || strcmp(country_code,"au")==0 || strcmp(country_code,"nz")==0)
+		rewrite_ampersands(tr, "and",3);
+	else if(lang==langGerman || strcmp(country_code,"de")==0 || strcmp(country_code,"at")==0 || strcmp(country_code,"li")==0)
+		rewrite_ampersands(tr, "und",3);
+}
+
+
+static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len) {
+	char *s = NULL;
+	for(const auto &t : tr->tokens) {
+		if(t.token_len==1 && *t.token_start=='&') {
+			if(!s) {
+				s = (char*)tr->egstack.alloc(ampersand_word_len);
+				memcpy(s,ampersand_word,ampersand_word_len);
+			}
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,ampersand_word_len, true);
 		}
 	}
 }

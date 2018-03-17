@@ -232,7 +232,11 @@ private:
 
 	CollectionRec *m_cr;
 
-	static void gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5);
+	static void getSpiderdbWaitingTreeListWrapper(void *state);
+	static void gotSpiderdbWaitingTreeListWrapper(void *state, job_exit_t exit_type);
+
+	static void getSpiderdbListWrapper(void *state);
+	static void gotSpiderdbListWrapper(void *state, job_exit_t exit_type);
 };
 
 #endif // GB_SPIDERCOLL_H

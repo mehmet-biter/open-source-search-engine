@@ -3195,10 +3195,10 @@ bool Sections::print(PrintData *pd) const {
 			if ( i == a ) pd->sbuf->safePrintf("</b>");
 		}
 		// if we truncated print a ...
-		if ( truncated ) pd->sbuf->safePrintf("<b>...</b>");
+		if ( truncated ) pd->sbuf->safePrintf("<b>…</b>");
 		// then print ending tag
 		if ( b < nw ) {
-			int32_t blen = (*m_tr)[b-1].token_len; //TODO: doens't this risk indexing before the start of the array?
+			int32_t blen = (*m_tr)[b-1].token_len;             //b is from m_b and always>0 so indexing b-1 is safe
 			if ( blen>20 ) blen = 20;
 			pd->sbuf->safePrintf("<b>");
 			pd->sbuf->htmlEncode((*m_tr)[b-1].token_start,blen,false);

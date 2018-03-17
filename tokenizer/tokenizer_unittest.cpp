@@ -446,6 +446,24 @@ int main(void) {
 		assert(t.str(1)=="Kerfuffle");
 	}
 	
+	//english-specific ligatures
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Encyclopædia",langEnglish);
+		assert(t.token_count()==3);
+		assert(t.str(0)=="Encyclopædia");
+		assert(t.str(1)=="Encyclopaedia" || t.str(1)=="Encyclopedia");
+		assert(t.str(2)=="Encyclopaedia" || t.str(2)=="Encyclopedia");
+	}
+	//french-specific ligatures
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("bœuf",langFrench);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="bœuf");
+		assert(t.str(1)=="boeuf");
+	}
+	
 	//danish-specific
 	printf("Test line %d\n",__LINE__);
 	{
@@ -506,28 +524,28 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John's dog",langUnknown); //U+0027 Apostrophe
-		assert(t.token_count()==6);
+		assert(t.token_count()==5); //phase-2 removes the standalone 's' token
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John`s dog",langUnknown); //U+0060 grave
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John´s dog",langUnknown); //U+00B4 acute accent
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John’s dog",langUnknown); //U+2019 Right single quotation mark
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 		//according to unicode NamesList.txt this is actually the preferred codepoint. Uhm, okay....
 	}
@@ -535,7 +553,7 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John′s dog",langUnknown); //U+2032 Prime
-		assert(t.token_count()==6);
+		assert(t.token_count()==5);
 		assert(t.str(5)=="Johns");
 	}
 	
@@ -688,6 +706,28 @@ int main(void) {
 		assert(t.str(4)=="T4");
 		assert(t.str(5)=="T");
 		assert(t.str(6)=="4");
+	}
+	
+	//ampersand
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("potato&carrot",langUnknown);
+		assert(!t.empty());
+		assert(t.token_count()==3);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("potato&carrot",langUnknown,"us");
+		assert(!t.empty());
+		assert(t.token_count()==4);
+		assert(t.str(3)=="and");
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("kartoffel&gulerod",langDanish);
+		assert(!t.empty());
+		assert(t.token_count()==4);
+		assert(t.str(3)=="og");
 	}
 	
 	return 0;
