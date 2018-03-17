@@ -11,7 +11,7 @@
 static const size_t max_word_codepoints = 128; //longest word we will consider working on
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
-static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang);
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
@@ -31,7 +31,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	if(!country_code)
 		country_code = "";
 	decompose_stylistic_ligatures(tr);
-	decompose_language_specific_ligatures(tr,lang);
+	decompose_language_specific_ligatures(tr,lang,country_code);
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
@@ -152,11 +152,37 @@ static void decompose_french_specific_ligatures(TokenizerResult *tr) {
 	}
 }
 
-static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang) {
+static void decompose_german_ligatures(TokenizerResult *tr) {
+	//German has no plain ligatures. But it does have ẞ/ß which are a bit complicated.
+	//When lowercase ß (U+00DF) is uppercased it changes to:
+	//  a: SS
+	//  b: SZ (sometimes, it's complicated…)
+	//  c: ẞ (U+1E9E) (since 2017)
+	//When uppercase ẞ (U+1E9E) is lowercased it turns into a plain ß.
+	//The ß letter is not used in Switzerland and Liechtenstein.
+	//So in titles with all-caps we may see:
+	//  GOTHAERSTRASSE, GOTHAERSTRASZE or GOTHAERSTRAẞE.
+	// When indexing we turn them to lowercase an index
+	//  gothaerstrasse, gothaerstrasze, or gothaestraße
+	//It is more efficient (space+time) to handle this with word variations at query time.
+	//  - When German/Austrian user search for gothaerstraße the word_variations should automatically
+	//    expand it to gothaerstrasse and possibly gothaerstrasze.
+	//  - When a Swiss searches for gothaerstrasse word_variations should automatically
+	//    expand it to gothaerstraße and possibly gothaerstrasze.
+	//
+	//note: Straße decomposes the ß to -ss-, so it is a bad example for -sz-. A better example would be
+	//"Maßstab", where the German orthography until 1980 required that ß was uppercased to SZ to avoid confusion.
+	//
+	//Bottom line: it doesn't appear we have to do anything special at indexing time.
+}
+
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang, const char * /*country_code*/);
 	if(lang==langEnglish)
 		decompose_english_specific_ligatures(tr);
 	else if(lang==langFrench)
 		decompose_french_specific_ligatures(tr);
+	else if(lang==langGerman)
+		decompose_german_ligatures(tr);
 }
 
 
