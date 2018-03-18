@@ -49,7 +49,18 @@ public:
 		return std::string(tr[i].token_start, tr[i].token_start+tr[i].token_len);
 	}
 	const TokenRange& token(int i) const { return tr[i]; }
+
+	bool has_token(const char *s) const {
+		size_t sl = strlen(s);
+		for(size_t i=0; i<tr.tokens.size(); i++) {
+			const auto &t = tr.tokens[i];
+			if(t.token_len==sl && memcmp(t.token_start,s,sl)==0)
+				return true;
+		}
+		return false;
+	}
 };
+
 
 
 int main(void) {
@@ -651,6 +662,106 @@ int main(void) {
 		assert(t.str(11)=="70270431");
 	}
 
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 04621 / 99 99 99 boo",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	{
+		T2 t("04621 / 99 99 99 boo",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	{
+		T2 t("foo 04621 / 99 99 99",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	{
+		T2 t("foo 04621 / 99 99 99 99999",langGerman,"de");
+		assert(!t.has_token("04621999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0461 9999-9999 boo",langGerman,"de");
+		assert(t.has_token("046199999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 04621-999999 boo",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 04621 999999 boo",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 04621 - 999 99 99 boo",langGerman,"de");
+		assert(t.has_token("046219999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 04621 9999-99 boo",langGerman,"de");
+		assert(t.has_token("04621999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 040/999.999-999 boo",langGerman,"de");
+		assert(t.has_token("040999999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 49(0)40-999999-999 boo",langGerman,"de");
+		assert(t.has_token("040999999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo (040) 99 99-99 99 boo",langGerman,"de");
+		assert(t.has_token("04099999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0341/999 99 99 boo",langGerman,"de");
+		assert(t.has_token("03419999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +49 89 9 999 999-9 boo",langGerman,"de");
+		assert(t.has_token("08999999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +49 (0)89/99 99 99-99 boo",langGerman,"de");
+		assert(t.has_token("08999999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +49 40 999999999 boo",langGerman,"de");
+		assert(t.has_token("040999999999"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 02 357 1113 1719 2327 boo",langGerman,"de");
+		assert(!t.has_token("02357111317192327"));
+		assert(!t.has_token("0235711131719"));
+		assert(!t.has_token("023571113171"));
+		assert(!t.has_token("02357111317"));
+	}
+	
+	
 	// subscript, phase 2
 	printf("Test line %d\n",__LINE__);
 	{
