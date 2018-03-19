@@ -27,8 +27,8 @@ class Pos {
 	// . filter out xml words [a,b] into plain text, stores into "f"
 	// . will not exceed "fend"
 	// . returns number of BYTES stored into "f"
-	int32_t filter(const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
-		       int32_t version = TITLEREC_CURRENT_VERSION);
+	unsigned filter(const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
+		        int32_t version = TITLEREC_CURRENT_VERSION);
 
 	// . the position in CHARACTERS of word i is given by m_pos[i]
 	// . this is NOT the byte position. you can have 2, 3 or even 4

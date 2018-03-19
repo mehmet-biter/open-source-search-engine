@@ -1306,7 +1306,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 	int32_t a = as[winner];
 	int32_t b = bs[winner];
 	// sanity check
-	if ( a < 0 || b > tr4->size() ) { g_process.shutdownAbort(true); }
+	if ( a < 0 || (unsigned)b > tr4->size() ) { g_process.shutdownAbort(true); }
 
 	// save the title
 	if ( ! copyTitle(tr4, a, b) ) {

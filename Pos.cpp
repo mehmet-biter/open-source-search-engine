@@ -46,7 +46,7 @@ static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
 	return ( *count > 0 );
 }
 
-int32_t Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
+unsigned Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
 	logTrace(g_conf.m_logTracePos, "BEGIN");
 
 	// save start point for filtering
@@ -89,7 +89,7 @@ int32_t Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addEl
 	if (version >= 122) { // TITLEREC_CURRENT_VERSION
 		int32_t maxWord = b;
 
-		if (maxWord == tr->size()) {
+		if ((unsigned)maxWord == tr->size()) {
 			maxWord -= 1;
 		}
 

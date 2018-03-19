@@ -894,12 +894,12 @@ static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
 	return (*count > 0);
 }
 
-static int32_t filterContent(TokenizerResult *tr, Pos *pp, char *buf, int32_t bufLen, int32_t minLength,
-			     int32_t maxLength, int32_t version) {
-	int32_t contentLen = 0;
+static int32_t filterContent(TokenizerResult *tr, Pos *pp, char *buf, int32_t bufLen, unsigned minLength,
+			     unsigned maxLength, int32_t version) {
+	unsigned contentLen = 0;
 
 	/// @todo ALC configurable maxNumWord so we can tweak this as needed
-	const int32_t maxNumWord = (maxLength * 2);
+	const unsigned maxNumWord = maxLength * 2;
 
 	if ( tr->size() > maxNumWord ) {
 		// ignore too long snippet
@@ -923,9 +923,9 @@ static int32_t filterContent(TokenizerResult *tr, Pos *pp, char *buf, int32_t bu
 	return contentLen;
 }
 
-bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
-						 int32_t minLength, int32_t maxLength, int32_t *contentLenPtr,
-						 bool ignoreExpandedIframe, nodeid_t expectedNodeId ) {
+bool Xml::getTagContent(const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
+			unsigned minLength, unsigned maxLength, int32_t *contentLenPtr,
+			bool ignoreExpandedIframe, nodeid_t expectedNodeId ) {
 	int32_t fieldNameLen = strlen( fieldName );
 	int32_t fieldContentLen = strlen(fieldContent);
 	int32_t contentLen = 0;

@@ -112,7 +112,7 @@ bool Highlight::highlightWords ( const TokenizerResult *tr, const Matches *m, co
 	int32_t backTagi = -1;
 	bool inTitle  = false;
 
-	for ( int32_t i = 0 ; i < tr->size(); i++ ) {
+	for ( int32_t i = 0 ; (size_t)i < tr->size(); i++ ) {
 		const auto &token = (*tr)[i];
 		// set word's info
 		bool endHead = false;

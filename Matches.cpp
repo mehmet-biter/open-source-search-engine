@@ -733,7 +733,7 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 }
 
 // . word #i in the doc matches slot #n in the hash table
-int32_t Matches::getNumWordsInMatch(const TokenizerResult *tr, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+int32_t Matches::getNumWordsInMatch(const TokenizerResult *tr, unsigned wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				    bool allowPunctInPhrase) {
 	// is it a two-word synonym?
 	if ( m_qtableFlags[n] & 0x08 ) {
@@ -753,7 +753,7 @@ int32_t Matches::getNumWordsInMatch(const TokenizerResult *tr, int32_t wn, int32
 	}
 
 	// save the first word in the doc that we match first
-	int32_t wn0 = wn;
+	unsigned wn0 = wn;
 
 	// CAUTION: the query "business development center" (in quotes)
 	// would match a doc with "business development" and 
@@ -767,7 +767,7 @@ int32_t Matches::getNumWordsInMatch(const TokenizerResult *tr, int32_t wn, int32
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;
 	int32_t count = 0;
-	int32_t nw    = tr->size();;
+	unsigned nw    = tr->size();;
 
 	// loop through all the quotes in the query and find
 	// which one we match, if any. we will have to advance the

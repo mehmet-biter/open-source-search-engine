@@ -106,7 +106,7 @@ void Summary::setSummary(const std::string &summary) {
 // - itemprop = "description"
 // - meta name = "og:description"
 // - meta name = "description"
-bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *titleBuf, int32_t titleBufLen ) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	// sanity check
@@ -165,7 +165,7 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *t
 }
 
 // returns false and sets g_errno on error
-bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, const Query *q, int32_t maxSummaryLen,
+bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, const Query *q, unsigned maxSummaryLen,
                          int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, const Url *f,
                          const Matches *matches, const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
@@ -440,7 +440,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		swbit_t *bb = maxm->m_bits->m_swbits;
 
 		// this should be impossible
-		if ( maxa > tr->size() || maxb > tr->size() ) {
+		if ( maxa > (int32_t)tr->size() || maxb > (int32_t)tr->size() ) {
 			log ( LOG_WARN,"query: summary starts or ends after "
 			      "document is over! maxa=%" PRId32" maxb=%" PRId32" nw=%zu",
 			      maxa, maxb, tr->size() );
@@ -1033,7 +1033,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 }
 
 // get summary when no search terms could be found
-bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, int32_t maxSummaryLen) {
+bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, unsigned maxSummaryLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	char *p    = m_summary;
@@ -1060,7 +1060,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 		sp = sections->m_sectionPtrs;
 	}
 
-	for (int32_t i = 0; i < tr->size(); i++) {
+	for (size_t i = 0; i < tr->size(); i++) {
 		const auto &token = (*tr)[i];
 		// skip if in bad section
 		if ( sp && (sp[i]->m_flags & badFlags) ) {

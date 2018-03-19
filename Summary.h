@@ -43,10 +43,10 @@ public:
 	void setSummary(const std::string &summary);
 
 	bool setSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, const Query *q,
-	                int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
+	                unsigned maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
 	                const Url *f, const Matches *matches, const char *titleBuf, int32_t titleBufLen);
 
-	bool setSummaryFromTags(Xml *xml, int32_t maxSummaryLen, const char *titleBuf, int32_t titleBufLen);
+	bool setSummaryFromTags(Xml *xml, unsigned maxSummaryLen, const char *titleBuf, int32_t titleBufLen);
 
 	char       *getSummary();
 	const char *getSummary() const;
@@ -58,7 +58,7 @@ public:
 private:
 	bool verifySummary(const char *titleBuf, int32_t titleBufLen);
 
-	bool getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, int32_t maxSummaryLen);
+	bool getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const Sections *sections, Pos *pos, unsigned maxSummaryLen);
 
 	int64_t getBestWindow (const Matches *matches, int32_t mn, int32_t *lasta, int32_t *besta, int32_t *bestb,
 	                       char *gotIt, char *retired, int32_t maxExcerptLen );

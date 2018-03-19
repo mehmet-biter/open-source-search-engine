@@ -105,7 +105,7 @@ class Matches {
 private:
 	void reset2();
 	bool isMatchableTerm(const QueryTerm *qt) const;
-	int32_t getNumWordsInMatch(const TokenizerResult *tr, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+	int32_t getNumWordsInMatch(const TokenizerResult *tr, unsigned wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				   bool allowPunctInPhrase = true);
 
 	// . 1-1 with Query::m_qwords[] array of QWords
