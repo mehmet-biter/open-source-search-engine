@@ -75,7 +75,6 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 			size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
 			char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
 			memcpy(s,new_token_utf8,new_token_utf8_len);
-			s[new_token_utf8_len] = '\0';
 			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
 		}
 	}
@@ -249,7 +248,6 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 			size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
 			char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
 			memcpy(s,new_token_utf8,new_token_utf8_len);
-			s[new_token_utf8_len] = '\0';
 			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
 		}
 	}
