@@ -6,6 +6,7 @@
 #include "ligature_decomposition.h"
 #include "tokenizer_util.h"
 #include <string.h>
+#include <algorithm>
 
 
 static const size_t max_word_codepoints = 128; //longest word we will consider working on
@@ -19,6 +20,7 @@ static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const 
 static void tokenize_superscript(TokenizerResult *tr);
 static void tokenize_subscript(TokenizerResult *tr);
 static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code);
+static void remove_duplicated_tokens(TokenizerResult *tr, size_t org_token_count);
 
 
 //pass 2 tokenizer / language-dependent tokenization
@@ -28,6 +30,7 @@ static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *cou
 //don't know the locale with certainty, so we take the language as a hint.
 //Also joins words separated with hyphen (all 10 of them)
 void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerResult *tr) {
+	size_t org_token_count = tr->tokens.size();
 	if(!country_code)
 		country_code = "";
 	decompose_stylistic_ligatures(tr);
@@ -43,6 +46,27 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	//TODO: recognize_numbers(tr,lang,country_code)
 	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
 	rewrite_ampersands(tr,lang,country_code);
+	
+	//The phase-2 sub-rules can have produced duplicated tokens. Eg. the hyphenation joining and the telephone number recognition may both have
+	//joined  "111-222-333" into a single token. Remove the duplicates.
+	remove_duplicated_tokens(tr,org_token_count);
+}
+
+
+static void remove_duplicated_tokens(TokenizerResult *tr, size_t org_token_count) {
+	auto &tokens = tr->tokens;
+	std::sort(tokens.begin()+org_token_count, tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
+		return tr0.start_pos < tr1.start_pos ||
+		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
+	});
+
+	for(size_t i=org_token_count; i+1<tokens.size(); i++) {
+		if(tokens[i].start_pos == tokens[i+1].start_pos &&
+		   tokens[i].end_pos == tokens[i+1].end_pos &&
+		   tokens[i].token_len == tokens[i+1].token_len &&
+		   memcmp(tokens[i].token_start,tokens[i+1].token_start,tokens[i].token_len)==0)
+			tokens.erase(tokens.begin()+i+1);
+	}
 }
 
 

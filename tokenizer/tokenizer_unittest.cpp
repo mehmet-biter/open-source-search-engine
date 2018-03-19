@@ -609,9 +609,12 @@ int main(void) {
 	{
 		T2 t("Newcastle-Upon-Tyne",langUnknown);
 		assert(t.token_count()==8);
-		assert(t.str(5)=="NewcastleUpon");
-		assert(t.str(6)=="UponTyne");
-		assert(t.str(7)=="NewcastleUponTyne");
+		assert(t.has_token("Newcastle"));
+		assert(t.has_token("Upon"));
+		assert(t.has_token("Tyne"));
+		assert(t.has_token("NewcastleUpon"));
+		assert(t.has_token("UponTyne"));
+		assert(t.has_token("NewcastleUponTyne"));
 	}
 	
 	// phone numbers
@@ -801,9 +804,9 @@ int main(void) {
 		assert(t.str(0)=="E");
 		assert(t.str(1)=="=");
 		assert(t.str(2)=="mc²");
-		assert(t.str(3)=="mc2");
-		assert(t.str(4)=="mc");
-		assert(t.str(5)=="2");
+		assert(t.has_token("mc2"));
+		assert(t.has_token("mc"));
+		assert(t.has_token("2"));
 	}
 	printf("Test line %d\n",__LINE__);
 	{
@@ -814,9 +817,9 @@ int main(void) {
 		assert(t.str(1)=="*=");
 		assert(t.str(2)=="σ");
 		assert(t.str(3)=="T⁴");
-		assert(t.str(4)=="T4");
-		assert(t.str(5)=="T");
-		assert(t.str(6)=="4");
+		assert(t.has_token("T4"));
+		assert(t.has_token("T"));
+		assert(t.has_token("4"));
 	}
 	
 	//ampersand
