@@ -5,7 +5,7 @@
 #include <cstdio>
 
 #include "Xml.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Phrases.h"
 #include "Sections.h"
 #include "Pos.h"
@@ -22,17 +22,17 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	Xml xml;
 	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, CT_HTML));
 
-	Words words;
-	ASSERT_TRUE(words.set(&xml));
+	TokenizerResult tr;
+	xml_tokenizer_phase_1(&xml,&tr);
 
 	Bits bits;
-	ASSERT_TRUE(bits.set(&words));
+	ASSERT_TRUE(bits.set(&tr));
 
 	Url url;
 	url.set(urlStr);
 
 	Sections sections;
-	ASSERT_TRUE(sections.set(&words, &bits, &url, CT_HTML));
+	ASSERT_TRUE(sections.set(&tr, &bits, &url, CT_HTML));
 
 	Query query;
 	ASSERT_TRUE(query.set(queryStr, langEnglish, 1.0, 1.0, nullptr, false, true, ABS_MAX_QUERY_TERMS));
@@ -42,22 +42,22 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	linkInfo.m_lisize = sizeof(LinkInfo);
 
 	Title title;
-	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish));
+	ASSERT_TRUE(title.setTitle(&xml, &tr, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish));
 
 	Pos pos;
-	ASSERT_TRUE(pos.set(&words));
+	ASSERT_TRUE(pos.set(&tr));
 
 	Bits bitsForSummary;
-	ASSERT_TRUE(bitsForSummary.setForSummary(&words));
+	ASSERT_TRUE(bitsForSummary.setForSummary(&tr));
 
 	Phrases phrases;
-	ASSERT_TRUE(phrases.set(&words, &bits));
+	ASSERT_TRUE(phrases.set(tr, bits));
 
 	Matches matches;
 	matches.setQuery(&query);
-	ASSERT_TRUE(matches.set(&words, &phrases, &sections, &bitsForSummary, &pos, &xml, &title, &url, &linkInfo));
+	ASSERT_TRUE(matches.set(&tr, &phrases, &sections, &bitsForSummary, &pos, &xml, &title, &url, &linkInfo));
 
-	summary.setSummary(&xml, &words, &sections, &pos, &query, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
+	summary.setSummary(&xml, &tr, &sections, &pos, &query, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
 }
 
 TEST( SummaryTest, StripSamePunct ) {

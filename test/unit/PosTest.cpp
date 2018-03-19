@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "Pos.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Xml.h"
 #include "HttpMime.h"
 
@@ -25,13 +25,13 @@ TEST( PosTest, FilterAllCaps ) {
 
 	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
 	for ( size_t i = 0; i < input_len; i++ ) {
-		Words words;
+		TokenizerResult tr;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
+		plain_tokenizer_phase_1(input_strs[i], strlen(input_strs[i]), &tr);
 
-		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
+		int32_t len = pos.filter( &tr, 0, tr.size(), false, buf, buf + MAX_BUF_SIZE );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
@@ -106,13 +106,13 @@ TEST( PosTest, FilterEnding ) {
 
 	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
 	for ( size_t i = 0; i < input_len; i++ ) {
-		Words words;
+		TokenizerResult tr;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
+		plain_tokenizer_phase_1(input_strs[i], strlen(input_strs[i]), &tr);
 
-		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+		int32_t len = pos.filter( &tr, 0, tr.size(), true, buf, buf + 180 );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
@@ -136,7 +136,7 @@ TEST( PosTest, FilterTags ) {
 	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
 	for ( size_t i = 0; i < input_len; i++ ) {
 		Xml xml;
-		Words words;
+		TokenizerResult tr;
 		Pos pos;
 		char input[MAX_BUF_SIZE];
 		char buf[MAX_BUF_SIZE];
@@ -144,9 +144,9 @@ TEST( PosTest, FilterTags ) {
 		std::sprintf(input, input_strs[i]);
 
 		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, CT_HTML ) );
-		ASSERT_TRUE( words.set( &xml ) );
+		xml_tokenizer_phase_1(&xml, &tr);
 
-		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
+		int32_t len = pos.filter( &tr, 0, tr.size(), false, buf, buf + MAX_BUF_SIZE );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
@@ -178,13 +178,13 @@ TEST( PosTest, FilterSamePunct ) {
 
 	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
 	for ( size_t i = 0; i < input_len; i++ ) {
-		Words words;
+		TokenizerResult tr;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
+		plain_tokenizer_phase_1(input_strs[i], strlen(input_strs[i]), &tr);
 
-		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+		int32_t len = pos.filter( &tr, 0, tr.size(), true, buf, buf + 180 );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
@@ -219,13 +219,13 @@ TEST( PosTest, DecodeHTMLEntities ) {
 
 	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
 	for ( size_t i = 0; i < input_len; i++ ) {
-		Words words;
+		TokenizerResult tr;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]) ) );
+		plain_tokenizer_phase_1(input_strs[i], strlen(input_strs[i]), &tr);
 
-		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+		int32_t len = pos.filter( &tr, 0, tr.size(), true, buf, buf + 180 );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );
@@ -233,15 +233,15 @@ TEST( PosTest, DecodeHTMLEntities ) {
 }
 
 TEST(PosTest, SegFaultDotPrevChar) {
-	Words words;
+	TokenizerResult tr;
 	Pos pos;
 	char buf[MAX_BUF_SIZE];
 
 	const char *input_str = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . ...";
 
-	ASSERT_TRUE( words.set( const_cast<char*>(input_str) ) );
+	plain_tokenizer_phase_1(input_str, strlen(input_str), &tr);
 
-	int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+	int32_t len = pos.filter( &tr, 0, tr.size(), true, buf, buf + 180 );
 
 	EXPECT_EQ( 0, len );
 }
