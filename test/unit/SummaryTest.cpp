@@ -82,7 +82,11 @@ TEST( SummaryTest, StripSamePunct ) {
 	Summary summary;
 	generateSummary(summary, input, "jesse budge", "http://www.example.com/");
 
-	EXPECT_STREQ("CANDRA BUDGE | $22.00 | … | JESSE NICLEY | $34.00 …", summary.getSummary());
+	ASSERT_TRUE(strstr(summary.getSummary(),"JESSE")!=0);
+	ASSERT_TRUE(strstr(summary.getSummary(),"BUDGE")!=0);
+	ASSERT_TRUE(strstr(summary.getSummary(),"$22.00")!=0);
+	ASSERT_TRUE(strstr(summary.getSummary(),"…")!=0);       //we expect the summary to truncate some of the document
+	ASSERT_TRUE(strstr(summary.getSummary(),"-----")==0);   //and not include the dashes
 }
 
 TEST( SummaryTest, DISABLED_BUGNoEllipsisAdded ) {
