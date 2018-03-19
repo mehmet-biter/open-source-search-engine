@@ -11,7 +11,7 @@
 static const size_t max_word_codepoints = 128; //longest word we will consider working on
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
-static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang);
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
@@ -31,7 +31,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	if(!country_code)
 		country_code = "";
 	decompose_stylistic_ligatures(tr);
-	decompose_language_specific_ligatures(tr,lang);
+	decompose_language_specific_ligatures(tr,lang,country_code);
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
@@ -151,11 +151,37 @@ static void decompose_french_specific_ligatures(TokenizerResult *tr) {
 	}
 }
 
-static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang) {
+static void decompose_german_ligatures(TokenizerResult *tr) {
+	//German has no plain ligatures. But it does have ẞ/ß which are a bit complicated.
+	//When lowercase ß (U+00DF) is uppercased it changes to:
+	//  a: SS
+	//  b: SZ (sometimes, it's complicated…)
+	//  c: ẞ (U+1E9E) (since 2017)
+	//When uppercase ẞ (U+1E9E) is lowercased it turns into a plain ß.
+	//The ß letter is not used in Switzerland and Liechtenstein.
+	//So in titles with all-caps we may see:
+	//  GOTHAERSTRASSE, GOTHAERSTRASZE or GOTHAERSTRAẞE.
+	// When indexing we turn them to lowercase an index
+	//  gothaerstrasse, gothaerstrasze, or gothaestraße
+	//It is more efficient (space+time) to handle this with word variations at query time.
+	//  - When German/Austrian user search for gothaerstraße the word_variations should automatically
+	//    expand it to gothaerstrasse and possibly gothaerstrasze.
+	//  - When a Swiss searches for gothaerstrasse word_variations should automatically
+	//    expand it to gothaerstraße and possibly gothaerstrasze.
+	//
+	//note: Straße decomposes the ß to -ss-, so it is a bad example for -sz-. A better example would be
+	//"Maßstab", where the German orthography until 1980 required that ß was uppercased to SZ to avoid confusion.
+	//
+	//Bottom line: it doesn't appear we have to do anything special at indexing time.
+}
+
+static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang, const char * /*country_code*/) {
 	if(lang==langEnglish)
 		decompose_english_specific_ligatures(tr);
 	else if(lang==langFrench)
 		decompose_french_specific_ligatures(tr);
+	else if(lang==langGerman)
+		decompose_german_ligatures(tr);
 }
 
 
@@ -189,7 +215,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 			continue;
 		UChar32 uc_org_token[max_word_codepoints];
 		if(token.token_len > sizeof(uc_org_token)/4)
-			continue; //Don't decompose ligatures in words longer than <max_word_codepoints> characters
+			continue; //Don't remove diacritics in words longer than <max_word_codepoints> characters
 		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
 		if(org_codepoints<=0)
 			continue; //decode error or empty token
@@ -411,11 +437,14 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 // Telephone number recognition
 
 static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
+static void recognize_telephone_numbers_germany(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
 	   lang==langNorwegian || strcmp(country_code,"no")==0)
 		recognize_telephone_numbers_denmark_norway(tr);
+	else if(strcmp(country_code,"de")==0)
+		recognize_telephone_numbers_germany(tr);
 }
 
 static bool is_ascii_digits(const TokenRange &tr) {
@@ -504,6 +533,127 @@ static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr) {
 	}
 }
 
+static void recognize_telephone_numbers_germany(TokenizerResult *tr) {
+	//Semi-open numbering plan, 10 or 11 digits, including areacode
+	//Areacodes can be 2-5 digits and subscripber numbers can be up to 8
+	//Recommended formats:
+	//	(0xx) xxxx-xxxx
+	//	(0xxx) xxxx-xxxx
+	//	(0xxxx) xxx-xxxx
+	//	(03xxxx) xx-xxxx
+	//But actually:
+	//	+49 4621 99999
+	//	+49 4621 999999
+	//	04621 / 99 99 99
+	//	0461 9999-9999
+	//	04621-999999
+	//	04621 999999
+	//	04621 - 999 99 99
+	//	040/999.999-999
+	//	49(0)40-999999-999
+	//	(040) 99 99-99 99
+	//	0341/999 99 99
+	//	+49 89 9 999 999-9
+	//	+49 (0)89/99 99 99-99
+	//	+49 40 999999999
+	//So we look for a sequence of alfanum-alldigits tokens separated by space, slash, dash, dot and parentheses, yielding 10 or 11 digits. Terminated by non-digit alfanum or eof
+	//The first token must start with a zero, or the preceeding alfanum token must be "+49"
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i<org_token_count; i++) {
+		const auto &t0 = (*tr)[i];
+		if(!t0.is_alfanum)
+			continue;
+		if(!is_ascii_digits(t0))
+			continue;
+		if(t0.token_len>11)
+			continue;
+		if(t0.token_len==1 && t0.token_start[0]!='0')
+			continue; //single-digit never seen to start a number
+		const TokenRange *preceeding_alfanum_token = NULL;
+		size_t preceeding_alfanum_token_idx=0;
+		for(size_t j=i; j!=0; j--) {
+			if((*tr)[j-1].is_alfanum) {
+				preceeding_alfanum_token = &((*tr)[j-1]);
+				preceeding_alfanum_token_idx = j-1;
+				break;
+			}
+			if((*tr)[j-1].nodeid)
+				break; //an html tag also breaks
+		}
+		bool could_start_phone_number = true;
+		bool preceeded_by_plus_49 = false;
+		if(preceeding_alfanum_token) {
+			if(t0.token_start[0]=='0') {
+				//preceeding alfanum token must be either non-digit or "49"
+				if(preceeding_alfanum_token->is_alfanum) {
+					if(is_ascii_digits(*preceeding_alfanum_token) &&
+					   (preceeding_alfanum_token->token_len!=2 || memcmp(preceeding_alfanum_token->token_start,"49",2)!=0))
+						could_start_phone_number = false;
+				}
+			} else {
+				//preceeding alfanum token must be (+)"49"
+				if(preceeding_alfanum_token->is_alfanum) {
+					if(!is_ascii_digits(*preceeding_alfanum_token) ||
+					   preceeding_alfanum_token->token_len!=2 || memcmp(preceeding_alfanum_token->token_start,"49",2)!=0)
+						could_start_phone_number = false;
+				}
+			}
+			if(preceeding_alfanum_token->token_len==2 && memcmp(preceeding_alfanum_token->token_start,"49",2)==0) {
+				//if the pre-preceeding token ends with '+' then good
+				if(preceeding_alfanum_token_idx>0) {
+					const auto &ppt = (*tr)[preceeding_alfanum_token_idx-1];
+					if(ppt.token_len>0 && ppt.token_end()[-1]=='+')
+						preceeded_by_plus_49 = true;
+				}
+			}
+		}
+		if(!could_start_phone_number)
+			continue;
+		//ok, token[i] could be the start of a phone number
+		//scan forward collecting all-digit tokens.
+		size_t j;
+		size_t collected_digit_count=0;
+		for(j=i; j<org_token_count && j<i+12; j++) {
+			const auto &t = (*tr)[j];
+			if(t.is_alfanum) {
+				if(is_ascii_digits(t))
+					collected_digit_count += t.token_len;
+				else
+					break;
+				if(collected_digit_count>12)
+					break;
+			} else if(!t.nodeid) {
+				for(size_t k=0; k<t.token_len; k++)
+					if(t.token_start[k]!=' ' &&
+					   t.token_start[k]!='/' &&
+					   t.token_start[k]!='-' &&
+					   t.token_start[k]!='(' &&
+					   t.token_start[k]!=')')
+						break;
+			} else {
+				//html tag
+				break;
+			}
+		}
+		if(collected_digit_count<10 || collected_digit_count>12)
+			continue;
+		if(collected_digit_count==12 && t0.token_start[0]!='0')
+			continue;
+		char *s = (char*)tr->egstack.alloc(collected_digit_count+1);
+		char *p=s;
+		if(t0.token_start[0]!='0' && preceeded_by_plus_49)
+			*p++ = '0';
+		for(size_t k=i; k<j; k++) {
+			const auto &t = (*tr)[k];
+			if(t.is_alfanum) {
+				memcpy(p,t.token_start,t.token_len);
+				p += t.token_len;
+			}
+		}
+		tr->tokens.emplace_back(t0.start_pos, (*tr)[j-1].end_pos, s, p-s, true);
+	}
+	
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Superscript and subscript
