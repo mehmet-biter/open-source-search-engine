@@ -2468,10 +2468,7 @@ bool Sections::setMenus ( ) {
 	int64_t h_copyright = hash64n("copyright");
 	// copyright check
 	// the copyright symbol in utf8 (see Entities.cpp for the code)
-	unsigned char copy[3];
-	copy[0] = 0xc2;
-	copy[1] = 0xa9;
-	copy[2] = 0x00;
+	static const char copy[] = "©";
 
 	// scan all years, lists and ranges of years, and look for
 	// a preceeding copyright sign. mark such years as DF_COPYRIGHT
@@ -2484,7 +2481,7 @@ bool Sections::setMenus ( ) {
 			if ( m_wids[i] != h_copyright ) continue;
 		}
 		// must have copyright sign in it i guess
-		else if ( ! gb_strncasestr(m_wptrs[i],m_wlens[i],(char*)copy)) 
+		else if ( ! gb_strncasestr(m_wptrs[i],m_wlens[i],copy))
 			continue;
 		// mark section as copyright section then
 		Section *sp = m_sectionPtrs[i];
