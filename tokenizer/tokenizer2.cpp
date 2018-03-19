@@ -20,6 +20,7 @@ static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const 
 static void tokenize_superscript(TokenizerResult *tr);
 static void tokenize_subscript(TokenizerResult *tr);
 static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code);
+static void recognize_cplusplus_and_other(TokenizerResult *tr);
 static void remove_duplicated_tokens(TokenizerResult *tr, size_t org_token_count);
 
 
@@ -46,6 +47,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	//TODO: recognize_numbers(tr,lang,country_code)
 	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
 	rewrite_ampersands(tr,lang,country_code);
+	recognize_cplusplus_and_other(tr);
 	
 	//The phase-2 sub-rules can have produced duplicated tokens. Eg. the hyphenation joining and the telephone number recognition may both have
 	//joined  "111-222-333" into a single token. Remove the duplicates.
@@ -911,4 +913,48 @@ static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, 
 			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,ampersand_word_len, true);
 		}
 	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Oddballs
+
+static void recognize_alfanum_nonalfanum_pair(TokenizerResult *tr, const char *tokenstr0, const char *tokenstr1, const char *replacement_token) {
+	size_t tokenstr0_len = strlen(tokenstr0);
+	size_t tokenstr1_len = strlen(tokenstr1);
+	size_t rlen = strlen(replacement_token);
+	for(size_t i=0; i+1<tr->size(); i++) {
+		const auto &t0 = (*tr)[i];
+		const auto &t1 = (*tr)[i+1];
+		if(t0.is_alfanum && !t1.is_alfanum && !t1.nodeid &&
+		   t0.token_len==tokenstr0_len && t1.token_len>=tokenstr1_len &&
+		   memcmp(t0.token_start,tokenstr0,tokenstr0_len)==0 && memcmp(t1.token_start,tokenstr1,tokenstr1_len)==0)
+		{
+			//now check that t1 after the tokenstr1 prefix has only whitespace and and punctuation
+			//(todo): check punctuation/whitespace correctly For half-alfanum tokens as "C++"
+			if(t1.token_len==tokenstr1_len ||
+			   t1.token_start[tokenstr1_len]==' ' || t1.token_start[tokenstr1_len]=='.' || t1.token_start[tokenstr1_len]==',')
+			{
+				char *s = (char*)tr->egstack.alloc(rlen);
+				memcpy(s,replacement_token,rlen);
+				tr->tokens.emplace_back(t0.start_pos,t1.start_pos+tokenstr1_len, s,rlen, true);
+			}
+		}
+	}
+}
+
+static void recognize_cplusplus_and_other(TokenizerResult *tr) {
+	//Recognize some alfanum+nonalfanum token pairs, such as:
+	//	C++	programming language
+	//	F#	programming language
+	//	C#	programming language
+	//	A*	graph search algorithm
+	//We do not recognize operators in programming languages (eg a+=7) or similar. That would need a more dedicated instance for such indexing.
+	recognize_alfanum_nonalfanum_pair(tr, "C","++", "C++");
+	recognize_alfanum_nonalfanum_pair(tr, "c","++", "C++");
+	recognize_alfanum_nonalfanum_pair(tr, "F","#", "F#");
+	recognize_alfanum_nonalfanum_pair(tr, "f","#", "f#");
+	recognize_alfanum_nonalfanum_pair(tr, "C","#", "C#");
+	recognize_alfanum_nonalfanum_pair(tr, "c","#", "c#");
+	recognize_alfanum_nonalfanum_pair(tr, "A","*", "A*");
 }

@@ -844,5 +844,14 @@ int main(void) {
 		assert(t.str(3)=="og");
 	}
 	
+	//oddballs
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("The C++ programming language can be tricky. As can be F# and the A* algorithm",langUnknown);
+		assert(t.has_token("C"));
+		assert(t.has_token("C++"));
+		assert(t.has_token("F#"));
+		assert(t.has_token("A*"));
+	}
 	return 0;
 }
