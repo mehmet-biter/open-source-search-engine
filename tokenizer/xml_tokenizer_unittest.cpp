@@ -121,18 +121,7 @@ int main(void) {
 		assert(has_token(tr,"française"));
 	}
 	
-	{
-		static const char html[] = "<html><title>yyy</title><body>cd&shy;rom</body></html>";
-		Xml xml;
-		assert(xml.set((char*)html,sizeof(html)-1, TITLEREC_CURRENT_VERSION, CT_HTML));
-		TokenizerResult tr;
-		xml_tokenizer_phase_1(&xml,&tr);
-		assert(!tr.tokens.empty());
-		assert(has_token(tr,"yyy"));
-		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
-		assert(has_token(tr,"cdrom"));
-	}
-	
+	//soft-hyphen. Special because it is left as-is
 	{
 		static const char html[] = "<html><title>yyy</title>cd­rom<body></body></html>";
 		Xml xml;
@@ -142,6 +131,6 @@ int main(void) {
 		assert(!tr.tokens.empty());
 		assert(has_token(tr,"yyy"));
 		xml_tokenizer_phase_2(&xml,langUnknown,0,&tr);
-		assert(has_token(tr,"cdrom"));
+		assert(has_token(tr,"cd­rom"));
 	}
 }
