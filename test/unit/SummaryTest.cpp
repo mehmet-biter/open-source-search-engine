@@ -24,6 +24,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 
 	TokenizerResult tr;
 	xml_tokenizer_phase_1(&xml,&tr);
+	//calculate_tokens_hashes(&tr); //not needed so far
 
 	Bits bits;
 	ASSERT_TRUE(bits.set(&tr));
