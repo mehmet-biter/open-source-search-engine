@@ -1047,7 +1047,23 @@ int32_t SpiderColl::getNextIpFromWaitingTree() {
 	}
 }
 
-void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5) {
+void SpiderColl::getSpiderdbWaitingTreeListWrapper(void *state) {
+	SpiderColl *sc = static_cast<SpiderColl*>(state);
+
+	if (!SpiderdbRdbSqliteBridge::getFirstIps(sc->m_cr->m_collnum,
+	                                          &sc->m_waitingTreeList,
+	                                          Spiderdb::getFirstIp(&sc->m_waitingTreeNextKey),
+	                                          -1,
+	                                          SR_READ_SIZE)) {
+		if (!g_errno) {
+			g_errno = EIO; //imprecise
+			logTrace(g_conf.m_logTraceSpider, "END, got io-error from sqlite");
+			return;
+		}
+	}
+}
+
+void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, job_exit_t exit_type) {
 	SpiderColl *THIS = (SpiderColl *)state;
 
 	// did our collection rec get deleted? since we were doing a read
@@ -1158,19 +1174,17 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		    
 		// flag it
 		m_gettingWaitingTreeList = true;
-		// make state
-		//int32_t state2 = (int32_t)m_cr->m_collnum;
+
 		// read the list from local disk
-		if (!SpiderdbRdbSqliteBridge::getFirstIps(m_cr->m_collnum,
-		                                          &m_waitingTreeList,
-		                                          Spiderdb::getFirstIp(&m_waitingTreeNextKey),
-		                                          -1,
-		                                          SR_READ_SIZE)) {
-			if(!g_errno) {
-				g_errno = EIO; //imprecise
-				logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
-				return;
-			}
+		if (g_jobScheduler.submit(getSpiderdbWaitingTreeListWrapper, gotSpiderdbWaitingTreeListWrapper, this, thread_type_spider_read, 0)) {
+			return;
+		}
+
+		// unable to submit job
+		getSpiderdbWaitingTreeListWrapper(this);
+
+		if (g_errno) {
+			return;
 		}
 	}
 
@@ -1217,7 +1231,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// cast it
 		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(rec);
 		// get first ip
-		int32_t firstIp = sreq->m_firstIp;
+		int32_t firstIp = Spiderdb::getFirstIp(&sreq->m_key);
 
 		// if same as last, skip it
 		if ( firstIp == lastOne ) 
@@ -1632,8 +1646,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 }
 
-
-
 ///////////////////
 //
 // KEYSTONE FUNCTION
@@ -1861,6 +1873,43 @@ bool SpiderColl::evalIpLoop ( ) {
 }
 
 
+void SpiderColl::getSpiderdbListWrapper(void *state) {
+	SpiderColl *sc = static_cast<SpiderColl*>(state);
+
+	if(!SpiderdbRdbSqliteBridge::getList(sc->m_cr->m_collnum,
+	                                     &sc->m_list,
+	                                     sc->m_nextKey,
+	                                     sc->m_endKey,
+	                                     SR_READ_SIZE)) {
+		if(!g_errno) {
+			g_errno = EIO; //imprecise
+		}
+		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+		return;
+	}
+}
+
+void SpiderColl::gotSpiderdbListWrapper(void *state, job_exit_t exit_type) {
+	SpiderColl *THIS = (SpiderColl *)state;
+
+	// are we trying to exit? some firstip lists can be quite long, so
+	// terminate here so all threads can return and we can exit properly
+	if (g_process.isShuttingDown()) {
+		return;
+	}
+
+	// return if that blocked
+	if (!THIS->evalIpLoop()) {
+		return;
+	}
+
+	// we are done, re-entry popuatedoledb
+	THIS->m_isPopulatingDoledb = false;
+
+	// gotta set m_isPopulatingDoledb to false lest it won't work
+	THIS->populateDoledbFromWaitingTree();
+}
+
 
 // . this is ONLY CALLED from evalIpLoop() above
 // . returns false if blocked, true otherwise
@@ -1937,17 +1986,12 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	//   end up timing out the round. so try checking for
 	//   m_gettingList in spiderDoledUrls() and setting
 	//   m_lastSpiderCouldLaunch
-	if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
-					     &m_list,
-					     m_nextKey,
-					     m_endKey,
-					     SR_READ_SIZE))
-	{
-		if(!g_errno)
-			g_errno = EIO; //imprecise
-		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
-		return true;
+	if (g_jobScheduler.submit(getSpiderdbListWrapper, gotSpiderdbListWrapper, this, thread_type_spider_read, 0)) {
+		return false;
 	}
+
+	// unable to submit job
+	getSpiderdbListWrapper(this);
 
 	// note its return
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
