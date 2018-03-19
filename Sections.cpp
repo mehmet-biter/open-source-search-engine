@@ -1789,7 +1789,7 @@ bool Sections::addSentenceSections ( ) {
 				//if ( pp->m_a <= senta ) break;
 			}
 			// mark it
-			if ( (*m_tr)[k].token_hash ) lastk = k;
+			if ( (*m_tr)[k].is_alfanum ) lastk = k;
 			// ok, keep chugging
 			continue;
 
