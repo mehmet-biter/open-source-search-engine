@@ -148,14 +148,15 @@ static void decompose_english_specific_ligatures(TokenizerResult *tr) {
 		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
 		if(org_codepoints<=0)
 			continue; //decode error or empty token
-		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token); //LATIN CAPITAL LIGATURE OE
-		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O'},1,     tr,token); //LATIN CAPITAL LIGATURE OE
-		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token); //LATIN SMALL LIGATURE OE
-		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o'},1,     tr,token); //LATIN SMALL LIGATURE OE
-		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'A','E'},2, tr,token); //LATIN CAPITAL LETTER AE
-		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'E'},1,     tr,token); //LATIN CAPITAL LETTER AE
-		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'a','e'},2, tr,token); //LATIN SMALL LETTER AE
-		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'e'},1,     tr,token); //LATIN SMALL LETTER AE
+		const auto org_token_copy = token; //need a copy becahse push_back may reallocate
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,org_token_copy); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O'},1,     tr,org_token_copy); //LATIN CAPITAL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,org_token_copy); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o'},1,     tr,org_token_copy); //LATIN SMALL LIGATURE OE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'A','E'},2, tr,org_token_copy); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00C6, (const UChar32[]){'E'},1,     tr,org_token_copy); //LATIN CAPITAL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'a','e'},2, tr,org_token_copy); //LATIN SMALL LETTER AE
+		replace_ligature(uc_org_token,org_codepoints, 0x00E6, (const UChar32[]){'e'},1,     tr,org_token_copy); //LATIN SMALL LETTER AE
 	}
 }
 
@@ -172,12 +173,13 @@ static void decompose_french_specific_ligatures(TokenizerResult *tr) {
 		int org_codepoints = decode_utf8_string(token.token_start,token.token_len,uc_org_token);
 		if(org_codepoints<=0)
 			continue; //decode error or empty token
-		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,token);
-		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,token);
+		const auto org_token_copy = token; //need a copy becahse push_back may reallocate
+		replace_ligature(uc_org_token,org_codepoints, 0x0152, (const UChar32[]){'O','E'},2, tr,org_token_copy);
+		replace_ligature(uc_org_token,org_codepoints, 0x0153, (const UChar32[]){'o','e'},2, tr,org_token_copy);
 	}
 }
 
-static void decompose_german_ligatures(TokenizerResult *tr) {
+static void decompose_german_ligatures(TokenizerResult * /*tr*/) {
 	//German has no plain ligatures. But it does have ẞ/ß which are a bit complicated.
 	//When lowercase ß (U+00DF) is uppercased it changes to:
 	//  a: SS
@@ -757,17 +759,18 @@ static void tokenize_superscript(TokenizerResult *tr) {
 			}
 		}
 		if(any_changed) {
+			const auto org_token_copy = t; //need copy because emplace_back may realloc
 			char *s = (char*)tr->egstack.alloc(ucs*4);
 			size_t sl = encode_utf8_string(new_uc,ucs,s);
-			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, false, true);
+			tr->tokens.emplace_back(org_token_copy.start_pos,org_token_copy.end_pos, s,sl, false, true);
 			if(num_changed==1 && change_pos==ucs-1) {
 				//footnote special (and spanish/portuguese ordinal)
 				s = (char*)tr->egstack.alloc((ucs-1)*4);
 				sl = encode_utf8_string(new_uc,ucs-1,s);
-				tr->tokens.emplace_back(t.start_pos,t.start_pos+sl, s,sl, false, true);
+				tr->tokens.emplace_back(org_token_copy.start_pos,org_token_copy.start_pos+sl, s,sl, false, true);
 				s = (char*)tr->egstack.alloc(4);
 				sl = encode_utf8_string(new_uc+ucs-1,1,s);
-				tr->tokens.emplace_back(t.end_pos-sl,t.end_pos, s,sl, false, true);
+				tr->tokens.emplace_back(org_token_copy.end_pos-sl,org_token_copy.end_pos, s,sl, false, true);
 			}
 		}
 	}

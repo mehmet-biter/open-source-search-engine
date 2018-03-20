@@ -81,6 +81,7 @@ int main(void) {
 		assert(t.token(0).end_pos==2);
 		assert(t.token(0).token_start==two_spaces);
 		assert(t.token(0).token_len==2);
+		assert(t.token(0).is_primary);
 	}
 	printf("Test line %d\n",__LINE__);
 	{
@@ -448,6 +449,7 @@ int main(void) {
 		T2 t("Vrĳdag",langUnknown);
 		assert(t.token_count()==2);
 		assert(t.str(1)=="Vrijdag");
+		assert(!t.token(1).is_primary);
 	}
 	
 	printf("Test line %d\n",__LINE__);
