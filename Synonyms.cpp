@@ -194,7 +194,7 @@ int32_t Synonyms::getSynonyms(const TokenizerResult *tr,
 	// need a language for wiktionary to work with
 	if ( wikiLangId && ! ss ) {
 		// get raw word id
-		bwid = (*tr)[wordNum+2].token_hash;
+		bwid = token.token_hash;
 		baseNumAlnumWords = 1;
 		//if ( bwid == 1424622907102375150LL)
 		//	log("a");
