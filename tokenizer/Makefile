@@ -28,3 +28,11 @@ run: tokenizer_unittest
 PHONY: xml_run
 xml_run: xml_tokenizer_unittest
 	LD_LIBRARY_PATH=.. ./xml_tokenizer_unittest
+
+
+.PHONY: clean
+clean:
+	rm -f *.o
+	rm -f libtokenizer.a
+	rm -f tokenizer_unittest xml_tokenizer_unittest
+	rm -f core
