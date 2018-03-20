@@ -101,7 +101,7 @@ static void decompose_stylistic_ligatures(TokenizerResult *tr) {
 			size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
 			char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
 			memcpy(s,new_token_utf8,new_token_utf8_len);
-			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
+			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, false, true);
 		}
 	}
 }
@@ -130,7 +130,7 @@ static void replace_ligature(const UChar32 original_codepoint[], unsigned origin
 	size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
 	char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
 	memcpy(s,new_token_utf8,new_token_utf8_len);
-	tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
+	tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, false, true);
 }
 
 
@@ -300,7 +300,7 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 			size_t new_token_utf8_len = encode_utf8_string(uc_new_token,new_codepoints,new_token_utf8);
 			char *s = (char*)tr->egstack.alloc(new_token_utf8_len+1);
 			memcpy(s,new_token_utf8,new_token_utf8_len);
-			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, true);
+			tr->tokens.emplace_back(token.start_pos,token.end_pos, s,new_token_utf8_len, false, true);
 		}
 	}
 }
@@ -351,7 +351,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		char *s = (char*)tr->egstack.alloc(combined_token_length);
 		memcpy(s, t0.token_start, t0.token_len);
 		s[t0.token_len] = 's';
-		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, true);
+		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, false, true);
 		
 		//In the case of "John's car" we now have the tokens:
 		//  John
@@ -436,7 +436,7 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 				char *s = (char*)tr->egstack.alloc(sl);
 				memcpy(s, t0.token_start, t0.token_len);
 				memcpy(s+t0.token_len, t1.token_start, t1.token_len);
-				tr->tokens.emplace_back(t0.start_pos, t1.end_pos, s, sl, true);
+				tr->tokens.emplace_back(t0.start_pos, t1.end_pos, s, sl, false, true);
 			}
 			if(j-i > 3) {
 				//make whole-join
@@ -449,7 +449,7 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 					memcpy(p, (*tr)[k].token_start, (*tr)[k].token_len);
 					p += (*tr)[k].token_len;
 				}
-				tr->tokens.emplace_back((*tr)[i].start_pos, (*tr)[j-1].end_pos, s, sl, true);
+				tr->tokens.emplace_back((*tr)[i].start_pos, (*tr)[j-1].end_pos, s, sl, false, true);
 			}
 		}
 		
@@ -555,7 +555,7 @@ static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr) {
 		memcpy(p, t6.token_start, t6.token_len);
 		//p += t6.token_len;
 		
-		tr->tokens.emplace_back(t0.start_pos, t6.end_pos, s, sl, true);
+		tr->tokens.emplace_back(t0.start_pos, t6.end_pos, s, sl, false, true);
 	}
 }
 
@@ -676,7 +676,7 @@ static void recognize_telephone_numbers_germany(TokenizerResult *tr) {
 				p += t.token_len;
 			}
 		}
-		tr->tokens.emplace_back(t0.start_pos, (*tr)[j-1].end_pos, s, p-s, true);
+		tr->tokens.emplace_back(t0.start_pos, (*tr)[j-1].end_pos, s, p-s, false, true);
 	}
 	
 }
@@ -759,15 +759,15 @@ static void tokenize_superscript(TokenizerResult *tr) {
 		if(any_changed) {
 			char *s = (char*)tr->egstack.alloc(ucs*4);
 			size_t sl = encode_utf8_string(new_uc,ucs,s);
-			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, false, true);
 			if(num_changed==1 && change_pos==ucs-1) {
 				//footnote special (and spanish/portuguese ordinal)
 				s = (char*)tr->egstack.alloc((ucs-1)*4);
 				sl = encode_utf8_string(new_uc,ucs-1,s);
-				tr->tokens.emplace_back(t.start_pos,t.start_pos+sl, s,sl, true);
+				tr->tokens.emplace_back(t.start_pos,t.start_pos+sl, s,sl, false, true);
 				s = (char*)tr->egstack.alloc(4);
 				sl = encode_utf8_string(new_uc+ucs-1,1,s);
-				tr->tokens.emplace_back(t.end_pos-sl,t.end_pos, s,sl, true);
+				tr->tokens.emplace_back(t.end_pos-sl,t.end_pos, s,sl, false, true);
 			}
 		}
 	}
@@ -879,7 +879,7 @@ static void tokenize_subscript(TokenizerResult *tr) {
 		if(any_changed) {
 			char *s = (char*)tr->egstack.alloc(ucs*4);
 			size_t sl = encode_utf8_string(new_uc,ucs,s);
-			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, true);
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,sl, false, true);
 		}
 	}
 }
@@ -910,7 +910,7 @@ static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, 
 				s = (char*)tr->egstack.alloc(ampersand_word_len);
 				memcpy(s,ampersand_word,ampersand_word_len);
 			}
-			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,ampersand_word_len, true);
+			tr->tokens.emplace_back(t.start_pos,t.end_pos, s,ampersand_word_len, false, true);
 		}
 	}
 }
@@ -937,7 +937,7 @@ static void recognize_alfanum_nonalfanum_pair(TokenizerResult *tr, const char *t
 			{
 				char *s = (char*)tr->egstack.alloc(rlen);
 				memcpy(s,replacement_token,rlen);
-				tr->tokens.emplace_back(t0.start_pos,t1.start_pos+tokenstr1_len, s,rlen, true);
+				tr->tokens.emplace_back(t0.start_pos,t1.start_pos+tokenstr1_len, s,rlen, false, true);
 			}
 		}
 	}

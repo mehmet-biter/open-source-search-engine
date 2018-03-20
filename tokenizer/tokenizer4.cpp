@@ -33,7 +33,7 @@ static void recognize_superscript(TokenizerResult *tr) {
 				char *s = (char*)tr->egstack.alloc(sl);
 				memcpy(s, token0.token_start, token0.token_len);
 				memcpy(s+token0.token_len, utf8, utf8len);
-				tr->tokens.emplace_back(token0.start_pos, token2.end_pos, s,sl, true);
+				tr->tokens.emplace_back(token0.start_pos, token2.end_pos, s,sl, false, true);
 			}
 		}
 	}
@@ -61,7 +61,7 @@ static void recognize_subscript(TokenizerResult *tr) {
 				char *s = (char*)tr->egstack.alloc(sl);
 				memcpy(s, token0.token_start, token0.token_len);
 				memcpy(s+token0.token_len, utf8, utf8len);
-				tr->tokens.emplace_back(token0.start_pos, token2.end_pos, s,sl, true);
+				tr->tokens.emplace_back(token0.start_pos, token2.end_pos, s,sl, false, true);
 			}
 			//TODO: collect multiple words for correctly tokenizing eg. H₂O₂
 		}

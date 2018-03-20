@@ -49,7 +49,7 @@ void plain_tokenizer_phase_1_downcall(const char *str, size_t len, size_t pos_ba
 			j += getUtf8CharSize(str+j);
 		}
 		//found token [i..j)
-		tr->tokens.emplace_back(pos_base+i,pos_base+j, str+i,j-i, in_alnum_token);
+		tr->tokens.emplace_back(pos_base+i,pos_base+j, str+i,j-i, true, in_alnum_token);
 		i = j;
 	}
 }
