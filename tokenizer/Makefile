@@ -36,3 +36,11 @@ clean:
 	rm -f libtokenizer.a
 	rm -f tokenizer_unittest xml_tokenizer_unittest
 	rm -f core
+
+
+tokenizer.o:  tokenizer.cpp  tokenizer.h
+tokenizer2.o: tokenizer2.cpp tokenizer.h
+tokenizer3.o: tokenizer3.cpp tokenizer.h
+tokenizer4.o: tokenizer4.cpp tokenizer.h
+tokenizer5.o: tokenizer5.cpp tokenizer.h
+tokenizer_util.o: tokenizer_util.cpp tokenizer_util.h tokenizer.h
