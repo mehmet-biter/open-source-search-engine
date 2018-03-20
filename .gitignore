@@ -68,3 +68,4 @@ query_stop_words.??.inc
 query_stop_words_list.inc
 unicode/libunicode.a
 libunicode.a
+libtokenizer.a
