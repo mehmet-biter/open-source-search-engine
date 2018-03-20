@@ -4949,8 +4949,7 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		// print checkmark (check mark) next to selected one
 		// if not the default (trueHeader)
 		if ( mi == first ) // ! isDefaultHeader && mi == first )
-			sb->safePrintf("<b style=color:black;>%c%c%c</b>",
-				       0xe2,0x9c,0x93);
+			sb->safePrintf("<b style=color:black;>&check;</b>");
 		else 
 			sb->safePrintf("&nbsp; &nbsp; ");
 
