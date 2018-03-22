@@ -638,8 +638,17 @@ bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_
 		nodeid_t tid = token.nodeid;
 
 		if (tid == TAG_IFRAME) {
-			inIFrame = true;
-		} else if (tid == (TAG_IFRAME | BACKBIT)) {
+			//if the section doesn't have the closing iframe tag then set inIFrame
+			bool hasClosingIframeTag = false;
+			for(int j=sn->m_b-1; j>i; j--) {
+				if(tids[j] == (TAG_IFRAME|BACKBIT)) {
+					hasClosingIframeTag = true;
+					break;
+				}
+			}
+			if(!hasClosingIframeTag)
+				inIFrame = true;
+		} else if (tid == (TAG_IFRAME | BACKBIT)) { //never happens how sentences are currently split
 			inIFrame = false;
 		} else if ( tid == TAG_GBFRAME ) {
 			// start or end?
@@ -649,14 +658,12 @@ bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_
 			inGbFrame = false;
 		}
 
-		if (inIFrame && !inGbFrame) {
+		if (inIFrame && !inGbFrame)
 			sn->m_flags |= SEC_IN_IFRAME;
-		}
 
 		// mark it
-		if (inGbFrame) {
+		if (inGbFrame)
 			sn->m_gbFrameNum = gbFrameNum;
-		}
 
 		// custom xml tag, hash the tag itself
 		if ( tid != TAG_XMLTAG ) continue;
@@ -683,6 +690,8 @@ bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_
 		// store that
 		sn->m_xmlNameHash = (int32_t)xh;
 	}
+	
+	//TODO: implement section m_flags inheritance correctly. Currently SEC_IN_IFRAME/SEC_HIDDEN/... are not inherited by  child sections.
 
 	// find any open ended tags and constrain them based on their parent
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
