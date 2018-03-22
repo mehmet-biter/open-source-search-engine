@@ -216,7 +216,7 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 				m_capacity = tmpCap;
 				return false;
 			}
-			log(LOG_DEBUG, "query: safebuf switching to heap: %" PRId32,
+			log(LOG_DEBUG, "safebuf: switching to heap: %" PRId32,
 			    m_capacity);
 			gbmemcpy(m_buf, tmpBuf, m_length);
 			// reset to 0's?
