@@ -641,7 +641,7 @@ bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_
 			//if the section doesn't have the closing iframe tag then set inIFrame
 			bool hasClosingIframeTag = false;
 			for(int j=sn->m_b-1; j>i; j--) {
-				if(tids[j] == (TAG_IFRAME|BACKBIT)) {
+				if((*m_tr)[j].nodeid == (TAG_IFRAME|BACKBIT)) {
 					hasClosingIframeTag = true;
 					break;
 				}
