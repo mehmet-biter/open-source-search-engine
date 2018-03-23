@@ -1575,8 +1575,9 @@ bool Query::setQWords ( char boolFlag ,
 		// . is this word potentially a field? 
 		// . it cannot be another field name in a field
 		if(i < m_numWords-2 &&
-		   w[wlen]  == ':' && ! is_wspace_utf8(w+wlen+1) &&
-		   (!is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' || w[wlen+1]=='-') &&
+		   m_tr[i+1].token_len==1 && m_tr[i+1].token_start[0]==':' &&
+		   !is_wspace_utf8_string(m_tr[i+2].token_start,m_tr[i+2].token_end()) &&
+		   (!is_punct_utf8(m_tr[i+2].token_start) || m_tr[i+2].token_start[0]=='\"' || m_tr[i+2].token_start[0]=='-') &&
 		   ! fieldCode && ! inQuotes)
 		{
 			// field name may have started before though if it
