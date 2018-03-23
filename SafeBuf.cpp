@@ -207,18 +207,14 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 		if(m_usingStack) {
 			m_buf = NULL;
 			m_capacity += i;
-			//if(m_capacity < 8) m_capacity = 8;
 			m_buf = (char*)mrealloc(m_buf, 0, m_capacity,m_label);
 			if(!m_buf) {
 				m_buf = tmpBuf;
-				log("safebuf: failed to reserve %" PRId32" bytes",
-				    m_capacity);
+				log(LOG_ERROR, "safebuf: failed to reserve %" PRId32" bytes", m_capacity);
 				m_capacity = tmpCap;
 				return false;
 			}
-			log(LOG_DEBUG, "query: safebuf switching to heap: %" PRId32,
-			    m_capacity);
-			gbmemcpy(m_buf, tmpBuf, m_length);
+			memcpy(m_buf, tmpBuf, m_length);
 			// reset to 0's?
 			if ( clearIt ) {
 				int32_t clearSize = m_capacity - tmpCap;
@@ -228,11 +224,10 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 			return true;
 		}
 		m_capacity += i;
-		//if(m_capacity < 8) m_capacity = 8;
 		m_buf = (char*)mrealloc(m_buf, tmpCap, m_capacity,m_label);
 		if(!m_buf) {
 			m_buf = tmpBuf;
-			log("safebuf: failed to realloc %" PRId32" bytes",m_capacity);
+			log(LOG_ERROR, "safebuf: failed to realloc %" PRId32" bytes", m_capacity);
 			m_capacity = tmpCap;
 			return false;
 		}
@@ -241,12 +236,7 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 			int32_t clearSize = m_capacity - tmpCap;
 			memset(m_buf+tmpCap,0,clearSize);
 		}
-		// log(LOG_DEBUG, "query: resize safebuf %" PRId32" to %" PRId32, tmpCap, m_capacity);
 	}
-	// reset to 0's?
-	//if ( ! clearIt ) return true;
-	//int32_t clearSize = m_capacity - m_length;
-	//memset(m_buf+m_length,0,clearSize);
 	return true;
 }
 
