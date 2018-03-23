@@ -217,12 +217,16 @@ static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t la
 // Combining marks removal
 
 static void remove_combining_marks_danish(TokenizerResult *tr);
+static void remove_combining_marks_norwegian(TokenizerResult *tr);
 
 
 static void remove_combining_marks(TokenizerResult *tr, lang_t lang) {
 	switch(lang) {
 		case langDanish:
 			remove_combining_marks_danish(tr);
+			return;
+		case langNorwegian:
+			remove_combining_marks_norwegian(tr);
 			return;
 		default:
 			break;
@@ -307,6 +311,16 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 	}
 }
 
+//According to my Norwegian contact:
+//  - ring-above	(Å/å)		Mandatory
+//  - umlaut		(äüö)		Well-known and easily accessible. In words from Swedish or German
+//  - acute-accent	(éin)		Optional, used for stress marking, or in French loanwords.
+//  - grave accent      (fòr)		Optional, used for clarifying meaning of homonyms
+//  - circumflex	(fôr)		Optional, used for clarifying meaning of homonyms
+static void remove_combining_marks_norwegian(TokenizerResult *tr) {
+	//this happens to be the exact same rules as for Danish so let's just use that function
+	remove_combining_marks_danish(tr);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Possessive-s handling
