@@ -3930,9 +3930,14 @@ TokenizerResult *XmlDoc::getTokenizerResult2() {
 	int64_t start = logQueryTimingStart();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Tokenizing document with langId=%u countryCode=%s", *langId, countryCode?countryCode:"<null>");
+	int64_t tokenizationStartTime = gettimeofdayInMilliseconds();
 	xml_tokenizer_phase_2(xml, (lang_t)*langId, countryCode, tr);
 	//(todo): Only the phase-2 tokens need to be rehashed, but because phase-2 can remove phase-1 tokens we cannot just easily identify the phase-2 tokens
 	calculate_tokens_hashes(&m_tokenizerResult);
+	int64_t tokenizationEndTime = gettimeofdayInMilliseconds();
+	int64_t tokenizationTime =tokenizationEndTime - tokenizationStartTime;
+	if(tokenizationTime>0.015)
+		log(LOG_TIMING,"build: tokenization of %s (size_utf8Content=%u) took %ldms", m_firstUrl.getUrl(), size_utf8Content, tokenizationTime);
 
 	//because the number of words may have changed m_bits/m_phrases/m_sections must be recalculated
 	m_bitsValid = false;
