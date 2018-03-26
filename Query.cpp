@@ -371,9 +371,9 @@ bool Query::setQTerms ( const Words &words ) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
 		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
-			int64_t phraseTermId = m_qwords[i].m_phraseId&TERMID_MASK;
+			int64_t phraseTermId = m_qwords[i].m_bigramId&TERMID_MASK;
 			int64_t wordTermId = m_qwords[i].m_wordId&TERMID_MASK;
-			logTrace(g_conf.m_logTraceQuery, "    m_phraseId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
+			logTrace(g_conf.m_logTraceQuery, "    m_bigramId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_bigramLen=%d", m_qwords[i].m_bigramId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_bigramLen);
 			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
 
 		}
@@ -386,7 +386,7 @@ bool Query::setQTerms ( const Words &words ) {
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		const QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
-		if ( ! qw->m_phraseId ) continue;
+		if ( ! qw->m_bigramId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
@@ -401,7 +401,7 @@ bool Query::setQTerms ( const Words &words ) {
  		     qw->m_ignoreWord != IGNORE_QSTOP) continue;
 		// ignore if in quotes and part of phrase, watch out
 		// for things like "word", a single word in quotes.
-		if ( qw->m_quoteStart >= 0 && qw->m_phraseId ) continue;
+		if ( qw->m_quoteStart >= 0 && qw->m_bigramId ) continue;
 		// if we are not start of quote and NOT in a phrase we
 		// must be the tailing word i guess.
 		// fixes '"john smith" -"bob dole"' from having
@@ -532,7 +532,7 @@ bool Query::setQTerms ( const Words &words ) {
 
 		QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
-		if ( ! qw->m_phraseId ) continue;
+		if ( ! qw->m_bigramId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
@@ -551,7 +551,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// stop word? no, we're a phrase term
 		qt->m_isQueryStopWord = false;
 		// change in both places
-		qt->m_termId    = qw->m_phraseId & TERMID_MASK;
+		qt->m_termId    = qw->m_bigramId & TERMID_MASK;
 		qt->m_rawTermId = qw->m_rawPhraseId;
 		// boolean queries are not allowed term signs for phrases
 		// UNLESS it is a '*' soft require sign which we need for
@@ -569,7 +569,7 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_inQuotes  = qw->m_inQuotes;
 		// point to the string itself that is the phrase
 		qt->m_term      = qw->m_word;
-		qt->m_termLen   = qw->m_phraseLen;
+		qt->m_termLen   = qw->m_bigramLen;
 
 		// the QueryWord should have a direct link to the QueryTerm,
 		// at least for phrase, so we can OR in the bits of its
@@ -596,7 +596,7 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// ignore if in quotes and part of phrase, watch out
 		// for things like "word", a single word in quotes.
-		if ( qw->m_quoteStart >= 0 && qw->m_phraseId ) continue;
+		if ( qw->m_quoteStart >= 0 && qw->m_bigramId ) continue;
 
 		// if we are not start of quote and NOT in a phrase we
 		// must be the tailing word i guess.
@@ -1327,7 +1327,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	// . STAGE #3
 	// . set phrases class w/ custom Bits class mods.
-	// . set m_phraseId and m_rawPhraseId of all QueryWords. if phraseId
+	// . set m_bigramId and m_rawPhraseId of all QueryWords. if phraseId
 	//   is not 0 (phrase exists) then set m_ignorePhrase to 0.
 	// . set m_leftConnected, m_rightConnected. word you are connecting
 	//   to must not be ignored. (no field names or op codes).
@@ -1804,7 +1804,7 @@ bool Query::setQWords ( char boolFlag ,
 			}
 
 			qw->m_rawWordId   = 0LL; // only for highlighting?
-			qw->m_phraseId    = 0LL;
+			qw->m_bigramId    = 0LL;
 			qw->m_rawPhraseId = 0LL;
 			qw->m_opcode      = opcode_t::OP_NONE;
 
@@ -2143,15 +2143,15 @@ bool Query::setQWords ( char boolFlag ,
 			uint64_t ph = qw->m_prefixHash ;
 
 			// like we do it in XmlDoc.cpp's hashString()
-			if ( ph ) qw->m_phraseId = hash64 ( pid , ph );
-			else      qw->m_phraseId = pid;
+			if ( ph ) qw->m_bigramId = hash64 ( pid , ph );
+			else      qw->m_bigramId = pid;
 
 			//calculate length of phrase(bigram) in bytes
 			int32_t numWordsInPhrase = phrases.getNumWordsInPhrase2(i);
 			int phraseLen = 0;
 			for(int j=i; j<i+numWordsInPhrase; j++)
 				phraseLen += m_qwords[j].m_wordLen;
-			qw->m_phraseLen = phraseLen;
+			qw->m_bigramLen = phraseLen;
 
 			// do not ignore the phrase, it's valid
 			qw->m_ignorePhrase = IGNORE_NO_IGNORE;
@@ -2243,7 +2243,7 @@ bool Query::setQWords ( char boolFlag ,
 		     m_useQueryStopWords &&
 		     ! qw->m_fieldCode &&
 		     // fix 'the tigers'
-		     //(qw->m_leftPhraseStart >= 0 || qw->m_phraseId > 0 ) && 
+		     //(qw->m_leftPhraseStart >= 0 || qw->m_bigramId > 0 ) &&
 		     ! qw->m_wordSign && 
 		     ! qw->m_ignoreWord )
 			qw->m_ignoreWord = IGNORE_QSTOP;
@@ -2253,7 +2253,7 @@ bool Query::setQWords ( char boolFlag ,
 		if ( ! keepAllSingles && qw->m_isQueryStopWord &&
 		     ! qw->m_fieldCode &&
 		     m_useQueryStopWords &&
-		     ! qw->m_phraseId && ! qw->m_inQuotes &&
+		     ! qw->m_bigramId && ! qw->m_inQuotes &&
 		     ((qw->m_wordId == 255176654160863LL) ||
 		      (qw->m_wordId ==  46196171999655LL))        )
 			qw->m_ignoreWord = IGNORE_QSTOP;
@@ -2280,7 +2280,7 @@ bool Query::setQWords ( char boolFlag ,
 			// ignore repeated phrases too!
 			for ( int32_t j = 0 ; j < i ; j++ ) {
 				if ( m_qwords[j].m_ignorePhrase ) continue;
-				if ( m_qwords[j].m_phraseId == qw->m_phraseId &&
+				if ( m_qwords[j].m_bigramId == qw->m_bigramId &&
 				     m_qwords[j].m_phraseSign 
 				     == qw->m_phraseSign)
 					qw->m_ignorePhrase = IGNORE_REPEAT;
@@ -2328,7 +2328,7 @@ bool Query::setQWords ( char boolFlag ,
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {	
 		QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignorePhrase ) continue;
-		if ( ! qw->m_phraseId   ) continue;
+		if ( ! qw->m_bigramId   ) continue;
 		count++;
 	}
 	for ( int32_t i = 0 ; i < numWords ; i++ ) {
@@ -2348,7 +2348,7 @@ bool Query::setQWords ( char boolFlag ,
 		if ( left >= 0 && ! m_qwords[left].m_phraseSign )
 			m_qwords[left].m_phraseSign = '*';
 		// our phrase should get a '*'
-		if ( qw->m_phraseId && ! qw->m_phraseSign )
+		if ( qw->m_bigramId && ! qw->m_phraseSign )
 			qw->m_phraseSign = '*';
 	}
 
@@ -2365,7 +2365,7 @@ bool Query::setQWords ( char boolFlag ,
 		const QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignorePhrase      ) continue;
 		if ( qw->m_phraseSign == '-' ) continue;
-		if ( qw->m_phraseId == 0LL   ) continue;
+		if ( qw->m_bigramId == 0LL   ) continue;
 		count++;
 	}
 	// if everybody is ignored or negative UNignore first query stop word
@@ -2960,9 +2960,9 @@ void Query::dumpToLog() const
 		const QueryWord &qw = m_qwords[i];
 		log("  qword #%d:",i);
 		log("    word='%*.*s'", (int)qw.m_wordLen, (int)qw.m_wordLen, qw.m_word);
-		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
+		log("    phrase='%*.*s'", (int)qw.m_bigramLen, (int)qw.m_bigramLen, qw.m_word);
 		log("    m_wordId=%" PRId64, qw.m_wordId);
-		log("    m_phraseId=%" PRId64, qw.m_phraseId);
+		log("    m_bigramId=%" PRId64, qw.m_bigramId);
 		if(qw.m_queryWordTerm)
 			log("    m_queryWordTerm= #%d", (int)(qw.m_queryWordTerm-m_qterms));
 	}

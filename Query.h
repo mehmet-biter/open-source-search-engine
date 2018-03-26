@@ -173,12 +173,12 @@ class QueryWord {
 	const char     *m_word;
 	int32_t        m_wordLen ;
 	// the length of the phrase, if any. it starts at m_word. It can be less than the source string length because
-	// non-alfanum words are treated as a single space by Phrases::getPhrase(), so eg "aaa::bbb" will only have m_phraseLen=7
-	int32_t        m_phraseLen;
+	// non-alfanum words are treated as a single space by Phrases::getPhrase(), so eg "aaa::bbb" will only have m_bigramLen=7
+	int32_t        m_bigramLen;
 	// this is the term hash with collection and field name and
 	// can be looked up directly in indexdb
 	int64_t   m_wordId ;
-	int64_t   m_phraseId;
+	int64_t   m_bigramId;
 	// hash of field name then collection, used to hash termId
 	int64_t   m_prefixHash;
 	int32_t        m_posNum;
