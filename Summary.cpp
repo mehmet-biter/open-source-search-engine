@@ -849,7 +849,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		const auto &token = (*tr)[i];
 		// debug print out
 		if ( g_conf.m_logDebugSummary ) {
-			int32_t len = tr->size();
+			int32_t len = token.token_len;
 			char cs;
 			for (int32_t k=0;k<len; k+=cs ) {
 				const char *c = token.token_start+k;
