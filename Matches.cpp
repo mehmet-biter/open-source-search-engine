@@ -573,7 +573,7 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 				// got a match
 				goto gotMatch2;
 			}
-			if ( qw->m_phraseId == pid ) {
+			if ( qw->m_bigramId == pid ) {
 				// might match more if we had more query
 				// terms in the quote
 				numWords = getNumWordsInMatch( tr, i, n, &numQWords, &qwn, true );
@@ -640,7 +640,7 @@ bool Matches::addMatches(const TokenizerResult *tr, Phrases *phrases, const Sect
 			// if stop word does not start a phrase in the query 
 			// then he must have a matched word before him in the
 			// document. if he doesn't then do not count as a match
-			if ( qw->m_phraseId == 0LL && i-2 != lasti ) {
+			if ( qw->m_bigramId == 0LL && i-2 != lasti ) {
 				// peel off anybody before us
 				m_numMatches -= matchStack;
 				if ( m_numMatches < 0 ) m_numMatches = 0;
