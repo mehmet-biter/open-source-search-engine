@@ -537,38 +537,53 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John's dog",langUnknown); //U+0027 Apostrophe
-		assert(t.token_count()==5); //phase-2 removes the standalone 's' token
-		assert(t.str(5)=="Johns");
+		assert(t.token_count()==6); //phase-2 removes the standalone 's' token
+		assert(t.has_token("John's"));
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John`s dog",langUnknown); //U+0060 grave
-		assert(t.token_count()==5);
-		assert(t.str(5)=="Johns");
+		assert(t.token_count()==6);
+		assert(t.has_token("John's"));
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John´s dog",langUnknown); //U+00B4 acute accent
-		assert(t.token_count()==5);
-		assert(t.str(5)=="Johns");
+		assert(t.token_count()==6);
+		assert(t.has_token("John's"));
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John’s dog",langUnknown); //U+2019 Right single quotation mark
-		assert(t.token_count()==5);
-		assert(t.str(5)=="Johns");
+		assert(t.token_count()==6);
+		assert(t.has_token("John's"));
 		//according to unicode NamesList.txt this is actually the preferred codepoint. Uhm, okay....
 	}
 	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("John′s dog",langUnknown); //U+2032 Prime
-		assert(t.token_count()==5);
-		assert(t.str(5)=="Johns");
+		assert(t.token_count()==6);
+		assert(t.has_token("John's"));
 	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John's dog",langEnglish);
+		assert(t.has_token("John's"));
+		assert(!t.has_token("Johns"));
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John's dog",langSwedish);
+		assert(t.has_token("John's"));
+		assert(t.has_token("Johns"));
+	}
+	
 	
 	//hyphenation
 	printf("Test line %d\n",__LINE__);

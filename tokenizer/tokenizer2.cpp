@@ -329,7 +329,7 @@ static void remove_combining_marks_norwegian(TokenizerResult *tr) {
 //Also take care of misused/abused other marks, such as modifier letters, prime marks, etc. Even in native English text
 //the apostrophe is sometimes morphed into weird codepoints. So we take all codepoints whose glyphs look like a blotch
 //that could conceivably stand in for apostrophe. We do this in all languages because the abuse seem to know no language barrier
-static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
+static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 	//Loop through original tokens, looking for <word> <blotch> "s". Combine the word with the letter s.
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i+2<org_token_count; i++) {
@@ -363,12 +363,26 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		   uc[0]!=0x2035)   //REVERSED PRIME
 			continue;
 		
-		size_t combined_token_length = t0.token_len + 1;
-		char *s = (char*)tr->egstack.alloc(combined_token_length);
-		memcpy(s, t0.token_start, t0.token_len);
-		s[t0.token_len] = 's';
-		tr->tokens.emplace_back(t0.start_pos,t2.end_pos, s, combined_token_length, false, true);
+		const TokenRange t0_copy = t0; //copied due to vector modification
 		
+		//generate the token <word>+apostrophe+'s'
+		size_t token_a_len = t0_copy.token_len + 1 + 1;
+		char *token_a = (char*)tr->egstack.alloc(token_a_len);
+		memcpy(token_a, t0_copy.token_start, t0.token_len);
+		token_a[t0_copy.token_len] = '\'';
+		token_a[t0_copy.token_len+1] = 's';
+		tr->tokens.emplace_back(t0_copy.start_pos,t2.end_pos,token_a, token_a_len, false, true);
+
+		//German/Danish/Norwegian/Swedish don't use apostrophe for possessive-s, however some web pages may use it for
+		//stylistic/origin reasons (eg McDonald's) or because they like the "greengrocer's apostrophe".
+		//So index <word>+'s' too
+		if(lang!=langEnglish && lang!=langDutch) {
+			size_t token_b_len = t0_copy.token_len + 1;
+			char *token_b = (char*)tr->egstack.alloc(token_b_len);
+			memcpy(token_b, t0_copy.token_start, t0.token_len);
+			token_b[t0_copy.token_len] = 's';
+			tr->tokens.emplace_back(t0_copy.start_pos,t2.end_pos,token_b, token_b_len, false, true);
+		}
 		//In the case of "John's car" we now have the tokens:
 		//  John
 		//  Johns
