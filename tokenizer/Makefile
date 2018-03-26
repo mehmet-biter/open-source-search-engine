@@ -1,5 +1,9 @@
-#CPPFLAGS += -O3 -g
-CPPFLAGS += -O0 -g
+ifeq ($(config),$(filter $(config),release release-safe))
+CPPFLAGS += -O3 -march=core-avx-i -msse4.2
+else
+CPPFLAGS += -O0
+endif
+CPPFLAGS += -g
 CPPFLAGS += -std=c++11
 CPPFLAGS += -Wall
 CPPFLAGS += -I.. -I../unicode
