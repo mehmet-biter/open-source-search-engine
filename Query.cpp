@@ -1238,6 +1238,81 @@ bool Query::setQWords ( char boolFlag ,
 	//   their own separate Word, so tell "words" we're setting a query
 	plain_tokenizer_phase_1(m_filteredQuery.getBufStart(), m_filteredQuery.length(), &m_tr);
 	calculate_tokens_hashes(&m_tr);
+	
+	//hackety-hack...
+	//The tokenizer phase 2 also recognizes "C++" and "john's", but we cannot use phase 2 because Phrases and Query are
+	//incompatible with phase-2 tokens (too many assumptions about strictly increasing positions and contiguous memory layout)
+	//So instead we implement special cases here, until we have time to fix the whole Query class.
+	for(size_t i=0; i+1<m_tr.size(); i++) {
+		//Hack for C++
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='c' || m_tr[i].token_start[0]=='C') &&
+		   m_tr[i+1].token_len>=2 && memcmp(m_tr[i+1].token_start,"++",2)==0)
+		{
+			m_tr[i].token_len += 2;
+			m_tr[i].end_pos += 2;
+			m_tr[i+1].start_pos += 2;
+			m_tr[i+1].token_start += 2;
+			m_tr[i+1].token_len -= 2;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for F#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='f' || m_tr[i].token_start[0]=='F') &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"#",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for C#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='c' || m_tr[i].token_start[0]=='C') &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"#",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for C#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && m_tr[i].token_start[0]=='A' &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"*",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for possessive-apostrophe (no need for extra codepoint checks - people usually don't type them in a search field)
+		if(i+2<m_tr.size() &&
+		   m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum && m_tr[i+2].is_alfanum &&
+		   m_tr[i+1].token_len==1 && (m_tr[i+1].token_start[0]=='\'' || m_tr[i+1].token_start[0]=='`') &&
+		   m_tr[i+2].token_len==1 && (m_tr[i+2].token_start[0]=='s' || m_tr[i+2].token_start[0]=='S'))
+		{
+			m_tr[i].end_pos = m_tr[i+2].end_pos;
+			m_tr[i].token_len += m_tr[i+1].token_len + m_tr[i+2].token_len;
+			m_tr.tokens.erase(m_tr.tokens.begin()+i+1,m_tr.tokens.begin()+i+3);
+			continue;
+		}
+	}
+
 	int32_t numWords = m_tr.size();
 	// truncate it
 	if ( numWords > ABS_MAX_QUERY_WORDS ) {
