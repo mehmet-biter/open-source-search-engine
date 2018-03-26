@@ -344,7 +344,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		if(!t2.is_alfanum)
 			continue;
 		//t2 must be "s"
-		if(t2.token_len!=1 || *t2.token_start!='s')
+		if(t2.token_len!=1 || (t2.token_start[0]!='s' && t2.token_start[0]!='S'))
 			continue;
 		//t1 must be a single blotch
 		if(t1.token_len>4)
@@ -374,7 +374,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t /*lang*/) {
 		//  Johns
 		//  car
 		//and XmlDoc_indexing.cpp will generate the bigram "johns+car", but also "s+car".
-		//We remove the 's' token because it (a) causes trouble iwth weird bigrams, and (b) it has little meaning by itself.
+		//We remove the 's' token because it (a) causes trouble with weird bigrams, and (b) it has little meaning by itself.
 		tr->tokens.erase(tr->tokens.begin()+i+2);
 	}
 }
