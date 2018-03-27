@@ -297,7 +297,8 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so.2 slacktee.sh libword_variations.a libsto.a libunicode.a
+DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so.2 slacktee.sh
+LIBFILES = $(DISTLIBFILES) libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 LIBS += -lword_variations -lsto -lunicode
 
@@ -404,7 +405,7 @@ dist: all
 	unifiedDict.txt \
 	valgrind.cfg \
 	.valgrindrc \
-	$(LIBFILES) \
+	$(DIST_LIBFILES) \
 	$(DIST_DIR)
 	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
 	@cp third-party/cld3/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD3
