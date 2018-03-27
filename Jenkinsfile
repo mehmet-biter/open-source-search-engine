@@ -20,20 +20,18 @@ pipeline {
 				parallel (
 					'open-source-search-engine': {
 						dir("${env.GB_DIR}") {
-							checkout([
-								$class: 'GitSCMSource',
-								branches: scm.branches,
-								doGenerateSubmoduleConfigurations: false,
-								extensions: scm.extensions +
-								            [[$class: 'SubmoduleOption',
-								              disableSubmodules: false,
-								              parentCredentials: false,
-								              recursiveSubmodules: true,
-								              reference: '',
-								              trackingSubmodules: false]] +
-								            [[$class: 'CleanBeforeCheckout']],
-								userRemoteConfigs: scm.userRemoteConfigs
-							])
+							checkout resolveScm(
+								source: [
+									$class: 'GitSCMSource',
+									traits: [
+										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+										[$class: 'CleanBeforeCheckoutTrait'],
+										[$class: 'DisableStatusUpdateTrait'],
+										[$class: 'SubmoduleOptionTrait', recursiveSubmodules: true]
+									]
+								],
+								targets: ["${env.BRANCH_NAME}"]
+							)
 						}
 					},
 					'pywebtest': {
