@@ -58,7 +58,7 @@ pipeline {
 		stage('Build') {
 			steps {
 				sh "cd ${env.GB_DIR} && make -j8 config=debug dist"
-				archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
+				archiveArtifacts artifacts: "$GB_DIR/*.tar.gz", fingerprint: true
 			}
 		}
 
