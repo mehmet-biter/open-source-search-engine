@@ -329,7 +329,7 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 
 	int bytes_consumed;
 	Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
-		                                          nullptr, mime_charset_ptr, meta_charset_ptr,
+		                                          url, mime_charset_ptr, meta_charset_ptr,
 		                                          UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
 		                                          CompactEncDet::WEB_CORPUS, false,
 		                                          &bytes_consumed, &is_reliable);
