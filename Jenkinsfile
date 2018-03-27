@@ -23,6 +23,7 @@ pipeline {
 							checkout resolveScm(
 								source: [
 									$class: 'GitSCMSource',
+									remote: scm.userRemoteCongfigs['url'],
 									traits: [
 										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
 										[$class: 'CleanBeforeCheckoutTrait'],
