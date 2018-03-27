@@ -43,7 +43,8 @@ pipeline {
 									remote: "https://github.com/privacore/${env.PYWEBTEST_PROJECT}.git",
 									traits: [
 										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
-										[$class: 'CleanBeforeCheckoutTrait']
+										[$class: 'CleanBeforeCheckoutTrait'],
+										[$class: 'DisableStatusUpdateTrait']
 									]
 								],
 								targets: ["${env.BRANCH_NAME}", 'master']
