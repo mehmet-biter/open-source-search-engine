@@ -164,12 +164,18 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 	const char *pstart = s;
 	const char *pend   = s + slen;
 
+	char mime_charset[32];
+	const char *mime_charset_ptr = NULL;
 	const char *cs    = mime->getCharset();
-	int32_t  cslen = mime->getCharsetLen();
-	if ( cslen > 31 ) cslen = 31;
+	size_t cslen = mime->getCharsetLen();
+	if(cslen > sizeof(mime_charset)-1)
+		cslen = sizeof(mime_charset)-1;
 	if ( cs && cslen > 0 ) {
 		charset = get_iana_charset ( cs , cslen );
 		httpHeaderCharset = charset;
+		memcpy(mime_charset, cs, cslen);
+		mime_charset[cslen] = '\0';
+		mime_charset_ptr = mime_charset;
 	}
 
 	// look for Unicode BOM first though
@@ -187,6 +193,8 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 
 	// prepare to scan doc
 	const char *p = pstart;
+	char meta_charset[32];
+	const char *meta_charset_ptr = NULL;
 
 	//
 	// it is inefficient to set xml just to get the charset.
@@ -287,12 +295,17 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 		        *p !='\\' )
 			p += 1;//oneChar;
 		size_t csStringLen = (size_t)(p-csString);
-		// get the character set
-		metaCharset = get_iana_charset(csString, csStringLen);
-		// update "charset" to "metaCs" if known, it overrides all
-		if (metaCharset != csUnknown ) {
-			charset = metaCharset;
-			break;
+		if(csStringLen<sizeof(meta_charset)-1) {
+			memcpy(meta_charset,csString,csStringLen);
+			meta_charset[csStringLen] = '\0';
+			meta_charset_ptr = meta_charset;
+			// get the character set
+			metaCharset = get_iana_charset(csString, csStringLen);
+			// update "charset" to "metaCs" if known, it overrides all
+			if (metaCharset != csUnknown ) {
+				charset = metaCharset;
+				break;
+			}
 		}
 	}
 
@@ -316,12 +329,19 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 
 	int bytes_consumed;
 	Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
-		                                              //url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
-		                                              nullptr, nullptr, nullptr,
-		                                              UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
-		                                              CompactEncDet::WEB_CORPUS, false,
-		                                              &bytes_consumed, &is_reliable);
-
+		                                          nullptr, mime_charset_ptr, meta_charset_ptr,
+		                                          UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
+		                                          CompactEncDet::WEB_CORPUS, false,
+		                                          &bytes_consumed, &is_reliable);
+	Encoding encoding2 = CompactEncDet::DetectEncoding(s, slen,
+		                                           nullptr, nullptr, nullptr,
+		                                           UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
+		                                           CompactEncDet::WEB_CORPUS, false,
+		                                           &bytes_consumed, &is_reliable);
+	if(encoding!=encoding2) {
+		log(LOG_INFO,"encoding: difference with/without mime/meta hints: mime_charset='%s', meta_chaset='%s', encoding1=%d, encoding2=%d, url=%s", mime_charset_ptr, meta_charset_ptr, (int)encoding, (int)encoding2, url);
+	}
+	
 	int16_t cedCharset = convertEncodingCED(encoding);
 	const char *cedCharsetStr = EncodingName(encoding);
 
