@@ -1,4 +1,4 @@
-'SHELL = /bin/bash
+SHELL = /bin/bash
 
 config=release
 
@@ -421,7 +421,7 @@ doc:
 
 
 # used for tools/unittest
-libgb.a: $(OBJS)
+libgb.a: $(OBJS) libsto.a libword_variations.a libunicode.a
 	ar rcs $@ $^ word_variations/*.o sto/*.o
 
 .PHONY: tools
