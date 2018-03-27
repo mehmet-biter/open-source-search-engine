@@ -297,7 +297,7 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libunicode.a
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so.2 slacktee.sh libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 LIBS += -lword_variations -lsto -lunicode
 
@@ -324,7 +324,7 @@ libced.so:
 	ln -s third-party/compact_enc_det/lib/libced.so libced.so
 
 CARES_SRC_DIR=third-party/c-ares
-libcares.so:
+libcares.so.2:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
 	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
 	ln -s libcares.so.2 libcares.so
@@ -361,7 +361,7 @@ FORCE:
 gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
-GbDns.o: libcares.so
+GbDns.o: libcares.so.2
 
 
 .PHONY: static
