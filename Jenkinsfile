@@ -19,22 +19,22 @@ pipeline {
 			steps {
 				parallel (
 					'open-source-search-engine': {
-						checkout([
-							$class: 'GitSCM',
-							branches: scm.branches,
-							doGenerateSubmoduleConfigurations: false,
-							extensions: scm.extensions +
-							            [[$class: 'SubmoduleOption',
-							              disableSubmodules: false,
-							              parentCredentials: false,
-							              recursiveSubmodules: true,
-							              reference: '',
-							              trackingSubmodules: false]] +
-							            [[$class: 'RelativeTargetDirectory', 
-							              relativeTargetDir: "${env.GB_DIR}"]] +
-							            [[$class: 'CleanBeforeCheckout']],
-							userRemoteConfigs: scm.userRemoteConfigs
-						])
+						dir("${env.GB_DIR}") {
+							checkout([
+								$class: 'GitSCMSource',
+								branches: scm.branches,
+								doGenerateSubmoduleConfigurations: false,
+								extensions: scm.extensions +
+								            [[$class: 'SubmoduleOption',
+								              disableSubmodules: false,
+								              parentCredentials: false,
+								              recursiveSubmodules: true,
+								              reference: '',
+								              trackingSubmodules: false]] +
+								            [[$class: 'CleanBeforeCheckout']],
+								userRemoteConfigs: scm.userRemoteConfigs
+							])
+						}
 					},
 					'pywebtest': {
 						dir("${env.PYWEBTEST_DIR}") {
