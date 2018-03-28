@@ -19,27 +19,22 @@ pipeline {
 			steps {
 				parallel (
 					'open-source-search-engine': {
-						dir("${env.GB_PROJECT}") {
-							checkout resolveScm(
-								source: [
-									$class: 'GitSCMSource',
-									remote: "https://github.com/privacore/${env.GB_PROJECT}.git",
-									traits: [
-										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
-										[$class: 'CleanBeforeCheckoutTrait'],
-										[$class: 'DisableStatusUpdateTrait'],
-										[$class: 'SubmoduleOptionTrait',
-										 disableSubmodules: false,
-										 recursiveSubmodules: true,
-										 reference: '',
-										 trackingSubmodules: false,
-										 parentCredentials: false
-										]
-									]
-								],
-								targets: ["${env.BRANCH_NAME}"]
-							)
-						}
+						checkout([
+							$class: 'GitSCM',
+							branches: scm.branches,
+							doGenerateSubmoduleConfigurations: false,
+							extensions: scm.extensions +
+							            [[$class: 'SubmoduleOption',
+							              disableSubmodules: false,
+							              parentCredentials: false,
+							              recursiveSubmodules: true,
+							              reference: '',
+							              trackingSubmodules: false]] +
+							            [[$class: 'RelativeTargetDirectory',
+							              relativeTargetDir: "${env.GB_PROJECT}"]] +
+							            [[$class: 'CleanBeforeCheckout']],
+							userRemoteConfigs: scm.userRemoteConfigs
+						])
 					},
 					'pywebtest': {
 						dir("${env.PYWEBTEST_PROJECT}") {
