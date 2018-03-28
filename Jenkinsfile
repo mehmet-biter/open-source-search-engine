@@ -28,7 +28,7 @@ pipeline {
 										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
 										[$class: 'CleanBeforeCheckoutTrait'],
 										[$class: 'DisableStatusUpdateTrait'],
-										[$class: 'SubmoduleOptionTrait', 
+										[$class: 'SubmoduleOptionTrait',
 										 disableSubmodules: false,
 										 recursiveSubmodules: true,
 										 trackingSubmodules: false,
@@ -63,7 +63,7 @@ pipeline {
 		stage('Build') {
 			steps {
 				sh "cd ${env.GB_PROJECT} && make -j8 config=debug dist libgb.a"
-				archiveArtifacts artifacts: "${env.GB_PROJECT}/*.tar.gz,${env.GB_PROJECT}/libgb.a", fingerprint: true
+				archiveArtifacts artifacts: "${env.GB_PROJECT}/*.tar.gz,${env.GB_PROJECT}/libgb.a,${env.GB_PROJECT}/WantedCheckerApi.h", fingerprint: true
 			}
 		}
 
