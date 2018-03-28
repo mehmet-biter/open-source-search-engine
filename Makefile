@@ -305,7 +305,7 @@ LIBS += -lword_variations -lsto -lunicode
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
 	cd $(CLD2_SRC_DIR) && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
-	ln -s $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
+	ln -sf $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
 
 CLD3_SRC_DIR=third-party/cld3/src
 libcld3.so:
@@ -318,17 +318,17 @@ libcld3.so:
 	task_context.cc task_context_params.cc unicodetext.cc utils.cc workspace.cc \
 	cld_3/protos/sentence.pb.cc cld_3/protos/feature_extractor.pb.cc cld_3/protos/task_spec.pb.cc \
 	-o libcld3.so
-	ln -s $(CLD3_SRC_DIR)/libcld3.so libcld3.so
+	ln -sf $(CLD3_SRC_DIR)/libcld3.so libcld3.so
 
 libced.so:
 	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
-	ln -s third-party/compact_enc_det/lib/libced.so libced.so
+	ln -sf third-party/compact_enc_det/lib/libced.so libced.so
 
 CARES_SRC_DIR=third-party/c-ares
 libcares.so.2:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
-	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
-	ln -s libcares.so.2 libcares.so
+	ln -sf $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
+	ln -sf libcares.so.2 libcares.so
 
 #always rebuild if needed
 .PHONY: libword_variations.a
