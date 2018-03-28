@@ -31,10 +31,19 @@ pipeline {
 										[$class: 'SubmoduleOptionTrait',
 										 disableSubmodules: false,
 										 recursiveSubmodules: true,
+										 reference: '',
 										 trackingSubmodules: false,
 										 parentCredentials: false
 										]
-									]
+									],
+									extensions: scm.extensions +
+										[[$class: 'SubmoduleOption',
+										  disableSubmodules: false,
+										  parentCredentials: false,
+										  recursiveSubmodules: true,
+										  reference: '',
+										  trackingSubmodules: false]] +
+										[[$class: 'CleanBeforeCheckout']]
 								],
 								targets: ["${env.BRANCH_NAME}"]
 							)
