@@ -58,7 +58,8 @@ pipeline {
 
 		stage('Build') {
 			steps {
-				sh "cd ${env.GB_PROJECT} && make -j8 debug"
+				sh "cd ${env.GB_PROJECT} && make -j8 config=debug dist libgb.a"
+				archiveArtifacts artifacts: "${env.GB_PROJECT}/*.tar.gz,${env.GB_PROJECT}/libgb.a,${env.GB_PROJECT}/**/*.h", excludes: "${env.GB_PROJECT}/test/**,${env.GB_PROJECT}/third-party/**", fingerprint: true
 			}
 		}
 
