@@ -298,7 +298,7 @@ all: gb
 
 # third party libraries
 DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so.2 slacktee.sh
-LIBFILES = $(DISTLIBFILES) libword_variations.a libsto.a libunicode.a
+LIBFILES = $(DIST_LIBFILES) libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 LIBS += -lword_variations -lsto -lunicode
 
