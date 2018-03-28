@@ -35,15 +35,7 @@ pipeline {
 										 trackingSubmodules: false,
 										 parentCredentials: false
 										]
-									],
-									extensions: scm.extensions +
-										[[$class: 'SubmoduleOption',
-										  disableSubmodules: false,
-										  parentCredentials: false,
-										  recursiveSubmodules: true,
-										  reference: '',
-										  trackingSubmodules: false]] +
-										[[$class: 'CleanBeforeCheckout']]
+									]
 								],
 								targets: ["${env.BRANCH_NAME}"]
 							)
@@ -72,7 +64,7 @@ pipeline {
 		stage('Build') {
 			steps {
 				sh "cd ${env.GB_PROJECT} && make -j8 config=debug dist libgb.a"
-				archiveArtifacts artifacts: "${env.GB_PROJECT}/*.tar.gz,${env.GB_PROJECT}/libgb.a,${env.GB_PROJECT}/WantedCheckerApi.h", fingerprint: true
+				archiveArtifacts artifacts: "${env.GB_PROJECT}/*.tar.gz,${env.GB_PROJECT}/libgb.a,${env.GB_PROJECT}/*.h", fingerprint: true
 			}
 		}
 
