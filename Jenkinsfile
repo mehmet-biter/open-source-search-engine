@@ -28,7 +28,12 @@ pipeline {
 										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
 										[$class: 'CleanBeforeCheckoutTrait'],
 										[$class: 'DisableStatusUpdateTrait'],
-										[$class: 'SubmoduleOptionTrait', recursiveSubmodules: true]
+										[$class: 'SubmoduleOptionTrait', 
+										 disableSubmodules: false,
+										 recursiveSubmodules: true,
+										 trackingSubmodules: false,
+										 parentCredentials: false
+										]
 									]
 								],
 								targets: ["${env.BRANCH_NAME}"]
