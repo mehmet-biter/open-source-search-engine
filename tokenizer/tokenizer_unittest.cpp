@@ -879,6 +879,7 @@ int main(void) {
 	assert(!is_slash_abbreviation("smurf",5));
 	assert(!is_slash_abbreviation("//comment",9));
 	assert(!is_slash_abbreviation("foo/boo",7));
+	assert(!is_slash_abbreviation("foo/",4));
 	assert(is_slash_abbreviation("m/s",3));
 	assert(is_slash_abbreviation("A/S",3));
 	assert(is_slash_abbreviation("a/s",3));
@@ -891,6 +892,8 @@ int main(void) {
 		assert(t.has_token("kmh"));
 		assert(!t.has_token("km"));
 		assert(!t.has_token("h"));
+		assert(t.has_token("80"));
+		assert(t.has_token("on"));
 	}
 	
 	return 0;
