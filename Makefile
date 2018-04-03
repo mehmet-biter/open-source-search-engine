@@ -297,7 +297,7 @@ all: gb
 
 
 # third party libraries
-DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so.2 slacktee.sh
+DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so libcares.so.2 slacktee.sh
 LIBFILES = $(DIST_LIBFILES) libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 LIBS += -lword_variations -lsto -lunicode
@@ -325,10 +325,12 @@ libced.so:
 	ln -sf third-party/compact_enc_det/lib/libced.so libced.so
 
 CARES_SRC_DIR=third-party/c-ares
+libcares.so: libcares.so.2
+	ln -sf libcares.so.2 libcares.so
+
 libcares.so.2:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
 	ln -sf $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
-	ln -sf libcares.so.2 libcares.so
 
 #always rebuild if needed
 .PHONY: libword_variations.a
