@@ -37,8 +37,10 @@ public:
 		printf("phase1-tokens: %u\n", (unsigned)tr.size());
 		for(unsigned i=0; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
-		size_t p1tokens = tr.size();
 		plain_tokenizer_phase_2(lang,country_code,&tr);
+		size_t p1tokens = 0;
+		while(p1tokens<tr.size() && tr[p1tokens].is_primary)
+			p1tokens++;
 		printf("phase2-tokens: %u\n", (unsigned)(tr.size()-p1tokens));
 		for(unsigned i=p1tokens; i<tr.size(); i++)
 			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
@@ -870,5 +872,25 @@ int main(void) {
 		assert(t.has_token("F#"));
 		assert(t.has_token("A*"));
 	}
+	
+	//slash-abbreviations
+	printf("Test line %d\n",__LINE__);
+	assert(!is_slash_abbreviation("",0));
+	assert(!is_slash_abbreviation("smurf",5));
+	assert(!is_slash_abbreviation("//comment",9));
+	assert(!is_slash_abbreviation("foo/boo",7));
+	assert(is_slash_abbreviation("m/s",3));
+	assert(is_slash_abbreviation("A/S",3));
+	assert(is_slash_abbreviation("a/s",3));
+	assert(is_slash_abbreviation("km/h",4));
+
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("The smurf drove 80 km/h on the highway",langUnknown);
+		assert(t.has_token("kmh"));
+		assert(!t.has_token("km"));
+		assert(!t.has_token("h"));
+	}
+	
 	return 0;
 }

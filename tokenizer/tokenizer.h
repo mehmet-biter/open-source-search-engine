@@ -68,5 +68,6 @@ void xml_tokenizer_phase_2(const Xml *xml, lang_t lang, const char *country_code
 
 void calculate_tokens_hashes(TokenizerResult *tr);
 
+bool is_slash_abbreviation(const char *s, size_t slen);
 
 #endif

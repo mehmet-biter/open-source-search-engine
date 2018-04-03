@@ -21,6 +21,7 @@ static void tokenize_superscript(TokenizerResult *tr);
 static void tokenize_subscript(TokenizerResult *tr);
 static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void recognize_cplusplus_and_other(TokenizerResult *tr);
+static void collapse_slash_abbreviations(TokenizerResult *tr);
 static void remove_duplicated_tokens(TokenizerResult *tr, size_t org_token_count);
 
 
@@ -36,6 +37,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 		country_code = "";
 	decompose_stylistic_ligatures(tr);
 	decompose_language_specific_ligatures(tr,lang,country_code);
+	collapse_slash_abbreviations(tr);
 	remove_combining_marks(tr,lang);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
@@ -51,6 +53,13 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	
 	//The phase-2 sub-rules can have produced duplicated tokens. Eg. the hyphenation joining and the telephone number recognition may both have
 	//joined  "111-222-333" into a single token. Remove the duplicates.
+	//phase-2 may have removed/replaced some of the original tokens, so 'org_token_count' is just a good guess.
+	//Make the guess exact
+	while(org_token_count > tr->tokens.size())
+		org_token_count--;
+	while(org_token_count>0 && !tr->tokens[org_token_count-1].is_primary)
+		org_token_count--;
+	
 	remove_duplicated_tokens(tr,org_token_count);
 }
 
@@ -988,4 +997,81 @@ static void recognize_cplusplus_and_other(TokenizerResult *tr) {
 	recognize_alfanum_nonalfanum_pair(tr, "C","#", "C#");
 	recognize_alfanum_nonalfanum_pair(tr, "c","#", "c#");
 	recognize_alfanum_nonalfanum_pair(tr, "A","*", "A*");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// slash-abbreviation stuff, eg "m/sec"
+bool is_slash_abbreviation(const char *s, size_t slen) {
+	//Minor todo: handle the other slashes than plain U+002F, someone might have used U+2044 or U+2215
+	//but that doesn't appear to happen that frequently.
+	if(slen<3)
+		return false;
+	if(slen>4+1+4)
+		return false;
+	if(memchr(s,'/',slen)==0)
+		return false;
+	UChar32 uc_org_token[max_word_codepoints];
+	if(slen*4 > sizeof(uc_org_token))
+		return false;
+	int org_codepoints = decode_utf8_string(s,slen,uc_org_token);
+	if(org_codepoints<3)
+		return false;
+	int slash_count = 0;
+	for(int i=0; i<org_codepoints; i++) {
+		if(uc_org_token[i]=='/')
+			slash_count++;
+		else if(UnicodeMaps::is_alphabetic(uc_org_token[i]))
+			;
+		else
+			return false;
+	}
+	if(slash_count!=1)
+		return false;
+	//ok, we have <alfa> <slash> <alfa>
+	//for <single-alfa> <slash> <single-alfa> we assume it is a slash-abbreviation
+	if(org_codepoints==3)
+		return true;
+	
+	//The other abbreviations are hardcoded.
+	static const char *a[] = {
+		"m/sec",
+		"km/h",
+		"m/sek",
+		"km/t",
+		"m/s²",
+	};
+	for(size_t i=0; i<sizeof(a)/sizeof(a[0]); i++) {
+		if(strlen(a[i])==slen && memcmp(a[i],s,slen)==0)
+			return true;
+	}
+	return false;
+}
+
+
+static void collapse_slash_abbreviations(TokenizerResult *tr) {
+	size_t org_token_count = tr->size();
+	for(size_t i=1; i+2<org_token_count; i++) {
+		const auto &t0 = (*tr)[i+0];
+		const auto &t1 = (*tr)[i+1];
+		const auto &t2 = (*tr)[i+2];
+		if(!t0.is_alfanum || t1.is_alfanum || !t2.is_alfanum)
+			continue;
+		if(t1.token_len!=1 || t1.token_start[0]!='/')
+			continue;
+		if(!t0.is_primary || !t1.is_primary || !t2.is_primary)
+			continue;
+		if(t0.token_end()!=t1.token_start || t1.token_end()!=t2.token_start)
+			continue;
+		if(!is_slash_abbreviation(t0.token_start, t0.token_len+t1.token_len+t2.token_len))
+			continue;
+		size_t sl = t0.token_len + t2.token_len;
+		char *s = (char*)tr->egstack.alloc(sl);
+		memcpy(s, t0.token_start, t0.token_len);
+		memcpy(s+t0.token_len, t2.token_start, t2.token_len);
+		tr->tokens.emplace_back(t0.start_pos, t2.end_pos, s,sl, false, true);
+		tr->tokens.erase(tr->tokens.begin()+i, tr->tokens.begin()+i+3);
+		org_token_count -= 3;
+		i -= 2;
+	}
 }
