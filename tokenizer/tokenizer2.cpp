@@ -1011,6 +1011,10 @@ bool is_slash_abbreviation(const char *s, size_t slen) {
 		return false;
 	if(memchr(s,'/',slen)==0)
 		return false;
+	if(s[0]=='/')
+		return false;
+	if(s[slen-1]=='/')
+		return false;
 	UChar32 uc_org_token[max_word_codepoints];
 	if(slen*4 > sizeof(uc_org_token))
 		return false;
@@ -1040,6 +1044,10 @@ bool is_slash_abbreviation(const char *s, size_t slen) {
 		"m/sek",
 		"km/t",
 		"m/s²",
+		"s/n",
+		"S/N",
+		"Mb/s",		//should we also ahve the common mistake mb/s (millibits per second)?
+		"kB/s",
 	};
 	for(size_t i=0; i<sizeof(a)/sizeof(a[0]); i++) {
 		if(strlen(a[i])==slen && memcmp(a[i],s,slen)==0)

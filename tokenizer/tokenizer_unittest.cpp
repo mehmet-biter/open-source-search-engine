@@ -883,6 +883,7 @@ int main(void) {
 	assert(is_slash_abbreviation("A/S",3));
 	assert(is_slash_abbreviation("a/s",3));
 	assert(is_slash_abbreviation("km/h",4));
+	assert(is_slash_abbreviation("kB/s",4));
 
 	printf("Test line %d\n",__LINE__);
 	{
