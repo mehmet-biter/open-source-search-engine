@@ -1312,6 +1312,22 @@ bool Query::setQWords ( char boolFlag ,
 			continue;
 		}
 	}
+	for(size_t i=0; i+2<m_tr.size(); ) {
+		const auto &t0 = m_tr[i+0];
+		const auto &t1 = m_tr[i+1];
+		const auto &t2 = m_tr[i+2];
+		if(t0.token_end()==t1.token_start && t1.token_end()==t2.token_start &&
+		   is_slash_abbreviation(t0.token_start, t0.token_len+t1.token_len+t2.token_len))
+		{
+			size_t sl = t0.token_len+t2.token_len;
+			char *s = (char*)m_tr.egstack.alloc(sl);
+			memcpy(s, t0.token_start, t0.token_len);
+			memcpy(s+t0.token_len, t2.token_start, t2.token_len);
+			m_tr.tokens.emplace_back(t0.start_pos, t2.end_pos, s,sl, false, true);
+			m_tr.tokens.erase(m_tr.tokens.begin()+i, m_tr.tokens.begin()+i+3);
+		} else
+			i++;
+	}
 
 	int32_t numWords = m_tr.size();
 	// truncate it
