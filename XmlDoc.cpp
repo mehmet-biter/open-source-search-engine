@@ -18354,66 +18354,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-void XmlDoc::printTermList() const {
-	if (!m_wts) {
-		return;
-	}
-
-	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
-	TermDebugInfo **tp = NULL;
-
-	// add them with this counter
-	int32_t nt = 0;
-
-	int32_t nwt = m_wts->getNumSlots();
-	tp = (TermDebugInfo **)m_wts->m_keys;
-
-	// now print the table we stored all we hashed into
-	for ( int32_t i = 0 ; i < nwt ; i++ ) {
-		// skip if empty
-		if ( m_wts->m_flags[i] == 0 ) continue;
-
-		// get the TermDebugInfo
-		TermDebugInfo *ti = (TermDebugInfo *)m_wts->getValueFromSlot ( i );
-		// point to it for sorting
-		tp[nt++] = ti;
-	}
-
-	const char *start = m_wbuf.getBufStart();
-
-	for ( int32_t i = 0 ; i < nt ; i++ ) {
-		TermDebugInfo *tpi = tp[i];
-
-		const char *prefix = NULL;
-		if (tpi->m_prefixOff >= 0) {
-			prefix = start + tpi->m_prefixOff;
-		}
-
-		const char *desc = NULL;
-		if (tpi->m_descOff >= 0) {
-			desc = start + tpi->m_descOff;
-		}
-
-		// use hashgroup
-		int32_t hg = tpi->m_hashGroup;
-		if (!desc || !strcmp(desc, "body"))
-			desc = getHashGroupString(hg);
-
-		logf(LOG_TRACE, "termId=%015" PRId64" prefix='%s' wordPos=%" PRId32" wordNum=%" PRId32" term='%.*s' desc='%s%s%s' densityRank=%hhd wordSpamRank=%hhd",
-		     (int64_t)(tp[i]->m_termId & TERMID_MASK),
-		     prefix ? prefix : "",
-		     tpi->m_wordPos,
-		     tpi->m_wordNum,
-		     tpi->m_termLen, start + tpi->m_termOff,
-		     desc,
-		     tpi->m_synSrc ? " - " : "",
-		     tpi->m_synSrc ? getSourceString(tpi->m_synSrc) : "",
-		     tpi->m_densityRank,
-		     tpi->m_wordSpamRank);
-
-	}
-}
-
 bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// set debug buffer
