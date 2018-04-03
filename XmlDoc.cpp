@@ -18359,28 +18359,22 @@ void XmlDoc::printTermList() const {
 		return;
 	}
 
-	// shortcut
-	HashTableX *wt = m_wts;
-
 	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
 	TermDebugInfo **tp = NULL;
 
 	// add them with this counter
 	int32_t nt = 0;
 
-	int32_t nwt = 0;
-	if ( wt ) {
-		nwt = wt->getNumSlots();
-		tp = (TermDebugInfo **)wt->m_keys;
-	}
+	int32_t nwt = m_wts->getNumSlots();
+	tp = (TermDebugInfo **)m_wts->m_keys;
 
 	// now print the table we stored all we hashed into
 	for ( int32_t i = 0 ; i < nwt ; i++ ) {
 		// skip if empty
-		if ( wt->m_flags[i] == 0 ) continue;
+		if ( m_wts->m_flags[i] == 0 ) continue;
 
 		// get the TermDebugInfo
-		TermDebugInfo *ti = (TermDebugInfo *)wt->getValueFromSlot ( i );
+		TermDebugInfo *ti = (TermDebugInfo *)m_wts->getValueFromSlot ( i );
 		// point to it for sorting
 		tp[nt++] = ti;
 	}
