@@ -288,10 +288,14 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		// only use other hints if fx_qlang is not set
 		if (!valid_qlang) {
 			if (m_fx_blang) {
+				const char *comma = strchr(m_fx_blang,',');
 				// validate lang
 				size_t len = strlen(m_fx_blang);
-				if (len > 0 && len <= 17) {
-					strcat(content_language_hint, m_fx_blang);
+				if(comma)
+					len = comma-m_fx_blang;
+				if (len > 0 && len < sizeof(content_language_hint)) {
+					memcpy(content_language_hint, m_fx_blang,len);
+					content_language_hint[len] = '\0';
 				}
 			}
 
@@ -348,9 +352,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// if &qlang was not given explicitly fall back to coll rec
 	if (!langAbbr) {
 		langAbbr = cr->m_defaultSortLanguage2;
-	}
-
-	log(LOG_INFO,"query: using default lang of %s", langAbbr );
+		log(LOG_INFO,"query: using default lang of %s", langAbbr);
+	} else
+		log(LOG_INFO,"query: using lang of %s", langAbbr);
+	
 
 	// get code
 	m_queryLangId = getLangIdFromAbbr ( langAbbr );
