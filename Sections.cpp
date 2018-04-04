@@ -657,6 +657,8 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentTy
 			}
 			if(!hasClosingIframeTag)
 				inIFrame = true;
+			else if(!inGbFrame)
+				sn->m_flags |= SEC_IN_IFRAME;
 		} else if (tid == (TAG_IFRAME | BACKBIT)) { //never happens how sentences are currently split
 			inIFrame = false;
 		} else if ( tid == TAG_GBFRAME ) {
