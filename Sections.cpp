@@ -648,6 +648,8 @@ bool Sections::set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_
 			}
 			if(!hasClosingIframeTag)
 				inIFrame = true;
+			else if(!inGbFrame)
+				sn->m_flags |= SEC_IN_IFRAME;
 		} else if (tid == (TAG_IFRAME | BACKBIT)) { //never happens how sentences are currently split
 			inIFrame = false;
 		} else if ( tid == TAG_GBFRAME ) {
