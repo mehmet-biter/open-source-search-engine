@@ -1297,15 +1297,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// skip if got nuked above
 	if ( ! w ) { g_process.shutdownAbort(true); }
 
-	// need to make our own Pos class if title not from body
-	Pos  tp;
-	if ( w != words ) {
-		// set "Scores" ptr to NULL. we assume all are positive scores
-		if ( ! tp.set ( w ) ) {
-			return false;
-		}
-	}
-
 	// the string ranges from word #a up to and including word #b
 	int32_t a = as[winner];
 	int32_t b = bs[winner];
