@@ -27,6 +27,8 @@ typedef void (*query_language_callback_t)(void *context, std::vector<std::pair<l
 class QueryLanguage : public FxClient {
 public:
 	bool initialize();
+	void reinitializeSettings();
+
 	using FxClient::finalize;
 
 	void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, fxclient_request_ptr_t base_request) override;

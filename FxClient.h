@@ -76,6 +76,7 @@ private:
 	std::atomic<unsigned> m_outstanding_request_count;
 
 	const char *m_servicename;
+	const char *m_threadname;
 	const char *m_hostname;
 	int m_port;
 	unsigned m_max_outstanding;

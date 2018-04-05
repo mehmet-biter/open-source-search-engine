@@ -37,6 +37,7 @@
 #include "Doledb.h"
 #include "GbDns.h"
 #include "SiteMedianPageTemperatureRegistry.h"
+#include "QueryLanguage.h"
 #include <set>
 #include <fstream>
 
@@ -5453,6 +5454,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
 	m++;
 
 	m->m_title = "Query language server port";
@@ -5465,6 +5467,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
 	m++;
 
 	m->m_title = "Query language max outstanding requests";
@@ -5476,6 +5479,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
 	m++;
 
 	m->m_title = "Query language timeout";
@@ -5488,6 +5492,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
 	m++;
 
 
@@ -10683,6 +10688,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildRankingSettings = false;
 	bool rebuildDnsSettings = false;
 	bool rebuildSpiderSettings = false;
+	bool rebuildQueryLanguageSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10779,6 +10785,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
 				rebuildSpiderSettings = true;
 			}
+
+			if (parm->m_flags & PF_REBUILDQUERYLANGSETTINGS) {
+				rebuildQueryLanguageSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10839,6 +10849,11 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	if (rebuildSpiderSettings) {
 		log("parms: rebuild spider settings");
 		g_spiderLoop.initSettings();
+	}
+
+	if (rebuildQueryLanguageSettings) {
+		log("parms: rebuild fxclient settings");
+		g_queryLanguage.reinitializeSettings();
 	}
 
 	// note it

@@ -70,6 +70,7 @@ FxClient::FxClient()
 	, m_communication_works(false)
 	, m_outstanding_request_count(0)
 	, m_servicename(nullptr)
+	, m_threadname(nullptr)
 	, m_hostname(nullptr)
 	, m_port(0) {
 }
@@ -370,7 +371,10 @@ void *FxClient::communicationThread(void *args) {
 
 
 bool FxClient::initialize(const char *servicename, const char *threadname, const char *hostname, int port, unsigned max_outstanding, bool log_trace) {
-	reinitializeSettings(hostname, port, max_outstanding, log_trace);
+	m_hostname = hostname;
+	m_port = port;
+	m_max_outstanding = max_outstanding;
+	m_log_trace = log_trace;
 
 	if (pipe(m_wakeup_fd) != 0) {
 		log(LOG_ERROR, "client: pipe() failed with errno=%d (%s)", errno, strerror(errno));
@@ -385,6 +389,7 @@ bool FxClient::initialize(const char *servicename, const char *threadname, const
 	}
 
 	m_servicename = servicename;
+	m_threadname = threadname;
 
 	int rc = pthread_create(&m_tid, nullptr, communicationThread, this);
 	if (rc != 0) {
@@ -395,14 +400,23 @@ bool FxClient::initialize(const char *servicename, const char *threadname, const
 	}
 
 	//set thread name so "perf top" et al can show a nice name
-	pthread_setname_np(m_tid, threadname);
+	pthread_setname_np(m_tid, m_threadname);
 
 	return true;
 }
 
 void FxClient::reinitializeSettings(const char *hostname, int port, unsigned max_outstanding, bool log_trace) {
-	m_hostname = hostname;
-	m_port = port;
+	if (strcasecmp(m_hostname, hostname) != 0 || m_port != port) {
+		log(LOG_INFO, "client: reconnect to %s:%d", hostname, port);
+		// changes in connection
+		finalize();
+
+		m_stop = false;
+		initialize(m_servicename, m_threadname, hostname, port, max_outstanding, log_trace);
+		return;
+	}
+
+	// other changes
 	m_max_outstanding = max_outstanding;
 	m_log_trace = log_trace;
 }

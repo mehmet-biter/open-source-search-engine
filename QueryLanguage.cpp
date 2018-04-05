@@ -142,6 +142,11 @@ bool QueryLanguage::initialize() {
 	                            g_conf.m_maxOutstandingQueryLanguage, g_conf.m_logTraceQueryLanguage);
 }
 
+void QueryLanguage::reinitializeSettings() {
+	FxClient::reinitializeSettings(g_conf.m_queryLanguageServerName, g_conf.m_queryLanguageServerPort,
+	                               g_conf.m_maxOutstandingQueryLanguage, g_conf.m_logTraceQueryLanguage);
+}
+
 bool QueryLanguage::getLanguage(void *context, query_language_callback_t callback,
                                 const std::string &qlang_hint, const std::string &blang_hint,
                                 const std::string &country_hint, const std::string &fe_tld_hint,
