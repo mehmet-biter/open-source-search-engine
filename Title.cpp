@@ -123,22 +123,23 @@ bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType
 }
 
 // types of titles. indicates where they came from.
-#define TT_LINKTEXTLOCAL  1
-#define TT_LINKTEXTREMOTE 2
-#define TT_RSSITEMLOCAL   3
-#define TT_RSSITEMREMOTE  4
-#define TT_BOLDTAG        5
-#define TT_HTAG           6
-#define TT_TITLETAG       7
-#define TT_FIRSTLINE      9
-#define TT_DIVTAG         10
-#define TT_FONTTAG        11
-#define TT_ATAG           12
-#define TT_TDTAG          13
-#define TT_PTAG           14
-#define TT_URLPATH        15
-#define TT_TITLEATT       16
-
+enum class title_source_t {
+	TT_LINKTEXTLOCAL  = 1,
+	TT_LINKTEXTREMOTE,
+	TT_RSSITEMLOCAL,
+	TT_RSSITEMREMOTE,
+	TT_BOLDTAG,
+	TT_HTAG,
+	TT_TITLETAG,
+	TT_FIRSTLINE,
+	TT_DIVTAG,
+	TT_FONTTAG,
+	TT_ATAG,
+	TT_TDTAG,
+	TT_PTAG,
+	TT_URLPATH,
+	TT_TITLEATT,
+};
 #define MAX_TIT_CANDIDATES 100
 
 static bool isAlpha(const TokenRange &token) {
@@ -214,7 +215,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 	int32_t bs[MAX_TIT_CANDIDATES];
 	float scores[MAX_TIT_CANDIDATES];
 	const TokenizerResult *cptrs[MAX_TIT_CANDIDATES];
-	int32_t types[MAX_TIT_CANDIDATES];
+	title_source_t types[MAX_TIT_CANDIDATES];
 	int32_t parent[MAX_TIT_CANDIDATES];
 
 	// record the scoring algos effects
@@ -289,8 +290,8 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 			// do not count so high if remote!
 			else      scores[n] = 0.80;
 			// set the type
-			if ( sh ) types [n] = TT_LINKTEXTLOCAL;
-			else      types [n] = TT_LINKTEXTREMOTE;
+			if ( sh ) types [n] = title_source_t::TT_LINKTEXTLOCAL;
+			else      types [n] = title_source_t::TT_LINKTEXTREMOTE;
 			// another candidate
 			n++;
 			// use xml and words
@@ -325,8 +326,8 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		// if not same host, treat like link text
 		else      scores[n] = 2.0;
 		// set the type
-		if ( sh ) types [n] = TT_RSSITEMLOCAL;
-		else      types [n] = TT_RSSITEMREMOTE;
+		if ( sh ) types [n] = title_source_t::TT_RSSITEMLOCAL;
+		else      types [n] = title_source_t::TT_RSSITEMREMOTE;
 		// advance
 		n++;
 		// break out if too many already. save some for below.
@@ -455,7 +456,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		as      [n] = 0;
 		bs      [n] = ttr[ti].size();
 		scores  [n] = 3.0; // not ALWAYS solid gold!
-		types   [n] = TT_TITLEATT;
+		types   [n] = title_source_t::TT_TITLEATT;
 
 		// we are using the words class
 		ti++;
@@ -635,34 +636,34 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		as[n] = start;
 		bs[n] = i;
 		if ( tid == TAG_B ) {
-			types[n] = TT_BOLDTAG;
+			types[n] = title_source_t::TT_BOLDTAG;
 			scores[n] = 1.0;
 		} else if ( tid == TAG_H1 ) {
-			types[n] = TT_HTAG;
+			types[n] = title_source_t::TT_HTAG;
 			scores[n] = 1.8;
 		} else if ( tid == TAG_H2 ) {
-			types[n] = TT_HTAG;
+			types[n] = title_source_t::TT_HTAG;
 			scores[n] = 1.7;
 		} else if ( tid == TAG_H3 ) {
-			types[n] = TT_HTAG;
+			types[n] = title_source_t::TT_HTAG;
 			scores[n] = 1.6;
 		} else if ( tid == TAG_TITLE ) {
-			types[n] = TT_TITLETAG;
+			types[n] = title_source_t::TT_TITLETAG;
 			scores[n] = 3.0;
 		} else if ( tid == TAG_DIV ) {
-			types[n] = TT_DIVTAG;
+			types[n] = title_source_t::TT_DIVTAG;
 			scores[n] = 1.0;
 		} else if ( tid == TAG_TD ) {
-			types[n] = TT_TDTAG;
+			types[n] = title_source_t::TT_TDTAG;
 			scores[n] = 1.0;
 		} else if ( tid == TAG_P ) {
-			types[n] = TT_PTAG;
+			types[n] = title_source_t::TT_PTAG;
 			scores[n] = 1.0;
 		} else if ( tid == TAG_FONT ) {
-			types[n] = TT_FONTTAG;
+			types[n] = title_source_t::TT_FONTTAG;
 			scores[n] = 1.0;
 		} else if ( tid == TAG_A ) {
-			types[n] = TT_ATAG;
+			types[n] = title_source_t::TT_ATAG;
 			// . self link is very powerful BUT
 			//   http://www.npr.org/templates/story/story.php?storyId=5417137
 			//   doesn't use it right! so use
@@ -730,7 +731,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 
 			// this is the last resort i guess...
 			scores  [n] =  0.5;
-			types   [n] =  TT_FIRSTLINE;
+			types   [n] =  title_source_t::TT_FIRSTLINE;
 			as      [n] =  t0;
 			bs      [n] =  t1;
 
@@ -792,7 +793,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 			as      [n] = 0;
 			bs      [n] = ttr[ti].size();
 			scores  [n] = 1.0;
-			types   [n] = TT_URLPATH;
+			types   [n] = title_source_t::TT_URLPATH;
 
 			// increment since we are using it
 			ti++;
@@ -1126,8 +1127,8 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 			// and its kids, subtitles...
 			//
 			// do not compare type X to type Y
-			if ( types[i] == TT_TITLETAG ) {
-				if ( types[j] == TT_TITLETAG ) {
+			if ( types[i] == title_source_t::TT_TITLETAG ) {
+				if ( types[j] == title_source_t::TT_TITLETAG ) {
 					continue;
 				}
 			}
@@ -1137,11 +1138,11 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 			// likewise, a TD to another TD
 			// http://content-uk.cricinfo.com/ausvrsa2008_09/engine/match/351681.html
 			// ... etc.
-			if ( types[i] == TT_BOLDTAG ||
-			     types[i] == TT_HTAG    ||
-			     types[i] == TT_DIVTAG  ||
-			     types[i] == TT_TDTAG   ||
-			     types[i] == TT_FONTTAG    ) {
+			if ( types[i] == title_source_t::TT_BOLDTAG ||
+			     types[i] == title_source_t::TT_HTAG    ||
+			     types[i] == title_source_t::TT_DIVTAG  ||
+			     types[i] == title_source_t::TT_TDTAG   ||
+			     types[i] == title_source_t::TT_FONTTAG    ) {
 				if ( types[j] == types[i] ) continue;
 			}
 			// . do not compare one kid to another kid
@@ -1157,31 +1158,31 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 			//   http://larvatusprodeo.net/2009/01/07/partisanship-politics-and-participation/
 			//   i put bold tags back
 
-			if ( types[i] == TT_LINKTEXTLOCAL ) {
-				if ( types[j] == TT_LINKTEXTLOCAL ) continue;
+			if ( types[i] == title_source_t::TT_LINKTEXTLOCAL ) {
+				if ( types[j] == title_source_t::TT_LINKTEXTLOCAL ) continue;
 			}
-			if ( types[i] == TT_RSSITEMLOCAL ) {
-				if ( types[j] == TT_RSSITEMLOCAL ) continue;
+			if ( types[i] == title_source_t::TT_RSSITEMLOCAL ) {
+				if ( types[j] == title_source_t::TT_RSSITEMLOCAL ) continue;
 			}
 
 			// only compare to one local link text for each i
-			if ( types[j] == TT_LINKTEXTLOCAL && localFlag1 ) {
+			if ( types[j] == title_source_t::TT_LINKTEXTLOCAL && localFlag1 ) {
 				continue;
 			}
-			if ( types[j] == TT_RSSITEMLOCAL  && localFlag2 ) {
+			if ( types[j] == title_source_t::TT_RSSITEMLOCAL  && localFlag2 ) {
 				continue;
 			}
-			if ( types[j] == TT_LINKTEXTLOCAL ) {
+			if ( types[j] == title_source_t::TT_LINKTEXTLOCAL ) {
 				localFlag1 = 1;
 			}
-			if ( types[j] == TT_RSSITEMLOCAL  ) {
+			if ( types[j] == title_source_t::TT_RSSITEMLOCAL  ) {
 				localFlag2 = 1;
 			}
 
 			// not link title attr to link title attr either
 			// fixes http://www.spiritualwoman.net/?cat=191
-			if ( types[i] == TT_TITLEATT &&
-			     types[j] == TT_TITLEATT )
+			if ( types[i] == title_source_t::TT_TITLEATT &&
+			     types[j] == title_source_t::TT_TITLEATT )
 				continue;
 
 			// get our words
@@ -1251,7 +1252,7 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		}
 
 		// url path's cannot be titles in and of themselves
-		if ( types[i] == TT_URLPATH ) {
+		if ( types[i] == title_source_t::TT_URLPATH ) {
 			continue;
 		}
 
@@ -1293,15 +1294,6 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 	// skip if got nuked above
 	if ( ! tr4 ) { g_process.shutdownAbort(true); }
 
-	// need to make our own Pos class if title not from body
-	Pos  tp;
-	if ( tr4 != tr ) {
-		// set "Scores" ptr to NULL. we assume all are positive scores
-		if ( ! tp.set ( tr4 ) ) {
-			return false;
-		}
-	}
-
 	// the string ranges from word #a up to and including word #b
 	int32_t a = as[winner];
 	int32_t b = bs[winner];
@@ -1342,21 +1334,21 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 	// print out all candidates
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		char *ts = "unknown";
-		if ( types[i] == TT_LINKTEXTLOCAL  ) ts = "local inlink text";
-		if ( types[i] == TT_LINKTEXTREMOTE ) ts = "remote inlink text";
-		if ( types[i] == TT_RSSITEMLOCAL   ) ts = "local rss title";
-		if ( types[i] == TT_RSSITEMREMOTE  ) ts = "remote rss title";
-		if ( types[i] == TT_BOLDTAG        ) ts = "bold tag";
-		if ( types[i] == TT_HTAG           ) ts = "header tag";
-		if ( types[i] == TT_TITLETAG       ) ts = "title tag";
-		if ( types[i] == TT_FIRSTLINE      ) ts = "first line in text";
-		if ( types[i] == TT_FONTTAG        ) ts = "font tag";
-		if ( types[i] == TT_ATAG           ) ts = "anchor tag";
-		if ( types[i] == TT_DIVTAG         ) ts = "div tag";
-		if ( types[i] == TT_TDTAG          ) ts = "td tag";
-		if ( types[i] == TT_PTAG           ) ts = "p tag";
-		if ( types[i] == TT_URLPATH        ) ts = "url path";
-		if ( types[i] == TT_TITLEATT       ) ts = "title attribute";
+		if ( types[i] == title_source_t::TT_LINKTEXTLOCAL  ) ts = "local inlink text";
+		if ( types[i] == title_source_t::TT_LINKTEXTREMOTE ) ts = "remote inlink text";
+		if ( types[i] == title_source_t::TT_RSSITEMLOCAL   ) ts = "local rss title";
+		if ( types[i] == title_source_t::TT_RSSITEMREMOTE  ) ts = "remote rss title";
+		if ( types[i] == title_source_t::TT_BOLDTAG        ) ts = "bold tag";
+		if ( types[i] == title_source_t::TT_HTAG           ) ts = "header tag";
+		if ( types[i] == title_source_t::TT_TITLETAG       ) ts = "title tag";
+		if ( types[i] == title_source_t::TT_FIRSTLINE      ) ts = "first line in text";
+		if ( types[i] == title_source_t::TT_FONTTAG        ) ts = "font tag";
+		if ( types[i] == title_source_t::TT_ATAG           ) ts = "anchor tag";
+		if ( types[i] == title_source_t::TT_DIVTAG         ) ts = "div tag";
+		if ( types[i] == title_source_t::TT_TDTAG          ) ts = "td tag";
+		if ( types[i] == title_source_t::TT_PTAG           ) ts = "p tag";
+		if ( types[i] == title_source_t::TT_URLPATH        ) ts = "url path";
+		if ( types[i] == title_source_t::TT_TITLEATT       ) ts = "title attribute";
 		// get the title
 		pbuf->safePrintf(
 				 "<tr>"
