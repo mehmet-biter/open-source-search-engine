@@ -336,7 +336,7 @@ libsto.a:
 	$(MAKE) -C sto/
 	ln -sf sto/libsto.a libsto.a
 
-PHONY: libunicode.a
+.PHONY: libunicode.a
 libunicode.a:
 	$(MAKE) -C unicode/
 	ln -sf unicode/libunicode.a libunicode.a
