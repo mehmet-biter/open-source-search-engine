@@ -992,6 +992,7 @@ int main2 ( int argc , char *argv[] ) {
 					if ( prefix64 )
 						termId = hash64(termId,prefix64);
 					termId &= TERMID_MASK;
+					printf("termId=%ld\n", termId);
 				}
 				else {
 					termId = atoll1(targ);
