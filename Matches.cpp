@@ -147,10 +147,6 @@ void Matches::setQuery(const Query *q) {
 		// get query word #i
 		QueryTerm *qt = &m_q->m_qterms[i];
 
-		if( !qt ) {
-			continue;
-		}
-
 		// skip if ignored *in certain ways only*
 		if ( ! isMatchableTerm ( qt ) ) {
 			continue;

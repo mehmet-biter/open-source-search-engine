@@ -33,222 +33,222 @@ const char *g_msg;
 //   otherwise you'll get a malformed error when running
 static WebPage s_pages[] = {
 	// publicly accessible pages
-	{ PAGE_ROOT      , "index.html"    , 0 , "root" , 0 , page_method_t::page_method_get,
+	{ PAGE_ROOT      , "index.html"    , 0 , "root" , page_method_t::page_method_get,
 	  "search page to query",
 	  sendPageRoot,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_RESULTS   , "search"        , 0 , "search" , 0, page_method_t::page_method_get,
+	{ PAGE_RESULTS   , "search"        , 0 , "search" , page_method_t::page_method_get,
 	  "search results page",
 	  sendPageResults,
 	  PG_ACTIVE},
 
 	// this is the public addurl, /addurl, if you are using the 
 	// api use PAGE_ADDURL2 which is /admin/addurl. so we set PG_NOAPI here
-	{ PAGE_ADDURL    , "addurl"       , 0 , "add url" , 0, page_method_t::page_method_get,
+	{ PAGE_ADDURL    , "addurl"       , 0 , "add url" , page_method_t::page_method_get,
 	  "Page where you can add url for spidering",
 	  sendPageAddUrl,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_GET       , "get"           , 0 , "get" ,  0, page_method_t::page_method_get,
+	{ PAGE_GET       , "get"           , 0 , "get" , page_method_t::page_method_get,
 	  "gets cached web page",
 	  sendPageGet,
 	  PG_ACTIVE},
 
-	{ PAGE_LOGIN     , "login"         , 0 , "login" ,  0, page_method_t::page_method_get,
+	{ PAGE_LOGIN     , "login"         , 0 , "login" ,  page_method_t::page_method_get,
 	 "login",
 	 sendPageLogin,
 	  PG_NOAPI|PG_ACTIVE},
 
 	// use post now for the "site list" which can be big
-	{ PAGE_BASIC_SETTINGS, "admin/settings", 0 , "settings",1, page_method_t::page_method_post_url,
+	{ PAGE_BASIC_SETTINGS, "admin/settings", 0 , "settings", page_method_t::page_method_post_url,
 	  "basic settings", sendPageGeneric,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_BASIC_STATUS, "admin/status", 0 , "status",1, page_method_t::page_method_get,
+	{ PAGE_BASIC_STATUS, "admin/status", 0 , "status", page_method_t::page_method_get,
 	  "basic status", sendPageBasicStatus,
 	  PG_STATUS|PG_COLLADMIN|PG_ACTIVE},
 
 	{ PAGE_COLLPASSWORDS,
-	  "admin/collectionpasswords", 0,"collection passwords",0, page_method_t::page_method_get,
+	  "admin/collectionpasswords", 0,"collection passwords", page_method_t::page_method_get,
 	  "passwords", sendPageGeneric,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_BASIC_SEARCH, "", 0 , "search",1, page_method_t::page_method_get,
+	{ PAGE_BASIC_SEARCH, "", 0 , "search", page_method_t::page_method_get,
 	  "basic search", sendPageRoot,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_HOSTS     , "admin/hosts"   , 0 , "Hosts" ,  0, page_method_t::page_method_get,
+	{ PAGE_HOSTS     , "admin/hosts"   , 0 , "Hosts" , page_method_t::page_method_get,
 	  "hosts status", sendPageHosts,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_MASTER    , "admin/master"  , 0 , "Master controls" ,  1, page_method_t::page_method_get,
+	{ PAGE_MASTER    , "admin/master"  , 0 , "Master controls" , page_method_t::page_method_get,
 	  "master controls", sendPageGeneric,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_RDB   , "admin/rdb"   , 0 , "Rdb controls" ,1, page_method_t::page_method_get,
+	{ PAGE_RDB   , "admin/rdb"   , 0 , "Rdb controls" , page_method_t::page_method_get,
 	  "rdb controls", sendPageGeneric,
 	  PG_ACTIVE},
 
 	// use POST for html head/tail and page root html. might be large.
-	{ PAGE_SEARCH    , "admin/search"   , 0 , "Search controls" ,1, page_method_t::page_method_post_url,
+	{ PAGE_SEARCH    , "admin/search"   , 0 , "Search controls" , page_method_t::page_method_post_url,
 	  "search controls", sendPageGeneric,
 	  PG_ACTIVE},
 
 	// use POST for html head/tail and page root html. might be large.
-	{ PAGE_WORD_VARIATIONS, "admin/wordvariations"   , 0 , "Word Variations" ,1, page_method_t::page_method_post_url,
+	{ PAGE_WORD_VARIATIONS, "admin/wordvariations"   , 0 , "Word Variations" , page_method_t::page_method_post_url,
 	  "word variation controls", sendPageGeneric,
 	  PG_ACTIVE},
 
-	{ PAGE_RANKING   , "admin/ranking"   , 0 , "Ranking controls" ,1, page_method_t::page_method_get,
+	{ PAGE_RANKING   , "admin/ranking"   , 0 , "Ranking controls" , page_method_t::page_method_get,
 	  "ranking controls", sendPageGeneric,
 	  PG_ACTIVE},
 
 	// use post now for the "site list" which can be big
-	{ PAGE_SPIDER    , "admin/spider"   , 0 , "Spider controls" ,1, page_method_t::page_method_post_url,
+	{ PAGE_SPIDER    , "admin/spider"   , 0 , "Spider controls" , page_method_t::page_method_post_url,
 	  "spider controls", sendPageGeneric,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_SPIDERPROXIES,"admin/proxies"   , 0 , "Proxies" ,  1 , page_method_t::page_method_get,
+	{ PAGE_SPIDERPROXIES,"admin/proxies"   , 0 , "Proxies" , page_method_t::page_method_get,
 	  "proxies", sendPageGeneric,
 	  PG_MASTERADMIN|PG_ACTIVE } ,
 
-	{ PAGE_LOG       , "admin/log"     , 0 , "Log controls"     ,  1, page_method_t::page_method_get,
+	{ PAGE_LOG       , "admin/log"     , 0 , "Log controls"     , page_method_t::page_method_get,
 	  "log controls", sendPageGeneric,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_COLLPASSWORDS2,//BASIC_SECURITY, 
-	  "admin/collectionpasswords2", 0,"collection passwords",0, page_method_t::page_method_get,
+	  "admin/collectionpasswords2", 0,"collection passwords", page_method_t::page_method_get,
 	  "passwords", sendPageGeneric,
 	  PG_COLLADMIN|PG_NOAPI|PG_ACTIVE},
 
 
-	{ PAGE_MASTERPASSWORDS, "admin/masterpasswords", 0 , "Master passwords" ,  1, page_method_t::page_method_get,
+	{ PAGE_MASTERPASSWORDS, "admin/masterpasswords", 0 , "Master passwords" , page_method_t::page_method_get,
 	  "master passwords", 
 	  sendPageGeneric,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
 #ifndef PRIVACORE_SAFE_VERSION
-	{ PAGE_ADDCOLL   , "admin/addcoll" , 0 , "add collection"  ,  1, page_method_t::page_method_get,
+	{ PAGE_ADDCOLL   , "admin/addcoll" , 0 , "add collection"  , page_method_t::page_method_get,
 	  "add a new collection",
 	  sendPageAddColl,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_DELCOLL   , "admin/delcoll" , 0 , "delete collections" ,  1, page_method_t::page_method_get,
+	{ PAGE_DELCOLL   , "admin/delcoll" , 0 , "delete collections" , page_method_t::page_method_get,
 	  "delete a collection",
 	  sendPageDelColl,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_CLONECOLL, "admin/clonecoll" , 0 , "clone collection" ,  1, page_method_t::page_method_get,
+	{ PAGE_CLONECOLL, "admin/clonecoll" , 0 , "clone collection" , page_method_t::page_method_get,
 	  "clone one collection's settings to another",
 	  sendPageCloneColl,
 	  PG_MASTERADMIN|PG_ACTIVE},
 #endif
 	// let's replace this with query reindex for the most part
-	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "Rebuild" ,  1 , page_method_t::page_method_get,
+	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "Rebuild" , page_method_t::page_method_get,
 	  "rebuild data",
 	  sendPageGeneric,
 	  PG_MASTERADMIN |PG_ACTIVE},
 
-	{ PAGE_FILTERS   , "admin/filters", 0 , "Url filters" ,  1 , page_method_t::page_method_post_url,
+	{ PAGE_FILTERS   , "admin/filters", 0 , "Url filters" , page_method_t::page_method_post_url,
 	  "prioritize urls for spidering",
 	  sendPageGeneric,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_INJECT    , "admin/inject"   , 0 , "Inject url" , 0, page_method_t::page_method_post_form,
+	{ PAGE_INJECT    , "admin/inject"   , 0 , "Inject url" , page_method_t::page_method_post_form,
 	  "inject url in the index here",
 	  sendPageInject,
 	  PG_ACTIVE} ,
 
 	// this is the addurl page the the admin!
-	{ PAGE_ADDURL2   , "admin/addurl"   , 0 , "Add urls" ,  0 , page_method_t::page_method_get,
+	{ PAGE_ADDURL2   , "admin/addurl"   , 0 , "Add urls" , page_method_t::page_method_get,
 	  "add url page for admin",
 	  sendPageAddUrl2,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_REINDEX   , "admin/reindex"  , 0 , "Query reindex" ,  0 , page_method_t::page_method_get,
+	{ PAGE_REINDEX   , "admin/reindex"  , 0 , "Query reindex" , page_method_t::page_method_get,
 	  "query delete/reindex",
 	  sendPageReindex,
 	  PG_COLLADMIN|PG_ACTIVE},
 
 	// master admin pages
-	{ PAGE_STATS     , "admin/stats"   , 0 , "Stats" ,  0 , page_method_t::page_method_get,
+	{ PAGE_STATS     , "admin/stats"   , 0 , "Stats" , page_method_t::page_method_get,
 	  "general statistics",
 	  sendPageStats,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_PERF      , "admin/perf"    , 0 , "Performance"     ,  0 , page_method_t::page_method_get,
+	{ PAGE_PERF      , "admin/perf"    , 0 , "Performance"     , page_method_t::page_method_get,
 	  "function performance graph",
 	  sendPagePerf,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_SOCKETS   , "admin/sockets" , 0 , "Sockets" ,  0 , page_method_t::page_method_get,
+	{ PAGE_SOCKETS   , "admin/sockets" , 0 , "Sockets" , page_method_t::page_method_get,
 	  "sockets",
 	  sendPageSockets,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	// deactivate until works on 64-bit... mdw 12/14/14
-	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "Profiler" ,  0, page_method_t::page_method_post_url,
+	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "Profiler" , page_method_t::page_method_post_url,
 	  "profiler",
 	  sendPageProfiler,
 	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_THREADS    , "admin/threads"   , 0 , "Threads" ,  0 , page_method_t::page_method_get,
+	{ PAGE_THREADS    , "admin/threads"   , 0 , "Threads" , page_method_t::page_method_get,
 	  "threads",
 	  sendPageThreads,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_API , "admin/api"         , 0 , "api" , 0 , page_method_t::page_method_get,
+	{ PAGE_API , "admin/api"         , 0 , "api" , page_method_t::page_method_get,
 	  "api",  
 	  sendPageAPI,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_TITLEDB   , "admin/titledb" , 0 , "titledb"         ,  0, page_method_t::page_method_get,
+	{ PAGE_TITLEDB   , "admin/titledb" , 0 , "titledb"         , page_method_t::page_method_get,
 	  "titledb",
 	  sendPageTitledb,
 	  PG_NOAPI|PG_MASTERADMIN},
 
-	{ PAGE_LINKDBLOOKUP, "admin/linkdblookup", 0, "Linkdb",  0, page_method_t::page_method_get,
+	{ PAGE_LINKDBLOOKUP, "admin/linkdblookup", 0, "Linkdb", page_method_t::page_method_get,
 	  "Lookup record in linkdb",
 	  sendPageLinkdbLookup,
 	  PG_NOAPI|PG_MASTERADMIN},
 
-	{ PAGE_SPIDERDBLOOKUP, "admin/spiderdblookup", 0, "Spiderdb",  0, page_method_t::page_method_get,
+	{ PAGE_SPIDERDBLOOKUP, "admin/spiderdblookup", 0, "Spiderdb", page_method_t::page_method_get,
 	  "Lookup record in spiderdb",
 	  sendPageSpiderdbLookup,
 	  PG_NOAPI|PG_MASTERADMIN},
 
-	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "Spider queue" ,  0 , page_method_t::page_method_get,
+	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "Spider queue" , page_method_t::page_method_get,
 	  "spider queue",
 	  sendPageSpiderdb,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_DOLEIPTABLE  , "admin/doledbiptable" , 0 , "DoledbIP table" ,  0 , page_method_t::page_method_get,
+	{ PAGE_DOLEIPTABLE  , "admin/doledbiptable" , 0 , "DoledbIP table" , page_method_t::page_method_get,
 	  "doleip table",
 	  sendPageDoledbIPTable,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_SEARCHBOX , "admin/searchbox", 0 , "search" ,  0 , page_method_t::page_method_get,
+	{ PAGE_SEARCHBOX , "admin/searchbox", 0 , "search" , page_method_t::page_method_get,
 	  "search box",
 	  sendPageResults,
 	  PG_NOAPI},
 
-	{ PAGE_PARSER    , "admin/parser"  , 0 , "Parser"          , 0, page_method_t::page_method_post_url,
+	{ PAGE_PARSER    , "admin/parser"  , 0 , "Parser"          , page_method_t::page_method_post_url,
 	  "page parser",
 	  sendPageParser,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_DOCPROCESS, "admin/docprocess", 0, "DocProcess", 0, page_method_t::page_method_get,
+	{ PAGE_DOCPROCESS, "admin/docprocess", 0, "DocProcess", page_method_t::page_method_get,
 	  "Various doc process methods",
 	  sendPageDocProcess,
 	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "Tagdb"  ,  0, page_method_t::page_method_post_url,
+	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "Tagdb"  ,  page_method_t::page_method_post_url,
 	  "add/remove/get tags for sites/urls",
 	  sendPageTagdb,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},	  
 
-	{ PAGE_HEALTHCHECK, "health-check"   , 0 , "healthcheck" ,  0 , page_method_t::page_method_get,
+	{ PAGE_HEALTHCHECK, "health-check"   , 0 , "healthcheck" , page_method_t::page_method_get,
 	  "health check",
 	  sendPageHealthCheck,
 	  PG_NOAPI|PG_ACTIVE},

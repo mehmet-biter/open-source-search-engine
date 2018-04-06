@@ -1,4 +1,22 @@
-#include "GbLanguage.h"
+//
+// Copyright (C) 2017 Privacore ApS - https://www.privacore.com
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// License TL;DR: If you change this file, you must publish your changes.
+//
+#include "FxLanguage.h"
 
 #include <cstdio>
 #include "third-party/cld2/public/compact_lang_det.h"
@@ -733,14 +751,14 @@ static lang_t convertLangCLD3(std::string &language) {
 	try {
 		CLD2::Language langCLD2 = s_langCLD3toCLD2.at(language);
 		return convertLangCLD2(langCLD2);
-	} catch (std::out_of_range &e) {
+	} catch (std::out_of_range &) {
 		return langUnknown;
 	}
 }
 
-lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
+lang_t FxLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
                                  const char *contentLanguage, int32_t contentLanguageLen,
-                                 const char *tld, int32_t tldLen) {
+                                 const char *tld, int32_t tldLen, bool bestEffort) {
 	if (contentLen == 0) {
 		return langUnknown;
 	}
@@ -762,7 +780,9 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	CLD2::CLDHints cldhints = {content_language_hint.c_str(), tld_hint.c_str(), encoding_hint, language_hint};
 
 	int flags = 0;
-	//flags |= CLD2::kCLDFlagBestEffort;
+	if (bestEffort) {
+		flags |= CLD2::kCLDFlagBestEffort;
+	}
 
 	CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE};
 	int percent3[3] = {};
@@ -798,7 +818,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	return convertLangCLD2(language);
 }
 
-lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
+lang_t FxLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 	if (contentLen == 0) {
 		return langUnknown;
 	}
@@ -818,7 +838,7 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 	return convertLangCLD3(result.language);
 }
 
-lang_t GbLanguage::pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
+lang_t FxLanguage::pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
                                 lang_t charsetLangId, lang_t langIdGB) {
 	if (summaryLangIdCld2 == langChineseSimp || summaryLangIdCld2 == langChineseTrad) {
 		return summaryLangIdCld2;

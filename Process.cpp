@@ -48,6 +48,7 @@
 #include "DocDelete.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
+#include "QueryLanguage.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -620,7 +621,8 @@ bool Process::shutdown2() {
 	if (m_try == 0) {
 		InstanceInfoExchange::finalize();
 
-		finalizeRealtimeUrlClassification();
+		g_urlRealtimeClassification.finalize();
+		g_queryLanguage.finalize();
 
 		WantedChecker::finalize();
 

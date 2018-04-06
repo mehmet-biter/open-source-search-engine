@@ -156,13 +156,19 @@ lang_t getLangIdFromAbbr ( const char *abbr ) {
 		}
 	}
 
-	// english?
-	if ( ! strcasecmp((char *)abbr,"en_uk")) {
+	// add overrides below
+
+	if (strcasecmp(abbr, "en_uk") == 0 || strcasecmp(abbr, "en_us") == 0) {
 		return langEnglish;
 	}
 
-	if ( ! strcasecmp((char *)abbr,"en_us")) {
-		return langEnglish;
+	if (strcasecmp(abbr, "nb") == 0 || strcasecmp(abbr, "nn") == 0) {
+		return langNorwegian;
+	}
+
+	// croatian
+	if (strcasecmp(abbr, "hr") == 0) {
+		return langSerboCroatian;
 	}
 
 	return langUnknown;

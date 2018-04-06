@@ -155,7 +155,7 @@ bool UrlMatchList::load() {
 
 	Dir dir;
 	if (!dir.set(dirname.c_str()) || !dir.open()) {
-		logError("Had error opening directory %s", g_hostdb.m_dir);
+		logError("Had error opening directory %s", dirname.c_str());
 		return false;
 	}
 

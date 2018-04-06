@@ -25,7 +25,9 @@
 #include "Process.h"
 #include "GbUtil.h"
 #include "Mem.h"
+#include "ContentTypeBlockList.h"
 #include <fcntl.h>
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -655,9 +657,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		}
 	}
 }
-
-#include "Pages.h" // sendPageAPI, printApiForPage()
-#include "ContentTypeBlockList.h"
 
 // . reply to a GET (including partial get) or HEAD request
 // . HEAD just returns the MIME header for the file requested

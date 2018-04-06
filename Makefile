@@ -1,4 +1,4 @@
-'SHELL = /bin/bash
+SHELL = /bin/bash
 
 config=release
 
@@ -82,7 +82,7 @@ OBJS_O3 = \
 	GbCompress.o \
 	GbRegex.o \
 	GbThreadQueue.o \
-	GbEncoding.o GbLanguage.o \
+	GbEncoding.o FxLanguage.o \
 	GbDns.o \
 	ConvertSpiderdb.o \
 	SpiderdbUtil.o \
@@ -92,6 +92,8 @@ OBJS_O3 = \
 	ByteOrderMark.o \
 	utf8.o utf8_fast.o utf8_convert.o \
 	EGStack.o \
+	QueryLanguage.o \
+	FxClient.o \
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
@@ -192,6 +194,8 @@ CPPFLAGS += -Wno-date-time
 CPPFLAGS += -Wno-format-nonliteral
 CPPFLAGS += -Wno-zero-as-null-pointer-constant
 CPPFLAGS += -Wno-cast-qual
+CPPFLAGS += -Wno-switch-enum
+CPPFLAGS += -Wno-undefined-func-template
 
 else ifeq ($(findstring g++, $(CXX)),g++)
 # dependencies
@@ -293,7 +297,8 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libtokenizer.a libunicode.a
+DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so libcares.so.2 slacktee.sh
+LIBFILES = $(DIST_LIBFILES) libword_variations.a libsto.a libtokenizer.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 LIBS += -ltokenizer
 LIBS += -lword_variations -lsto -lunicode
@@ -301,7 +306,7 @@ LIBS += -lword_variations -lsto -lunicode
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
 	cd $(CLD2_SRC_DIR) && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
-	ln -s $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
+	ln -sf $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
 
 CLD3_SRC_DIR=third-party/cld3/src
 libcld3.so:
@@ -314,17 +319,19 @@ libcld3.so:
 	task_context.cc task_context_params.cc unicodetext.cc utils.cc workspace.cc \
 	cld_3/protos/sentence.pb.cc cld_3/protos/feature_extractor.pb.cc cld_3/protos/task_spec.pb.cc \
 	-o libcld3.so
-	ln -s $(CLD3_SRC_DIR)/libcld3.so libcld3.so
+	ln -sf $(CLD3_SRC_DIR)/libcld3.so libcld3.so
 
 libced.so:
 	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
-	ln -s third-party/compact_enc_det/lib/libced.so libced.so
+	ln -sf third-party/compact_enc_det/lib/libced.so libced.so
 
 CARES_SRC_DIR=third-party/c-ares
-libcares.so:
+libcares.so: libcares.so.2
+	ln -sf libcares.so.2 libcares.so
+
+libcares.so.2:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
-	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
-	ln -s libcares.so.2 libcares.so
+	ln -sf $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
 
 #always rebuild if needed
 .PHONY: libword_variations.a
@@ -363,7 +370,7 @@ FORCE:
 gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
-GbDns.o: libcares.so
+GbDns.o: libcares.so.2
 
 
 .PHONY: static
@@ -406,7 +413,7 @@ dist: all
 	unifiedDict.txt \
 	valgrind.cfg \
 	.valgrindrc \
-	$(LIBFILES) \
+	$(DIST_LIBFILES) \
 	$(DIST_DIR)
 	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
 	@cp third-party/cld3/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD3
@@ -423,8 +430,8 @@ doc:
 
 
 # used for tools/unittest
-libgb.a: $(OBJS)
-	ar rcs $@ $^ word_variations/*.o sto/*.o
+libgb.a: $(OBJS) libsto.a libword_variations.a libunicode.a
+	ar rcs $@ $^ word_variations/*.o sto/*.o unicode/*.o
 
 .PHONY: tools
 tools:

@@ -94,7 +94,6 @@ class WebPage {
 	const char *m_filename;
 	int32_t  m_flen;
 	const char *m_name;     // for printing the links to the pages in admin sect.
-	bool  m_cast;     // broadcast input to all hosts?
 	page_method_t  m_page_method;  // use a POST request/reply instead of GET?
 	                  // used because GET's input is limited to a few k.
 	//char  m_perm;     // permissions, see USER_* #define's below

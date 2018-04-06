@@ -384,7 +384,6 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			default: {
 				Rdb *rdb = getRdbFromId(rdbItem.first);
 
-				bool status = true;
 				for (auto const &item : rdbItem.second.m_items) {
 					// reset g_errno
 					g_errno = 0;
@@ -403,24 +402,18 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 					rdb->readRequestAdd(item.m_recSize);
 
 					// this returns false and sets g_errno on error
-					status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
+					bool status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
 
 					// bad coll #? ignore it. common when deleting and resetting
 					// collections using crawlbot. but there are other recs in this
 					// list from different collections, so do not abandon the whole
 					// meta list!! otherwise we lose data!!
-					if (g_errno == ENOCOLLREC && !status) {
-						g_errno = 0;
-						status = true;
+					if(!status) {
+						if(g_errno == ENOCOLLREC)
+							g_errno = 0;
+						else
+							goto break_out_of_for;
 					}
-
-					if (!status) {
-						goto break_out_of_for;
-					}
-				}
-
-				if (!status) {
-					goto break_out_of_for;
 				}
 				break;
 			}

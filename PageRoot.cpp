@@ -694,7 +694,7 @@ bool printFrontPageShell ( SafeBuf *sb , const char *tabName , CollectionRec *cr
 
 static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
 	SearchInput si;
-	si.set ( sock , r );
+	si.set(sock, r, langUnknown);
 
 	// if there's a ton of sites use the post method otherwise
 	// they won't fit into the http request, the browser will reject

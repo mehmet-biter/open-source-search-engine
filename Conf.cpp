@@ -59,10 +59,17 @@ Conf::Conf ( ) {
 	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(m_rnsIps, 0, sizeof(m_rnsIps));
+
+	m_queryLanguageServerName[0] = '\0';
+	m_queryLanguageServerPort = 0;
+	m_maxOutstandingQueryLanguage = 0;
+	m_queryLanguageTimeout = 0;
+
 	m_urlClassificationServerName[0] = '\0';
 	m_urlClassificationServerPort = 0;
 	m_maxOutstandingUrlClassifications = 0;
 	m_urlClassificationTimeout = 0;
+
 	m_mergeBufSize = 0;
 	m_doledbNukeInterval = 86400;
 	m_posdbMaxLostPositivesPercentage = 0;
@@ -241,6 +248,7 @@ Conf::Conf ( ) {
 	m_logTracePos = false;
 	m_logTracePosdb = false;
 	m_logTraceQuery = false;
+	m_logTraceQueryLanguage = false;
 	m_logTraceRdb = false;
 	m_logTraceRdbBase = false;
 	m_logTraceRdbBuckets = false;

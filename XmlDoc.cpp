@@ -46,7 +46,7 @@
 #include <fcntl.h>
 #include <algorithm>
 #include "GbEncoding.h"
-#include "GbLanguage.h"
+#include "FxLanguage.h"
 #include "DnsBlockList.h"
 #include "GbDns.h"
 #include "RobotsCheckList.h"
@@ -3668,7 +3668,7 @@ lang_t XmlDoc::getSummaryLangIdCLD2() {
 		return langUnknown;
 	}
 
-	return GbLanguage::getLangIdCLD2(true, summary.getSummary(), summary.getSummaryLen(),
+	return FxLanguage::getLangIdCLD2(true, summary.getSummary(), summary.getSummaryLen(),
 	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
 	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
 }
@@ -3681,7 +3681,7 @@ lang_t XmlDoc::getContentLangIdCLD2() {
 		return langUnknown;
 	}
 
-	return GbLanguage::getLangIdCLD2(false, *utf8content, contentLen,
+	return FxLanguage::getLangIdCLD2(false, *utf8content, contentLen,
 	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
 	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
 }
@@ -3699,7 +3699,7 @@ lang_t XmlDoc::getContentLangIdCLD3() {
 	}
 
 	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
-	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+	lang_t langId = FxLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
 	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
 
 	return langId;
@@ -3808,7 +3808,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// try charset
 	lang_t charsetLangId = getLangIdFromCharset(m_charset);
 
-	m_langId = GbLanguage::pickLanguage(contentLangIdCLD2, contentLangIdCLD3, summaryLangIdCLD2,
+	m_langId = FxLanguage::pickLanguage(contentLangIdCLD2, contentLangIdCLD3, summaryLangIdCLD2,
 	                                    charsetLangId, static_cast<lang_t>(langIdGB));
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
 	log(LOG_INFO, "lang: langId=%s contentLangCLD2=%s contentLangCLD3=%s langSummaryCLD2=%s charsetLangId=%s langIdGB=%s url=%s",

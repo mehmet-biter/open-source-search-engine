@@ -9,9 +9,6 @@
 #include "Collectiondb.h"
 #include "Conf.h"
 
-#include "third-party/cld2/public/compact_lang_det.h"
-#include "third-party/cld2/public/encodings.h"
-
 SearchInput::SearchInput()
   : m_word_variations_config()
 {
@@ -102,7 +99,7 @@ void SearchInput::copy ( class SearchInput *si ) {
 	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
-bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
+bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t queryLang) {
 	// store list of collection #'s to search here. usually just one.
 	m_collnumBuf.reset();
 
@@ -160,12 +157,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		// get default collection rec
 		cr = g_collectiondb.getRec (coll);
 		// add to our list
-		if ( cr &&
-		     !m_collnumBuf.safeMemcpy(&cr->m_collnum,
-					      sizeof(collnum_t)))
+		if ( cr && !m_collnumBuf.safeMemcpy(&cr->m_collnum, sizeof(collnum_t))) {
 			return false;
+		}
 	}
-		
 
 
 	/////
@@ -197,9 +192,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	//////
 
 	// get the format. "html" "json" --> FORMAT_HTML, FORMAT_JSON ...
-	char tmpFormat = m_hr.getReplyFormat();
+	m_format = m_hr.getReplyFormat();
+
 	// now override automatic defaults for special cases
-	if ( tmpFormat != FORMAT_HTML ) {
+	if ( m_format != FORMAT_HTML ) {
 		m_doQueryHighlighting = false;
 		m_getDocIdScoringInfo = false;
 	}
@@ -213,10 +209,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
 
 	m_coll = coll;
-
-	// it sets m_formatStr above, but we gotta set this...
-	m_format = tmpFormat;
-
 
 	//////
 	//
@@ -253,119 +245,19 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		return false;
 	}
 
-	// this parm is in Parms.cpp and should be set
-	const char *langAbbr = m_defaultSortLang;
-
-	// Parms.cpp sets it to an empty string, so make that null
-	// if Parms.cpp set it to NULL it seems it comes out as "(null)"
-	// i guess because we sprintf it or something.
-	if ( langAbbr && langAbbr[0] == '\0' ) {
-		langAbbr = NULL;
+	// set queryLangId by priority
+	//   - configured sort language
+	//   - detected query language
+	//   - collection configured sort language
+	if (m_defaultSortLang && m_defaultSortLang[0] != '\0') {
+		m_queryLangId = getLangIdFromAbbr(m_defaultSortLang);
+	} else if (queryLang != langUnknown) {
+		m_queryLangId = queryLang;
+	} else if (cr->m_defaultSortLanguage2[0] != '\0') {
+		m_queryLangId = getLangIdFromAbbr(cr->m_defaultSortLanguage2);
 	}
 
-	// detect language
-	if ( !langAbbr ) {
-		// detect language hints
-
-		// language tag format:
-		//   Language-Tag = Primary-tag *( "-" Subtag )
-		//   Primary-tag = 1*8ALPHA
-		//   Subtag = 1*8ALPHA
-		char content_language_hint[64] = {}; // HTTP header Content-Language: field
-		const char *tld_hint = NULL; // hostname of a URL
-
-		bool valid_qlang = false;
-		{
-			if (m_fx_qlang) {
-				// validate lang
-				if (strlen(m_fx_qlang) == 2) {
-					valid_qlang = true;
-					strcat(content_language_hint, m_fx_qlang);
-				}
-			}
-		}
-
-		// only use other hints if fx_qlang is not set
-		if (!valid_qlang) {
-			if (m_fx_blang) {
-				const char *comma = strchr(m_fx_blang,',');
-				// validate lang
-				size_t len = strlen(m_fx_blang);
-				if(comma)
-					len = comma-m_fx_blang;
-				if (len > 0 && len < sizeof(content_language_hint)) {
-					memcpy(content_language_hint, m_fx_blang,len);
-					content_language_hint[len] = '\0';
-				}
-			}
-
-			// use fx_fetld if available; if not, try with fx_country
-			tld_hint = m_fx_fetld;
-			if (!tld_hint || strlen(tld_hint) == 0) {
-				tld_hint = m_fx_country;
-			}
-		}
-
-		int encoding_hint = CLD2::UNKNOWN_ENCODING; // encoding detector applied to the input document
-		CLD2::Language language_hint = CLD2::UNKNOWN_LANGUAGE; // any other context
-
-		//log("query: cld2: using content_language_hint='%s' tld_hint='%s'", content_language_hint, tld_hint);
-
-		CLD2::CLDHints cldhints = {content_language_hint, tld_hint, encoding_hint, language_hint};
-
-		int flags = 0;
-		flags |= CLD2::kCLDFlagBestEffort;
-
-		// this is initialized by CLD2 library
-		CLD2::Language language3[3];
-		int percent3[3];
-		double normalized_score3[3];
-
-		CLD2::ResultChunkVector *resultchunkvector = NULL;
-
-		int text_bytes = 0;
-		bool is_reliable = false;
-		int valid_prefix_bytes = 0;
-
-		CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(m_sbuf1.getBufStart(),
-		                                                                  m_sbuf1.length(),
-		                                                                  true,
-		                                                                  &cldhints,
-		                                                                  flags,
-		                                                                  language3,
-		                                                                  percent3,
-		                                                                  normalized_score3,
-		                                                                  resultchunkvector,
-		                                                                  &text_bytes,
-		                                                                  &is_reliable,
-		                                                                  &valid_prefix_bytes);
-
-		//log("query: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
-		//log("query: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
-		//log("query: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
-
-		if (language != CLD2::UNKNOWN_LANGUAGE) {
-			langAbbr = CLD2::LanguageCode(language);
-		}
-	}
-
-	// if &qlang was not given explicitly fall back to coll rec
-	if (!langAbbr) {
-		langAbbr = cr->m_defaultSortLanguage2;
-		log(LOG_INFO,"query: using default lang of %s", langAbbr);
-	} else
-		log(LOG_INFO,"query: using lang of %s", langAbbr);
-	
-
-	// get code
-	m_queryLangId = getLangIdFromAbbr ( langAbbr );
-
-	// allow for 'xx', which means langUnknown
-	if ( m_queryLangId == langUnknown &&
-	     langAbbr[0] &&
-	     langAbbr[0]!='x' ) {
-		log("query: langAbbr of '%s' is NOT SUPPORTED. using langUnknown, 'xx'.", langAbbr);
-	}
+	log(LOG_INFO, "query: using query lang of %s", getLanguageAbbr(m_queryLangId));
 
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
 

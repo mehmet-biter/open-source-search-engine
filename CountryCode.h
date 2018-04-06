@@ -6,7 +6,7 @@
 
 // . used by Events.cpp to keep things small
 // . get a single byte country id from a 2 character country code
-uint8_t getCountryId ( char *cc ) ;
+uint8_t getCountryId ( const char *cc ) ;
 
 // map a country id to the two letter country abbr
 const char *getCountryCode ( uint16_t crid );

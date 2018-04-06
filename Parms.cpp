@@ -37,6 +37,7 @@
 #include "Doledb.h"
 #include "GbDns.h"
 #include "SiteMedianPageTemperatureRegistry.h"
+#include "QueryLanguage.h"
 #include <set>
 #include <fstream>
 
@@ -61,7 +62,7 @@ public:
 // User configured values for these parms need to be adjusted to internal ranges
 //
 const struct {
-	char *name;
+	const char *name;
 	float div_by;
 } static g_fxui_parms[] = {
 	{"diversityweightmin", 100.0},
@@ -1538,7 +1539,7 @@ bool Parms::printParm( SafeBuf* sb,
 	// what type of parameter?
 	parameter_type_t t = m->m_type;
 	// point to the data in THIS
-	char *s = THIS + m->m_off + m->m_size * j ;
+	const char *s = THIS + m->m_off + m->m_size * j ;
 
 	// if THIS is NULL then it must be GigablastRequest or something
 	// and is not really a persistent thing, but a one-shot deal.
@@ -5443,6 +5444,58 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Query language server name";
+	m->m_desc  = "";
+	m->m_cgi   = "query_lang_server_name";
+	m->m_off   = offsetof(Conf,m_queryLanguageServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_urlClassificationServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+	m->m_title = "Query language server port";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "query_lang_server_port";
+	simple_m_set(Conf,m_queryLanguageServerPort);
+	m->m_def   = "8078";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+	m->m_title = "Query language max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "query_lang_server_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingQueryLanguage);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+	m->m_title = "Query language timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "query_lang_timeout";
+	simple_m_set(Conf,m_queryLanguageTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+
 	m->m_title = "URL realtime classification server name";
 	m->m_desc  = "";
 	m->m_cgi   = "url_class_server_name";
@@ -9094,6 +9147,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for QueryLanguage";
+	m->m_cgi   = "ltrc_querylang";
+	simple_m_set(Conf,m_logTraceQueryLanguage);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Rdb";
 	m->m_cgi   = "ltrc_rdb";
 	simple_m_set(Conf,m_logTraceRdb);
@@ -10635,6 +10695,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildRankingSettings = false;
 	bool rebuildDnsSettings = false;
 	bool rebuildSpiderSettings = false;
+	bool rebuildQueryLanguageSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10731,6 +10792,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
 				rebuildSpiderSettings = true;
 			}
+
+			if (parm->m_flags & PF_REBUILDQUERYLANGSETTINGS) {
+				rebuildQueryLanguageSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10791,6 +10856,11 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	if (rebuildSpiderSettings) {
 		log("parms: rebuild spider settings");
 		g_spiderLoop.initSettings();
+	}
+
+	if (rebuildQueryLanguageSettings) {
+		log("parms: rebuild fxclient settings");
+		g_queryLanguage.reinitializeSettings();
 	}
 
 	// note it
