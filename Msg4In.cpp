@@ -418,10 +418,6 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 						goto break_out_of_for;
 					}
 				}
-
-				if (!status) {
-					goto break_out_of_for;
-				}
 				break;
 			}
 		}
