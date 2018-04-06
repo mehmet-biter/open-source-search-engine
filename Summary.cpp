@@ -159,6 +159,18 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *t
 		}
 	}
 
+	// meta property = "description"
+	if ( xml->getTagContent("property", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
+			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta property description. summary='%.*s'", m_summaryLen, m_summary);
+			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta property description. Returning true");
+
+			return true;
+		}
+	}
+
 	logDebug(g_conf.m_logDebugSummary, "sum: unable to generate summary from itemprop/meta tags");
 	logTrace(g_conf.m_logTraceSummary, "END. Unable to generate summary. Returning false");
 
