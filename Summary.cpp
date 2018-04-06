@@ -74,7 +74,7 @@ bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 		}
 
 		// verify that it's not the same with title
-		if ( strncasestr( m_summary, titleBuf, m_summaryLen, titleBufLen ) ) {
+		if ( titleBufLen == m_summaryLen && strncasestr( m_summary, titleBuf, m_summaryLen, titleBufLen ) ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 
