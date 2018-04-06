@@ -845,7 +845,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_avoidSpiderLinks         = requestFlags.m_avoidSpiderLinks;
 		sreq.m_ufn                      = 0; //only used in-memory
 		sreq.m_priority                 = priority;
-		strcpy(sreq.m_url,(const char*)url);
+		strncpy(sreq.m_url,(const char*)url,sizeof(sreq.m_url));
+		sreq.m_url[sizeof(sreq.m_url)-1] = '\0';
 		sreq.setDataSize();
 
 		if (firstIpEnd == firstIp && uh48End == uh48 && !isRequestEnd) {
