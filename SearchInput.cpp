@@ -253,7 +253,7 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t queryLang) {
 		m_queryLangId = getLangIdFromAbbr(m_defaultSortLang);
 	} else if (queryLang != langUnknown) {
 		m_queryLangId = queryLang;
-	} else if (cr->m_defaultSortLanguage2 && cr->m_defaultSortLanguage2[0] != '\0') {
+	} else if (cr->m_defaultSortLanguage2[0] != '\0') {
 		m_queryLangId = getLangIdFromAbbr(cr->m_defaultSortLanguage2);
 	}
 
