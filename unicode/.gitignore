@@ -3,3 +3,4 @@ UCCMMap_unittest
 UCCMDecompose_unittest
 libunicode.a
 *.pyc
+*.dat
