@@ -72,7 +72,9 @@ FxClient::FxClient()
 	, m_servicename(nullptr)
 	, m_threadname(nullptr)
 	, m_hostname(nullptr)
-	, m_port(0) {
+	, m_port(0)
+	, m_max_outstanding(0)
+	, m_log_trace(false) {
 }
 
 void FxClient::drainWakeupPipe() {
