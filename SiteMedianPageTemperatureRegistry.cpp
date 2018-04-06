@@ -122,7 +122,7 @@ bool SiteMedianPageTemperatureRegistry::add(uint32_t sitehash32, unsigned defaul
 	ScopedLock sl(mtx);
 	//if the value hasn't changed then there is no need for appending to the files
 	auto iter = primary_map.find(sitehash32);
-	if(iter!=primary_map.end() || iter->second==default_site_page_temperature)
+	if(iter!=primary_map.end() && iter->second==default_site_page_temperature)
 		return true;
 
 	
