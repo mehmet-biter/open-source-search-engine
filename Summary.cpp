@@ -73,7 +73,7 @@ bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 		}
 
 		// verify that it's not the same with title
-		if ( strncasestr( m_summary, titleBuf, m_summaryLen, titleBufLen ) ) {
+		if ( titleBufLen == m_summaryLen && strncasestr( m_summary, titleBuf, m_summaryLen, titleBufLen ) ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 
@@ -153,6 +153,18 @@ bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *
 
 			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta name description. summary='%.*s'", m_summaryLen, m_summary);
 			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta name description. Returning true");
+
+			return true;
+		}
+	}
+
+	// meta property = "description"
+	if ( xml->getTagContent("property", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
+			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta property description. summary='%.*s'", m_summaryLen, m_summary);
+			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta property description. Returning true");
 
 			return true;
 		}

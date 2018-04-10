@@ -9470,7 +9470,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return NULL;
 	}
 
-	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), *fc, m_filteredContentLen);
+	m_charset = GbEncoding::getCharset(mime, m_currentUrl.getUrl(), *fc, m_filteredContentLen);
 	m_charsetValid = true;
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return %" PRIu16 "", m_charset);
 	return &m_charset;

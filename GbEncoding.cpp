@@ -326,7 +326,7 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 	}
 
 	bool is_reliable = false;
-
+	bool is_reliable2 = false;
 	int bytes_consumed;
 	Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
 		                                          url, mime_charset_ptr, meta_charset_ptr,
@@ -337,9 +337,10 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 		                                           nullptr, nullptr, nullptr,
 		                                           UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
 		                                           CompactEncDet::WEB_CORPUS, false,
-		                                           &bytes_consumed, &is_reliable);
+		                                           &bytes_consumed, &is_reliable2);
 	if(encoding!=encoding2) {
-		log(LOG_INFO,"encoding: difference with/without mime/meta hints: mime_charset='%s', meta_chaset='%s', encoding1=%d, encoding2=%d, url=%s", mime_charset_ptr, meta_charset_ptr, (int)encoding, (int)encoding2, url);
+		log(LOG_INFO,"encoding: difference with/without hints: mime_charset='%s', meta_charset='%s', encoding1='%s' (%d), encoding2='%s' (%d), url=%s",
+		    mime_charset_ptr, meta_charset_ptr, EncodingName(encoding), is_reliable, EncodingName(encoding2), is_reliable2, url);
 	}
 	
 	int16_t cedCharset = convertEncodingCED(encoding);
