@@ -8055,6 +8055,9 @@ char **XmlDoc::getHttpReply ( ) {
 		m_redirUrlValid           = false;
 		m_metaRedirUrlValid       = false;
 
+		m_canonicalRedirUrlValid  = false;
+		m_canonicalUrlValid       = false;
+
 		// free it
 		mfree ( m_httpReply , m_httpReplyAllocSize, "freehr" );
 
