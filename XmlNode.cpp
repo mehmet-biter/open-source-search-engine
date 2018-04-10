@@ -593,7 +593,8 @@ int32_t XmlNode::setCDATANode ( char *node ) {
 }
 
 static bool findCharSingle( char nodeChar, char expectedChar, char expectedOtherChar, char *foundChar ) {
-	if ( ( nodeChar == expectedChar ) || ( expectedOtherChar && nodeChar == expectedOtherChar ) ) {
+	if ( ( to_lower_a(nodeChar) == to_lower_a(expectedChar) ) ||
+	     ( expectedOtherChar && to_lower_a(nodeChar) == to_lower_a(expectedOtherChar) ) ) {
 		if ( foundChar ) {
 			*foundChar = nodeChar;
 		}
