@@ -524,6 +524,53 @@ int main(void) {
 		assert(t.str(6)=="Noel");
 	}
 
+	//norwegian just calls the same for danishso we won't add tests for that.
+	
+	//german-specific
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("aaa bbb",langGerman);
+		assert(t.token_count()==3);
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("René",langGerman);
+		assert(t.token_count()==2);
+		assert(t.str(1)=="Rene");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Müller",langGerman);
+		assert(t.token_count()==1);
+		assert(t.str(0)=="Müller");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Chloë",langGerman);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="Chloë");
+		assert(t.str(1)=="Chloe");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Škoda",langGerman);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="Škoda");
+		assert(t.str(1)=="Skoda");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Bûche de Noël",langGerman);
+		assert(t.token_count()==7);
+		assert(t.str(5)=="Buche");
+		assert(t.str(6)=="Noel");
+	}
+
 	//diacritics hands-off
 	printf("Test line %d\n",__LINE__);
 	{

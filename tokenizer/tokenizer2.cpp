@@ -13,7 +13,7 @@ static const size_t max_word_codepoints = 128; //longest word we will consider w
 
 static void decompose_stylistic_ligatures(TokenizerResult *tr);
 static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t lang, const char *country_code);
-static void remove_combining_marks(TokenizerResult *tr, lang_t lang);
+static void remove_combining_marks(TokenizerResult *tr, lang_t lang, const char *country_code);
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang);
 static void combine_hyphenated_words(TokenizerResult *tr);
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code);
@@ -38,7 +38,7 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	decompose_stylistic_ligatures(tr);
 	decompose_language_specific_ligatures(tr,lang,country_code);
 	collapse_slash_abbreviations(tr);
-	remove_combining_marks(tr,lang);
+	remove_combining_marks(tr,lang,country_code);
 	combine_possessive_s_tokens(tr,lang);
 	//TODO: chemical formulae
 	tokenize_subscript(tr);
@@ -227,15 +227,24 @@ static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t la
 
 static void remove_combining_marks_danish(TokenizerResult *tr);
 static void remove_combining_marks_norwegian(TokenizerResult *tr);
+static void remove_combining_marks_german(TokenizerResult *tr);
+static void remove_combining_marks_swiss_german(TokenizerResult *tr);
+static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 native_marked_letters[], size_t native_marked_letters_count);
 
 
-static void remove_combining_marks(TokenizerResult *tr, lang_t lang) {
+static void remove_combining_marks(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	switch(lang) {
 		case langDanish:
 			remove_combining_marks_danish(tr);
 			return;
 		case langNorwegian:
 			remove_combining_marks_norwegian(tr);
+			return;
+		case langGerman:
+			if(strcmp(country_code,"ch")!=0)
+				remove_combining_marks_german(tr);
+			else	
+				remove_combining_marks_swiss_german(tr);
 			return;
 		default:
 			break;
@@ -249,6 +258,57 @@ static void remove_combining_marks(TokenizerResult *tr, lang_t lang) {
 //  - acute-accent	(allé)		Optional, used for stress marking, or in French loanwords.
 
 static void remove_combining_marks_danish(TokenizerResult *tr) {
+	static const UChar32 native_marked_letters[] = {
+		0x00C5, //Å
+		0x00E5, //å
+		0x00C4, //Ä
+		0x00D6, //Ö
+		0x00DC, //Ü
+		0x00E4, //ä
+		0x00F6, //ö
+		0x00FC, //ü
+	};
+	remove_some_combining_marks(tr, native_marked_letters, sizeof(native_marked_letters)/sizeof(native_marked_letters[0]));
+}
+
+//According to my Norwegian contact:
+//  - ring-above	(Å/å)		Mandatory
+//  - umlaut		(äüö)		Well-known and easily accessible. In words from Swedish or German
+//  - acute-accent	(éin)		Optional, used for stress marking, or in French loanwords.
+//  - grave accent      (fòr)		Optional, used for clarifying meaning of homonyms
+//  - circumflex	(fôr)		Optional, used for clarifying meaning of homonyms
+static void remove_combining_marks_norwegian(TokenizerResult *tr) {
+	//this happens to be the exact same rules as for Danish so let's just use that function
+	remove_combining_marks_danish(tr);
+}
+
+//Combining marks used in German:
+//  - umlaut		(äüö)		Well-known and easily accessible.
+//That's it. Some other diacricits are well-known (due to neighbouring France/Poland/Czech Republic it varies from region to region.
+//The German keyboard layout has easy access to umlaut. Leaving out umlout or transliterating should be avoided (and can be misleading).
+//Except for swiss-german (see below)
+static void remove_combining_marks_german(TokenizerResult *tr) {
+	static const UChar32 native_marked_letters[] = {
+		0x00C4, //Ä
+		0x00D6, //Ö
+		0x00DC, //Ü
+		0x00E4, //ä
+		0x00F6, //ö
+		0x00FC, //ü
+	};
+	remove_some_combining_marks(tr, native_marked_letters, sizeof(native_marked_letters)/sizeof(native_marked_letters[0]));
+}
+
+//Swiss-German is German. With a few wrinkles of course.
+//The umlaut is mandatory; except for uppercase letters due to the French-compatible keyboard layout, except for the work "Österreich" where the umlaut must be used.
+//So would a Swiss type äöü ? Yes. Would he type ÄÖÜ ? Depends on which region he lives in and what the primary langauge is.
+static void remove_combining_marks_swiss_german(TokenizerResult *tr) {
+	//Uhmm... let's do the same as for the other German (Germany/Lichtenstein/Austria) and see how that goes
+	remove_combining_marks_german(tr);
+}
+
+
+static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 native_marked_letters[], size_t native_marked_letters_count) {
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i<org_token_count; i++) {
 		const auto &token = (*tr)[i];
@@ -264,15 +324,14 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 		int new_codepoints=0;
 		bool any_combining_marks_removed = false;
 		for(int i=0; i<org_codepoints; i++) {
-			if(uc_org_token[i]==0x00C5 || //Å
-			   uc_org_token[i]==0x00E5 || //å
-			   uc_org_token[i]==0x00C4 || //Ä
-			   uc_org_token[i]==0x00D6 || //Ö
-			   uc_org_token[i]==0x00DC || //Ü
-			   uc_org_token[i]==0x00E4 || //ä
-			   uc_org_token[i]==0x00F6 || //ö
-			   uc_org_token[i]==0x00FC)   //ü
-			{
+			bool is_native_marked_letter = false;
+			for(size_t k=0; k<native_marked_letters_count; k++) {
+				if(native_marked_letters[k]==uc_org_token[i]) {
+					is_native_marked_letter = true;
+					break;
+				}
+			}
+			if(is_native_marked_letter) {
 				uc_new_token[new_codepoints++] = uc_org_token[i];
 				continue;
 			}
@@ -320,16 +379,6 @@ static void remove_combining_marks_danish(TokenizerResult *tr) {
 	}
 }
 
-//According to my Norwegian contact:
-//  - ring-above	(Å/å)		Mandatory
-//  - umlaut		(äüö)		Well-known and easily accessible. In words from Swedish or German
-//  - acute-accent	(éin)		Optional, used for stress marking, or in French loanwords.
-//  - grave accent      (fòr)		Optional, used for clarifying meaning of homonyms
-//  - circumflex	(fôr)		Optional, used for clarifying meaning of homonyms
-static void remove_combining_marks_norwegian(TokenizerResult *tr) {
-	//this happens to be the exact same rules as for Danish so let's just use that function
-	remove_combining_marks_danish(tr);
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // Possessive-s handling
