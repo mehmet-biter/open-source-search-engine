@@ -524,7 +524,40 @@ int main(void) {
 		assert(t.str(6)=="Noel");
 	}
 
-	//norwegian just calls the same for danishso we won't add tests for that.
+	//norwegian just calls the same for danish so we won't add tests for that.
+	
+	//swedish diacritics
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("började",langSwedish);
+		assert(t.token_count()==1);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("är",langSwedish);
+		assert(t.token_count()==1);
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("höra",langSwedish);
+		assert(t.token_count()==1);
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Müller",langSwedish);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="Müller");
+		assert(t.str(1)=="Muller");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Chloë",langSwedish);
+		assert(t.token_count()==2);
+		assert(t.str(0)=="Chloë");
+		assert(t.str(1)=="Chloe");
+	}
 	
 	//german-specific
 	printf("Test line %d\n",__LINE__);

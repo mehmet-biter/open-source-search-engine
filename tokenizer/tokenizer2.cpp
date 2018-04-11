@@ -227,6 +227,7 @@ static void decompose_language_specific_ligatures(TokenizerResult *tr, lang_t la
 
 static void remove_combining_marks_danish(TokenizerResult *tr);
 static void remove_combining_marks_norwegian(TokenizerResult *tr);
+static void remove_combining_marks_swedish(TokenizerResult *tr);
 static void remove_combining_marks_german(TokenizerResult *tr);
 static void remove_combining_marks_swiss_german(TokenizerResult *tr);
 static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 native_marked_letters[], size_t native_marked_letters_count);
@@ -240,6 +241,9 @@ static void remove_combining_marks(TokenizerResult *tr, lang_t lang, const char 
 		case langNorwegian:
 			remove_combining_marks_norwegian(tr);
 			return;
+		case langSwedish:
+			remove_combining_marks_swedish(tr);
+			break;
 		case langGerman:
 			if(strcmp(country_code,"ch")!=0)
 				remove_combining_marks_german(tr);
@@ -281,6 +285,25 @@ static void remove_combining_marks_norwegian(TokenizerResult *tr) {
 	//this happens to be the exact same rules as for Danish so let's just use that function
 	remove_combining_marks_danish(tr);
 }
+
+
+//Combining marks used n Swedish:
+//  - ring-above	(Å/å)		Mandatory
+//  - trema/diaeresis   ä/ö		Mandatory
+//But the letters à, é and ü (grave accent, acute accent, umlaut) are also used in Swedish words. Those accents are typically omitted in non-Swedish words.
+//So.. uhm... let's remove them
+static void remove_combining_marks_swedish(TokenizerResult *tr) {
+	static const UChar32 native_marked_letters[] = {
+		0x00C5, //Å
+		0x00E5, //å
+		0x00C4, //Ä
+		0x00D6, //Ö
+		0x00E4, //ä
+		0x00F6, //ö
+	};
+	remove_some_combining_marks(tr, native_marked_letters, sizeof(native_marked_letters)/sizeof(native_marked_letters[0]));
+}
+
 
 //Combining marks used in German:
 //  - umlaut		(äüö)		Well-known and easily accessible.
