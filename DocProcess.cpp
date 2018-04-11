@@ -249,6 +249,10 @@ bool DocProcess::addKey(const std::string &key, uint32_t firstIp, int64_t curren
 
 		logTrace(g_conf.m_logTraceDocProcess, "Adding docid=%" PRId64, docId);
 		docItem->m_xmlDoc->set3(docId, "main", 0);
+
+		// treat url as non-canonical
+		docItem->m_xmlDoc->m_isUrlCanonical = false;
+		docItem->m_xmlDoc->m_isUrlCanonicalValid = true;
 	}
 
 	updateXmldoc(docItem->m_xmlDoc);
