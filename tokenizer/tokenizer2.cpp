@@ -1007,6 +1007,8 @@ static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, 
 static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	if(lang==langDanish || strcmp(country_code,"da")==0)
 		rewrite_ampersands(tr, "og",2);
+	if(lang==langSwedish || strcmp(country_code,"se")==0)
+		rewrite_ampersands(tr, "och",3);
 	else if(lang==langEnglish || strcmp(country_code,"us")==0 || strcmp(country_code,"uk")==0 || strcmp(country_code,"au")==0 || strcmp(country_code,"nz")==0)
 		rewrite_ampersands(tr, "and",3);
 	else if(lang==langGerman || strcmp(country_code,"de")==0 || strcmp(country_code,"at")==0 || strcmp(country_code,"li")==0)

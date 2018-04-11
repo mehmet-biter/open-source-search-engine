@@ -943,6 +943,13 @@ int main(void) {
 		assert(t.str(3)=="og");
 	}
 	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("potatis&morot",langSwedish);
+		assert(!t.empty());
+		assert(t.has_token("och"));
+	}
+	
 	//oddballs
 	printf("Test line %d\n",__LINE__);
 	{
