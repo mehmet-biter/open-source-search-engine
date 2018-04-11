@@ -142,11 +142,16 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			// utf-8 decoded as latin1
 			if (xmlDoc.m_charset == csISOLatin1) {
-				// danish (utf-8 decoded as latin1)
+					// danish
 				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥") || // å
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦") || // æ
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸")) { // ø
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸") || // ø
+					// swedish
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¶") || // ö
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¤") // ä
+					) {
 					int32_t *firstIp = xmlDoc.getFirstIp();
 					if (!firstIp || firstIp == (int32_t *)-1) {
 						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
