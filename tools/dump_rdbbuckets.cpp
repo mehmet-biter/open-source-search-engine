@@ -5,6 +5,7 @@
 #include "Mem.h"
 #include "GbUtil.h"
 #include <libgen.h>
+#include <limits.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] FILE\n", argv0);
