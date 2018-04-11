@@ -150,7 +150,9 @@ int main(int argc, char **argv) {
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸") || // ø
 					// swedish
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¶") || // ö
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¤") // ä
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¤") || // ä
+					// german
+					find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¼") // ü
 					) {
 					int32_t *firstIp = xmlDoc.getFirstIp();
 					if (!firstIp || firstIp == (int32_t *)-1) {
