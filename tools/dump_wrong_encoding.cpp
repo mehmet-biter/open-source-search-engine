@@ -41,6 +41,10 @@ static void cleanup() {
 	WantedChecker::finalize();
 }
 
+static bool find_str(const char *haystack, size_t haystackLen, const char *needle) {
+	return (memmem(haystack, haystackLen, needle, strlen(needle)) != nullptr);
+}
+
 int main(int argc, char **argv) {
 	if (argc < 2) {
 		print_usage(argv[0]);
@@ -140,9 +144,9 @@ int main(int argc, char **argv) {
 
 			if (xmlDoc.m_charset == csISOLatin1) {
 				// danish (utf-8 decoded as latin1)
-				if ((memmem(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥", 2) != nullptr) || // å
-				    (memmem(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦", 2) != nullptr) || // æ
-				    (memmem(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸", 2) != nullptr)) { // ø
+				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥") || // å
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦") || // æ
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸")) { // ø
 					int32_t *firstIp = xmlDoc.getFirstIp();
 					if (!firstIp || firstIp == (int32_t *)-1) {
 						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
