@@ -67,6 +67,7 @@ public:
 
 int main(void) {
 	UnicodeMaps::load_maps("../ucdata/",0);
+
 	printf("Test line %d\n",__LINE__);
 	{
 		T1 t("");
@@ -763,7 +764,87 @@ int main(void) {
 		assert(t.token_count()==12);
 		assert(t.str(11)=="70270431");
 	}
+	
+	//swedish telephone numbers
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +46 99 888 77 boo",langSwedish);
+		assert(t.has_token("09988877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +46 99 88 77 66 boo",langSwedish);
+		assert(t.has_token("099887766"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +46 8 999 88 77 boo",langSwedish);
+		assert(t.has_token("089998877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +46 921 888 77 boo",langSwedish);
+		assert(t.has_token("092188877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo +46 921 99 88 77 boo",langSwedish);
+		assert(t.has_token("0921998877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 070 999 88 77 boo",langSwedish);
+		assert(t.has_token("0709998877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0200-99 88 77 boo",langSwedish);
+		assert(t.has_token("0200998877"));
+	}
 
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 099 888 77 boo",langSwedish);
+		assert(t.has_token("09988877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 099 88 77 66 boo",langSwedish);
+		assert(t.has_token("099887766"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 08 999 88 77 boo",langSwedish);
+		assert(t.has_token("089998877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0921 888 77 boo",langSwedish);
+		assert(t.has_token("092188877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0921 99 88 77 boo",langSwedish);
+		assert(t.has_token("0921998877"));
+	}
+
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 0921 99 88 77 45 89 20 är lotteri numren",langSwedish);
+		assert(!t.has_token("0921998877"));
+	}
+
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 042 - 99 88 77 boo",langSwedish);
+		assert(t.has_token("042998877"));
+	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 040-99 88 77 boo",langSwedish);
+		assert(t.has_token("040998877"));
+	}
+	
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("foo 04621 / 99 99 99 boo",langGerman,"de");

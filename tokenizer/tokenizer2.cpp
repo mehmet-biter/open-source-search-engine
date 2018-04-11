@@ -44,8 +44,8 @@ void plain_tokenizer_phase_2(lang_t lang, const char *country_code, TokenizerRes
 	tokenize_subscript(tr);
 	tokenize_superscript(tr);
 	//TODO: detect circumflex used for power, eg m^2
-	combine_hyphenated_words(tr);
 	recognize_telephone_numbers(tr,lang,country_code);
+	combine_hyphenated_words(tr);
 	//TODO: recognize_numbers(tr,lang,country_code)
 	//TODO: support use by query with quotation marks for suppressing alternatives (eg, "john's cat" should be not generate the "johns" special bigram)
 	rewrite_ampersands(tr,lang,country_code);
@@ -574,12 +574,15 @@ static void combine_hyphenated_words(TokenizerResult *tr) {
 // Telephone number recognition
 
 static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr);
+static void recognize_telephone_numbers_sweden(TokenizerResult *tr);
 static void recognize_telephone_numbers_germany(TokenizerResult *tr);
 
 static void recognize_telephone_numbers(TokenizerResult *tr, lang_t lang, const char *country_code) {
 	if(lang==langDanish || strcmp(country_code,"dk")==0 ||
 	   lang==langNorwegian || strcmp(country_code,"no")==0)
 		recognize_telephone_numbers_denmark_norway(tr);
+	else if(lang==langSwedish || strcmp(country_code,"se")==0)
+		recognize_telephone_numbers_sweden(tr);
 	else if(strcmp(country_code,"de")==0)
 		recognize_telephone_numbers_germany(tr);
 }
@@ -600,6 +603,33 @@ static bool is_whitespace(const TokenRange &tr) {
 			return -1; //decode error
 		if(!is_wspace_utf8(p))
 			return false;
+		p += cs;
+	}
+	return true;
+}
+
+static bool is_whitespace_or_hyphen(const TokenRange &tr) {
+	const char *p = tr.token_start;
+	const char *end = tr.token_start+tr.token_len;
+	int hyphens_found = 0;
+	while(p<end) {
+		int cs = getUtf8CharSize(p);
+		if(p+cs>end)
+			return -1; //decode error
+		if(is_wspace_utf8(p))
+			; //fine
+		else {
+			UChar32 uc = utf8Decode(p);
+			if(uc==0x002D || //hyphen-minus
+			   uc==0x2010 || //Hypen
+			   uc==0x2011)   //Non-breaking hypen
+			{
+				hyphens_found++;
+				if(hyphens_found>1)
+					return false;
+			} else
+				return false;
+		}
 		p += cs;
 	}
 	return true;
@@ -669,6 +699,126 @@ static void recognize_telephone_numbers_denmark_norway(TokenizerResult *tr) {
 		tr->tokens.emplace_back(t0.start_pos, t6.end_pos, s, sl, false, true);
 	}
 }
+
+
+static void recognize_telephone_numbers_sweden(TokenizerResult *tr) {
+	//Open numbering plan, subscriber numbers are 5-8 digits. 8 digits only occur in area code 08 (greater stockholm)
+	//apparently no recommended format. Formats seen in the wild:
+	//  +46 99 999 99
+	//  +46 99 99 99 99
+	//  +46 8 999 99 99
+	//  +46 921 999 99
+	//  +46 921 99 99 99
+	//  070 999 99 99
+	//  0200-99 99 99
+	//  042 - 99 99 99
+	//  040-99 99 99
+	// so try to detect by finding a two-digit token, scan backward collecting 5-10 digits in 4-5 alfanum tokens
+	//first token must start with '0' or be preceeded by "+46". And there should be no number digits immediately preceeding that
+	//the only separator chars between the digit tokens appears to be whitespace or hyphen
+	const size_t org_token_count = tr->size();
+	for(size_t i=0; i+4<org_token_count; i++) {
+		const auto &t0 = (*tr)[i+0];
+		//area codes seem to always be written as a single token, so that makes our life easier
+		if(!t0.is_alfanum)
+			continue;
+		if(!is_ascii_digits(t0))
+			continue;
+		bool zero_prefix_must_be_added;
+		if(t0.token_start[0]!='0') {
+			//must be preceeded by "+46"
+			if(i<3)
+				continue;
+			const auto &t_a = (*tr)[i-3]; //....+
+			const auto &t_b = (*tr)[i-2]; //46
+			const auto &t_c = (*tr)[i-1]; //whitespace
+			if(t_a.is_alfanum)
+				continue;
+			if(t_a.token_end()[-1]!='+')
+				continue;
+			if(!t_b.is_alfanum)
+				continue;
+			if(t_b.token_len!=2 || memcmp(t_b.token_start,"46",2)!=0)
+				continue;
+			if(t_c.is_alfanum || !is_whitespace(t_c))
+				continue;
+			zero_prefix_must_be_added = true;
+		} else {
+			//could be an area code. Must be 2-4 digits including the initial '0'
+			if(t0.token_len<2 || t0.token_len>4)
+				continue;
+			zero_prefix_must_be_added = false;
+		}
+		//might be the start of a telephone number,
+		//scan forward, at most 7 tokens
+		size_t digit_count=0;
+		bool might_be_a_phone_number = true;
+		size_t last_digit_token_idx;
+		for(last_digit_token_idx = i; last_digit_token_idx<org_token_count && last_digit_token_idx<i+7; last_digit_token_idx++) {
+			const auto &t = (*tr)[last_digit_token_idx];
+			if(t.is_alfanum) {
+				if(!is_ascii_digits(t)) {
+					break;
+				}
+				if(t.token_len>=5) {
+					//only groups of 1, 2 and 3 seen. south sweden might be inspired by danish numbers, so allow 4 too
+					might_be_a_phone_number = false;
+					break;
+				}
+				digit_count += t.token_len;
+				if(digit_count>10) {
+					might_be_a_phone_number = false;
+					break;
+				}
+			} else {
+				//must be whitespace or hyphen
+				if(!is_whitespace_or_hyphen(t)) {
+					might_be_a_phone_number = false;
+					break;
+				}
+			}
+		}
+		if(digit_count<5)
+			continue;
+		if(digit_count>10)
+			continue;
+		if(!might_be_a_phone_number)
+			continue;
+		//'last_digit_token_idx' points to the ending token. The next tokens (if any) must be nonalfanum+nondigit or nondigit
+		if(last_digit_token_idx+2<org_token_count) {
+			if((*tr)[last_digit_token_idx+1].is_primary && (*tr)[last_digit_token_idx+2].is_primary) {
+				const auto &t_a = (*tr)[last_digit_token_idx+1];
+				const auto &t_b = (*tr)[last_digit_token_idx+2];
+				if(t_a.is_alfanum)
+					continue;
+				if(t_b.is_alfanum && is_ascii_digits(t_b))
+					continue;
+			}
+		}
+		
+		if(last_digit_token_idx+1-i < 3)
+			continue; //insist on at least three groups
+		
+		//ok, could be a phone number
+		
+		size_t slen = digit_count;
+		if(zero_prefix_must_be_added)
+			slen++;
+		char *s = (char*)tr->egstack.alloc(slen);
+		char *p = s;
+		if(zero_prefix_must_be_added)
+			*p++ = '0';
+		for(size_t j=i; j<=last_digit_token_idx; j++) {
+			const auto &t = (*tr)[j];
+			if(t.is_alfanum) {
+				memcpy(p, t.token_start, t.token_len);
+				p += t.token_len;
+			}
+		}
+		tr->tokens.emplace_back(t0.start_pos, (*tr)[last_digit_token_idx].end_pos, s,slen,  false, true);
+	}
+}
+
 
 static void recognize_telephone_numbers_germany(TokenizerResult *tr) {
 	//Semi-open numbering plan, 10 or 11 digits, including areacode
