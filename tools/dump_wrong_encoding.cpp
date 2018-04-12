@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 					char ipbuf[16];
 					fprintf(stdout, "%" PRId64"|%s|bad encoding latin1|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
 				}
-			} else if (xmlDoc.m_charset == csWindows1257) {
+			} else if (xmlDoc.m_charset == cswindows1257) {
 				    // danish
 				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¦") || // æ
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ćø") || // ø
