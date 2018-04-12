@@ -307,8 +307,8 @@ static void remove_combining_marks_swedish(TokenizerResult *tr) {
 
 //Combining marks used in German:
 //  - umlaut		(äüö)		Well-known and easily accessible.
-//That's it. Some other diacricits are well-known (due to neighbouring France/Poland/Czech Republic it varies from region to region.
-//The German keyboard layout has easy access to umlaut. Leaving out umlout or transliterating should be avoided (and can be misleading).
+//That's it. Some other diacricits are well-known (due to neighbouring France/Poland/Czech Republic). It varies from region to region.
+//The German keyboard layout has easy access to umlaut. Leaving out umlaut or transliterating should be avoided (and can be misleading).
 //Except for swiss-german (see below)
 static void remove_combining_marks_german(TokenizerResult *tr) {
 	static const UChar32 native_marked_letters[] = {
@@ -323,14 +323,17 @@ static void remove_combining_marks_german(TokenizerResult *tr) {
 }
 
 //Swiss-German is German. With a few wrinkles of course.
-//The umlaut is mandatory; except for uppercase letters due to the French-compatible keyboard layout, except for the work "Österreich" where the umlaut must be used.
-//So would a Swiss type äöü ? Yes. Would he type ÄÖÜ ? Depends on which region he lives in and what the primary langauge is.
+//The umlaut is mandatory; except for uppercase letters due to the French-compatible keyboard layout; except for the word "Österreich" where
+//the umlaut must be used.
+//So would a Swiss type the lowercase äöü ? Yes. Would he type the uppercase ÄÖÜ ? Depends on which region he lives in and what the primary
+//langauge is. But since the text language is German then he's probably in a german-speaking Kanton and might even have a real German keyboard.
 static void remove_combining_marks_swiss_german(TokenizerResult *tr) {
 	//Uhmm... let's do the same as for the other German (Germany/Lichtenstein/Austria) and see how that goes
 	remove_combining_marks_german(tr);
 }
 
 
+//Remove combining marks form the codepoints except for the native marked letters
 static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 native_marked_letters[], size_t native_marked_letters_count) {
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i<org_token_count; i++) {
