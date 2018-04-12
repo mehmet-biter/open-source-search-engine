@@ -18,6 +18,7 @@
 //
 #include "DocDelete.h"
 #include "XmlDoc.h"
+#include "Conf.h"
 
 DocDelete g_docDelete("docdelete.txt", false);
 DocDelete g_docDeleteUrl("docdeleteurl.txt", true);
@@ -92,4 +93,8 @@ void DocDelete::processDocItem(DocProcessDocItem *docItem) {
 		delete xmlDoc;
 		delete docItem;
 	}
+}
+
+int64_t DocDelete::getMaxPending() const {
+	return g_conf.m_docDeleteMaxPending;
 }

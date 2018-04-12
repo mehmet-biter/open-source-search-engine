@@ -27,6 +27,7 @@ public:
 
 	void updateXmldoc(XmlDoc *xmlDoc) override;
 	void processDocItem(DocProcessDocItem *docItem) override;
+	int64_t getMaxPending() const override;
 };
 
 extern DocDelete g_docDelete;

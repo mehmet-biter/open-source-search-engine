@@ -152,7 +152,9 @@ Conf::Conf ( ) {
 	m_corruptRetries = 0;
 	m_sqliteSynchronous = 1;
 	m_docProcessDelayMs = 1000;
-	m_docProcessMaxPending = 10;
+	m_docDeleteMaxPending = 1;
+	m_docRebuildMaxPending = 1;
+	m_docReindexMaxPending = 10;
 	m_detectMemLeaks = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;

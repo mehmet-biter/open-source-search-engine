@@ -263,7 +263,9 @@ class Conf {
 	bool m_queryHostToSpiderHostFallbackAllowed;
 
 	int64_t m_docProcessDelayMs;
-	int64_t m_docProcessMaxPending;
+	int64_t m_docDeleteMaxPending;
+	int64_t m_docRebuildMaxPending;
+	int64_t m_docReindexMaxPending;
 
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;

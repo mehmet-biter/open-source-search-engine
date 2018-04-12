@@ -342,7 +342,7 @@ void DocProcess::processFile(void *item) {
 			}
 			if (fileItem->m_docProcess->addKey(key, firstIp, currentFilePos)) {
 				lastAddTimeMs = gettimeofdayInMilliseconds();
-				fileItem->m_docProcess->waitPendingDocCount(g_conf.m_docProcessMaxPending);
+				fileItem->m_docProcess->waitPendingDocCount(fileItem->m_docProcess->getMaxPending());
 			}
 		} else if (lastPosKey.compare(key) == 0) {
 			foundLastPos = true;

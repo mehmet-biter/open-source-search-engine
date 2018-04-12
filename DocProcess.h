@@ -50,6 +50,7 @@ public:
 	virtual DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos);
 	virtual void updateXmldoc(XmlDoc *xmlDoc) = 0;
 	virtual void processDocItem(DocProcessDocItem *docItem) = 0;
+	virtual int64_t getMaxPending() const = 0;
 
 	bool hasPendingFirstIp(uint32_t firstIp);
 

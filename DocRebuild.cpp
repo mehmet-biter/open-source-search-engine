@@ -203,3 +203,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		delete rebuildDocItem;
 	}
 }
+
+int64_t DocRebuild::getMaxPending() const {
+	return g_conf.m_docRebuildMaxPending;
+}

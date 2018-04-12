@@ -143,3 +143,7 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 		delete reindexDocItem;
 	}
 }
+
+int64_t DocReindex::getMaxPending() const {
+	return g_conf.m_docReindexMaxPending;
+}
