@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <assert.h>
 #include <fcntl.h>
+#include <limits.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH RDB\n", argv0);

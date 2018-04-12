@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include <libgen.h>
+#include <limits.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH\n", argv0);
@@ -61,7 +62,11 @@ int main(int argc, char **argv) {
 	g_hostdb.init(-1, false, false, true, path);
 	g_conf.init(path);
 
-	ucInit();
+	const char *errmsg;
+	if (!UnicodeMaps::load_maps("ucdata",&errmsg)) {
+		log("Unicode initialization failed!");
+		exit(1);
+	}
 
 	// initialize rdbs
 	g_loop.init();
