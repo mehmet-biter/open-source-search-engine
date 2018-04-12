@@ -144,15 +144,25 @@ int main(int argc, char **argv) {
 
 			// utf-8 decoded as latin1
 			if (xmlDoc.m_charset == csISOLatin1) {
-					// danish
-				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥") || // å
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦") || // æ
+				    // danish
+				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦") || // æ
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸") || // ø
-					// swedish
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¶") || // ö
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥") || // å
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã†") || // Æ
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã˜") || // Ø
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã…") || // Å
+
+				    // swedish
 				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¤") || // ä
-					// german
-					find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¼") // ü
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¶") || // ö
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã„") || // Ä
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã–") || // Ö
+
+				    // german
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¼") || // ü
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "ÃŸ") || // ß
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ãœ") || // Ü
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "áºž") // ẞ
 					) {
 					int32_t *firstIp = xmlDoc.getFirstIp();
 					if (!firstIp || firstIp == (int32_t *)-1) {
@@ -163,7 +173,39 @@ int main(int argc, char **argv) {
 					Url *url = xmlDoc.getFirstUrl();
 
 					char ipbuf[16];
-					fprintf(stdout, "%" PRId64"|%s|bad encoding|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+					fprintf(stdout, "%" PRId64"|%s|bad encoding latin1|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+				}
+			} else if (xmlDoc.m_charset == csWindows1257) {
+				    // danish
+				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¦") || // æ
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ćø") || // ø
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć�") || // å
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć†") || // Æ
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u0098") || // Ø
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć…") || // Å
+
+				    // swedish
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¤") || // ä
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¶") || // ö
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć„") || // Ä
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć–") || // Ö
+
+				    // german
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¼") || // ü
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "įŗ˛") || // ß
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u009C") || // Ü
+				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u009F") // ẞ
+					) {
+					int32_t *firstIp = xmlDoc.getFirstIp();
+					if (!firstIp || firstIp == (int32_t *)-1) {
+						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
+						continue;
+					}
+
+					Url *url = xmlDoc.getFirstUrl();
+
+					char ipbuf[16];
+					fprintf(stdout, "%" PRId64"|%s|bad encoding windows1257|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
 				}
 			}
 		}
