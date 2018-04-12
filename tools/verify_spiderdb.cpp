@@ -11,6 +11,7 @@
 #include <libgen.h>
 #include <arpa/inet.h>
 #include <fstream>
+#include <limits.h>
 #include "ip.h"
 
 static void print_usage(const char *argv0) {
@@ -68,7 +69,11 @@ int main(int argc, char **argv) {
 	g_hostdb.init(-1, false, false, true, path);
 	g_conf.init(path);
 
-	ucInit();
+	const char *errmsg;
+	if (!UnicodeMaps::load_maps("ucdata",&errmsg)) {
+		log("Unicode initialization failed!");
+		exit(1);
+	}
 
 	// initialize rdbs
 	g_loop.init();
@@ -138,7 +143,7 @@ int main(int argc, char **argv) {
 
 	count = 0;
 	for (;;) {
-		if (!msg5.getList(RDB_SPIDERDB, cr->m_collnum, &list, &startKey, &endKey, 10000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
+		if (!msg5.getList(RDB_SPIDERDB_DEPRECATED, cr->m_collnum, &list, &startKey, &endKey, 10000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 			logf(LOG_TRACE, "msg5.getlist didn't block");
 			break;
 		}
