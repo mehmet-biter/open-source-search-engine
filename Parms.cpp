@@ -6090,10 +6090,32 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "Max pending doc allowed for DocProcess";
-	m->m_desc  = "How many concurrent processes we allow for DocProcess";
-	m->m_cgi   = "docprocessmaxpending";
-	simple_m_set(Conf,m_docProcessMaxPending);
+	m->m_title = "Max pending doc allowed for DocDelete";
+	m->m_desc  = "How many concurrent processes we allow for DocDelete";
+	m->m_cgi   = "docdeletemaxpending";
+	simple_m_set(Conf,m_docDeleteMaxPending);
+	m->m_def   = "1";
+	m->m_units = "";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Max pending doc allowed for DocRebuild";
+	m->m_desc  = "How many concurrent processes we allow for DocRebuild";
+	m->m_cgi   = "docrebuildmaxpending";
+	simple_m_set(Conf,m_docRebuildMaxPending);
+	m->m_def   = "1";
+	m->m_units = "";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Max pending doc allowed for DocReindex";
+	m->m_desc  = "How many concurrent processes we allow for DocReindex";
+	m->m_cgi   = "docreindexmaxpending";
+	simple_m_set(Conf,m_docReindexMaxPending);
 	m->m_def   = "10";
 	m->m_units = "";
 	m->m_group = false;
