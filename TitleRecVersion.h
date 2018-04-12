@@ -33,7 +33,10 @@
 //#define TITLEREC_CURRENT_VERSION    127
 
 // explicit keywords field
-#define TITLEREC_CURRENT_VERSION    128
+//#define TITLEREC_CURRENT_VERSION    128
+
+// make sure parameter is stripped even if query parameter is separated with '?'
+#define TITLEREC_CURRENT_VERSION    129
 
 #define TITLEREC_CURRENT_VERSION_STR    TO_STRING(TITLEREC_CURRENT_VERSION)
 

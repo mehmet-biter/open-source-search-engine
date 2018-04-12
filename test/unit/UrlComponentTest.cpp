@@ -3,7 +3,7 @@
 #include "UrlComponent.h"
 
 TEST(UrlComponentTest, ComponentParamSingle) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?', true);
 	EXPECT_STREQ("param1", urlComponent.getKey().c_str());
 
 	EXPECT_EQ(6, urlComponent.getValueLen());
@@ -11,7 +11,7 @@ TEST(UrlComponentTest, ComponentParamSingle) {
 }
 
 TEST(UrlComponentTest, ComponentParamDouble) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1&Param2=Value2", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1&Param2=Value2", 13, '?', true);
 	EXPECT_STREQ("param1", urlComponent.getKey().c_str());
 
 	EXPECT_EQ(6, urlComponent.getValueLen());
@@ -51,7 +51,7 @@ TEST(UrlComponentTest, ComponentNormalize) {
 }
 
 TEST(UrlComponentTest, MatcherMatchDefault) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	UrlComponent::Matcher matcherLower("param1");
 	EXPECT_TRUE(matcherLower.isMatching(urlComponent));
@@ -85,7 +85,7 @@ TEST(UrlComponentTest, MatcherMatchDefault) {
 }
 
 TEST(UrlComponentTest, MatcherMatchCase) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = MATCH_CASE;
 
@@ -122,7 +122,7 @@ TEST(UrlComponentTest, MatcherMatchCase) {
 
 
 TEST(UrlComponentTest, MatcherMatchPartial) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = MATCH_PARTIAL;
 
@@ -158,7 +158,7 @@ TEST(UrlComponentTest, MatcherMatchPartial) {
 }
 
 TEST(UrlComponentTest, MatcherMatchPrefix) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = MATCH_PREFIX;
 
@@ -194,7 +194,7 @@ TEST(UrlComponentTest, MatcherMatchPrefix) {
 }
 
 TEST(UrlComponentTest, MatcherMatchSuffix) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = MATCH_SUFFIX;
 
@@ -230,7 +230,7 @@ TEST(UrlComponentTest, MatcherMatchSuffix) {
 }
 
 TEST(UrlComponentTest, MatcherMatchCaseMatchPartial) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_PARTIAL);
 
@@ -266,7 +266,7 @@ TEST(UrlComponentTest, MatcherMatchCaseMatchPartial) {
 }
 
 TEST(UrlComponentTest, MatcherMatchCaseMatchPrefix) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_PREFIX);
 
@@ -302,7 +302,7 @@ TEST(UrlComponentTest, MatcherMatchCaseMatchPrefix) {
 }
 
 TEST(UrlComponentTest, MatcherMatchCaseMatchSuffix) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?', true);
 
 	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_SUFFIX);
 
@@ -338,7 +338,7 @@ TEST(UrlComponentTest, MatcherMatchCaseMatchSuffix) {
 }
 
 UrlComponent createUrlComponent(UrlComponent::Type type, const char *component) {
-	return UrlComponent(type, component, strlen(component), '?');
+	return UrlComponent(type, component, strlen(component), '?', true);
 }
 
 TEST(UrlComponentTest, ValidatorDefault) {

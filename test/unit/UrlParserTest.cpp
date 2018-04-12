@@ -314,3 +314,14 @@ TEST(UrlParserTest, ParseIDN) {
 		checkResult(version, "http://www.xn--relgeroskilde-5fb0y.dk/", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 	}
 }
+
+TEST(UrlParserTest, ParseDoubleQuestionMark) {
+	std::string url("http://www.yutaka.dk/info_pages.php?pages_id=28?osCsid=514e6c48fc4d0ac437b54977dd0b35d5");
+
+	for (int version = 123; version <= TITLEREC_CURRENT_VERSION; ++version) {
+		UrlParser urlParser(url.c_str(), url.size(), version);
+
+		urlParser.unparse();
+		checkResult(version, "http://www.yutaka.dk/info_pages.php?pages_id=28?osCsid=514e6c48fc4d0ac437b54977dd0b35d5", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
+	}
+}

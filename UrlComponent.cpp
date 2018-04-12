@@ -41,11 +41,12 @@ void UrlComponent::normalize( std::string *component ) {
 	}
 }
 
-UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len, char separator )
+UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len, char separator, bool isFirst )
 	: m_type ( type )
 	, m_componentStr( pos, len )
 	, m_separator( separator )
-	, m_deleted( false) {
+	, m_isFirst( isFirst )
+	, m_deleted( false ) {
 	// normalize string
 	normalize( &m_componentStr );
 	m_keyLen = m_componentStr.size();

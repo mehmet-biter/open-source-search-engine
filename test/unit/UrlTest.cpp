@@ -150,6 +150,7 @@ static void strip_param_tests(const std::vector<std::tuple<const char *, const c
 			Url url;
 			url.set(input_url, strlen(input_url), false, true, titleDbVersion);
 
+			SCOPED_TRACE(testing::Message() << "version=" << version);
 			EXPECT_STREQ(std::get<1>(*it), (const char *)url.getUrl());
 		}
 	}
@@ -247,6 +248,26 @@ TEST(UrlTest, StripParamsOsCommerce) {
 	};
 
 	strip_param_tests(test_cases, 123);
+}
+
+TEST(UrlTest, StripParamsOsCommerceV128) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// osCsid
+		std::make_tuple("http://www.yutaka.dk/info_pages.php?pages_id=28?osCsid=514e6c48fc4d0ac437b54977dd0b35d5",
+		                "http://www.yutaka.dk/info_pages.php?pages_id=28?osCsid=514e6c48fc4d0ac437b54977dd0b35d5")
+	};
+
+	strip_param_tests(test_cases, 128);
+}
+
+TEST(UrlTest, StripParamsOsCommerceV129) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// osCsid
+		std::make_tuple("http://www.yutaka.dk/info_pages.php?pages_id=28?osCsid=514e6c48fc4d0ac437b54977dd0b35d5",
+		                "http://www.yutaka.dk/info_pages.php?pages_id=28")
+	};
+
+	strip_param_tests(test_cases, 129);
 }
 
 TEST(UrlTest, StripParamsXTCommerce) {
