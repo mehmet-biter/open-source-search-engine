@@ -59,6 +59,9 @@ void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {
 #endif
 
 	xmlDoc->m_versionValid = true;
+
+	// we always want to store a new version even if it looks to be the same (we normaly reindex due to an error)
+	xmlDoc->m_skipContentHashCheck = true;
 }
 
 void DocReindex::processDocItem(DocProcessDocItem *docItem) {
