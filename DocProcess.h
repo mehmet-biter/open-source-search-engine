@@ -77,6 +77,7 @@ private:
 	const char *m_filename;
 	std::string m_tmpFilename;
 	std::string m_lastPosFilename;
+	std::string m_tmpErrorFilename;
 
 	time_t m_lastModifiedTime;
 

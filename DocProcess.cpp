@@ -73,6 +73,7 @@ DocProcess::DocProcess(const char *filename, bool isUrl, bool hasFirstIp)
 	, m_filename(filename)
 	, m_tmpFilename(filename)
 	, m_lastPosFilename(filename)
+	, m_tmpErrorFilename(filename)
 	, m_lastModifiedTime(0)
 	, m_pendingDocItems()
 	, m_pendingDocItemsMtx()
@@ -81,6 +82,7 @@ DocProcess::DocProcess(const char *filename, bool isUrl, bool hasFirstIp)
 	, m_hasFirstIp(hasFirstIp) {
 	m_tmpFilename.append(".processing");
 	m_lastPosFilename.append(".lastpos");
+	m_tmpErrorFilename.append(".tmperr");
 }
 
 bool DocProcess::init() {
@@ -214,6 +216,16 @@ void DocProcess::removePendingDoc(DocProcessDocItem *docItem) {
 	if (docItem->m_lastPos >= 0 && it == m_pendingDocItems.begin()) {
 		std::ofstream lastPosFile(docItem->m_docProcess->m_lastPosFilename, std::ofstream::out|std::ofstream::trunc);
 		lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
+	}
+
+	// if we end with temp error - log to file so we know about it
+	if (docItem->m_xmlDoc->m_indexCodeValid && isSpiderTempError(docItem->m_xmlDoc->m_indexCode)) {
+		std::ofstream tmpErrorFile(docItem->m_docProcess->m_tmpErrorFilename, std::ofstream::out|std::ofstream::app);
+		tmpErrorFile << docItem->m_xmlDoc->m_docId
+		             << "|" << docItem->m_xmlDoc->m_firstIp
+		             << "|" << mstrerror(docItem->m_xmlDoc->m_indexCode)
+		             << "|" << docItem->m_xmlDoc->m_firstUrl.getUrl()
+		             << std::endl;
 	}
 
 	m_pendingDocItems.erase(it);
