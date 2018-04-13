@@ -6070,22 +6070,24 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;
+
 	m->m_title = "fallback query->spider allowed";
 	m->m_desc  = "If a query-host is unavailable can requests fall back to any spider-hosts in the shard?";
 	m->m_cgi   = "fallbackquerytospider";
 	simple_m_set(Conf,m_queryHostToSpiderHostFallbackAllowed);
 	m->m_def   = "1";
+	m->m_group = false;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "Delay between each item for DocProcess";
+	m->m_title = "Delay between each item for DocDelete";
 	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
-	m->m_cgi   = "docprocessdelayms";
-	simple_m_set(Conf,m_docProcessDelayMs);
-	m->m_def   = "1000";
+	m->m_cgi   = "docdeletedelayms";
+	simple_m_set(Conf,m_docDeleteDelayMs);
+	m->m_def   = "0";
 	m->m_units = "ms";
-	m->m_group = false;
+	m->m_group = true;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;
@@ -6101,6 +6103,17 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Delay between each item for DocRebuild";
+	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
+	m->m_cgi   = "docrebuilddelayms";
+	simple_m_set(Conf,m_docRebuildDelayMs);
+	m->m_def   = "0";
+	m->m_units = "ms";
+	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "Max pending doc allowed for DocRebuild";
 	m->m_desc  = "How many concurrent processes we allow for DocRebuild";
 	m->m_cgi   = "docrebuildmaxpending";
@@ -6108,6 +6121,17 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_units = "";
 	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Delay between each item for DocReindex";
+	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
+	m->m_cgi   = "docreindexdelayms";
+	simple_m_set(Conf,m_docReindexDelayMs);
+	m->m_def   = "1000";
+	m->m_units = "ms";
+	m->m_group = true;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;

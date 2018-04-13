@@ -151,7 +151,9 @@ Conf::Conf ( ) {
 	m_verifyTagRec = false;
 	m_corruptRetries = 0;
 	m_sqliteSynchronous = 1;
-	m_docProcessDelayMs = 1000;
+	m_docDeleteDelayMs = 0;
+	m_docRebuildDelayMs = 0;
+	m_docReindexDelayMs = 1000;
 	m_docDeleteMaxPending = 1;
 	m_docRebuildMaxPending = 1;
 	m_docReindexMaxPending = 10;

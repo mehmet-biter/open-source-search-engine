@@ -207,3 +207,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 int64_t DocRebuild::getMaxPending() const {
 	return g_conf.m_docRebuildMaxPending;
 }
+
+int64_t DocRebuild::getDelayMs() const {
+	return g_conf.m_docRebuildDelayMs;
+}

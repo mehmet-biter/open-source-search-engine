@@ -98,3 +98,7 @@ void DocDelete::processDocItem(DocProcessDocItem *docItem) {
 int64_t DocDelete::getMaxPending() const {
 	return g_conf.m_docDeleteMaxPending;
 }
+
+int64_t DocDelete::getDelayMs() const {
+	return g_conf.m_docDeleteDelayMs;
+}

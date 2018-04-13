@@ -51,6 +51,7 @@ public:
 	virtual void updateXmldoc(XmlDoc *xmlDoc) = 0;
 	virtual void processDocItem(DocProcessDocItem *docItem) = 0;
 	virtual int64_t getMaxPending() const = 0;
+	virtual int64_t getDelayMs() const = 0;
 
 	bool hasPendingFirstIp(uint32_t firstIp);
 

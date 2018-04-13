@@ -29,6 +29,7 @@ public:
 	void updateXmldoc(XmlDoc *xmlDoc) override;
 	void processDocItem(DocProcessDocItem *docItem) override;
 	int64_t getMaxPending() const override;
+	int64_t getDelayMs() const override;
 };
 
 extern DocReindex g_docReindex;

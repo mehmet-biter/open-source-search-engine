@@ -359,8 +359,8 @@ void DocProcess::processFile(void *item) {
 		// add delay if needed
 		if (lastAddTimeMs != 0) {
 			int64_t currentDelayMs = gettimeofdayInMilliseconds() - lastAddTimeMs;
-			if (currentDelayMs < g_conf.m_docProcessDelayMs) {
-				usleep((g_conf.m_docProcessDelayMs - currentDelayMs) * 1000);
+			if (currentDelayMs < fileItem->m_docProcess->getDelayMs()) {
+				usleep((fileItem->m_docProcess->getDelayMs() - currentDelayMs) * 1000);
 			}
 		}
 	}

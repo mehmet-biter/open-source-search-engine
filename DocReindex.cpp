@@ -147,3 +147,7 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 int64_t DocReindex::getMaxPending() const {
 	return g_conf.m_docReindexMaxPending;
 }
+
+int64_t DocReindex::getDelayMs() const {
+	return g_conf.m_docReindexDelayMs;
+}
