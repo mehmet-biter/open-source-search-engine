@@ -389,6 +389,33 @@ void DocProcess::processDoc(void *item) {
 }
 
 void DocProcess::processedDoc(void *state) {
+	DocProcessDocItem *docItem = static_cast<DocProcessDocItem*>(state);
+	if (g_errno == EUDPTIMEDOUT) {
+		// reset XmlDoc and restart process if we get udp timeout
+		if (docItem->m_docProcess->m_isUrl) {
+			std::string url(docItem->m_xmlDoc->m_firstUrl.getUrl());
+			docItem->m_xmlDoc->reset();
+
+			SpiderRequest sreq;
+			sreq.setFromAddUrl(url.c_str());
+			sreq.m_isAddUrl = 0;
+
+			docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
+		} else {
+			int64_t docId = docItem->m_xmlDoc->m_docId;
+			docItem->m_xmlDoc->reset();
+
+			docItem->m_xmlDoc->set3(docId, "main", 0);
+
+			// treat url as non-canonical
+			docItem->m_xmlDoc->m_isUrlCanonical = false;
+			docItem->m_xmlDoc->m_isUrlCanonicalValid = true;
+		}
+
+		docItem->m_docProcess->updateXmldoc(docItem->m_xmlDoc);
+		docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+	}
+
 	// reprocess xmldoc
 	s_docProcessDocThreadQueue.addItem(state);
 }
