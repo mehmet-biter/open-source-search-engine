@@ -11,13 +11,14 @@
 #include "UrlMatchList.h"
 #include "WantedChecker.h"
 #include "ip.h"
+#include "utf8_convert.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH\n", argv0);
-	fprintf(stdout, "Dump redirect titlerec\n");
+	fprintf(stdout, "Dump titlerec with wrong encoding\n");
 	fprintf(stdout, "\n");
 	fprintf(stdout, "  -h, --help     display this help and exit\n");
 }
@@ -41,8 +42,8 @@ static void cleanup() {
 	WantedChecker::finalize();
 }
 
-static bool find_str(const char *haystack, size_t haystackLen, const char *needle) {
-	return (memmem(haystack, haystackLen, needle, strlen(needle)) != nullptr);
+static bool find_str(const char *haystack, size_t haystackLen, const std::string &needle) {
+	return (memmem(haystack, haystackLen, needle.c_str(), needle.size()) != nullptr);
 }
 
 int main(int argc, char **argv) {
@@ -76,6 +77,11 @@ int main(int argc, char **argv) {
 	const char *errmsg;
 	if (!UnicodeMaps::load_maps("ucdata",&errmsg)) {
 		log("Unicode initialization failed!");
+		exit(1);
+	}
+
+	if (!utf8_convert_initialize()) {
+		log(LOG_ERROR, "db: utf-8 conversion initialization failed!");
 		exit(1);
 	}
 
@@ -122,6 +128,50 @@ int main(int argc, char **argv) {
 	key96_t endKey;
 	endKey.setMax();
 
+	std::vector<std::pair<eIANACharset, std::string>> wrong_encodings;
+
+	std::vector<const char*> inputs = {
+		// danish
+		"æ",
+		"ø",
+		"å",
+		"Æ",
+		"Ø",
+		"Å",
+		// swedish
+		"ä",
+		"ö",
+		"Ä",
+		"Ö",
+		// german
+		"ü",
+		"ß",
+		"Ü",
+		"ẞ",
+	};
+
+	std::vector<std::pair<eIANACharset,eIANACharset>> from_to_charsets = {
+		std::make_pair(csUTF8, csISOLatin1),
+		std::make_pair(csUTF8, csISOLatin2),
+		std::make_pair(csUTF8, csISOLatin4),
+		std::make_pair(csUTF8, cslatin6),
+		std::make_pair(csUTF8, cswindows1250),
+		std::make_pair(csUTF8, cswindows1252),
+		std::make_pair(csUTF8, cswindows1257),
+	};
+
+	for (const auto &from_to_charset : from_to_charsets) {
+		for (const auto &input : inputs) {
+			char buffer[8];
+			if (ucToAny(buffer, sizeof(buffer), get_charset_str(from_to_charset.first),
+			            input, strlen(input), get_charset_str(from_to_charset.second), -1) > 0) {
+				// successful
+				std::string bufferStr(buffer);
+				wrong_encodings.emplace_back(from_to_charset.second, bufferStr);
+			}
+		}
+	}
+
 	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 		if (list.isEmpty()) {
 			break;
@@ -142,28 +192,9 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
-			// utf-8 decoded as latin1
-			if (xmlDoc.m_charset == csISOLatin1) {
-				    // danish
-				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¦") || // æ
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¸") || // ø
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¥") || // å
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã†") || // Æ
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã˜") || // Ø
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã…") || // Å
-
-				    // swedish
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¤") || // ä
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¶") || // ö
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã„") || // Ä
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã–") || // Ö
-
-				    // german
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ã¼") || // ü
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "ÃŸ") || // ß
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ãœ") || // Ü
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "áºž") // ẞ
-					) {
+			for (auto const &wrong_encoding : wrong_encodings) {
+				if ((xmlDoc.m_charset == wrong_encoding.first) &&
+					find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, wrong_encoding.second)) {
 					int32_t *firstIp = xmlDoc.getFirstIp();
 					if (!firstIp || firstIp == (int32_t *)-1) {
 						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
@@ -173,39 +204,8 @@ int main(int argc, char **argv) {
 					Url *url = xmlDoc.getFirstUrl();
 
 					char ipbuf[16];
-					fprintf(stdout, "%" PRId64"|%s|bad encoding latin1|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
-				}
-			} else if (xmlDoc.m_charset == cswindows1257) {
-				    // danish
-				if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¦") || // æ
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ćø") || // ø
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć�") || // å
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć†") || // Æ
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u0098") || // Ø
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć…") || // Å
-
-				    // swedish
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¤") || // ä
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¶") || // ö
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć„") || // Ä
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć–") || // Ö
-
-				    // german
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć¼") || // ü
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "įŗ˛") || // ß
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u009C") || // Ü
-				    find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "Ć\u009F") // ẞ
-					) {
-					int32_t *firstIp = xmlDoc.getFirstIp();
-					if (!firstIp || firstIp == (int32_t *)-1) {
-						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
-						continue;
-					}
-
-					Url *url = xmlDoc.getFirstUrl();
-
-					char ipbuf[16];
-					fprintf(stdout, "%" PRId64"|%s|bad encoding windows1257|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+					fprintf(stdout, "%" PRId64"|%s|bad encoding %s|%s\n",
+					        docId, iptoa(*firstIp, ipbuf), get_charset_str(xmlDoc.m_charset), url->getUrl());
 				}
 			}
 		}
