@@ -252,12 +252,14 @@ int main(int argc, char **argv) {
 								break;
 							}
 						}
+
+						if (!found) {
+							fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+						}
+
+						break;
 					}
 				}
-			}
-
-			if (!found) {
-				fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
 			}
 		}
 
