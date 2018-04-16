@@ -206,6 +206,9 @@ int main(int argc, char **argv) {
 					char ipbuf[16];
 					fprintf(stdout, "%" PRId64"|%s|bad encoding %s|%s\n",
 					        docId, iptoa(*firstIp, ipbuf), get_charset_str(xmlDoc.m_charset), url->getUrl());
+
+					// don't check for more
+					break;
 				}
 			}
 		}
