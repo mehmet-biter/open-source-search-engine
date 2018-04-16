@@ -254,7 +254,27 @@ int main(int argc, char **argv) {
 						}
 
 						if (!found) {
-							fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+							for (char c = 'a'; c <= 'z'; ++c) {
+								if (c == 'a' || c == 'e' || c == 'i') {
+									continue;
+								}
+
+								char match[] = "   ";
+								char matchUpper[] = "   ";
+								match[1] = c;
+								matchUpper[1] = to_upper_a(c);
+
+								if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, match) ||
+									find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, matchUpper)) {
+									fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
+									found = true;
+									break;
+								}
+							}
+						}
+
+						if (!found) {
+							fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII (probable)|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
 						}
 
 						break;
