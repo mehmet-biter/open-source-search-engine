@@ -15,6 +15,7 @@
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
+#include <set>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH\n", argv0);
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
 
 	std::vector<std::pair<eIANACharset, std::string>> wrong_encodings;
 
-	std::vector<const char*> inputs = {
+	static const std::vector<const char*> inputs_danish = {
 		// danish
 		"æ",
 		"ø",
@@ -138,19 +139,36 @@ int main(int argc, char **argv) {
 		"Æ",
 		"Ø",
 		"Å",
+	};
+
+	static const std::vector<const char*> inputs_swedish = {
 		// swedish
+		"å",
+		"Å",
 		"ä",
 		"ö",
 		"Ä",
 		"Ö",
+	};
+
+	static const std::vector<const char*> inputs_german = {
 		// german
+		"ä",
+		"ö",
+		"Ä",
+		"Ö",
 		"ü",
 		"ß",
 		"Ü",
 		"ẞ",
 	};
 
-	std::vector<std::pair<eIANACharset,eIANACharset>> from_to_charsets = {
+	std::set<const char*> inputs;
+	inputs.insert(inputs_danish.begin(), inputs_danish.end());
+	inputs.insert(inputs_swedish.begin(), inputs_swedish.end());
+	inputs.insert(inputs_german.begin(), inputs_german.end());
+
+	static const std::vector<std::pair<eIANACharset,eIANACharset>> from_to_charsets = {
 		std::make_pair(csUTF8, csISOLatin1),
 		std::make_pair(csUTF8, csISOLatin2),
 		std::make_pair(csUTF8, csISOLatin4),
@@ -172,6 +190,12 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	static const std::vector<std::pair<lang_t, std::vector<const char*>>> lang_inputs = {
+		std::make_pair(langDanish, inputs_danish),
+		std::make_pair(langSwedish, inputs_swedish),
+		std::make_pair(langGerman, inputs_german),
+	};
+
 	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 		if (list.isEmpty()) {
 			break;
@@ -192,24 +216,48 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			int32_t *firstIp = xmlDoc.getFirstIp();
+			if (!firstIp || firstIp == (int32_t *)-1) {
+				logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
+				continue;
+			}
+
+			Url *url = xmlDoc.getFirstUrl();
+			char ipbuf[16];
+
+			bool found = false;
 			for (auto const &wrong_encoding : wrong_encodings) {
 				if ((xmlDoc.m_charset == wrong_encoding.first) &&
 					find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, wrong_encoding.second)) {
-					int32_t *firstIp = xmlDoc.getFirstIp();
-					if (!firstIp || firstIp == (int32_t *)-1) {
-						logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
-						continue;
-					}
-
-					Url *url = xmlDoc.getFirstUrl();
-
-					char ipbuf[16];
 					fprintf(stdout, "%" PRId64"|%s|bad encoding %s|%s\n",
 					        docId, iptoa(*firstIp, ipbuf), get_charset_str(xmlDoc.m_charset), url->getUrl());
 
 					// don't check for more
+					found = true;
 					break;
 				}
+			}
+
+			if (found) {
+				continue;
+			}
+
+			// let's see if there are danish/swedish/german content detected as ascii, without special characters
+			if (xmlDoc.m_charset == csASCII) {
+				for (auto const &lang_input : lang_inputs) {
+					if (xmlDoc.m_langId == lang_input.first) {
+						for (auto const &input : lang_input.second) {
+							if (find_str(xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, input)) {
+								found = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if (!found) {
+				fprintf(stdout, "%" PRId64"|%s|bad encoding csASCII|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl());
 			}
 		}
 
