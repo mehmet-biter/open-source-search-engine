@@ -171,6 +171,7 @@ void UrlParser::parse() {
 	const char *queryEnd = fragmentPos ? fragmentPos : urlEnd;
 
 	// path
+	bool isFirstComponent = true;
 	bool updatePathEncChar = false;
 	const char *prevPos = pathPos + 1;
 	while (prevPos && (prevPos <= pathEnd)) {
@@ -180,7 +181,8 @@ void UrlParser::parse() {
 			len = currentPos - prevPos;
 		}
 
-		UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_PATH, prevPos, len, *(prevPos - 1));
+		UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_PATH, prevPos, len, *(prevPos - 1), isFirstComponent);
+		isFirstComponent = false;
 
 		// check for special cases before adding to m_paths
 		if (len == 1 && memcmp(prevPos, ".", 1) == 0) {
@@ -227,15 +229,19 @@ void UrlParser::parse() {
 	if (queryPos) {
 		prevPos = queryPos + 1;
 
+		bool isFirstComponent = true;
 		bool isPrevAmpersand = false;
 		while (prevPos && (prevPos < queryEnd)) {
+			const char *querySeparator = m_titledbVersion <= 128 ? "&;" : "&;?";
 			size_t len = queryEnd - prevPos;
-			currentPos = strnpbrk(prevPos, len, "&;");
+			currentPos = strnpbrk(prevPos, len, querySeparator);
 			if (currentPos) {
 				len = currentPos - prevPos;
 			}
 
-			UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_QUERY, prevPos, len, *(prevPos - 1));
+			UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_QUERY, prevPos, len, *(prevPos - 1), isFirstComponent);
+			isFirstComponent = false;
+
 			std::string key = urlPart.getKey();
 
 			// check previous urlPart
@@ -332,7 +338,9 @@ void UrlParser::unparse() {
 					isFirst = false;
 					m_urlParsed.append("?");
 				} else {
-					m_urlParsed += (query.getSeparator() == '?') ? '&' : query.getSeparator();
+					// we should preserve '?' that is not the first separator
+					// because '?' should not have any special meaning after query parameter starts
+					m_urlParsed += (query.isFirst() && query.getSeparator() == '?') ? '&' : query.getSeparator();
 				}
 
 				m_urlParsed.append(query.getString());

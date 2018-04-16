@@ -2728,7 +2728,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		}
 
 		// disable content hash check if language differ (we could have overridden language when injecting doc)
-		bool checkContentHash = true;
+		bool checkContentHash = !m_skipContentHashCheck;
 		if (m_wasContentInjected) {
 			if (m_skipContentHashCheck || (m_langIdValid && m_langId != od->m_langId)) {
 				checkContentHash = false;

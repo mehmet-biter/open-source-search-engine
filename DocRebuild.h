@@ -28,6 +28,8 @@ public:
 	DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) override;
 	void updateXmldoc(XmlDoc *xmlDoc) override;
 	void processDocItem(DocProcessDocItem *processDocItem) override;
+	int64_t getMaxPending() const override;
+	int64_t getDelayMs() const override;
 };
 
 extern DocRebuild g_docRebuild;

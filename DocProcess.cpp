@@ -73,6 +73,7 @@ DocProcess::DocProcess(const char *filename, bool isUrl, bool hasFirstIp)
 	, m_filename(filename)
 	, m_tmpFilename(filename)
 	, m_lastPosFilename(filename)
+	, m_tmpErrorFilename(filename)
 	, m_lastModifiedTime(0)
 	, m_pendingDocItems()
 	, m_pendingDocItemsMtx()
@@ -81,6 +82,7 @@ DocProcess::DocProcess(const char *filename, bool isUrl, bool hasFirstIp)
 	, m_hasFirstIp(hasFirstIp) {
 	m_tmpFilename.append(".processing");
 	m_lastPosFilename.append(".lastpos");
+	m_tmpErrorFilename.append(".tmperr");
 }
 
 bool DocProcess::init() {
@@ -216,6 +218,16 @@ void DocProcess::removePendingDoc(DocProcessDocItem *docItem) {
 		lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
 	}
 
+	// if we end with temp error - log to file so we know about it
+	if (docItem->m_xmlDoc->m_indexCodeValid && isSpiderTempError(docItem->m_xmlDoc->m_indexCode)) {
+		std::ofstream tmpErrorFile(docItem->m_docProcess->m_tmpErrorFilename, std::ofstream::out|std::ofstream::app);
+		tmpErrorFile << docItem->m_xmlDoc->m_docId
+		             << "|" << docItem->m_xmlDoc->m_firstIp
+		             << "|" << mstrerror(docItem->m_xmlDoc->m_indexCode)
+		             << "|" << docItem->m_xmlDoc->m_firstUrl.getUrl()
+		             << std::endl;
+	}
+
 	m_pendingDocItems.erase(it);
 	pthread_cond_signal(&m_pendingDocItemsCond);
 }
@@ -342,7 +354,7 @@ void DocProcess::processFile(void *item) {
 			}
 			if (fileItem->m_docProcess->addKey(key, firstIp, currentFilePos)) {
 				lastAddTimeMs = gettimeofdayInMilliseconds();
-				fileItem->m_docProcess->waitPendingDocCount(g_conf.m_docProcessMaxPending);
+				fileItem->m_docProcess->waitPendingDocCount(fileItem->m_docProcess->getMaxPending());
 			}
 		} else if (lastPosKey.compare(key) == 0) {
 			foundLastPos = true;
@@ -359,8 +371,8 @@ void DocProcess::processFile(void *item) {
 		// add delay if needed
 		if (lastAddTimeMs != 0) {
 			int64_t currentDelayMs = gettimeofdayInMilliseconds() - lastAddTimeMs;
-			if (currentDelayMs < g_conf.m_docProcessDelayMs) {
-				usleep((g_conf.m_docProcessDelayMs - currentDelayMs) * 1000);
+			if (currentDelayMs < fileItem->m_docProcess->getDelayMs()) {
+				usleep((fileItem->m_docProcess->getDelayMs() - currentDelayMs) * 1000);
 			}
 		}
 	}
@@ -389,6 +401,33 @@ void DocProcess::processDoc(void *item) {
 }
 
 void DocProcess::processedDoc(void *state) {
+	DocProcessDocItem *docItem = static_cast<DocProcessDocItem*>(state);
+	if (g_errno == EUDPTIMEDOUT) {
+		// reset XmlDoc and restart process if we get udp timeout
+		if (docItem->m_docProcess->m_isUrl) {
+			std::string url(docItem->m_xmlDoc->m_firstUrl.getUrl());
+			docItem->m_xmlDoc->reset();
+
+			SpiderRequest sreq;
+			sreq.setFromAddUrl(url.c_str());
+			sreq.m_isAddUrl = 0;
+
+			docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
+		} else {
+			int64_t docId = docItem->m_xmlDoc->m_docId;
+			docItem->m_xmlDoc->reset();
+
+			docItem->m_xmlDoc->set3(docId, "main", 0);
+
+			// treat url as non-canonical
+			docItem->m_xmlDoc->m_isUrlCanonical = false;
+			docItem->m_xmlDoc->m_isUrlCanonicalValid = true;
+		}
+
+		docItem->m_docProcess->updateXmldoc(docItem->m_xmlDoc);
+		docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+	}
+
 	// reprocess xmldoc
 	s_docProcessDocThreadQueue.addItem(state);
 }

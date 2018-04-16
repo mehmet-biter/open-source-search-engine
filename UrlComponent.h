@@ -10,7 +10,7 @@ public:
 		TYPE_QUERY
 	};
 
-	UrlComponent( Type type, const char *pos, size_t len, char separator );
+	UrlComponent( Type type, const char *pos, size_t len, char separator, bool isFirst );
 
 	void print() const;
 
@@ -54,6 +54,10 @@ public:
 		return m_componentStr.size() - m_keyLen - 1;
 	}
 
+	bool isFirst() const {
+		return m_isFirst;
+	}
+
 	bool isDeleted() const {
 		return m_deleted;
 	}
@@ -73,6 +77,7 @@ private:
 	std::string m_componentStr;
 
 	char m_separator;
+	bool m_isFirst;
 
 	std::string m_key;
 	size_t m_keyLen;

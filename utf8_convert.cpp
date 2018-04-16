@@ -73,7 +73,7 @@ static void gbiconv_reset() {
 }
 
 
-static int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
+int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 		const char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars ){
 	if (inbuflen == 0) return 0;

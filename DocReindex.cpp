@@ -59,6 +59,9 @@ void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {
 #endif
 
 	xmlDoc->m_versionValid = true;
+
+	// we always want to store a new version even if it looks to be the same (we normaly reindex due to an error)
+	xmlDoc->m_skipContentHashCheck = true;
 }
 
 void DocReindex::processDocItem(DocProcessDocItem *docItem) {
@@ -142,4 +145,12 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 		delete xmlDoc;
 		delete reindexDocItem;
 	}
+}
+
+int64_t DocReindex::getMaxPending() const {
+	return g_conf.m_docReindexMaxPending;
+}
+
+int64_t DocReindex::getDelayMs() const {
+	return g_conf.m_docReindexDelayMs;
 }
