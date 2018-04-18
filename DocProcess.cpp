@@ -24,6 +24,7 @@
 #include "XmlDoc.h"
 #include "ScopedLock.h"
 #include "Collectiondb.h"
+#include "ip.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <algorithm>
@@ -220,9 +221,10 @@ void DocProcess::removePendingDoc(DocProcessDocItem *docItem) {
 
 	// if we end with temp error - log to file so we know about it
 	if (docItem->m_xmlDoc->m_indexCodeValid && isSpiderTempError(docItem->m_xmlDoc->m_indexCode)) {
+		char ipbuf[16];
 		std::ofstream tmpErrorFile(docItem->m_docProcess->m_tmpErrorFilename, std::ofstream::out|std::ofstream::app);
 		tmpErrorFile << docItem->m_xmlDoc->m_docId
-		             << "|" << docItem->m_xmlDoc->m_firstIp
+		             << "|" << iptoa(docItem->m_xmlDoc->m_firstIp, ipbuf)
 		             << "|" << mstrerror(docItem->m_xmlDoc->m_indexCode)
 		             << "|" << docItem->m_xmlDoc->m_firstUrl.getUrl()
 		             << std::endl;
