@@ -310,7 +310,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	}
 
 	const char *tld_hint = fx_fetld;
-	if (!tld_hint || strlen(tld_hint) == 0) {
+	if (!tld_hint || strlen(tld_hint) == 0 || strlen(tld_hint) != 2) {
 		tld_hint = fx_country;
 	}
 
