@@ -127,11 +127,20 @@ int main(int argc, char **argv) {
 			char buf[128];
 			strftime(buf, 128, "%b-%d-%Y %H:%M:%S", timeStruct);
 
+			// validate shard
+			key96_t titleRecKey = Titledb::makeFirstKey(docId);
+			int32_t shardNum = g_hostdb.getShardNum(RDB_TITLEDB, &titleRecKey);
+			if (shardNum != g_hostdb.getMyShardNum()) {
+				fprintf(stdout, "%" PRId64"|wrong shard|%d|%s|%.*s\n", docId, shardNum, buf, xmlDoc.size_firstUrl, xmlDoc.ptr_firstUrl);
+				continue;
+			}
+
 			// validate linkinfo
 			if (xmlDoc.ptr_linkInfo1->m_version != 0 ||
 			    xmlDoc.ptr_linkInfo1->m_lisize < 0 || xmlDoc.ptr_linkInfo1->m_lisize != xmlDoc.size_linkInfo1 ||
 			    xmlDoc.ptr_linkInfo1->m_numStoredInlinks < 0 || xmlDoc.ptr_linkInfo1->m_numGoodInlinks < 0) {
-				fprintf(stderr, "\ndocid=%" PRId64" url='%.*s spidered='%s'\n", docId, xmlDoc.size_firstUrl, xmlDoc.ptr_firstUrl, buf);
+				fprintf(stdout, "%" PRId64"|bad linkinfo|%s|%.*s\n", docId, buf, xmlDoc.size_firstUrl, xmlDoc.ptr_firstUrl);
+				continue;
 			}
 		}
 		startKey = *(key96_t *)list.getLastKey();
