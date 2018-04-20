@@ -11,7 +11,6 @@
 #include "UrlMatchList.h"
 #include "WantedChecker.h"
 #include "utf8_convert.h"
-#include "GbUtil.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
@@ -40,10 +39,6 @@ static void cleanup() {
 	g_loop.reset();
 
 	WantedChecker::finalize();
-}
-
-static bool find_str(const char *haystack, size_t haystackLen, const std::string &needle) {
-	return (memmem(haystack, haystackLen, needle.c_str(), needle.size()) != nullptr);
 }
 
 int main(int argc, char **argv) {
@@ -128,70 +123,6 @@ int main(int argc, char **argv) {
 	key96_t endKey;
 	endKey.setMax();
 
-	static const std::vector<eIANACharset> charsets = {
-		csISOLatin1,
-		csISOLatin2,
-		csISOLatin4,
-		cslatin6,
-		cswindows1250,
-		cswindows1252,
-		cswindows1257,
-	};
-
-	static const std::vector<const char*> inputs_danish = {
-		// danish
-		"æ",
-		"ø",
-		"å",
-		"Æ",
-		"Ø",
-		"Å",
-	};
-
-	static const std::vector<const char*> inputs_swedish = {
-		// swedish
-		"å",
-		"Å",
-		"ä",
-		"ö",
-		"Ä",
-		"Ö",
-	};
-
-	static const std::vector<const char*> inputs_german = {
-		// german
-		"ä",
-		"ö",
-		"Ä",
-		"Ö",
-		"ü",
-		"ß",
-		"Ü",
-		"ẞ",
-	};
-
-	static const std::vector<std::pair<lang_t, std::vector<const char*>>> lang_inputs = {
-		std::make_pair(langDanish, inputs_danish),
-		std::make_pair(langSwedish, inputs_swedish),
-		std::make_pair(langGerman, inputs_german),
-	};
-
-	std::set<std::string> unwanted_encodes;
-	for (const auto &lang_input : lang_inputs) {
-		for (const auto &input : lang_input.second) {
-			std::vector<std::string> encodes;
-			for (const auto &charset : charsets) {
-				char buffer[8];
-				if (ucToAny(buffer, sizeof(buffer), get_charset_str(csUTF8),
-				            input, strlen(input), get_charset_str(charset), -1) > 0) {
-					SafeBuf sb;
-					urlEncode(&sb, buffer);
-					unwanted_encodes.insert(sb.getBufStart());
-				}
-			}
-		}
-	}
-
 	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 		if (list.isEmpty()) {
 			break;
@@ -262,18 +193,6 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			bool found = false;
-			for (const auto &unwanted_encode : unwanted_encodes) {
-				if (find_str(xmlDoc.ptr_firstUrl, xmlDoc.size_firstUrl, unwanted_encode)) {
-					fprintf(stdout, "%" PRId64"|bad encoding|%s\n", docId, url->getUrl());
-					found = true;
-					break;
-				}
-			}
-
-			if (found) {
-				continue;
-			}
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
