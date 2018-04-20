@@ -155,6 +155,15 @@ int main(int argc, char **argv) {
 					continue;
 				}
 			}
+
+			int64_t probableDocId = Titledb::getProbableDocId(url);
+			int64_t firstProbableDocId = Titledb::getFirstProbableDocId(probableDocId);
+			int64_t lastProbableDocId = Titledb::getLastProbableDocId(probableDocId);
+			if (docId < firstProbableDocId || docId > lastProbableDocId) {
+				fprintf(stdout, "%" PRId64"|docid out of range|%s\n", docId, url->getUrl());
+				continue;
+			}
+
 			uint8_t *contentType = xmlDoc.getContentType();
 			switch (*contentType) {
 				case CT_GIF:
@@ -192,7 +201,6 @@ int main(int argc, char **argv) {
 					continue;
 				}
 			}
-
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
