@@ -287,30 +287,61 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	if (strlen(fx_qlang) && getLangIdFromAbbr(fx_qlang) != langUnknown) {
 		contentLanguage = fx_qlang;
 	} else if (strlen(fx_blang)) {
-		std::vector<std::pair<lang_t, double>> langIdBlangs;
+		// en-GB,en;q=0.8,fr;q=0.6,en-US;q=0.4
+		std::string blang_hint(fx_blang);
 
-		std::string blangStr(fx_blang);
-		auto items = split(blangStr, ',');
+		std::vector<std::pair<std::string, double>> blang_quality_pairs;
+		// split between entries
+		auto items = split(blang_hint, ',');
 		for (const auto &item : items) {
+			// en-US;q=0.4
 			auto pairs = split(item, ';');
-			if (pairs[0].length() == 2) {
+			double q = 1;
+			if (pairs.size() == 2) {
+				// has language quality factor
+				auto nvp = split(pairs[1], '=');
+				if (nvp.size() == 2) {
+					q = strtod(nvp[1].c_str(), nullptr);
+				}
+			}
+
+			// en-US
+			auto tokens = split(pairs[0], '-');
+
+			blang_quality_pairs.emplace_back(pairs[0], q);
+		}
+
+		std::sort(blang_quality_pairs.begin(), blang_quality_pairs.end(),
+		          [](const std::pair<std::string, double> &a, const std::pair<std::string, double> &b) {
+			          return a.second > b.second;
+		          });
+
+		auto it = std::unique(blang_quality_pairs.begin(), blang_quality_pairs.end(),
+		                      [](const std::pair<std::string, double> &a, const std::pair<std::string, double> &b) {
+			                      return a.first == b.first;
+		                      });
+		blang_quality_pairs.erase(it, blang_quality_pairs.end());
+
+		if (blang_quality_pairs.size()) {
+			double max_weight = blang_quality_pairs[0].second;
+			for (auto blang_quality_pair : blang_quality_pairs) {
 				if (!contentLanguage.empty()) {
 					contentLanguage.append(",");
 				}
 
-				contentLanguage.append(pairs[0]);
-			} else if (pairs[0].length() > 2 && pairs[0][2] == '-') {
-				if (!contentLanguage.empty()) {
-					contentLanguage.append(",");
+				// append all blang with max weight
+				if (blang_quality_pair.second == max_weight) {
+					contentLanguage.append(blang_quality_pair.first);
+					continue;
 				}
 
-				contentLanguage.append(pairs[0], 0, 2);
+				break;
 			}
 		}
 	}
 
 	const char *tld_hint = fx_fetld;
-	if (!tld_hint || strlen(tld_hint) == 0) {
+	if (!tld_hint || strlen(tld_hint) == 0 || strlen(tld_hint) != 2) {
 		tld_hint = fx_country;
 	}
 
