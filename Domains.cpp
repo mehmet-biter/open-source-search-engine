@@ -106,6 +106,36 @@ static GbMutex    s_tableMutex;
 
 #include "tlds.inc"
 
+static bool loadTLDs() {
+	FILE *fp = fopen("tlds.txt","r");
+	if(!fp)
+		return false;
+	log(LOG_DEBUG,"build: Loading TLDs from 'tlds.txt'");
+	int num_tlds_loaded = 0;
+	char line[128];
+	while(fgets(line,sizeof(line),fp)) {
+		char *s = strchr(line,'\n');
+		if(s) *s='\0';
+		s = strchr(line,'#');
+		if(s) *s='\0';
+		if(!*s || isspace(*s))
+			continue;
+		
+		size_t dlen = strlen(line);
+		int64_t dh  = hash64Lower_a(line, dlen);
+		//todo/future: encode from utf8 to punycode
+		if(!s_table.addKey (&dh,NULL)) {
+			log(LOG_WARN, "build: dom table failed");
+			fclose(fp);
+			return false;
+		}
+		num_tlds_loaded++;
+	}
+	fclose(fp);
+	log(LOG_DEBUG,"build: Loading %d TLDs from 'tlds.txt'", num_tlds_loaded);
+	return true;
+}
+
 static bool initializeTLDTable() {
 	ScopedLock sl(s_tableMutex);
 	if(!s_isInitialized) {
@@ -114,19 +144,20 @@ static bool initializeTLDTable() {
 			return false;
 		}
 
-		int32_t n = (int32_t)sizeof(s_tlds)/ sizeof(char *); 
-		for(int32_t i = 0; i < n; i++) {
-			const char *d    = s_tlds[i];
-			int32_t     dlen = strlen (d);
-			int64_t     dh   = hash64Lower_a(d, dlen);
-			if(!s_table.addKey (&dh,NULL)) {
-				log( LOG_WARN, "build: dom table failed");
-				return false;
+		if(!loadTLDs()) {
+			//use burned-in default
+			for(int32_t i = 0; s_tlds[i]; i++) {
+				const char *d    = s_tlds[i];
+				int32_t     dlen = strlen (d);
+				int64_t     dh   = hash64Lower_a(d, dlen);
+				if(!s_table.addKey (&dh,NULL)) {
+					log( LOG_WARN, "build: dom table failed");
+					return false;
+				}
 			}
 		}
 		s_isInitialized = true;
 	} 
-	sl.unlock();
 	return true;
 }
 
@@ -147,7 +178,9 @@ static bool isTLDForUrl(const char *tld, int32_t tldLen) {
 	// otherwise, if one period, check table to see if qualified
 
 	int64_t h = hash64Lower_a ( tld , tldLen ); // strlen(tld));
-	return s_table.isInTable ( &h );//getScoreFromTermId ( h );
+	//return s_table.isInTable ( &h );//getScoreFromTermId ( h );
+	bool b = s_table.isInTable ( &h );//getScoreFromTermId ( h );
+	return b;
 }		
 
 
