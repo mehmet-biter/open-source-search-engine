@@ -454,6 +454,7 @@ clean:
 	-rm -f entities.inc
 	-rm -f default_css.inc
 	-rm -f query_stop_words.??.inc query_stop_words_list.inc
+	-rm -f tlds.inc
 	$(MAKE) -C test $@
 	$(MAKE) -C word_variations/ $@
 	$(MAKE) -C sto/ $@
@@ -548,6 +549,11 @@ default_css.inc: default.css
 
 Pages.o: default_css.inc
 
+
+Domains.cpp: tlds.inc
+
+tlds.inc: generate_tld_list.sh tlds-alpha-by-domain.txt official_2nd_level_domains.txt
+	./generate_tld_list.sh $@
 
 # different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)

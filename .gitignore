@@ -8,6 +8,7 @@
 *.conf
 *.cache
 entities.inc
+tlds.inc
 diskusage
 gb
 gb.oldsave
