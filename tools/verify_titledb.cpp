@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 	endKey.setMax();
 
 	for (;;) {
-		if (!msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 500000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
+		if (!msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 			logf(LOG_TRACE, "msg5.getlist didn't block");
 			break;
 		}
