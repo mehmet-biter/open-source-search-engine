@@ -118,7 +118,7 @@ static bool loadTLDs() {
 		if(s) *s='\0';
 		s = strchr(line,'#');
 		if(s) *s='\0';
-		if(!*s || isspace(*s))
+		if(!s || isspace(*s))
 			continue;
 		
 		size_t dlen = strlen(line);
