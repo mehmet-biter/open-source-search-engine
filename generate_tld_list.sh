@@ -49,7 +49,7 @@ cat $TMPFILE1 |
 cut -d'#' -f1 |
 sed -e 's/^ *//g' -e 's/ *$//g' |
 grep -v -e '^$' |
-tr '[[:upper:]]' 'lower:]]' |
+tr '[[:upper:]]' '[[:lower:]]' |
 sort |
 uniq > $TMPFILE2 || die
 
