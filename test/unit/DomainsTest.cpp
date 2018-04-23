@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include "Domains.h"
 #include <stdio.h>
+#include <string.h>
 
 
-TEST(DomainsTest, one_and_only_test) {
-	//this test relies on sensible data in tlds.txt
+TEST(DomainsTest, tld_test) {
 	FILE *fp=fopen("tlds.txt","w");
 	ASSERT_TRUE(fp!=NULL);
 	fprintf(fp,"#test line 1\n");
@@ -20,4 +20,18 @@ TEST(DomainsTest, one_and_only_test) {
 	ASSERT_TRUE(isTLD("co.uk",5));
 	ASSERT_FALSE(isTLD("foo.boo.goo",11));
 	ASSERT_TRUE(isTLD("hemorroid",9));
+}
+
+
+TEST(DomainsTest, dom_test) {
+	FILE *fp=fopen("tlds.txt","w");
+	ASSERT_TRUE(fp!=NULL);
+	fprintf(fp,"com\n");
+	fprintf(fp,"co.uk\n");
+	fclose(fp);
+	
+	ASSERT_TRUE(initializeDomains("."));
+	ASSERT_STREQ(getTLD("www.ibm.com",11),"com");
+	ASSERT_STREQ(getTLD("www.ibm.co.uk",13),"co.uk");
+	ASSERT_STREQ(getTLD("example.com",11),"com");
 }

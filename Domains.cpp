@@ -138,6 +138,7 @@ static bool loadTLDs(const char *data_dir) {
 }
 
 static bool initializeTLDTable(const char *data_dir) {
+	s_table.reset();
 	if(!s_table.set(8, 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl")) {
 		log(LOG_WARN, "build: Could not init table of TLDs.");
 		return false;
