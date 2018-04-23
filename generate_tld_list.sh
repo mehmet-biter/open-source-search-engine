@@ -11,7 +11,7 @@
 #sources for a complete list:
 #  1:	TLDs and ccTLDs: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
 #	File: tlds-alpha-by-domain.txt
-#  2:	Official or semi-official 2nd-level domains: wikipedia, with manual plausability checks. Mozilla's list with manual checks.
+#  2:	Official or semi-official 2nd-level domains: wikipedia, with manual plausability checks. Mozilla's list (https://wiki.mozilla.org/TLD_List) with manual checks.
 #	File: official_2nd_level_domains.txt
 #  3:	Unofficial or defacto 2nd-level domains: Manual checks (with help from domain-crunching scripts)
 #	File: additional_2nd_level_domains.txt (optional)
