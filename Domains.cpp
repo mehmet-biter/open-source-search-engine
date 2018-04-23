@@ -24,7 +24,7 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 }
 
 
-const char *getDomain ( char *host , int32_t hostLen , const char *tld , int32_t *dlen ) {
+const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_t *dlen) {
 	// assume no domain 
 	*dlen = 0;
 	// get host length
