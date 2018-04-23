@@ -43,13 +43,13 @@ if [ -r additional_2nd_level_domains.txt ]; then
 fi
 
 
-#extract only the domains, then uppercase it, sort, unique, 
+#extract only the domains, then lowercase it, sort, unique, put into tmpfile2
 TMPFILE2=/tmp/$$.file2
 cat $TMPFILE1 |
 cut -d'#' -f1 |
 sed -e 's/^ *//g' -e 's/ *$//g' |
 grep -v -e '^$' |
-tr '[[:lower:]]' '[[:upper:]]' |
+tr '[[:upper:]]' 'lower:]]' |
 sort |
 uniq > $TMPFILE2 || die
 
