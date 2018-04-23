@@ -18,6 +18,7 @@ OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	UnicodeTest.o UrlBlockCheckTest.o UrlComponentTest.o UrlMatchListTest.o UrlParserTest.o UrlTest.o \
 	WordsTest.o \
 	XmlDocTest.o XmlTest.o \
+	DomainsTest.o \
 
 .PHONY: all
 all: $(TARGET)

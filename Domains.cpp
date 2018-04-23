@@ -101,16 +101,17 @@ const char *getTLD ( const char *host , int32_t hostLen ) {
 
 
 static HashTableX s_table;
-static bool       s_isInitialized = false;
 static GbMutex    s_tableMutex;
 
 #include "tlds.inc"
 
-static bool loadTLDs() {
-	FILE *fp = fopen("tlds.txt","r");
+static bool loadTLDs(const char *data_dir) {
+	char full_filename[1024];
+	sprintf(full_filename,"%s/tlds.txt", data_dir);
+	FILE *fp = fopen(full_filename,"r");
 	if(!fp)
 		return false;
-	log(LOG_DEBUG,"build: Loading TLDs from 'tlds.txt'");
+	log(LOG_DEBUG,"build: Loading TLDs from '%s'",full_filename);
 	int num_tlds_loaded = 0;
 	char line[128];
 	while(fgets(line,sizeof(line),fp)) {
@@ -118,7 +119,7 @@ static bool loadTLDs() {
 		if(s) *s='\0';
 		s = strchr(line,'#');
 		if(s) *s='\0';
-		if(!s || isspace(*s))
+		if(s && isspace(*s))
 			continue;
 		
 		size_t dlen = strlen(line);
@@ -132,39 +133,32 @@ static bool loadTLDs() {
 		num_tlds_loaded++;
 	}
 	fclose(fp);
-	log(LOG_DEBUG,"build: Loading %d TLDs from 'tlds.txt'", num_tlds_loaded);
+	log(LOG_DEBUG,"build: Loading %d TLDs from '%s'", num_tlds_loaded,full_filename);
 	return true;
 }
 
-static bool initializeTLDTable() {
-	ScopedLock sl(s_tableMutex);
-	if(!s_isInitialized) {
-		if(!s_table.set(8, 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl")) {
-			log(LOG_WARN, "build: Could not init table of TLDs.");
-			return false;
-		}
+static bool initializeTLDTable(const char *data_dir) {
+	if(!s_table.set(8, 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl")) {
+		log(LOG_WARN, "build: Could not init table of TLDs.");
+		return false;
+	}
 
-		if(!loadTLDs()) {
-			//use burned-in default
-			for(int32_t i = 0; s_tlds[i]; i++) {
-				const char *d    = s_tlds[i];
-				int32_t     dlen = strlen (d);
-				int64_t     dh   = hash64Lower_a(d, dlen);
-				if(!s_table.addKey (&dh,NULL)) {
-					log( LOG_WARN, "build: dom table failed");
-					return false;
-				}
+	if(!loadTLDs(data_dir)) {
+		//use burned-in default
+		for(int32_t i = 0; s_tlds[i]; i++) {
+			const char *d    = s_tlds[i];
+			int32_t     dlen = strlen (d);
+			int64_t     dh   = hash64Lower_a(d, dlen);
+			if(!s_table.addKey (&dh,NULL)) {
+				log( LOG_WARN, "build: dom table failed");
+				return false;
 			}
 		}
-		s_isInitialized = true;
-	} 
+	}
 	return true;
 }
 
 static bool isTLDForUrl(const char *tld, int32_t tldLen) {
-	if(!initializeTLDTable())
-		return false;
-
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < tldLen ; i++ ) {
 		// period count
@@ -185,14 +179,15 @@ static bool isTLDForUrl(const char *tld, int32_t tldLen) {
 
 
 bool isTLD(const char *tld, int32_t tldLen) {
-	if(!initializeTLDTable())
-		return false;
 	int64_t h = hash64Lower_a(tld, tldLen);
 	return s_table.isInTable(&h);
 }
 
 
-void resetDomains ( ) {
+bool initializeDomains(const char *data_dir) {
+	return initializeTLDTable(data_dir);
+}
+
+void finalizeDomains() {
 	s_table.reset();
-	s_isInitialized = false;
 }

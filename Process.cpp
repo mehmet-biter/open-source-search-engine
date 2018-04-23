@@ -29,6 +29,7 @@
 #include "StopWords.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
+#include "Domains.h"
 #include "Proxy.h"
 #include "Rebalance.h"
 #include "SpiderProxy.h"
@@ -59,7 +60,6 @@ bool g_inAutoSave;
 extern void resetPageAddUrl    ( );
 extern void resetHttpMime      ( );
 extern void reset_iana_charset ( );
-extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetAbbrTable     ( );
@@ -1027,7 +1027,7 @@ void Process::resetAll ( ) {
 	resetPageAddUrl();
 	resetHttpMime();
 	reset_iana_charset();
-	resetDomains();
+	finalizeDomains();
 	resetEntities();
 	resetQuery();
 	resetAbbrTable();
