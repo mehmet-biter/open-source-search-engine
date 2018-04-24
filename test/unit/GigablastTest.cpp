@@ -5,6 +5,7 @@
 #include "hash.h"
 #include "Conf.h"
 #include "Hostdb.h"
+#include "Domains.h"
 
 #include <stdlib.h>
 #include <libgen.h>
@@ -42,6 +43,11 @@ int main(int argc, char **argv) {
 	const char *errmsg;
 	if ( !UnicodeMaps::load_maps("ucdata",&errmsg) ) {
 		log("Unicode initialization failed!");
+		exit(1);
+	}
+
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log("Domains initialization failed!");
 		exit(1);
 	}
 

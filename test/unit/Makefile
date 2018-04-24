@@ -38,6 +38,9 @@ libsto.a:
 ucdata:
 	ln -s $(BASE_DIR)/$@ .
 
+tlds.txt:
+	ln -sf $(BASE_DIR)/$@ .
+
 $(BASE_DIR)/libcld2_full.so:
 	$(MAKE) -C $(BASE_DIR) libcld2_full.so
 
@@ -72,7 +75,7 @@ check: TARGET_PRE="valgrind"
 check: test
 
 .PHONY: test
-test: all ucdata
+test: all ucdata tlds.txt
 	-$(TARGET_PRE) ./$(TARGET) $(TEST_ARGS)
 
 .PHONY: clean
