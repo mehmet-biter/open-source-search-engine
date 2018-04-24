@@ -76,27 +76,6 @@ bool Speller::loadUnifiedDict() {
 			if ( *p == '\n' ) *p = '\0';
 		log(LOG_DEBUG,"speller: done loading successfully");
 
-		// a quick little checksum
-		if ( ! g_conf.m_isLive ) return true;
-
-		// the size
-		int64_t h1 = m_unifiedDict.getNumUsedSlots();
-		int64_t h2 = m_unifiedBuf .length();
-		int64_t h = hash64 ( h1 , h2 );
-		char *tail1 = (char *)m_unifiedDict.m_keys;
-		char *tail2 = m_unifiedBuf.getBufStart()+h2-1000;
-		h = hash64 ( tail1 , 1000 , h );
-		h = hash64 ( tail2 , 1000 , h );
-		//int64_t n = 8346765853685546681LL;
-		int64_t n = -14450509118443930LL;
-		if ( h != n ) {
-			log("gb: unifiedDict-buf.txt or "
-			    "unifiedDict-map.dat "
-			    "checksum is not approved for "
-			    "live service (%" PRId64" != %" PRId64")" ,h,n);
-			//return false;
-		}
-
 		return true;
 	}
 

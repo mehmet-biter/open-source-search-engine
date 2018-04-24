@@ -7,7 +7,7 @@
 // . returns NULL if not in the accepted list
 // . "host" must be NULL terminated and in LOWER CASE
 // . returns ptr into host that marks the domain name
-const char *getDomain ( char *host , int32_t hostLen , const char *tld , int32_t *dlen );
+const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_t *dlen);
 
 // when host is like 192.0.2.1  use this one
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
@@ -17,5 +17,8 @@ const char *getTLD ( const char *host , int32_t hostLen ) ;
 
 //is the string (com or co.uk) a known TLD?
 bool isTLD(const char *tld, int32_t tldLen);
+
+bool initializeDomains(const char *data_dir);
+void finalizeDomains();
 
 #endif // GB_DOMAINS_H

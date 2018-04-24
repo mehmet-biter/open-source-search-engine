@@ -46,6 +46,7 @@
 #include "Wiktionary.h"    // g_wiktionary
 #include "WordVariations.h"
 #include "CountryCode.h"
+#include "Domains.h"
 #include "Pos.h"
 #include "Title.h"
 #include "Speller.h"
@@ -203,7 +204,6 @@ extern void resetPageAddUrl    ( );
 extern void resetHttpMime      ( );
 extern void reset_iana_charset ( );
 extern void resetAdultBit      ( );
-extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
 
@@ -1234,6 +1234,11 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log( LOG_ERROR, "Domains initialization failed!" );
+		return 1;
+	}
+	
 	// shout out if we're in read only mode
 	if ( g_conf.m_readOnlyMode )
 		log("db: -- Read Only Mode Set. Can Not Add New Data. --");
