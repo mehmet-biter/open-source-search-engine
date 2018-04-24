@@ -251,7 +251,7 @@ bool DocProcess::addKey(const std::string &key, uint32_t firstIp, int64_t curren
 		sreq.m_isAddUrl = 0;
 
 		logTrace(g_conf.m_logTraceDocProcess, "Adding url=%s", key.c_str());
-		docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
+		docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, MAX_NICENESS);
 	} else {
 		int64_t docId = strtoll(key.c_str(), nullptr, 10);
 
@@ -262,7 +262,7 @@ bool DocProcess::addKey(const std::string &key, uint32_t firstIp, int64_t curren
 		}
 
 		logTrace(g_conf.m_logTraceDocProcess, "Adding docid=%" PRId64, docId);
-		docItem->m_xmlDoc->set3(docId, "main", 0);
+		docItem->m_xmlDoc->set3(docId, "main", MAX_NICENESS);
 
 		// treat url as non-canonical
 		docItem->m_xmlDoc->m_isUrlCanonical = false;
@@ -414,12 +414,12 @@ void DocProcess::processedDoc(void *state) {
 			sreq.setFromAddUrl(url.c_str());
 			sreq.m_isAddUrl = 0;
 
-			docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
+			docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, MAX_NICENESS);
 		} else {
 			int64_t docId = docItem->m_xmlDoc->m_docId;
 			docItem->m_xmlDoc->reset();
 
-			docItem->m_xmlDoc->set3(docId, "main", 0);
+			docItem->m_xmlDoc->set3(docId, "main", MAX_NICENESS);
 
 			// treat url as non-canonical
 			docItem->m_xmlDoc->m_isUrlCanonical = false;

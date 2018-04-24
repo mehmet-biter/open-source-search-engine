@@ -1225,8 +1225,8 @@ bool Hostdb::mayWeSendRequestToHost(const Host *host, msg_type_t /*msgType*/) {
 	return true;
 }
 
-// if niceness 0 can't pick noquery host/ must pick spider host.
-// if niceness 1 can't pick nospider host/ must pick query host.
+// if niceness 0 can't pick noquery host/ must pick query host.
+// if niceness 1 can't pick nospider host/ must pick spider host.
 // Used to select based on PingInfo::m_udpSlotsInUseIncoming but that information is not exchanged often enough to
 // be even remotely accurate with any realistic number of shards.
 Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
