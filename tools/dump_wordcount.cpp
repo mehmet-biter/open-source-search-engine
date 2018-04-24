@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Domains.h"
+#include "Version.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
@@ -46,6 +47,11 @@ int main(int argc, char **argv) {
 		print_usage(argv[0]);
 		return 1;
 	}
+
+    if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ) {
+        printVersion(basename(argv[0]));
+        return 1;
+    }
 
 	g_log.m_disabled = true;
 

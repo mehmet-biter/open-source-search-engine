@@ -61,9 +61,9 @@ const char* getBranch() {
 	return TO_STRING(GIT_BRANCH);
 }
 
-void printVersion() {
-	fprintf(stdout,"Gigablast Version      : %s\n", getVersion());
-	fprintf(stdout,"Gigablast Build config : %s\n", getBuildConfig());
-	fprintf(stdout,"Gigablast Git branch   : %s\n", getBranch());
-	fprintf(stdout,"Gigablast Git commit   : %s\n", getCommitId());
+void printVersion(const char *name) {
+	fprintf(stdout,"%s Version      : %s\n", name, getVersion());
+	fprintf(stdout,"%s Build config : %s\n", name, getBuildConfig());
+	fprintf(stdout,"%s Git branch   : %s\n", name, getBranch());
+	fprintf(stdout,"%s Git commit   : %s\n", name, getCommitId());
 }

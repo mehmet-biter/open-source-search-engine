@@ -4,6 +4,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "GbUtil.h"
+#include "Version.h"
 #include <libgen.h>
 #include <limits.h>
 
@@ -33,6 +34,11 @@ int main(int argc, char **argv) {
 		print_usage(argv[0]);
 		return 1;
 	}
+
+    if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ) {
+        printVersion(basename(argv[0]));
+        return 1;
+    }
 
 	char filepath[PATH_MAX];
 

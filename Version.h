@@ -6,6 +6,6 @@ char *getVersion ( ) ;
 const char* getBuildConfig();
 const char* getCommitId();
 
-void printVersion();
+void printVersion(const char *name = "Gigablast");
 
 #endif // GB_VERSION_H
