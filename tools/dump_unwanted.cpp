@@ -11,6 +11,7 @@
 #include "UrlMatchList.h"
 #include "WantedChecker.h"
 #include "utf8_convert.h"
+#include "Domains.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
@@ -77,6 +78,11 @@ int main(int argc, char **argv) {
 
 	if (!utf8_convert_initialize()) {
 		log(LOG_ERROR, "db: utf-8 conversion initialization failed!");
+		exit(1);
+	}
+
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log("Domains initialization failed!");
 		exit(1);
 	}
 

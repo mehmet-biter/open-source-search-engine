@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Domains.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
@@ -66,6 +67,11 @@ int main(int argc, char **argv) {
 	const char *errmsg;
 	if (!UnicodeMaps::load_maps("ucdata",&errmsg)) {
 		log("Unicode initialization failed!");
+		exit(1);
+	}
+
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log("Domains initialization failed!");
 		exit(1);
 	}
 

@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 	// initialize library
 	g_mem.init();
 	hashinit();
-	initializeDomains("..");
+	initializeDomains(".");
 
 	g_conf.init(NULL);
 
