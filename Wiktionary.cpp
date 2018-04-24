@@ -207,26 +207,6 @@ bool Wiktionary::load() {
 		if ( ! addSynsets ( "mysynonyms.txt" ) ) 
 			return false;
 
-		// a quick little checksum
-		if ( ! g_conf.m_isLive ) return true;
-
-		// the size
-		int64_t h1 = m_synTable.getNumUsedSlots();
-		int64_t h2 = m_synBuf  .length();
-		int64_t h = hash64 ( h1 , h2 );
-		char *tail1 = (char *)m_synTable.m_keys;
-		char *tail2 = m_synBuf  .getBufStart()+h2-1000;
-		h = hash64 ( tail1 , 1000 , h );
-		h = hash64 ( tail2 , 1000 , h );
-		int64_t nn = -662959013613045013LL;//-6197041242898026762LL;
-		int64_t nn2 = -2511412928924361809LL;
-		if ( h != nn && h != nn2 ) {
-			log("gb: %s or %s checksum is not approved for "
-			    "live service (%" PRId64" != %" PRId64")", ff3, ff4,
-			    h,nn);
-			//return false;
-		}
-
 		return true;
 	}
 	// if no text file that is bad
