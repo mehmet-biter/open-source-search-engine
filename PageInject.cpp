@@ -94,18 +94,8 @@ void setInjectionRequestFromParms(TcpSocket *sock, HttpRequest *hr, CollectionRe
 	if ( ir->ptr_content && ! ir->ptr_content[0]  )
 		ir->ptr_content = NULL;
 
-	if ( ir->ptr_contentFile && ! ir->ptr_contentFile[0]  )
-		ir->ptr_contentFile = NULL;
-
-	if ( ir->ptr_contentDelim && ! ir->ptr_contentDelim[0] )
-		ir->ptr_contentDelim = NULL;
-
 	if ( ir->ptr_url && ! ir->ptr_url[0] ) 
 		ir->ptr_url = NULL;
-
-	// if we had a delimeter but not content, zero it out...
-	if ( ! ir->ptr_content && ! ir->ptr_contentFile ) 
-		ir->ptr_contentDelim = NULL;
 }
 
 static Host *getHostToHandleInjection(char *url) {
@@ -179,9 +169,6 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 		log(LOG_WARN, "inject: url too big.");
 		return false;
 	}
-
-	// hack fix core
-	if ( ir->size_metadata == 0 ) ir->ptr_metadata = NULL;
 
 	int32_t sirSize = 0;
 	char *sir = serializeMsg2 ( ir ,

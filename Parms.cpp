@@ -6572,15 +6572,6 @@ void Parms::init ( ) {
 	simple_m_set_checkbox(InjectionRequest,m_deleteUrl);
 	m++;
 
-	m->m_title = "do consistency checking";
-	m->m_desc  = "Turn this on for debugging.";
-	m->m_cgi   = "consist";
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN; // | PF_API
-	m->m_page  = PAGE_INJECT;
-	simple_m_set_checkbox(InjectionRequest,m_doConsistencyTesting);
-	m++;
-
 	m->m_title = "url IP";
 	m->m_desc  = "Use this IP when injecting the document. Do not use or "
 		"set to 0.0.0.0, if unknown. If provided, it will save an IP "
@@ -6623,26 +6614,6 @@ void Parms::init ( ) {
 	simple_m_set_checkbox(InjectionRequest,m_hasMime);
 	m++;
 
-	m->m_title = "content delimeter";
-	m->m_desc  = "If the content of the url is provided below, then "
-		"it consist of multiple documents separated by this "
-		"delimeter. Each such item will be injected as an "
-		"independent document. Some possible delimeters: "
-		"<i>========</i> or <i>&lt;doc&gt;</i>. If you set "
-		"<i>hasmime</i> above to true then Gigablast will check "
-		"for a url after the delimeter and use that url as the "
-		"injected url. Otherwise it will append numbers to the "
-		"url you provide above.";
-	m->m_cgi   = "delim";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,ptr_contentDelim);
-	m++;
-
-
 	m->m_title = "content type";
 	m->m_desc  = "If you supply content in the text box below without "
 		"an HTTP mime header, "
@@ -6681,18 +6652,6 @@ void Parms::init ( ) {
 	simple_m_set(InjectionRequest,m_langId);
 	m++;
 
-	m->m_title = "upload content file";
-	m->m_desc  = "Instead of specifying the content to be injected in "
-		"the text box below, upload this file for it.";
-	m->m_cgi   = "file";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_FILEUPLOADBUTTON;
-	m->m_def   = NULL;
-	m->m_flags = PF_NOAPI;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,ptr_contentFile);
-	m++;
-
 	m->m_title = "content";
 	m->m_desc = "If you want to supply the URL's content "
 		"rather than have Gigablast download it, then "
@@ -6713,17 +6672,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_API|PF_TEXTAREA;
 	m->m_page  = PAGE_INJECT;
 	m->m_off   = offsetof(InjectionRequest,ptr_content);
-	m++;
-
-	m->m_title = "metadata";
-	m->m_desc = "Json encoded metadata to be indexed with the document.";
-	m->m_cgi   = "metadata";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_flags = PF_API|PF_TEXTAREA;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,ptr_metadata);
 	m++;
 
 	///////////////////

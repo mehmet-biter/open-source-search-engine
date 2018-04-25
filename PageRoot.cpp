@@ -1379,11 +1379,8 @@ static void doneInjectingWrapper3 ( void *st ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(ir,sizeof(*ir));
 	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_url,ir->size_url);
-	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentDelim,ir->size_contentDelim);
-	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentFile,ir->size_contentFile);
 	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentTypeStr,ir->size_contentTypeStr);
 	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_content,ir->size_content);
-	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_metadata,ir->size_metadata);
 #endif
 	char *url = ir->ptr_url;
 	log(LOG_INFO,"http: add url %s (%s)",url ,mstrerror(g_errno));
