@@ -115,6 +115,8 @@ int writeTitleRec(FILE *file, z_stream &strm, const XmlDoc &xmlDoc) {
 		}
 	} while (strm.avail_out == 0);
 
+	mfree(buffer, bufferLen, "CompressBuf");
+
 	return 0;
 }
 
@@ -236,8 +238,7 @@ int main(int argc, char **argv) {
 	key96_t endKey;
 	endKey.setMax();
 
-	FILE *file = fopen("test.txt.gz", "w+b");
-
+	FILE *file = fopen("titledb_filtered.fxarc.zz", "w+b");
 
 	z_stream strm;
 	strm.zalloc = Z_NULL;
