@@ -118,9 +118,6 @@ public:
 	int32_t                m_rbufSize;
 	char                m_rbuf [ RBUF_SIZE ];
 
-	// now we send to the twin as well
-	SafeBuf m_rbuf2;
-
 	// each split gives us a reply
 	class Msg39Reply   *m_reply       [MAX_SHARDS];
 	int32_t                m_replyMaxSize[MAX_SHARDS];

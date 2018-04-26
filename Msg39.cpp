@@ -99,7 +99,6 @@ void Msg39Request::reset() {
 	m_addToCache              = false;
 	m_familyFilter            = false;
 	m_timeout                 = -1; // -1 means auto-compute
-	m_stripe                  = 0;
 	m_collnum                 = -1;
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
