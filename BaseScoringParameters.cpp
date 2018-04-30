@@ -1,10 +1,11 @@
 #include "BaseScoringParameters.h"
 #include "Log.h"
+#include <stddef.h>
 
 
 void BaseScoringParameters::clear() {
-	m_sameLangWeight = 0.0;
-	m_unknownLangWeight = 0.0;
+	for(size_t i=0; i<sizeof(m_languageWeights)/sizeof(m_languageWeights[0]); i++)
+		m_languageWeights[i] = 1.0;
 	m_siteRankMultiplier = 0.0;
 	m_termFreqWeightFreqMin = m_termFreqWeightFreqMax = 0.0;
 	m_termFreqWeightMin = m_termFreqWeightMax = 0.0;
@@ -36,8 +37,8 @@ void BaseScoringParameters::clear() {
 
 void BaseScoringParameters::traceToLog(const char *prefix) {
 	log(LOG_TRACE,"%s:BaseScoringParameters:",prefix);
-	log(LOG_TRACE,"%s:  m_sameLangWeight=%.3f",prefix,m_sameLangWeight);
-	log(LOG_TRACE,"%s:  m_unknownLangWeight=%.3f",prefix,m_unknownLangWeight);
+	for(size_t i=0; i<sizeof(m_languageWeights)/sizeof(m_languageWeights[0]); i++)
+		log(LOG_TRACE,"%s:  m_languageWeights[%zu]=%.3f",prefix,i,m_languageWeights[i]);
 	log(LOG_TRACE,"%s:  m_siteRankMultiplier=%.3f",prefix,m_siteRankMultiplier);
 	log(LOG_TRACE,"%s:  m_termFreqWeightFreqMin=%.3f",prefix,m_termFreqWeightFreqMin);
 	log(LOG_TRACE,"%s:  m_termFreqWeightFreqMax=%.3f",prefix,m_termFreqWeightFreqMax);

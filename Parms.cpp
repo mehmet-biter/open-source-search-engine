@@ -4016,7 +4016,7 @@ void Parms::init ( ) {
 		"20.0. Which means that we multiply a result's score by 20 "
 		"if from the same language as the query or the language is "
 		"unknown.";
-	simple_m_set(SearchInput,m_baseScoringParameters.m_sameLangWeight);
+	simple_m_set(SearchInput,m_sameLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_sameLangWeight);
 	m->m_cgi  = "langw";
 	m->m_flags = PF_API;
@@ -4028,7 +4028,7 @@ void Parms::init ( ) {
 		"for this collection. We multiply a result's score by this value "
 		"if the user requested a specific language, but the language of the "
 		"indexed page could not be determined.";
-	simple_m_set(SearchInput,m_baseScoringParameters.m_unknownLangWeight);
+	simple_m_set(SearchInput,m_unknownLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
 	m->m_cgi  = "ulangw";
 	m->m_flags = PF_API;

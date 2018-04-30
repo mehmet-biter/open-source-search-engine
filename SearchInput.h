@@ -145,6 +145,8 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_sameLangWeight;
+	float m_unknownLangWeight;
 	BaseScoringParameters m_baseScoringParameters;
 
 	int32_t m_numFlagScoreMultipliers; //constant = 26

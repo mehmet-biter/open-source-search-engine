@@ -3915,17 +3915,7 @@ void PosdbTable::intersectLists_real() {
 			//#
 			//# Use "qlang" parm to set the language. i.e. "&qlang=fr"
 			//#
-			if ( m_msg39req->m_language != 0 ) {
-				if( m_msg39req->m_language == docLang) {
-					score *= (m_msg39req->m_baseScoringParameters.m_sameLangWeight);
-					logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_baseScoringParameters.m_sameLangWeight, score, m_docId);
-				}
-				else
-				if( docLang == 0 ) {
-					score *= (m_msg39req->m_baseScoringParameters.m_unknownLangWeight);
-					logTrace(g_conf.m_logTracePosdb, "Giving score an unknown language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_baseScoringParameters.m_unknownLangWeight, score, m_docId);
-				}
-			}
+			score *= m_msg39req->m_baseScoringParameters.m_languageWeights[(unsigned char)docLang]; //(todo): fix types and casts
 
 			double page_temperature = 0;
 			bool use_page_temperature = false;
@@ -4244,15 +4234,7 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	score *= (((float)siteRank)*m_baseScoringParameters.m_siteRankMultiplier+1.0);
 
 	// language boost if language specified and if page is same language, or unknown language
-	if ( m_msg39req->m_language != 0 ) {
-		if( m_msg39req->m_language == docLang) {
-			score *= (m_msg39req->m_baseScoringParameters.m_sameLangWeight);
-		}
-		else
-		if( docLang == 0 ) {
-			score *= (m_msg39req->m_baseScoringParameters.m_unknownLangWeight);
-		}
-	}
+	score *= m_msg39req->m_baseScoringParameters.m_languageWeights[(unsigned char)docLang]; //(todo): fix types and casts
 	
 	// assume the other term we pair with will be 1.0
 	score *= bestTermFreqWeight;

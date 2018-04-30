@@ -60,6 +60,8 @@ SearchInput::SearchInput()
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
+	m_sameLangWeight = 0.0;
+	m_unknownLangWeight = 0.0;
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
 	m_numFlagRankAdjustments=26;
@@ -259,6 +261,11 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t queryLang) {
 
 	log(LOG_INFO, "query: using query lang of %s", getLanguageAbbr(m_queryLangId));
 
+	for(int i=0; i<64; i++)
+		m_baseScoringParameters.m_languageWeights[i] = 1.0;
+	m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight;
+	m_baseScoringParameters.m_languageWeights[m_queryLangId] = m_sameLangWeight;
+	
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
 
 	// . the query to use for highlighting... can be overriden with "hq"
