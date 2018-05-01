@@ -3525,6 +3525,7 @@ void Parms::init ( ) {
                      "mainly to correct duplicate wiki pages.";
 	m->m_cgi   = "ddu";
 	simple_m_set(SearchInput,m_dedupURL);
+	m->m_defOff= offsetof(CollectionRec,m_dedupURLByDefault);
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_flags = PF_API;
@@ -6875,6 +6876,17 @@ void Parms::init ( ) {
 	simple_m_set(CollectionRec,m_dedupResultsByDefault);
 	m->m_def   = "1";
 	m->m_group = true;
+	m->m_flags = PF_API | PF_CLONE;
+	m->m_page  = PAGE_SEARCH;
+	m++;
+
+	m->m_title = "dedup URLs by default";
+	m->m_desc  = "Should we dedup URLs with case insensitivity? This is "
+                     "mainly to correct duplicate wiki pages.";
+	m->m_cgi   = "ddud";
+	simple_m_set(CollectionRec,m_dedupURLByDefault);
+	m->m_def   = "0";
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m++;
