@@ -10,7 +10,9 @@
 #include "UrlBlockCheck.h"
 #include "UrlMatchList.h"
 #include "WantedChecker.h"
+#include "Domains.h"
 #include "ip.h"
+#include "Version.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
@@ -52,6 +54,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+    if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ) {
+        printVersion(basename(argv[0]));
+        return 1;
+    }
+
 	g_log.m_disabled = true;
 
 	// initialize library
@@ -72,6 +79,11 @@ int main(int argc, char **argv) {
 	const char *errmsg;
 	if (!UnicodeMaps::load_maps("ucdata",&errmsg)) {
 		log("Unicode initialization failed!");
+		exit(1);
+	}
+
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log("Domains initialization failed!");
 		exit(1);
 	}
 

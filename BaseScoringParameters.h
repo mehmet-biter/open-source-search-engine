@@ -4,8 +4,7 @@
 
 //base scoring/ranking parameters. Mostly weights but also a few on/off and other adjustments
 struct BaseScoringParameters {
-	float m_sameLangWeight;
-	float m_unknownLangWeight;
+	float m_languageWeights[64]; //MAX_LANGUAGES
 	
 	float m_siteRankMultiplier;
 	

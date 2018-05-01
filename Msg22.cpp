@@ -139,8 +139,8 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// get groupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );
 
-	// if niceness 0 can't pick noquery host.
-	// if niceness 1 can't pick nospider host.
+	// if niceness 0 can't pick noquery host/ must pick query host.
+	// if niceness 1 can't pick nospider host/ must pick spider host.
 	Host *firstHost = g_hostdb.getLeastLoadedInShard ( shardNum, r->m_niceness );
 	int32_t firstHostId = firstHost->m_hostId;
 

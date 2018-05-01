@@ -28,7 +28,6 @@ class InjectionRequest {
 	bool      m_skipContentHashCheck;
 	bool      m_deleteUrl;
 	bool      m_hasMime;
-	bool      m_doConsistencyTesting;
 	int32_t   m_charset;
 	int32_t   m_langId;
 	collnum_t m_collnum; // more reliable than m_coll
@@ -36,18 +35,12 @@ class InjectionRequest {
 	uint32_t  m_lastSpidered;
 
 	char *ptr_url;
-	char *ptr_contentDelim;
-	char *ptr_contentFile;
 	char *ptr_contentTypeStr;
 	char *ptr_content;
-	char *ptr_metadata;
 
 	int32_t size_url;
-	int32_t size_contentDelim;
-	int32_t size_contentFile;
 	int32_t size_contentTypeStr;
 	int32_t size_content;
-	int32_t size_metadata;
 
 	// variable data begins here
 };

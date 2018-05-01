@@ -1,9 +1,11 @@
 #include "Url.h"
+#include "Domains.h"
 #include "SiteGetter.h"
 #include "Titledb.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Version.h"
 #include <libgen.h>
 
 static void print_usage(const char *argv0) {
@@ -24,9 +26,15 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+    if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ) {
+        printVersion(basename(argv[0]));
+        return 1;
+    }
+
 	// initialize library
 	g_mem.init();
 	hashinit();
+	initializeDomains(".");
 
 	g_conf.init(NULL);
 

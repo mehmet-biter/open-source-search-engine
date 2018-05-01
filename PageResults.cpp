@@ -3165,29 +3165,18 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 		sb->safePrintf ("\t\t<finalScoreEquationCanonical>"
 			       "<![CDATA["
 			       "Final Score = (siteRank*%.01f+1) * "
-			       "(%.01f [if not foreign language, %.01f if unknown]) * "
 			       "(%s of above matrix scores)"
 			       "]]>"
 			       "</finalScoreEquationCanonical>\n"
-			       , si->m_baseScoringParameters.m_siteRankMultiplier, si->m_baseScoringParameters.m_sameLangWeight, si->m_baseScoringParameters.m_unknownLangWeight, ff2);
+			       , si->m_baseScoringParameters.m_siteRankMultiplier, ff2);
 
 		sb->safePrintf ("\t\t<finalScoreEquation>"
 			       "<![CDATA["
 			       "<b>%.03f</b> = (%" PRId32"*%.01f+1) "
 			       , dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_baseScoringParameters.m_siteRankMultiplier);
 
-		// Check if user specified a query language
-		if ( si->m_queryLangId != 0 ) {
-			// Query language same as document language?
-			if( si->m_queryLangId == mr->m_language ) {
-				sb->safePrintf(" * %.01f", si->m_baseScoringParameters.m_sameLangWeight);
-			}
-			else
-			if( mr->m_language == 0 ) {
-				// Document language unknown, use the unknown language weight
-				sb->safePrintf(" * %.01f", si->m_baseScoringParameters.m_unknownLangWeight);
-			}
-		}
+		
+		sb->safePrintf(" * %.01f", si->m_baseScoringParameters.m_languageWeights[mr->m_language]);
 
 		// the actual min then
 		sb->safePrintf(" * %.03f",minScore);
@@ -3203,19 +3192,7 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	const char *cc = getCountryCode ( mr->m_country );
 	if ( mr->m_country == 0 ) cc = "Unknown";
 
-	float langBoost=1;
-	// Check if user specified a query language
-	if ( si->m_queryLangId != 0 ) {
-		// Query language same as document language?
-		if( si->m_queryLangId == mr->m_language ) {
-			langBoost = si->m_baseScoringParameters.m_sameLangWeight;
-		}
-		else
-		if( mr->m_language == 0 ) {
-			// Document language unknown, use the unknown language weight
-			langBoost = si->m_baseScoringParameters.m_unknownLangWeight;
-		}
-	}
+	float langBoost = si->m_baseScoringParameters.m_languageWeights[mr->m_language];
 
 
 

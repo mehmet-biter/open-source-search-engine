@@ -31,9 +31,6 @@ void Msg3a::constructor ( ) {
 	m_collnums     = NULL;
 	m_q            = NULL;
 
-	// need to call all safebuf constructors now to set m_label
-	m_rbuf2.constructor();
-
 	// NULLify all the reply buffer ptrs
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ )
 		m_reply[j] = NULL;
@@ -90,7 +87,6 @@ void Msg3a::reset ( ) {
 		mfree ( m_rbufPtr , m_rbufSize, "Msg3a" );
 		m_rbufPtr = NULL;
 	}
-	m_rbuf2.purge();
 	m_finalBuf     = NULL;
 	m_finalBufSize = 0;
 	m_docsToGet    = 0;
@@ -265,7 +261,6 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		mfree ( m_rbufPtr , m_rbufSize, "Msg3a" );
 		m_rbufPtr = NULL;
 	}
-	m_msg39req.m_stripe = 0;
 	// . (re)serialize the request
 	// . returns NULL and sets g_errno on error
 	// . "m_rbuf" is a local storage space that can save a malloc
@@ -286,16 +281,6 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 	// how many seconds since our main process was started?
 	long long now = gettimeofdayInMilliseconds();
 	long elapsed = (now - g_stats.m_startTime) / 1000;
-
-	// free this one too
-	m_rbuf2.purge();
-	// and copy that!
-	if ( ! m_rbuf2.safeMemcpy ( m_rbufPtr , m_rbufSize ) ) {
-		return true;
-	}
-
-	// and tweak it
-	((Msg39Request *)(m_rbuf2.getBufStart()))->m_stripe = 1;
 
 	/////////////////////////////
 	//
@@ -346,8 +331,6 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		int32_t firstHostId = h->m_hostId;
 		// get strip num
 		char *req = m_rbufPtr;
-		// if sending to twin, use slightly different request
-		if ( h->m_stripe == 1 ) req = m_rbuf2.getBufStart();
 		// if we are a non-split query, like gbdom:xyz.com just send
 		// to the host that has the first termid local. it will call
 		// msg2 to download all termlists. msg2 should be smart

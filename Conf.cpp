@@ -131,6 +131,8 @@ Conf::Conf ( ) {
 	m_httpMaxSendBufSize = 0;
 	m_docSummaryWithDescriptionMaxCacheAge = 0;
 	m_sliderParm = 0;
+	m_sameLangWeight = 0.0;
+	m_unknownLangWeight = 0.0;
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers = 26;
 	m_numFlagRankAdjustments = 26;

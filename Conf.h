@@ -222,6 +222,8 @@ class Conf {
 	// for Weights.cpp
 	int32_t   m_sliderParm;
 
+	float m_sameLangWeight;
+	float m_unknownLangWeight;
 	BaseScoringParameters m_baseScoringParameters;
 
 	int32_t m_numFlagScoreMultipliers; //constant = 26

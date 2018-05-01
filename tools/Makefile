@@ -14,6 +14,9 @@ libgb.a:
 ucdata:
 	ln -s $(BASE_DIR)/$@ .
 
+tlds.txt:
+	ln -sf $(BASE_DIR)/$@ .
+
 $(BASE_DIR)/libcld2_full.so:
 	$(MAKE) -C $(BASE_DIR) libcld2_full.so
 

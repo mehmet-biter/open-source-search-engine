@@ -52,7 +52,6 @@ class Msg39Request {
 	bool    m_familyFilter;
 	bool    m_getDocIdScoringInfo;
 	char    m_realMaxTop;
-	char    m_stripe;
 	bool    m_useQueryStopWords;
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
