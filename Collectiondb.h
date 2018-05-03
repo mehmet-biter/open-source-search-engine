@@ -220,6 +220,7 @@ public:
 	bool  m_indexBody;
 
 	bool  m_dedupingEnabled         ; // dedup content on same hostname
+	bool  m_dedupURLByDefault       ;
 	bool  m_dupCheckWWW             ;
 	bool  m_useSimplifiedRedirects  ;
 	bool  m_oneVotePerIpDom         ;

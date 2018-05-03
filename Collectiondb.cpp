@@ -996,6 +996,7 @@ CollectionRec::CollectionRec()
 	m_thumbnailMaxWidthHeight = 0;
 	m_indexBody = false;
 	m_dedupingEnabled = false;
+	m_dedupURLByDefault = false;
 	m_dupCheckWWW = false;
 	m_useSimplifiedRedirects = false;
 	m_oneVotePerIpDom = false;

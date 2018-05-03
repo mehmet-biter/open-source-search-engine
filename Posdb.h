@@ -59,6 +59,7 @@
 #include "HashTableX.h"
 #include "Sanity.h"
 #include "termid_mask.h"
+#include "Lang.h"
 
 
 #define MAXSITERANK      0x0f // 4 bits
@@ -248,11 +249,11 @@ class Posdb {
 		return (((const key144_t *)key)->n1 >> 37) & MAXSITERANK;
 	}
 
-	static unsigned char getLangId ( const void *key ) {
+	static lang_t getLangId ( const void *key ) {
 		if ( ((const char *)key)[0] & 0x08 )
-			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) | 0x20;
+			return (lang_t)(((((const key144_t *)key)->n1 >> 32) & 0x1f) | 0x20);
 		else
-			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) ;
+			return (lang_t)((((const key144_t *)key)->n1 >> 32) & 0x1f);
 	}
 
 	static unsigned char getHashGroup ( const void *key ) {

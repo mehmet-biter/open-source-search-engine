@@ -2181,7 +2181,7 @@ nextNode:
 }
 
 
-bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang) {
+bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, lang_t docLang) {
 
 	dcs->m_siteRank   = siteRank;
 	dcs->m_finalScore = score;
@@ -3554,7 +3554,7 @@ void PosdbTable::intersectLists_real() {
 	int32_t lastLen = 0;
 	char siteRank;
 	int highestInlinkSiteRank;
-	char docLang;
+	lang_t docLang;
 	float score;
 	int32_t intScore = 0;
 	float minScore = 0.0;
@@ -3848,7 +3848,7 @@ void PosdbTable::intersectLists_real() {
 					}
 					
 					siteRank = Posdb::getSiteRank ( miniMergeBuf.mergedListStart[k] );
-					docLang  = Posdb::getLangId   ( miniMergeBuf.mergedListStart[k] );
+					docLang  = Posdb::getLangId(miniMergeBuf.mergedListStart[k]);
 					break;
 				}
 				logTrace(g_conf.m_logTracePosdb, "Got siteRank %d and docLang %d", (int)siteRank, (int)docLang);
@@ -3915,7 +3915,7 @@ void PosdbTable::intersectLists_real() {
 			//#
 			//# Use "qlang" parm to set the language. i.e. "&qlang=fr"
 			//#
-			score *= m_msg39req->m_baseScoringParameters.m_languageWeights[(unsigned char)docLang]; //(todo): fix types and casts
+			score *= m_msg39req->m_baseScoringParameters.m_languageWeights[docLang];
 
 			double page_temperature = 0;
 			bool use_page_temperature = false;
@@ -4107,7 +4107,8 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	float bestTermFreqWeight = -1.0;
 	unsigned char bestDensityRank = 0;
 	char siteRank = -1;
-	char docLang = -1;
+	bool docLangSet = false;
+	lang_t docLang = langUnknown;
 	unsigned char hgrp;
 	bool hadHalfStopWikiBigram = false;
 	
@@ -4135,8 +4136,9 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 		if ( siteRank == -1 ) {
 			siteRank = Posdb::getSiteRank(start);
 		}
-		if ( docLang == -1 ) {
+		if ( !docLangSet ) {
 			docLang = Posdb::getLangId(start);
+			docLangSet = true;
 		}
 		
 		// skip first key because it is 12 bytes, go right to the
@@ -4234,7 +4236,7 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	score *= (((float)siteRank)*m_baseScoringParameters.m_siteRankMultiplier+1.0);
 
 	// language boost if language specified and if page is same language, or unknown language
-	score *= m_msg39req->m_baseScoringParameters.m_languageWeights[(unsigned char)docLang]; //(todo): fix types and casts
+	score *= m_msg39req->m_baseScoringParameters.m_languageWeights[docLang];
 	
 	// assume the other term we pair with will be 1.0
 	score *= bestTermFreqWeight;
