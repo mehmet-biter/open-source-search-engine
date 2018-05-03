@@ -15127,12 +15127,10 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 			// set siterank or langid so that its termlist
 			// remains sorted just by that float
 			Posdb::setAlignmentBit ( p , 1 );
-		}
-		// otherwise, set the siterank and langid
-		else {
-			// this too
+		} else {
+			// otherwise, set the siterank and langid
 			Posdb::setSiteRankBits ( p , siteRank );
-			// set language here too
+			// This overrides the language set by hashWords3()
 			Posdb::setLangIdBits ( p , m_langId );
 		}
 		// advance over it

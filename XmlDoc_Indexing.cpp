@@ -1892,6 +1892,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		// clear what language this word belongs to.
 		// if the word is only in german it should be german,
 		// otherwise it will be the document's primary language.
+		//note: the above comment is wrong. The lanauge is overwritten by addTable144(). It is unclear if this is a good thing
 		char langId = langUnknown;
 		if ( m_wts && langVec ) langId = langVec[i];
 
