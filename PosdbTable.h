@@ -5,6 +5,7 @@
 #include "HashTableX.h"
 #include "ScoringWeights.h"
 #include "BaseScoringParameters.h"
+#include "Lang.h"
 #include <vector>
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -153,7 +154,7 @@ private:
 	void intersectLists_real();
 
 	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile);
-	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, lang_t docLang);
 	void logDebugScoreInfo(int32_t loglevel);
 	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr);
@@ -289,7 +290,7 @@ class DocIdScore {
 	char        m_usePageTemperature;
 	char        m_reserved1;
 	char        m_reserved2;
-	int32_t        m_docLang; // langId
+	lang_t      m_docLang;
 	int32_t        m_numRequiredTerms;
 	// NEW 20170423
 	float		m_adjustedSiteRank;
