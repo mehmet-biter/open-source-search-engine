@@ -269,8 +269,8 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	st->m_header = hr->getLong("header", 1);
 
 	// get query parameters
-	const char *query = hr->getString("q");
-	size_t queryLen = strlen(query);
+	int32_t queryLen = 0;
+	const char *query = hr->getString("q", &queryLen, "");
 
 	const char *fx_qlang = hr->getString("fx_qlang", nullptr, "");
 	const char *fx_blang = hr->getString("fx_blang", nullptr, "");
