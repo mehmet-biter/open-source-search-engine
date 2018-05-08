@@ -29,6 +29,7 @@ static void print_usage(const char *argv0) {
 	fprintf(stdout, "  -h, --help     display this help and exit\n");
 	fprintf(stdout, "  -t, --tlds     list of comma separated tlds to filter (eg: com,dk)\n");
 	fprintf(stdout, "  -l, --langs    list of comma separated languages to filter (eg: en,da)\n");
+	fprintf(stdout, "  -r, --redir    only dump redirected titlerecs\n");
 }
 
 static void cleanup() {
@@ -75,6 +76,9 @@ int writeTitleRec(FILE *file, z_stream &strm, const XmlDoc &xmlDoc) {
 	// header
 	sb.safePrintf("FXARC/1.0\r\n");
 	sb.safePrintf("Target-URI: %.*s\r\n", xmlDoc.size_firstUrl - 1, xmlDoc.ptr_firstUrl);
+	if (xmlDoc.size_redirUrl != 0) {
+		sb.safePrintf("Redirect-URI: %.*s\r\n", xmlDoc.size_redirUrl - 1, xmlDoc.ptr_redirUrl);
+	}
 	sb.safePrintf("First-Indexed: %s\r\n", formatTime(xmlDoc.m_firstIndexedDate, timebuf));
 	sb.safePrintf("Last-Indexed: %s\r\n", formatTime(xmlDoc.m_spideredTime, timebuf));
 	sb.safePrintf("IP-Address: %s\r\n", iptoa(xmlDoc.m_ip, ipbuf));
@@ -85,7 +89,6 @@ int writeTitleRec(FILE *file, z_stream &strm, const XmlDoc &xmlDoc) {
 	sb.safePrintf("Content-Length: %d\r\n", contentLen);
 	sb.safePrintf("\r\n");
 
-	/// @todo ALC we can potentially compress content here
 	// content
 	sb.safePrintf("%.*s", contentLen, xmlDoc.ptr_utf8Content);
 
@@ -99,14 +102,14 @@ int writeTitleRec(FILE *file, z_stream &strm, const XmlDoc &xmlDoc) {
 	char *buffer = (char*)mmalloc(sb.length() + 30, "CompressBuf");
 	uint32_t bufferLen = sb.length() + 30;
 
-	/* run deflate() on input until output buffer not full, finish
-	   compression if all of source has been read in */
+	// run deflate() on input until output buffer not full, finish
+	// compression if all of source has been read in
 	do {
 		strm.avail_out = bufferLen;
 		strm.next_out = (unsigned char*)buffer;
 
-		int ret = deflate(&strm, Z_SYNC_FLUSH);    /* no bad return value */
-		assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+		int ret = deflate(&strm, Z_SYNC_FLUSH); // no bad return value
+		assert(ret != Z_STREAM_ERROR);  // state not clobbered
 
 		unsigned have = bufferLen - strm.avail_out;
 		if (fwrite(buffer, 1, have, file) != have || ferror(file)) {
@@ -126,11 +129,13 @@ int main(int argc, char **argv) {
 		{"version", no_argument, nullptr, 'g'},
 		{"tlds", optional_argument, nullptr, 't'},
 		{"langs", optional_argument, nullptr, 'l'},
+		{"redir", optional_argument, nullptr, 'r'},
 		{nullptr, 0, nullptr, 0}
 	};
 
 	std::vector<std::string> tlds;
 	std::vector<std::string> langs;
+	bool only_redir = false;
 
 	int c;
 	int index;
@@ -149,6 +154,9 @@ int main(int argc, char **argv) {
 				break;
 			case 'l':
 				langs = split(optarg, ',');
+				break;
+			case 'r':
+				only_redir = true;
 				break;
 			default:
 				print_usage(argv[0]);
@@ -259,6 +267,12 @@ int main(int argc, char **argv) {
 			XmlDoc xmlDoc;
 			if (!xmlDoc.set2(list.getCurrentRec(), list.getCurrentRecSize(), "main", NULL, 0)) {
 				logf(LOG_TRACE, "Unable to set XmlDoc for docId=%" PRIu64, docId);
+				continue;
+			}
+
+			// check only_redir flag
+			Url **redirUrlPtr = xmlDoc.getRedirUrl();
+			if (only_redir && !(redirUrlPtr && *redirUrlPtr)) {
 				continue;
 			}
 
