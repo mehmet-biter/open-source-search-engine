@@ -76,9 +76,19 @@ int writeTitleRec(FILE *file, z_stream &strm, const XmlDoc &xmlDoc) {
 	// header
 	sb.safePrintf("FXARC/1.0\r\n");
 	sb.safePrintf("Target-URI: %.*s\r\n", xmlDoc.size_firstUrl - 1, xmlDoc.ptr_firstUrl);
+
 	if (xmlDoc.size_redirUrl != 0) {
 		sb.safePrintf("Redirect-URI: %.*s\r\n", xmlDoc.size_redirUrl - 1, xmlDoc.ptr_redirUrl);
 	}
+
+	if (xmlDoc.m_indexCode) {
+		sb.safePrintf("FX-Index-Code: %s\r\n", merrname(xmlDoc.m_indexCode));
+	}
+
+	if (xmlDoc.m_httpStatus != -1) {
+		sb.safePrintf("HTTP-Status: %d\r\n", xmlDoc.m_httpStatus);
+	}
+
 	sb.safePrintf("First-Indexed: %s\r\n", formatTime(xmlDoc.m_firstIndexedDate, timebuf));
 	sb.safePrintf("Last-Indexed: %s\r\n", formatTime(xmlDoc.m_spideredTime, timebuf));
 	sb.safePrintf("IP-Address: %s\r\n", iptoa(xmlDoc.m_ip, ipbuf));
