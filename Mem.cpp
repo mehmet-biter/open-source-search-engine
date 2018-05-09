@@ -95,6 +95,20 @@ void operator delete [] ( void *ptr ) throw () {
 	g_mem.gbfree((char *)ptr, NULL, 0, false);
 }
 
+void operator delete ( void *ptr, unsigned long ) throw () {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
+
+	// now just call this
+	g_mem.gbfree((char *)ptr, NULL, 0, false);
+}
+
+void operator delete[] ( void *ptr, unsigned long ) throw () {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
+
+	// now just call this
+	g_mem.gbfree((char *)ptr, NULL, 0, false);
+}
+
 #define MINMEM 6000000
 
 
