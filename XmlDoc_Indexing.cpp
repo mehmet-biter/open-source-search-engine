@@ -893,6 +893,20 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		hi.m_hashNumbers = false;
 		hi.m_filterUrlIndexableWords = true;
 		if (!hashString(s, slen, &hi)) return false;
+		
+		//If the host has punycode encoded characters in it and the TLD has some enforcement against phishing
+		//and misleading domains then index the punycode-decoded string too
+		if(fu->isPunycodeSafeTld() && fu->hasPunycode()) {
+			SafeBuf sb_decodedHost;
+			if(fu->getPunycodeDecodedHost(&sb_decodedHost)) {
+				//note: we index non-punycode labels too, it is not worth the effort to avoid that
+				//because we also need them for bigram generation. So eg www.ærtesuppe.dk will get
+				//indexed for "www", "xn--rtesuppe-i0a", and "dk" in the hashStrings() call above
+				//and them for "www", "ærtesuppe" and "dk" below.
+				if (!hashString(sb_decodedHost.getBufStart(), sb_decodedHost.length(), &hi))
+					return false;
+			}
+		}
 	}
 
 	{
