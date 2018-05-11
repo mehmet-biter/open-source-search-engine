@@ -2535,10 +2535,48 @@ bool Url::isPunycodeSafeTld() const {
 	//Some ccTLDs are safe because they only allow punycode for non-ascii letters that used by the country's language(s).
 	//Firefox/mozilla used to use a TLD whitelist, but then switched to a "no mixed scripts" rule, which mostly works but
 	//fails for www.са.com (note: the "ca" in that url is cyrillic letters)
-	if(m_tldLen==2 && (memcmp(m_tld,"dk",2)==0 ||
-			   memcmp(m_tld,"no",2)==0 ||
-			   memcmp(m_tld,"se",2)==0 ||
-			   memcmp(m_tld,"de",2)==0))
+	if(m_tldLen==2) {
+		//Some ccTLDs have strict and sensible policies
+		//List inspired by firefox's old/unused whitelist
+		static const char *safe_cctld[] = {
+			"ac",
+			"ar",
+			"at",
+			"br",
+			"ca",
+			"ch",
+			"cl",
+			"de",
+			"dk",
+			"ee",
+			"es",
+			"fi",
+			"fr",
+			"gr",
+			"gt",
+			"hu",
+			"il",
+			"is",
+			"jp",
+			"li",
+			"lt",
+			"lu",
+			"lv",
+			"no",
+			"nz",
+			"pl",
+			"se",
+			"ua",
+			nullptr
+		};
+		for(size_t i=0; safe_cctld[i]; i++)
+			if(memcmp(m_tld,safe_cctld[i],2)==0)
+				return true;
+	}
+	//example.com/are safe (reserved for documentation purposes and we use them internally for testing)
+	if(m_dlen==11 && memcmp(m_domain,"example.com",11)==0)
+		return true;
+	if(m_dlen==11 && memcmp(m_domain,"example.net",11)==0)
 		return true;
 	return false;
 }

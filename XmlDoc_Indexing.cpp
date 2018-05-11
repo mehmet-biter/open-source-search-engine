@@ -881,6 +881,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	const char *s = fu->getUrl();
 	int32_t slen = fu->getUrlLen();
 
+	SafeBuf sb_punyDecodedHost;
 	if (!*ini || m_version <= 126) {
 		setStatus("hashing inurl colon");
 
@@ -897,13 +898,12 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		//If the host has punycode encoded characters in it and the TLD has some enforcement against phishing
 		//and misleading domains then index the punycode-decoded string too
 		if(fu->isPunycodeSafeTld() && fu->hasPunycode()) {
-			SafeBuf sb_decodedHost;
-			if(fu->getPunycodeDecodedHost(&sb_decodedHost)) {
+			if(fu->getPunycodeDecodedHost(&sb_punyDecodedHost)) {
 				//note: we index non-punycode labels too, it is not worth the effort to avoid that
 				//because we also need them for bigram generation. So eg www.ærtesuppe.dk will get
 				//indexed for "www", "xn--rtesuppe-i0a", and "dk" in the hashStrings() call above
 				//and them for "www", "ærtesuppe" and "dk" below.
-				if (!hashString(sb_decodedHost.getBufStart(), sb_decodedHost.length(), &hi))
+				if (!hashString(sb_punyDecodedHost.getBufStart(), sb_punyDecodedHost.length(), &hi))
 					return false;
 			}
 		}
@@ -1167,6 +1167,10 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		hi.m_filterUrlIndexableWords = true;    // Skip com, http etc.
 		if (!hashString(host, hlen, &hi)) {
 			return false;
+		}
+		if(sb_punyDecodedHost.length()>1) {
+			if(!hashString(sb_punyDecodedHost.getBufStart(),sb_punyDecodedHost.length(), &hi))
+				return false;
 		}
 
 		hi.m_filterUrlIndexableWords = false;
