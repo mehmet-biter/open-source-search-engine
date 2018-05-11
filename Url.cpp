@@ -2529,6 +2529,62 @@ int32_t getPathDepth(const char *s, bool hasHttp) {
 	return depth;
 }
 
+
+bool Url::isPunycodeSafeTld() const {
+	//TODO: use a configuration file for this or some more clever logic
+	//Some ccTLDs are safe because they only allow punycode for non-ascii letters that used by the country's language(s).
+	//Firefox/mozilla used to use a TLD whitelist, but then switched to a "no mixed scripts" rule, which mostly works but
+	//fails for www.са.com (note: the "ca" in that url is cyrillic letters)
+	if(m_tldLen==2 && (memcmp(m_tld,"dk",2)==0 ||
+			   memcmp(m_tld,"no",2)==0 ||
+			   memcmp(m_tld,"se",2)==0 ||
+			   memcmp(m_tld,"de",2)==0))
+		return true;
+	return false;
+}
+
+bool Url::hasPunycode() const {
+	const char *s = (const char*)memmem(m_host,m_hlen,"xn--",4);
+	if(!s)
+		return false;
+	if(s==m_host || s[-1]=='.')
+		return true;
+	else
+		return false;
+}
+
+bool Url::getPunycodeDecodedHost(SafeBuf *sb) const {
+	const char *s = m_host;
+	const char *end = m_host+m_hlen;
+	while(s<end) {
+		const char *d = (const char*)memchr(s,'.',end-s);
+		if(!d)
+			d = end;
+		if(d-s<4 || memcmp(s,"xn--",4)!=0) {
+			sb->safeMemcpy(s,d-s);
+		} else {
+			uint32_t decoded[256]; //64 should be enough according to DNS spec, but let's be a bit safer
+			size_t decoded_count = 256;
+			punycode_status status = punycode_decode(d-s-4, s+4, &decoded_count, decoded, NULL);
+			if(status!=punycode_success) {
+				log(LOG_WARN, "build: Could not decode punycode '%.*s' component in host '%.*s'", (int)(d-s),s, m_hlen, m_host);
+				return false;
+			}
+			char utf8buf[256*4];
+			size_t utf8len = 0;
+			for(size_t i=0; i<decoded_count; i++)
+				utf8len += utf8Encode(decoded[i],utf8buf+utf8len);
+			sb->safeMemcpy(utf8buf,utf8len);
+		}
+		if(d<end)
+			sb->safeMemcpy(".",1);
+		s = d+1;
+	}
+	return true;
+}
+
+
+
 char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
 	const char *urlEnd = url + strlen(url);
 	const char *p = url;

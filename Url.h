@@ -197,6 +197,11 @@ public:
 
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
+	//is the registrar(s) of the TLD enforcing sane rules on punycode?
+	bool isPunycodeSafeTld() const;
+	bool hasPunycode() const;
+	bool getPunycodeDecodedHost(SafeBuf *sb) const;
+
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripCommonFile,
 	          int32_t titledbVersion );
