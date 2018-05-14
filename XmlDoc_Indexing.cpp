@@ -481,36 +481,15 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != TAG_META ) continue;
+		//we are only interested in meta tags
+		if(nodes[i].m_nodeId != TAG_META)
+			continue;
 		// only get content for <meta name=..> not <meta http-equiv=..>
 		int32_t tagLen;
-		char *tag = m_xml.getString ( i , "name" , &tagLen );
-		char tagLower[128];
-		int32_t j ;
-		int32_t code;
-		// skip if empty
+		const char *tag = m_xml.getString(i, "name", &tagLen);
+		// skip if error/empty
 		if ( ! tag || tagLen <= 0 ) continue;
-		// make tag name lower case and do not allow bad chars
-		if ( tagLen > 126 ) tagLen = 126 ;
-		to_lower3_a ( tag , tagLen , tagLower );
-		for ( j = 0 ; j < tagLen ; j++ ) {
-			// bail if has unacceptable chars
-			if ( ! is_alnum_a ( tag[j] ) &&
-			     tag[j] != '-' &&
-			     tag[j] != '_' &&
-			     tag[j] != '.' ) break;
-			// convert to lower
-			tagLower[j] = to_lower_a ( tag[j] );
-		}
-		// skip this meta if had unacceptable chars
-		if ( j < tagLen ) continue;
-		// is it recognized?
-		code = getFieldCode ( tag , tagLen );
 
-		// . do not allow reserved tag names
-		// . title,url,suburl,
-		if ( code != FIELD_GENERIC ) continue;
 		// this is now reserved
 		// do not hash keyword, keywords, description, or summary metas
 		// because that is done in hashRange() below based on the
@@ -540,7 +519,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 		// get the content
 		int32_t len;
-		char *s = m_xml.getString ( i , "content" , &len );
+		const char *s = m_xml.getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// . ensure not too big for our buffer (keep room for a \0)
 		// . TODO: this is wrong, should be len+1 > bufLen,
@@ -553,9 +532,9 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 			// assume no punct to break on!
 			len = 0;
 			// only cut off at punctuation
-			char *p    = s;
-			char *pend = s + len;
-			char *last = NULL;
+			const char *p    = s;
+			const char *pend = s + len;
+			const char *last = NULL;
 			int32_t  size ;
 			for ( ; p < pend ; p += size ) {
 				// skip if utf8 char
