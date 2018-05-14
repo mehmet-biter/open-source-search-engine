@@ -1357,6 +1357,10 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	const char  *title    = wptrs[a];
 	const char  *titleEnd = wptrs[i-1] + wlens[i-1];
 	int32_t   titleLen = titleEnd - title;
+	
+	StackBuf<1024> doubleDecodedContent;
+	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent);
+	
 	if ( ! hashString ( title, titleLen, &hi) ) return false;
 
 	// now hash as without title: prefix
