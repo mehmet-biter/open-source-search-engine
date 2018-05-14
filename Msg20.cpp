@@ -164,7 +164,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 
 	// we might be getting inlinks for a spider request
 	// so make sure timeout is inifinite for that...
-	const int32_t timeout = (req->m_niceness==0)
+	const int64_t timeout = (req->m_niceness==0)
 	                      ? multicast_msg20_summary_timeout
 	                      : multicast_infinite_send_timeout;
 
