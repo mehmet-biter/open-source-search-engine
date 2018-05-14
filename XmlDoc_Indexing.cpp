@@ -1466,11 +1466,14 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 
 	setStatus ( "hashing meta summary" );
 
+	StackBuf<1024> doubleDecodedContent;
+
 	// hash the meta keywords tag
 	//char buf [ 2048 + 2 ];
 	//int32_t len = m_xml.getMetaContent ( buf , 2048 , "summary" , 7 );
 	int32_t mslen;
 	const char *ms = getMetaSummary ( &mslen );
+	possiblyDecodeHtmlEntitiesAgain(&ms, &mslen, &doubleDecodedContent);
 
 	// update hash parms
 	HashInfo hi;
@@ -1485,7 +1488,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
 	int32_t mdlen;
-	char *md = getMetaDescription ( &mdlen );
+	const char *md = getMetaDescription ( &mdlen );
+	possiblyDecodeHtmlEntitiesAgain(&md, &mdlen, &doubleDecodedContent);
 
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
