@@ -466,10 +466,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 	setStatus ( "hashing meta tags" );
 
-	// assume it's empty
-	char buf [ 32*1024 ];
-	int32_t bufLen = 32*1024 - 1;
-	buf[0] = '\0';
 	int32_t     n     = m_xml.getNumNodes();
 	XmlNode *nodes = m_xml.getNodes();
 
@@ -521,46 +517,13 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		int32_t len;
 		const char *s = m_xml.getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
-		// . ensure not too big for our buffer (keep room for a \0)
-		// . TODO: this is wrong, should be len+1 > bufLen,
-		//   but can't fix w/o resetting the index (COME BACK HERE
-		//   and see where we index meta tags besides this place!!!)
-		//   remove those other places, except... what about keywords
-		//   and description?
-		if ( len+1 >= bufLen ) {
-			//len = bufLen - 1;
-			// assume no punct to break on!
-			len = 0;
-			// only cut off at punctuation
-			const char *p    = s;
-			const char *pend = s + len;
-			const char *last = NULL;
-			int32_t  size ;
-			for ( ; p < pend ; p += size ) {
-				// skip if utf8 char
-				size = getUtf8CharSize(*p);
-				// skip if 2+ bytes
-				if ( size > 1 ) continue;
-				// skip if not punct
-				if ( is_alnum_a(*p) ) continue;
-				// mark it
-				last = p;
-			}
-			if ( last ) len = last - s;
-			// this old way was faster...:
-			//while ( len > 0 && is_alnum(s[len-1]) ) len--;
-		}
-		// convert html entities to their chars
-		len = saftenTags ( buf , bufLen , s , len );
-		// NULL terminate the buffer
-		buf[len] = '\0';
 
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
 		// desc is NULL, prefix will be used as desc
-		bool status = hashString ( buf,len,&hi );
+		bool status = hashString ( s,len, &hi );
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
