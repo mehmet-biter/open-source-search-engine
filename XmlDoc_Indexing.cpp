@@ -21,6 +21,37 @@
 #endif
 
 
+static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBuf *sb) {
+	//some documents have incorrectly encoded html entities twice. Example:
+	//correct:   <meta name="foo" content="&#66;oa">
+	//incorrect: <meta name="foo" content="&amp;#66;oa">
+	//If it seems likely that this has happened then we decode the entities again and put the result in 'sb' and update '*s' and '*len'
+	
+	//Due to the (il)logic of GB the correct form is decoded, while the incorrect form is still raw, needing double decoding
+	
+	//require &amp; following by a second semicolon
+	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
+	if(!amppos)
+		return;
+	if(memchr(amppos+5, ';', *len-(amppos-*s))==NULL)
+		return;
+	
+	//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
+	StackBuf<1024> tmpBuf;
+	if(!tmpBuf.reserve(*len + *len/2 + 4))
+		return;
+	if(!sb->reserve(*len + *len/2 + 4))
+		return;
+	
+	int32_t tmpLen = htmlDecode(tmpBuf.getBufStart(), *s,*len, false);
+	
+	int32_t newlen = htmlDecode(sb->getBufStart(), tmpBuf.getBufStart(), tmpLen, false);
+	*s = sb->getBufStart();
+	*len = newlen;
+}
+
+
+
 // a ptr to HashInfo is passed to hashString() and hashWords()
 class HashInfo {
 public:
@@ -517,6 +548,9 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		int32_t len;
 		const char *s = m_xml.getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
+
+		StackBuf<1024> doubleDecodedContent;
+		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent);
 
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
