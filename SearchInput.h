@@ -26,7 +26,7 @@ class SearchInput {
 public:
 
 	// why provide query here, it is in "hr"
-	bool set(class TcpSocket *s, class HttpRequest *hr, lang_t queryLang);
+	bool set(class TcpSocket *s, class HttpRequest *hr, lang_t primaryQueryLanguage, const std::vector<std::pair<lang_t, double>> &language_weights);
 
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 

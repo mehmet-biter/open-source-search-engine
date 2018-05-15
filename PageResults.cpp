@@ -42,8 +42,8 @@ static bool printSearchResultsTail(State0 *st);
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
-static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, int>> &languages);
-static bool gotQueryLanguage(void *state);
+static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, double>> &languages);
+static bool gotQueryLanguage(State0 *st, const std::vector<std::pair<lang_t, double>> &languages);
 
 static void gotResultsWrapper  ( void *state ) ;
 static bool gotResults         ( void *state ) ;
@@ -82,7 +82,7 @@ State0::State0()
 	, m_qesb()
 	, m_xd(nullptr)
 	, m_socketStartTimeHack(0)
-	, m_queryLanguage(langUnknown) {
+	, m_primaryQueryLanguage(langUnknown) {
 }
 
 static bool sendReply(State0 *st, char *reply) {
@@ -277,12 +277,8 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	const char *fx_country = hr->getString("fx_country", nullptr, "");
 	const char *fx_fetld = hr->getString("fx_fetld", nullptr, "");
 
-	if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
-		// blocked
-		return false;
-	}
-
-	// fallback to normal language detection
+	
+	// First try our built-in langauge detection which uses CLD2 and the top-quality accept-language item
 	std::string contentLanguage;
 	if (strlen(fx_qlang) && getLangIdFromAbbr(fx_qlang) != langUnknown) {
 		contentLanguage = fx_qlang;
@@ -345,26 +341,28 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		tld_hint = fx_country;
 	}
 
-	st->m_queryLanguage = FxLanguage::getLangIdCLD2(true, query, queryLen, contentLanguage.c_str(), contentLanguage.size(),
-	                                                tld_hint, strlen(tld_hint), true);
+	st->m_primaryQueryLanguage = FxLanguage::getLangIdCLD2(true, query, queryLen, contentLanguage.c_str(), contentLanguage.size(),
+	                                                       tld_hint, strlen(tld_hint), true);
 
-	return gotQueryLanguage(st);
+
+	// Then try the external language detection server
+	if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
+		// blocked
+		return false;
+	} else
+		return gotQueryLanguage(st, {});
 }
 
-static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, int>> &languages) {
-	if (!languages.empty()) {
-		/// @todo ALC currently we only cater for one result (assume first result is the best)
-		State0 *st = (State0 *) state;
-		st->m_queryLanguage = languages.front().first;
+static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, double>> &language_weights) {
+	State0 *st = reinterpret_cast<State0 *>(state);
+	if (!language_weights.empty()) {
+		st->m_primaryQueryLanguage = language_weights.front().first;
 	}
 
-	gotQueryLanguage(state);
+	gotQueryLanguage(st,language_weights);
 }
 
-static bool gotQueryLanguage(void *state) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-
+static bool gotQueryLanguage(State0 *st, const std::vector<std::pair<lang_t, double>> &language_weights) {
 	// . parse it up
 	// . this returns false and sets g_errno and, maybe, g_msg on error
 	SearchInput *si = &st->m_si;
@@ -374,7 +372,7 @@ static bool gotQueryLanguage(void *state) {
 	// so do not use the "hr" on the stack. SearchInput::
 	// m_hr points to the hr we pass into
 	// SearchInput::set
-	if (!si->set(st->m_socket, &st->m_hr, st->m_queryLanguage)) {
+	if (!si->set(st->m_socket, &st->m_hr, st->m_primaryQueryLanguage, language_weights)) {
 		log("query: set search input: %s",mstrerror(g_errno));
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		return sendReply ( st, NULL );

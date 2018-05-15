@@ -42,7 +42,7 @@ public:
 	XmlDoc *m_xd;
 	int64_t m_socketStartTimeHack;
 
-	lang_t m_queryLanguage;
+	lang_t m_primaryQueryLanguage;
 };
 
 

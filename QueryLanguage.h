@@ -22,7 +22,7 @@
 #include "FxClient.h"
 #include "Lang.h"
 
-typedef void (*query_language_callback_t)(void *context, const std::vector<std::pair<lang_t, int>> &languages);
+typedef void (*query_language_callback_t)(void *context, const std::vector<std::pair<lang_t, double>> &languages);
 
 class QueryLanguage : public FxClient {
 public:
