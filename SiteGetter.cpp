@@ -311,12 +311,11 @@ bool SiteGetter::gotSiteList ( ) {
 		log("site: sitegetter gotList: %s",mstrerror(g_errno));
 		// mark it so caller knows
 		m_errno = g_errno;
-		// so try again without increasing m_pathDepth
-		// i've seen a host return EBADRDBID for some reason
-		// and put host #0 in an infinite log spam loop so stop it
-		if ( g_errno != EBADRDBID ) m_tryAgain = true;
+
+		// let UdpServer do the retries for error scenario
 		return true;
 	}
+
 	// how many urls at this path depth?
 	int32_t count = ( m_list.getListSize() - 6 ) / 6;
 	// if we do not have enough to quality this as a subsite path depth

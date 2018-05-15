@@ -63,6 +63,8 @@ private:
 	int64_t getBestWindow (const Matches *matches, int32_t mn, int32_t *lasta, int32_t *besta, int32_t *bestb,
 	                       char *gotIt, char *retired, int32_t maxExcerptLen );
 
+	void maybeRemoveHtmlFormatting();
+
 	// null terminate and store the summary here.
 	char  m_summary[ MAX_SUMMARY_LEN ];
 	int32_t  m_summaryLen;

@@ -124,6 +124,7 @@ bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *
 
 	// itemprop = "description"
 	if ( xml->getTagContent("itemprop", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen) ) {
+		maybeRemoveHtmlFormatting();
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
@@ -136,6 +137,7 @@ bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *
 
 	// meta property = "og:description"
 	if ( xml->getTagContent("property", "og:description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
+		maybeRemoveHtmlFormatting();
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
@@ -148,6 +150,7 @@ bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *
 
 	// meta name = "description"
 	if ( xml->getTagContent("name", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
+		maybeRemoveHtmlFormatting();
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
@@ -162,6 +165,7 @@ bool Summary::setSummaryFromTags( Xml *xml, unsigned maxSummaryLen, const char *
 	if ( xml->getTagContent("property", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
+			maybeRemoveHtmlFormatting();
 
 			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta property description. summary='%.*s'", m_summaryLen, m_summary);
 			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta property description. Returning true");
@@ -1153,3 +1157,42 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 	logTrace(g_conf.m_logTraceSummary, "END. Returning true");
 	return true;
 }	
+
+
+void Summary::maybeRemoveHtmlFormatting() {
+	//Some websites have junk in their meta tags. Eg <br> in the meta description
+	//We don't fix all cases as that could hurt correctly written pages about how to write proper html. But
+	//if they don't mention "html", "tag" nor "element" then we remove the most common offenders br/b/i/p
+	//When changing this function consider keeping in sync with XmlDoc_Indexing.cpp:possiblyDecodeHtmlEntitiesAgain()
+	if(memmem(m_summary,m_summaryLen,"html",4)==0 &&
+	   memmem(m_summary,m_summaryLen,"HTML",4)==0 &&
+	   memmem(m_summary,m_summaryLen,"tag",3)==0 &&
+	   memmem(m_summary,m_summaryLen,"Tag",3)==0 &&
+	   memmem(m_summary,m_summaryLen,"element",7)==0 &&
+	   memmem(m_summary,m_summaryLen,"Element",7)==0)
+	{
+		for(int i=0; i<m_summaryLen; ) {
+			char *p = (char*)memchr(m_summary+i,'<',m_summaryLen-i);
+			if(!p)
+				break;
+			i = p-m_summary;
+			if(i+4<m_summaryLen) {
+				if(memcmp(p,"<br>",4)==0) {
+					memmove(m_summary+i,m_summary+i+4,m_summaryLen-i-4);
+					m_summaryLen -= 4;
+				} else if(memcmp(p,"<b>",3)==0) {
+					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
+					m_summaryLen -= 3;
+				} else if(memcmp(p,"<i>",3)==0) {
+					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
+					m_summaryLen -= 3;
+				} else if(memcmp(p,"<p>",3)==0) {
+					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
+					m_summaryLen -= 3;
+				} else
+					i++;
+			} else
+				break;
+		}
+	}
+}

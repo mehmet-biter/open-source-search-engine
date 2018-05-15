@@ -21,6 +21,56 @@
 #endif
 
 
+static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBuf *sb, bool also_remove_certain_html_elements) {
+	//some documents have incorrectly encoded html entities twice. Example:
+	//correct:   <meta name="foo" content="&#66;oa">
+	//incorrect: <meta name="foo" content="&amp;#66;oa">
+	//If it seems likely that this has happened then we decode the entities again and put the result in 'sb' and update '*s' and '*len'
+	
+	//Due to the (il)logic of GB the correct form is decoded, while the incorrect form is still raw, needing double decoding
+	
+	//require &amp; following by a second semicolon
+	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
+	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s))!=NULL) ||
+	   (memmem(*s,*len,"&lt;",4)!=NULL && memmem(*s,*len,"&gt;",4)!=NULL)) {
+		//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
+		StackBuf<1024> tmpBuf;
+		if(!tmpBuf.reserve(*len + *len/2 + 4))
+			return;
+		if(!sb->reserve(*len + *len/2 + 4))
+			return;
+		
+		int32_t tmpLen = htmlDecode(tmpBuf.getBufStart(), *s,*len, false);
+		
+		int32_t newlen = htmlDecode(sb->getBufStart(), tmpBuf.getBufStart(), tmpLen, false);
+		
+		sb->setLength(newlen);
+		
+		//Furthermore, some websites have junk in their meta tags. Eg <br> in the meta description
+		//We don't fix all cases as that could hurt correctly written pages about how to write proper html. But
+		//if they don't mention "html", "tag" nor "element" then we remove the most common offenders br/b/i/p
+		//When changing this function consider keeping in sync with Summary::maybeRemoveHtmlFormatting()
+		if(also_remove_certain_html_elements) {
+			if(memmem(sb->getBufStart(),sb->length(),"html",4)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"HTML",4)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"tag",3)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"Tag",3)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"element",7)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"Element",7)==0)
+			{
+				sb->safeReplace2("<br>",4,"",0,0);
+				sb->safeReplace2("<b>",3,"",0,0);
+				sb->safeReplace2("<u>",3,"",0,0);
+				sb->safeReplace2("<p>",3,"",0,0);
+			}
+		}
+		*s = sb->getBufStart();
+		*len = sb->length();
+	   }
+}
+
+
+
 // a ptr to HashInfo is passed to hashString() and hashWords()
 class HashInfo {
 public:
@@ -466,10 +516,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 	setStatus ( "hashing meta tags" );
 
-	// assume it's empty
-	char buf [ 32*1024 ];
-	int32_t bufLen = 32*1024 - 1;
-	buf[0] = '\0';
 	int32_t     n     = m_xml.getNumNodes();
 	XmlNode *nodes = m_xml.getNodes();
 
@@ -481,36 +527,15 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != TAG_META ) continue;
+		//we are only interested in meta tags
+		if(nodes[i].m_nodeId != TAG_META)
+			continue;
 		// only get content for <meta name=..> not <meta http-equiv=..>
 		int32_t tagLen;
-		char *tag = m_xml.getString ( i , "name" , &tagLen );
-		char tagLower[128];
-		int32_t j ;
-		int32_t code;
-		// skip if empty
+		const char *tag = m_xml.getString(i, "name", &tagLen);
+		// skip if error/empty
 		if ( ! tag || tagLen <= 0 ) continue;
-		// make tag name lower case and do not allow bad chars
-		if ( tagLen > 126 ) tagLen = 126 ;
-		to_lower3_a ( tag , tagLen , tagLower );
-		for ( j = 0 ; j < tagLen ; j++ ) {
-			// bail if has unacceptable chars
-			if ( ! is_alnum_a ( tag[j] ) &&
-			     tag[j] != '-' &&
-			     tag[j] != '_' &&
-			     tag[j] != '.' ) break;
-			// convert to lower
-			tagLower[j] = to_lower_a ( tag[j] );
-		}
-		// skip this meta if had unacceptable chars
-		if ( j < tagLen ) continue;
-		// is it recognized?
-		code = getFieldCode ( tag , tagLen );
 
-		// . do not allow reserved tag names
-		// . title,url,suburl,
-		if ( code != FIELD_GENERIC ) continue;
 		// this is now reserved
 		// do not hash keyword, keywords, description, or summary metas
 		// because that is done in hashRange() below based on the
@@ -540,48 +565,18 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 		// get the content
 		int32_t len;
-		char *s = m_xml.getString ( i , "content" , &len );
+		const char *s = m_xml.getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
-		// . ensure not too big for our buffer (keep room for a \0)
-		// . TODO: this is wrong, should be len+1 > bufLen,
-		//   but can't fix w/o resetting the index (COME BACK HERE
-		//   and see where we index meta tags besides this place!!!)
-		//   remove those other places, except... what about keywords
-		//   and description?
-		if ( len+1 >= bufLen ) {
-			//len = bufLen - 1;
-			// assume no punct to break on!
-			len = 0;
-			// only cut off at punctuation
-			char *p    = s;
-			char *pend = s + len;
-			char *last = NULL;
-			int32_t  size ;
-			for ( ; p < pend ; p += size ) {
-				// skip if utf8 char
-				size = getUtf8CharSize(*p);
-				// skip if 2+ bytes
-				if ( size > 1 ) continue;
-				// skip if not punct
-				if ( is_alnum_a(*p) ) continue;
-				// mark it
-				last = p;
-			}
-			if ( last ) len = last - s;
-			// this old way was faster...:
-			//while ( len > 0 && is_alnum(s[len-1]) ) len--;
-		}
-		// convert html entities to their chars
-		len = saftenTags ( buf , bufLen , s , len );
-		// NULL terminate the buffer
-		buf[len] = '\0';
+
+		StackBuf<1024> doubleDecodedContent;
+		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent, true);
 
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
 		// desc is NULL, prefix will be used as desc
-		bool status = hashString ( buf,len,&hi );
+		bool status = hashString ( s,len, &hi );
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
@@ -1377,11 +1372,22 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 
 	//FIXME: assumption: title tokens are the phase-1 tokens and the tokens are in contiguous memory
 	//FIXME: also grab the alternative tokens from phase 2 in the title part
-	if ( ! hashString(a, i, &hi) ) return false;
+
+	//clean indexing:
+	//  if ( ! hashString(a, i, &hi) ) return false;
+	//but due to bad webmasters:
+	
+	const char  *title    = m_tokenizerResult[a].token_start;
+	const char  *titleEnd = m_tokenizerResult[i].token_end();
+	int32_t   titleLen = titleEnd - title;
+	StackBuf<1024> doubleDecodedContent;
+	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
+	
+	if ( ! hashString(title, titleLen, &hi)) return false;
 
 	// now hash as without title: prefix
 	hi.m_prefix = NULL;
-	if ( ! hashString(a, i, &hi) ) return false;
+	if ( ! hashString(title, titleLen, &hi)) return false;
 
 	return true;
 }
@@ -1486,11 +1492,14 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 
 	setStatus ( "hashing meta summary" );
 
+	StackBuf<1024> doubleDecodedContent;
+
 	// hash the meta keywords tag
 	//char buf [ 2048 + 2 ];
 	//int32_t len = m_xml.getMetaContent ( buf , 2048 , "summary" , 7 );
 	int32_t mslen;
 	const char *ms = getMetaSummary ( &mslen );
+	possiblyDecodeHtmlEntitiesAgain(&ms, &mslen, &doubleDecodedContent, true);
 
 	// update hash parms
 	HashInfo hi;
@@ -1505,7 +1514,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
 	int32_t mdlen;
-	char *md = getMetaDescription ( &mdlen );
+	const char *md = getMetaDescription ( &mdlen );
+	possiblyDecodeHtmlEntitiesAgain(&md, &mdlen, &doubleDecodedContent, true);
 
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
