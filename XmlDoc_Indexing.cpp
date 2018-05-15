@@ -21,7 +21,7 @@
 #endif
 
 
-static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBuf *sb) {
+static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBuf *sb, bool also_remove_certain_html_elements) {
 	//some documents have incorrectly encoded html entities twice. Example:
 	//correct:   <meta name="foo" content="&#66;oa">
 	//incorrect: <meta name="foo" content="&amp;#66;oa">
@@ -31,23 +31,41 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 	
 	//require &amp; following by a second semicolon
 	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
-	if(!amppos)
-		return;
-	if(memchr(amppos+5, ';', *len-(amppos-*s))==NULL)
-		return;
-	
-	//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
-	StackBuf<1024> tmpBuf;
-	if(!tmpBuf.reserve(*len + *len/2 + 4))
-		return;
-	if(!sb->reserve(*len + *len/2 + 4))
-		return;
-	
-	int32_t tmpLen = htmlDecode(tmpBuf.getBufStart(), *s,*len, false);
-	
-	int32_t newlen = htmlDecode(sb->getBufStart(), tmpBuf.getBufStart(), tmpLen, false);
-	*s = sb->getBufStart();
-	*len = newlen;
+	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s))!=NULL) ||
+	   (memmem(*s,*len,"&lt;",4)!=NULL && memmem(*s,*len,"&gt;",4)!=NULL)) {
+		//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
+		StackBuf<1024> tmpBuf;
+		if(!tmpBuf.reserve(*len + *len/2 + 4))
+			return;
+		if(!sb->reserve(*len + *len/2 + 4))
+			return;
+		
+		int32_t tmpLen = htmlDecode(tmpBuf.getBufStart(), *s,*len, false);
+		
+		int32_t newlen = htmlDecode(sb->getBufStart(), tmpBuf.getBufStart(), tmpLen, false);
+		
+		sb->setLength(newlen);
+		
+		//Furthermore, some websites have junk in their meta tags. Eg <br> in the meta description
+		//We don't fix all cases as that could hurt correctly written pages about how to write proper html. But
+		//if they don't mention "html", "tag" nor "element" then we remove the most common offenders br/b/i/p
+		if(also_remove_certain_html_elements) {
+			if(memmem(sb->getBufStart(),sb->length(),"html",4)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"HTML",4)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"tag",3)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"Tag",3)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"element",7)==0 &&
+			   memmem(sb->getBufStart(),sb->length(),"Element",7)==0)
+			{
+				sb->safeReplace2("<br>",4,"",0,0);
+				sb->safeReplace2("<b>",3,"",0,0);
+				sb->safeReplace2("<u>",3,"",0,0);
+				sb->safeReplace2("<p>",3,"",0,0);
+			}
+		}
+		*s = sb->getBufStart();
+		*len = sb->length();
+	   }
 }
 
 
@@ -550,7 +568,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		if ( ! s || len <= 0 ) continue;
 
 		StackBuf<1024> doubleDecodedContent;
-		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent);
+		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent, true);
 
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
@@ -1359,7 +1377,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	int32_t   titleLen = titleEnd - title;
 	
 	StackBuf<1024> doubleDecodedContent;
-	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent);
+	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
 	
 	if ( ! hashString ( title, titleLen, &hi) ) return false;
 
@@ -1477,7 +1495,7 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	//int32_t len = m_xml.getMetaContent ( buf , 2048 , "summary" , 7 );
 	int32_t mslen;
 	const char *ms = getMetaSummary ( &mslen );
-	possiblyDecodeHtmlEntitiesAgain(&ms, &mslen, &doubleDecodedContent);
+	possiblyDecodeHtmlEntitiesAgain(&ms, &mslen, &doubleDecodedContent, true);
 
 	// update hash parms
 	HashInfo hi;
@@ -1493,7 +1511,7 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
 	int32_t mdlen;
 	const char *md = getMetaDescription ( &mdlen );
-	possiblyDecodeHtmlEntitiesAgain(&md, &mdlen, &doubleDecodedContent);
+	possiblyDecodeHtmlEntitiesAgain(&md, &mdlen, &doubleDecodedContent, true);
 
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
