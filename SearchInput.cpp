@@ -263,7 +263,8 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t primaryQueryLangua
 
 	for(int i=0; i<64; i++)
 		m_baseScoringParameters.m_languageWeights[i] = 1.0;
-	m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight;
+	if(language_weights.empty())
+		m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight; //backward compatible. questionable behaviour
 	m_baseScoringParameters.m_languageWeights[m_queryLangId] = m_sameLangWeight;
 	for(const auto &e : language_weights)
 		m_baseScoringParameters.m_languageWeights[e.first] = e.second;

@@ -349,7 +349,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
 		// blocked
 		return false;
-	} else 
+	} else
 		return gotQueryLanguage(st, {});
 }
 
