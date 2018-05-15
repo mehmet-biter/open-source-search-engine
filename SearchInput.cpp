@@ -101,7 +101,7 @@ void SearchInput::copy ( class SearchInput *si ) {
 	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
-bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t queryLang) {
+bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t primaryQueryLanguage, const std::vector<std::pair<lang_t, double>> &language_weights) {
 	// store list of collection #'s to search here. usually just one.
 	m_collnumBuf.reset();
 
@@ -253,18 +253,20 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t queryLang) {
 	//   - collection configured sort language
 	if (m_defaultSortLang && m_defaultSortLang[0] != '\0') {
 		m_queryLangId = getLangIdFromAbbr(m_defaultSortLang);
-	} else if (queryLang != langUnknown) {
-		m_queryLangId = queryLang;
+	} else if (primaryQueryLanguage != langUnknown) {
+		m_queryLangId = primaryQueryLanguage;
 	} else if (cr->m_defaultSortLanguage2[0] != '\0') {
 		m_queryLangId = getLangIdFromAbbr(cr->m_defaultSortLanguage2);
 	}
 
-	log(LOG_INFO, "query: using query lang of %s", getLanguageAbbr(m_queryLangId));
+	log(LOG_INFO, "query: using primary query lang of %s", getLanguageAbbr(m_queryLangId));
 
 	for(int i=0; i<64; i++)
 		m_baseScoringParameters.m_languageWeights[i] = 1.0;
 	m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight;
 	m_baseScoringParameters.m_languageWeights[m_queryLangId] = m_sameLangWeight;
+	for(const auto &e : language_weights)
+		m_baseScoringParameters.m_languageWeights[e.first] = e.second;
 	
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
 
