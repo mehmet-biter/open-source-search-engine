@@ -49,6 +49,7 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 		//Furthermore, some websites have junk in their meta tags. Eg <br> in the meta description
 		//We don't fix all cases as that could hurt correctly written pages about how to write proper html. But
 		//if they don't mention "html", "tag" nor "element" then we remove the most common offenders br/b/i/p
+		//When changing this function consider keeping in sync with Summary::maybeRemoveHtmlFormatting()
 		if(also_remove_certain_html_elements) {
 			if(memmem(sb->getBufStart(),sb->length(),"html",4)==0 &&
 			   memmem(sb->getBufStart(),sb->length(),"HTML",4)==0 &&
