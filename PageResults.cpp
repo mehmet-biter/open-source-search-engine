@@ -42,7 +42,7 @@ static bool printSearchResultsTail(State0 *st);
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
-static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, int>> &languages);
+static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, double>> &languages);
 static bool gotQueryLanguage(void *state);
 
 static void gotResultsWrapper  ( void *state ) ;
@@ -351,7 +351,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	return gotQueryLanguage(st);
 }
 
-static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, int>> &languages) {
+static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, double>> &languages) {
 	if (!languages.empty()) {
 		/// @todo ALC currently we only cater for one result (assume first result is the best)
 		State0 *st = (State0 *) state;

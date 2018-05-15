@@ -104,7 +104,7 @@ void QueryLanguage::processResponse(fxclient_request_ptr_t base_request, char *r
 	std::shared_ptr<QueryLanguageRequest> request = std::dynamic_pointer_cast<QueryLanguageRequest>(base_request);
 	logTrace(g_conf.m_logTraceQueryLanguage, "Got result='%s' for query='%s'", response, request->m_query.c_str());
 
-	std::vector<std::pair<lang_t, int>> languages;
+	std::vector<std::pair<lang_t, double>> languages;
 
 	//parse the response
 	auto tokens = split(response, '|');
@@ -121,7 +121,7 @@ void QueryLanguage::processResponse(fxclient_request_ptr_t base_request, char *r
 			continue;
 		}
 
-		languages.emplace_back(language, static_cast<int>(strtoul(pairs[1].c_str(), nullptr, 0)));
+		languages.emplace_back(language, static_cast<int>(strtod(pairs[1].c_str(), nullptr)));
 	}
 
 	// return default value if empty
@@ -134,7 +134,7 @@ void QueryLanguage::processResponse(fxclient_request_ptr_t base_request, char *r
 
 void QueryLanguage::errorCallback(fxclient_request_ptr_t base_request) {
 	std::shared_ptr<QueryLanguageRequest> request = std::dynamic_pointer_cast<QueryLanguageRequest>(base_request);
-	request->m_callback(request->m_context, std::vector<std::pair<lang_t, int>>());
+	request->m_callback(request->m_context, {});
 }
 
 bool QueryLanguage::initialize() {
