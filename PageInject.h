@@ -33,12 +33,16 @@ class InjectionRequest {
 	collnum_t m_collnum; // more reliable than m_coll
 	uint32_t  m_firstIndexed;
 	uint32_t  m_lastSpidered;
+	int32_t   m_indexCode;
+	int32_t   m_httpStatus;
 
 	char *ptr_url;
+	char *ptr_redirUrl;
 	char *ptr_contentTypeStr;
 	char *ptr_content;
 
 	int32_t size_url;
+	int32_t size_redirUrl;
 	int32_t size_contentTypeStr;
 	int32_t size_content;
 

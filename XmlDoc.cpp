@@ -1389,25 +1389,26 @@ static void indexDocWrapper ( void *state ) {
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
 // . returns true and sets g_errno on error
-bool XmlDoc::injectDoc ( const char *url ,
-			 CollectionRec *cr ,
-			 char *content ,
-			 bool contentHasMimeArg ,
-			 int32_t charset,
-			 int32_t langId,
-			 bool deleteUrl,
-			 const char *contentTypeStr, // text/html application/json
-			 bool spiderLinks ,
-			 char newOnly, // index iff new
-			 bool skipContentHashCheck,
-			 void *state,
-			 void (*callback)(void *state) ,
-
-			 uint32_t firstIndexed,
-			 uint32_t lastSpidered ,
-			 int32_t injectDocIp
+bool XmlDoc::injectDoc(const char *url,
+                       CollectionRec *cr,
+                       char *content,
+                       bool contentHasMimeArg,
+                       int32_t charset,
+                       int32_t langId,
+                       bool deleteUrl,
+                       const char *contentTypeStr, // text/html application/json
+                       bool spiderLinks,
+                       char newOnly, // index iff new
+                       bool skipContentHashCheck,
+                       void *state,
+                       void (*callback)(void *state),
+                       uint32_t firstIndexed,
+                       uint32_t lastSpidered,
+                       int32_t injectDocIp,
+                       const char *redirUrl,
+                       int32_t indexCode,
+                       int16_t httpStatus
 			 ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// normalize url
@@ -1483,6 +1484,25 @@ bool XmlDoc::injectDoc ( const char *url ,
 	if (langId > langUnknown && langId < langLast) {
 		m_langId = langId;
 		m_langIdValid = true;
+	}
+
+	if (redirUrl) {
+		m_redirUrl.set(redirUrl);
+		m_redirUrlPtr = &m_redirUrl;
+		m_redirUrlValid = true;
+
+		m_currentUrl.set(redirUrl);
+		m_currentUrlValid = true;
+	}
+
+	if (indexCode) {
+		m_indexCode = indexCode;
+		m_indexCodeValid = true;
+	}
+
+	if (httpStatus != 200) {
+		m_httpStatus = httpStatus;
+		m_httpStatusValid = true;
 	}
 
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb

@@ -6524,6 +6524,16 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(InjectionRequest,ptr_url);
 	m++;
 
+	m->m_title = "redirect url";
+	m->m_cgi   = "redirurl";
+	m->m_obj   = OBJ_IR;
+	m->m_type  = TYPE_CHARPTR;
+	m->m_def   = NULL;
+	m->m_flags = PF_HIDDEN;
+	m->m_page  = PAGE_INJECT;
+	m->m_off   = offsetof(InjectionRequest,ptr_redirUrl);
+	m++;
+
 	m->m_title = "spider links";
 	m->m_desc  = "Add the outlinks of the injected content into spiderdb "
 		"for spidering?";
@@ -6604,6 +6614,23 @@ void Parms::init ( ) {
 	simple_m_set(InjectionRequest,m_firstIndexed);
 	m++;
 
+	m->m_title = "index code";
+	m->m_desc  = "Override index code";
+	m->m_cgi   = "indexcode";
+	m->m_def   = "0";
+	m->m_flags = PF_HIDDEN; // | PF_API
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_indexCode);
+	m++;
+
+	m->m_title = "HTTP status";
+	m->m_desc  = "Override HTTP status";
+	m->m_cgi   = "httpstatus";
+	m->m_def   = "200";
+	m->m_flags = PF_HIDDEN; // | PF_API
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_httpStatus);
+	m++;
 
 	m->m_title = "content has mime";
 	m->m_desc  = "If the content of the url is provided below, does "
