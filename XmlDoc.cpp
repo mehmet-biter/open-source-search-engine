@@ -1491,6 +1491,9 @@ bool XmlDoc::injectDoc(const char *url,
 		m_redirUrlPtr = &m_redirUrl;
 		m_redirUrlValid = true;
 
+		ptr_redirUrl    = m_redirUrl.getUrl();
+		size_redirUrl    = m_redirUrl.getUrlLen()+1;
+
 		m_currentUrl.set(redirUrl);
 		m_currentUrlValid = true;
 	}
