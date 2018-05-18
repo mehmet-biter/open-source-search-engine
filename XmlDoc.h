@@ -706,7 +706,6 @@ public:
 	bool m_finalSummaryBufValid;
 
 	bool m_isInjectingValid;
-	bool m_isImportingValid;
 	bool m_metaListCheckSum8Valid;
 	bool m_contentValid;
 	bool m_filteredContentValid;
@@ -894,7 +893,6 @@ public:
 	SafeBuf m_myPageLinkInfoBuf;
 
 	bool m_isInjecting;
-	bool m_isImporting;
 	bool m_useFakeMime;
 	bool m_useSiteLinkBuf;
 	bool m_usePageLinkBuf;

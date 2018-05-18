@@ -160,8 +160,6 @@ void XmlDoc::reset ( ) {
 	m_getSiteLinkInfoStartTime = 0;
 	m_getSiteLinkInfoEndTime = 0;
 
-	m_isImporting = false;
-
 	m_printedMenu = false;
 
 	m_bodyStartPos = 0;
@@ -1684,28 +1682,6 @@ bool XmlDoc::indexDoc ( ) {
 	if ( ! m_masterLoop ) {
 		m_masterLoop  = indexDocWrapper;
 		m_masterState = this;
-	}
-
-	// do not index if already indexed and we are importing
-	// from the code in PageInject.cpp from a foreign titledb file
-	if ( m_isImporting && m_isImportingValid ) {
-		char *isIndexed = getIsIndexed();
-		if ( ! isIndexed ) {
-			log("import: import had error: %s",mstrerror(g_errno));
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. Import error." );
-			return true;
-		}
-		if ( isIndexed == (char *)-1)
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning false. isIndex = -1" );
-			return false;
-		}
-		if ( *isIndexed ) {
-			log("import: skipping import for %s. already indexed.",
-			    m_firstUrl.getUrl());
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning true." );
-			return true;
-		}
 	}
 
 	bool status = true;
@@ -11458,17 +11434,6 @@ char *XmlDoc::getIsSiteRoot ( ) {
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
 char *XmlDoc::getSpiderLinks ( ) {
-	// this slows importing down because we end up doing ip lookups
-	// for every outlink if "firstip" not in tagdb.
-	// shoot. set2() already sets m_spiderLinksValid to true so we
-	// have to override if importing.
-	if ( m_isImporting && m_isImportingValid ) {
-		m_spiderLinks  = (char)false;
-		m_spiderLinks2 = (char)false;
-		m_spiderLinksValid = true;
-		return &m_spiderLinks2;
-	}
-
 	// return the valid value
 	if ( m_spiderLinksValid ) return &m_spiderLinks2;
 
@@ -13477,8 +13442,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // if we were set from a titleRec, see if we got
 		    // a different hash of terms to index this time around...
 		    m_setFromTitleRec &&
-		    // fix for import log spam
-		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
 
 			// ONLY log as warning if hashes differ for SAME titlerec versions -
