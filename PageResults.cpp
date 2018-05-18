@@ -1081,6 +1081,32 @@ static bool printSearchResultsHeader(State0 *st) {
 		sb->safePrintf("\t\"queryLanguage\":\"");
 		sb->jsonEncode ( getLanguageString(si->m_queryLangId) );
 		sb->safePrintf("\",\n");
+		
+		//If the language weights are dissimilar then print the top 5
+		//make a temporari sorted-by-weight list of languages
+		struct langweight_t {
+			lang_t lang;
+			double weight;
+		} langweights[MAX_LANGUAGES];
+		for(int i=0; i<MAX_LANGUAGES; i++) {
+			langweights[i].lang = (lang_t)i;
+			langweights[i].weight = si->m_baseScoringParameters.m_languageWeights[i];
+		}
+		std::sort(langweights, langweights+MAX_LANGUAGES, [](const langweight_t& a, const langweight_t& b) {
+			return a.weight>b.weight;
+		});
+		//if the weigths are not all identical then print the top 5
+		if(langweights[0].weight!=langweights[MAX_LANGUAGES-1].weight) {
+			sb->safePrintf("\t\"languageWeights\": [ ");
+			for(int i=0; i<5; i++) {
+				const char *l = getLanguageAbbr(langweights[i].lang);
+				sb->safePrintf("{\"lang\":\"%s\", \"weight\":%.3f}", l, langweights[i].weight);
+				if(i+1<5)
+					sb->safePrintf(", ");
+			}
+			sb->safePrintf(" ],\n");
+		}
+		
 		// print query words we ignored, like stop words
 		printIgnoredWords ( sb , si );
 
