@@ -1486,18 +1486,6 @@ bool XmlDoc::injectDoc(const char *url,
 		m_langIdValid = true;
 	}
 
-	if (redirUrl) {
-		m_redirUrl.set(redirUrl);
-		m_redirUrlPtr = &m_redirUrl;
-		m_redirUrlValid = true;
-
-		ptr_redirUrl    = m_redirUrl.getUrl();
-		size_redirUrl    = m_redirUrl.getUrlLen()+1;
-
-		m_currentUrl.set(redirUrl);
-		m_currentUrlValid = true;
-	}
-
 	if (indexCode) {
 		m_indexCode = indexCode;
 		m_indexCodeValid = true;
@@ -1506,6 +1494,41 @@ bool XmlDoc::injectDoc(const char *url,
 	if (httpStatus != 200) {
 		m_httpStatus = httpStatus;
 		m_httpStatusValid = true;
+	}
+
+	if (redirUrl) {
+		if (indexCode == EDOCNONCANONICAL) {
+			m_canonicalUrl.set(redirUrl);
+			m_canonicalUrlValid = true;
+			m_canonicalRedirUrlPtr = &m_canonicalUrl;
+			m_canonicalRedirUrlValid = true;
+
+			// store canonical url in titlerec as well
+			ptr_redirUrl    = m_canonicalUrl.getUrl();
+			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
+		} else {
+			m_redirUrl.set(redirUrl);
+			m_redirUrlPtr = &m_redirUrl;
+			m_redirUrlValid = true;
+
+			ptr_redirUrl = m_redirUrl.getUrl();
+			size_redirUrl = m_redirUrl.getUrlLen() + 1;
+
+			if (indexCode == 0) {
+				m_currentUrl.set(redirUrl);
+				m_currentUrlValid = true;
+			}
+		}
+
+		if (storeEmptyTitleRec(indexCode)) {
+			// make sure we store an empty document
+			m_contentValid = true;
+			m_content    = NULL;
+			m_contentLen = 0;
+
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+		}
 	}
 
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb
@@ -13165,9 +13188,12 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			// since we're adding titlerec, add posrec as well
 			addPosRec = true;
 
-			// if we are adding a simplified redirect as a link to spiderdb
-			// likewise if the error was EDOCNONCANONICAL treat it like that
-			spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
+			// we can override spiderLinks setting if we're injecting
+			if (!getIsInjecting()) {
+				// if we are adding a simplified redirect as a link to spiderdb
+				// likewise if the error was EDOCNONCANONICAL treat it like that
+				spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
+			}
 
 			// don't add linkinfo since titlerec is empty
 			addLinkInfo = false;
