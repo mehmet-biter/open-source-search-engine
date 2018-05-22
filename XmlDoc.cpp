@@ -336,8 +336,6 @@ void XmlDoc::reset ( ) {
 
 	m_wtsTable.reset();
 	m_wbuf.reset();
-	m_pageLinkBuf.reset();
-	m_siteLinkBuf.reset();
 	m_esbuf.reset();
 	m_tagRecBuf.reset();
 
@@ -17459,23 +17457,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	printRainbowSections ( sb , NULL );
 
-	//
-	// PRINT LINKINFO
-	//
-
-	char *p    = m_pageLinkBuf.getBufStart();
-	int32_t  plen = m_pageLinkBuf.length();
-	sb->safeMemcpy ( p , plen );
-
-
-	//
-	// PRINT SITE LINKINFO
-	//
-	p    = m_siteLinkBuf.getBufStart();
-	plen = m_siteLinkBuf.length();
-	sb->safeMemcpy ( p , plen );
-
-
 	// note this
 	sb->safePrintf("<h2>NEW Meta List</h2>");
 
@@ -17677,8 +17658,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( page == 2 )
 		return printPageInlinks(sb,hr);
 
-	if ( page == 3 )
-		return printSiteInlinks(sb,hr);
+	// 3 used to be print site inlinks (nothing is printed)
 
 	if ( page == 4 )
 		return printRainbowSections(sb,hr);
@@ -17686,8 +17666,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( page == 5 )
 		return printTermList(sb,hr);
 
-	if ( page == 6 )
-		return printSpiderStats(sb,hr);
+	// 6 used to be print spider stats (coming soon page)
 
 	if ( page == 7 )
 		return printCachedPage(sb,hr);
@@ -18131,44 +18110,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-bool XmlDoc::printSiteInlinks ( SafeBuf *sb , HttpRequest *hr ) {
-
-	// use msg25 to hit linkdb and give us a link info class i guess
-	// but we need paging functionality so we can page through like
-	// 100 links at a time. clustered by c-class ip.
-
-	// do we need to mention how many from each ip c-class then? because
-	// then we'd have to read the whole termlist, might be several
-	// separate disk reads.
-
-	// we need to re-get both if either is NULL
-	LinkInfo *sinfo = getSiteLinkInfo();
-	// block or error?
-	if ( ! sinfo ) return true;
-	if ( sinfo == (LinkInfo *)-1) return false;
-
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
-
-	if ( isXml )
-		sb->safePrintf ("<?xml version=\"1.0\" "
-				"encoding=\"UTF-8\" ?>\n"
-				"<response>\n"
-				);
-
-
-	sb->safeMemcpy ( &m_siteLinkBuf );
-
-	if ( isXml )
-		sb->safePrintf ("</response>\n"	);
-
-	// just print that
-	//sinfo->print ( sb , cr->m_coll );
-
-	return true;
-}
-
 bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// we need to re-get both if either is NULL
@@ -18195,8 +18136,6 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// i guess we need this
 	if ( ! recompute ) // m_setFromTitleRec )
 		info1->print ( sb , cr->m_coll );
-	else
-		sb->safeMemcpy ( &m_pageLinkBuf );
 
 	if ( isXml )
 		sb->safePrintf ("</response>\n"	);
@@ -18694,17 +18633,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	//
 	// END PRINT HASHES TERMS
 	//
-
-	return true;
-}
-
-bool XmlDoc::printSpiderStats ( SafeBuf *sb , HttpRequest *hr ) {
-
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
-
-	sb->safePrintf("<b>Coming Soon</b>");
 
 	return true;
 }

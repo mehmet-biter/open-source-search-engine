@@ -567,12 +567,9 @@ public:
 	bool printDocForProCog ( class SafeBuf *sb , HttpRequest *hr ) ;
 	bool printGeneralInfo ( class SafeBuf *sb , HttpRequest *hr ) ;
 	bool printRainbowSections ( class SafeBuf *sb , HttpRequest *hr );
-	bool printSiteInlinks ( class SafeBuf *sb , HttpRequest *hr );
 	bool printPageInlinks ( class SafeBuf *sb , HttpRequest *hr );
 	bool printTermList ( class SafeBuf *sb , HttpRequest *hr );
-	bool printSpiderStats ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
-
 	void printTermList() const;
 
 	char *getTitleBuf             ( );
@@ -1081,10 +1078,6 @@ public:
 	class HashTableX *m_wts;
 	HashTableX m_wtsTable;
 	SafeBuf m_wbuf;
-
-	// Msg25.cpp stores its pageparser.cpp output into this one
-	SafeBuf m_pageLinkBuf;
-	SafeBuf m_siteLinkBuf;
 
 	// which set() function was called above to set us?
 	bool          m_setFromTitleRec;
