@@ -570,7 +570,6 @@ public:
 	bool printPageInlinks ( class SafeBuf *sb , HttpRequest *hr );
 	bool printTermList ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
-	void printTermList() const;
 
 	char *getTitleBuf             ( );
 	char *getRootTitleBuf         ( );
