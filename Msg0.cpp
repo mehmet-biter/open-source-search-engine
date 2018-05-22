@@ -540,7 +540,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		g_udpServer.sendErrorReply(slot, g_errno);
 		return; 
 	}
-	mnew ( st0 , sizeof(State00) , "State00" );
+	mnew ( st0 , sizeof(State00) , "Msg0:State00" );
 	// timing debug
 	if ( g_conf.m_logTimingNet )
 		st0->m_startTime = gettimeofdayInMilliseconds();
@@ -624,7 +624,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 
 	// on error nuke the list and it's data
 	if ( g_errno ) {
-		mdelete ( st0 , sizeof(State00) , "Msg0" );
+		mdelete ( st0 , sizeof(State00) , "Msg0:State00" );
 		delete (st0);
 		// TODO: free "slot" if this send fails
 		
@@ -759,7 +759,7 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 
 
 	// release st0 now
-	mdelete ( st0 , sizeof(State00) , "Msg0" );
+	mdelete ( st0 , sizeof(State00) , "Msg0:State00" );
 	delete ( st0 );
 }
 
@@ -773,6 +773,7 @@ static void handleSpiderdbRequest(State00 *state) {
 	{
 		log(LOG_ERROR,"Could not submit job for spiderdb-read");
 		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		mdelete ( state , sizeof(State00) , "Msg0:State00" );
 		delete state;
 	}
 	logTrace( g_conf.m_logTraceMsg0, "END");
@@ -788,6 +789,7 @@ static void execSpiderdbRequest(void *pv) {
 					     *(reinterpret_cast<const u_int128_t*>(state->m_endKey)),
 					     state->m_minRecSizes)) {
 		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		mdelete(state, sizeof(State00), "Msg0:State00");
 		delete state;
 		logTrace( g_conf.m_logTraceMsg0, "END");
 		return;
@@ -803,6 +805,7 @@ static void doneSpiderdbRequest(void *pv, job_exit_t exit_type) {
 	if(exit_type!=job_exit_normal) {
 		State00 *state = reinterpret_cast<State00*>(pv);
 		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		mdelete(state, sizeof(State00), "Msg0:State00");
 		delete state;
 	}
 	logTrace( g_conf.m_logTraceMsg0, "END");
