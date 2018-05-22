@@ -95,14 +95,14 @@ void operator delete [] ( void *ptr ) throw () {
 	g_mem.gbfree((char *)ptr, NULL, 0, false);
 }
 
-void operator delete ( void *ptr, unsigned long ) throw () {
+void operator delete ( void *ptr, size_t ) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
 
 	// now just call this
 	g_mem.gbfree((char *)ptr, NULL, 0, false);
 }
 
-void operator delete[] ( void *ptr, unsigned long ) throw () {
+void operator delete[] ( void *ptr, size_t ) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
 
 	// now just call this

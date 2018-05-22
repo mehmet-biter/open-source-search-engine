@@ -1217,6 +1217,24 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 }
 
 
+Host *Hostdb::getHostWithQueryingEnabled(uint32_t shardNum) {
+	Host *hosts = getShard(shardNum);
+	int32_t numHosts = getNumHostsPerShard();
+
+	int32_t hostNum = 0;
+	int32_t numTried = 0;
+	while( !hosts[hostNum].m_queryEnabled && numTried < numHosts ) {
+		hostNum = (hostNum+1) % numHosts;
+		numTried++;
+	}
+	if( !hosts[hostNum].m_queryEnabled) {
+		log("build: cannot query when entire shard (%d) has noquery set", shardNum);
+		g_process.shutdownAbort(true);
+	}
+	return &(hosts[hostNum]);
+}
+
+
 bool Hostdb::mayWeSendRequestToHost(const Host *host, msg_type_t /*msgType*/) {
 	if(!getMyHost()->m_spiderEnabled && host->m_spiderEnabled && !g_conf.m_queryHostToSpiderHostFallbackAllowed)
 		return false;

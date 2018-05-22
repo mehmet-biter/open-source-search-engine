@@ -538,13 +538,13 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 				g_udpServer.sendErrorReply(slot, httpCacheData->m_errno);
 			}
 
-			delete rec;
+			mfree(rec,recSize,"RdbCache3");
 
 			return;
 		}
 
 		// we need to free memory even when we're unable to deserialize message
-		delete rec;
+		mfree(rec,recSize,"RdbCache3");
 	}
 	rcl.unlock();
 

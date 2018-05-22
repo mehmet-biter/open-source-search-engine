@@ -3,6 +3,7 @@
 
 #include "Msg39.h"
 #include "Multicast.h"
+#include "GbSignature.h"
 
 class SearchInput;
 class Query;
@@ -74,6 +75,7 @@ public:
 
 	bool mergeLists ( );
 
+	declare_signature
 	// incoming parameters passed to Msg39::getDocIds() function
 	Query     *m_q;
 	int32_t       m_docsToGet;
@@ -82,8 +84,6 @@ public:
 
 	// set by Msg3a initially
 	//int32_t       m_indexdbSplit;
-//	int32_t m_numHosts;
-	int32_t m_numQueriedHosts;
 
 	bool m_moreDocIdsAvail;
 
@@ -102,7 +102,6 @@ public:
 
 	// this buffer should be big enough to hold all requests
 	//char       m_request [MAX_MSG39_REQUEST_SIZE * MAX_SHARDS];
-	int32_t       m_numReplies;
 
 	int32_t m_skippedShards;
 
@@ -141,6 +140,18 @@ public:
 	// when merging this list of docids into a final list keep
 	// track of the cursor into m_docIds[]
 	int32_t m_cursor;
+
+
+	void gotReply(Multicast *m);
+private:
+	bool incrementReplyCount();
+	void incrementRequestCount();
+	bool allRequestsReplied();
+	
+	int32_t m_numRequests;
+	int32_t m_numReplies;
+	bool m_requestsBeingSubmitted;
+	GbMutex m_mtxCounters; //protects the two counters and flag above
 };
 
 #endif // GB_MSG3A_H

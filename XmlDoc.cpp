@@ -160,8 +160,6 @@ void XmlDoc::reset ( ) {
 	m_getSiteLinkInfoStartTime = 0;
 	m_getSiteLinkInfoEndTime = 0;
 
-	m_isImporting = false;
-
 	m_printedMenu = false;
 
 	m_bodyStartPos = 0;
@@ -1389,25 +1387,26 @@ static void indexDocWrapper ( void *state ) {
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
 // . returns true and sets g_errno on error
-bool XmlDoc::injectDoc ( const char *url ,
-			 CollectionRec *cr ,
-			 char *content ,
-			 bool contentHasMimeArg ,
-			 int32_t charset,
-			 int32_t langId,
-			 bool deleteUrl,
-			 const char *contentTypeStr, // text/html application/json
-			 bool spiderLinks ,
-			 char newOnly, // index iff new
-			 bool skipContentHashCheck,
-			 void *state,
-			 void (*callback)(void *state) ,
-
-			 uint32_t firstIndexed,
-			 uint32_t lastSpidered ,
-			 int32_t injectDocIp
+bool XmlDoc::injectDoc(const char *url,
+                       CollectionRec *cr,
+                       char *content,
+                       bool contentHasMimeArg,
+                       int32_t charset,
+                       int32_t langId,
+                       bool deleteUrl,
+                       const char *contentTypeStr, // text/html application/json
+                       bool spiderLinks,
+                       char newOnly, // index iff new
+                       bool skipContentHashCheck,
+                       void *state,
+                       void (*callback)(void *state),
+                       uint32_t firstIndexed,
+                       uint32_t lastSpidered,
+                       int32_t injectDocIp,
+                       const char *redirUrl,
+                       int32_t indexCode,
+                       int16_t httpStatus
 			 ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// normalize url
@@ -1483,6 +1482,51 @@ bool XmlDoc::injectDoc ( const char *url ,
 	if (langId > langUnknown && langId < langLast) {
 		m_langId = langId;
 		m_langIdValid = true;
+	}
+
+	if (indexCode) {
+		m_indexCode = indexCode;
+		m_indexCodeValid = true;
+	}
+
+	if (httpStatus != 200) {
+		m_httpStatus = httpStatus;
+		m_httpStatusValid = true;
+	}
+
+	if (redirUrl) {
+		if (indexCode == EDOCNONCANONICAL) {
+			m_canonicalUrl.set(redirUrl);
+			m_canonicalUrlValid = true;
+			m_canonicalRedirUrlPtr = &m_canonicalUrl;
+			m_canonicalRedirUrlValid = true;
+
+			// store canonical url in titlerec as well
+			ptr_redirUrl    = m_canonicalUrl.getUrl();
+			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
+		} else {
+			m_redirUrl.set(redirUrl);
+			m_redirUrlPtr = &m_redirUrl;
+			m_redirUrlValid = true;
+
+			ptr_redirUrl = m_redirUrl.getUrl();
+			size_redirUrl = m_redirUrl.getUrlLen() + 1;
+
+			if (indexCode == 0) {
+				m_currentUrl.set(redirUrl);
+				m_currentUrlValid = true;
+			}
+		}
+
+		if (storeEmptyTitleRec(indexCode)) {
+			// make sure we store an empty document
+			m_contentValid = true;
+			m_content    = NULL;
+			m_contentLen = 0;
+
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+		}
 	}
 
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb
@@ -1638,28 +1682,6 @@ bool XmlDoc::indexDoc ( ) {
 	if ( ! m_masterLoop ) {
 		m_masterLoop  = indexDocWrapper;
 		m_masterState = this;
-	}
-
-	// do not index if already indexed and we are importing
-	// from the code in PageInject.cpp from a foreign titledb file
-	if ( m_isImporting && m_isImportingValid ) {
-		char *isIndexed = getIsIndexed();
-		if ( ! isIndexed ) {
-			log("import: import had error: %s",mstrerror(g_errno));
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. Import error." );
-			return true;
-		}
-		if ( isIndexed == (char *)-1)
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning false. isIndex = -1" );
-			return false;
-		}
-		if ( *isIndexed ) {
-			log("import: skipping import for %s. already indexed.",
-			    m_firstUrl.getUrl());
-			logTrace( g_conf.m_logTraceXmlDoc, "END, returning true." );
-			return true;
-		}
 	}
 
 	bool status = true;
@@ -11395,17 +11417,6 @@ char *XmlDoc::getIsSiteRoot ( ) {
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
 char *XmlDoc::getSpiderLinks ( ) {
-	// this slows importing down because we end up doing ip lookups
-	// for every outlink if "firstip" not in tagdb.
-	// shoot. set2() already sets m_spiderLinksValid to true so we
-	// have to override if importing.
-	if ( m_isImporting && m_isImportingValid ) {
-		m_spiderLinks  = (char)false;
-		m_spiderLinks2 = (char)false;
-		m_spiderLinksValid = true;
-		return &m_spiderLinks2;
-	}
-
 	// return the valid value
 	if ( m_spiderLinksValid ) return &m_spiderLinks2;
 
@@ -13125,9 +13136,12 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			// since we're adding titlerec, add posrec as well
 			addPosRec = true;
 
-			// if we are adding a simplified redirect as a link to spiderdb
-			// likewise if the error was EDOCNONCANONICAL treat it like that
-			spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
+			// we can override spiderLinks setting if we're injecting
+			if (!getIsInjecting()) {
+				// if we are adding a simplified redirect as a link to spiderdb
+				// likewise if the error was EDOCNONCANONICAL treat it like that
+				spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
+			}
 
 			// don't add linkinfo since titlerec is empty
 			addLinkInfo = false;
@@ -13411,8 +13425,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // if we were set from a titleRec, see if we got
 		    // a different hash of terms to index this time around...
 		    m_setFromTitleRec &&
-		    // fix for import log spam
-		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
 
 			// ONLY log as warning if hashes differ for SAME titlerec versions -

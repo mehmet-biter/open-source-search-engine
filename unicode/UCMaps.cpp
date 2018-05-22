@@ -29,9 +29,11 @@ bool load_map(T *map, const char *dir, const char *filename, const char **errstr
 	if(map->load(full_filename)) {
 		return true;
 	} else {
-		if(errno)
-			*errstr = strerror(errno);
-		else {
+		if(errno) {
+			static char errmsg[sizeof(full_filename)+256];
+			sprintf(errmsg,"%s: %s",strerror(errno),full_filename);
+			*errstr = errmsg;
+		} else {
 			static char errmsg[sizeof(full_filename)+256];
 			sprintf(errmsg,"Unicode map format/consistency error in %s",full_filename);
 			*errstr = errmsg;

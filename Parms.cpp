@@ -5459,10 +5459,10 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Query language server port";
-	m->m_desc  = "(0=disable)";
+	m->m_desc  = "(0=disable; 8078=default server port)";
 	m->m_cgi   = "query_lang_server_port";
 	simple_m_set(Conf,m_queryLanguageServerPort);
-	m->m_def   = "8078";
+	m->m_def   = "0";
 	m->m_smin  = 0;
 	m->m_smax  = 65535;
 	m->m_group = false;
@@ -5510,10 +5510,10 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "URL realtime classification server port";
-	m->m_desc  = "(0=disable)";
+	m->m_desc  = "(0=disable; 8079=default server port)";
 	m->m_cgi   = "url_class_server_port";
 	simple_m_set(Conf,m_urlClassificationServerPort);
-	m->m_def   = "8079";
+	m->m_def   = "0";
 	m->m_smin  = 0;
 	m->m_smax  = 65535;
 	m->m_group = false;
@@ -6524,6 +6524,16 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(InjectionRequest,ptr_url);
 	m++;
 
+	m->m_title = "redirect url";
+	m->m_cgi   = "redirurl";
+	m->m_obj   = OBJ_IR;
+	m->m_type  = TYPE_CHARPTR;
+	m->m_def   = NULL;
+	m->m_flags = PF_HIDDEN;
+	m->m_page  = PAGE_INJECT;
+	m->m_off   = offsetof(InjectionRequest,ptr_redirUrl);
+	m++;
+
 	m->m_title = "spider links";
 	m->m_desc  = "Add the outlinks of the injected content into spiderdb "
 		"for spidering?";
@@ -6604,6 +6614,23 @@ void Parms::init ( ) {
 	simple_m_set(InjectionRequest,m_firstIndexed);
 	m++;
 
+	m->m_title = "index code";
+	m->m_desc  = "Override index code";
+	m->m_cgi   = "indexcode";
+	m->m_def   = "0";
+	m->m_flags = PF_HIDDEN; // | PF_API
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_indexCode);
+	m++;
+
+	m->m_title = "HTTP status";
+	m->m_desc  = "Override HTTP status";
+	m->m_cgi   = "httpstatus";
+	m->m_def   = "200";
+	m->m_flags = PF_HIDDEN; // | PF_API
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_httpStatus);
+	m++;
 
 	m->m_title = "content has mime";
 	m->m_desc  = "If the content of the url is provided below, does "

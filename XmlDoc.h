@@ -718,7 +718,6 @@ public:
 	bool m_finalSummaryBufValid;
 
 	bool m_isInjectingValid;
-	bool m_isImportingValid;
 	bool m_metaListCheckSum8Valid;
 	bool m_contentValid;
 	bool m_filteredContentValid;
@@ -907,7 +906,6 @@ public:
 	SafeBuf m_myPageLinkInfoBuf;
 
 	bool m_isInjecting;
-	bool m_isImporting;
 	bool m_useFakeMime;
 	bool m_useSiteLinkBuf;
 	bool m_usePageLinkBuf;
@@ -1162,23 +1160,26 @@ public:
 	// vector is 1-1 with words in the document body.
 	char *getFragVec ( );
 
-	bool injectDoc ( const char *url ,
-			 class CollectionRec *cr ,
-			 char *content ,
-			 bool contentHasMime ,
-			 int32_t charset,
-			 int32_t langId,
-			 bool deleteUrl,
-			 const char *contentTypeStr, // text/html, text/xml etc.
-			 bool spiderLinks ,
-			 char newOnly, // index iff new
-			 bool skipContentHashCheck,
-			 void *state,
-			 void (*callback)(void *state) ,
+	bool injectDoc(const char *url,
+	               class CollectionRec *cr,
+	               char *content,
+	               bool contentHasMime,
+	               int32_t charset,
+	               int32_t langId,
+	               bool deleteUrl,
+	               const char *contentTypeStr, // text/html, text/xml etc.
+	               bool spiderLinks,
+	               char newOnly, // index iff new
+	               bool skipContentHashCheck,
+	               void *state,
+	               void (*callback)(void *state),
 
-			 uint32_t firstIndexedTime = 0,
-			 uint32_t lastSpideredDate = 0 ,
-			 int32_t  injectDocIp = 0 );
+	               uint32_t firstIndexedTime = 0,
+	               uint32_t lastSpideredDate = 0,
+	               int32_t injectDocIp = 0,
+	               const char *redirUrl = nullptr,
+	               int32_t indexCode = 0,
+	               int16_t httpStatus = 200);
 
 	int64_t logQueryTimingStart();
 	void logQueryTimingEnd(const char* function, int64_t startTime);
