@@ -846,36 +846,11 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	setStatus ( "setting xml doc from title rec");
 
-	// . it resets us, so save this
-	// . we only save these for set2() not the other sets()!
-	//void (*cb1)(void *state) = m_callback1;
-	//bool (*cb2)(void *state) = m_callback2;
-	//void *state = m_state;
-
-	// . clear it all out
-	// . no! this is clearing our msg20/msg22 reply...
-	// . ok, but repair.cpp needs it so do it there then
-	//reset();
-
-	// restore callbacks
-	//m_callback1 = cb1;
-	//m_callback2 = cb2;
-	//m_state     = state;
-
 	// sanity check - since we do not reset
 	if ( m_contentValid ) { g_process.shutdownAbort(true); }
 
 	// this is true
 	m_setFromTitleRec = true;
-
-	// this is valid i guess. includes key, etc.
-	//m_titleRec      = titleRec;
-	//m_titleRecSize  = *(int32_t *)(titleRec+12) + sizeof(key96_t) + 4;
-	//m_titleRecValid = true;
-	// . should we free m_cbuf on our reset/destruction?
-	// . no because doCOnsistencyCheck calls XmlDoc::set2 with a titleRec
-	//   that should not be freed, besides the alloc size is not known!
-	//m_freeTitleRec  = false;
 
 	// it must be there!
 	if ( !titleRec ) { g_errno=ENOTFOUND; return false; }
