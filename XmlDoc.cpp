@@ -553,7 +553,7 @@ bool XmlDoc::loadFromOldTitleRec() {
 
 	// use that. decompress it! this will also set
 	// m_setFromTitleRec to true
-	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, nullptr, m_niceness)) {
+	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, m_niceness)) {
 		// we are now loaded, do not re-call
 		m_loaded = true;
 
@@ -838,7 +838,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 bool XmlDoc::set2 ( char    *titleRec ,
 		    int32_t     maxSize  ,
 		    const char    *coll     ,
-		    SafeBuf *pbuf     ,
 		    int32_t     niceness ,
 		    SpiderRequest *sreq ) {
 
@@ -898,8 +897,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 	m_titleRecBufValid = true;
 
-	//m_coll               = coll;
-	m_pbuf               = pbuf;
 	m_niceness           = niceness;
 
 	// set our collection number
@@ -5952,11 +5949,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	//     ,m_firstUrl.getUrl());
 	// if title rec is corrupted data uncompress will fail and this
 	// will return false!
-	if ( ! m_oldDoc->set2 ( m_oldTitleRec ,
-				m_oldTitleRecSize , // maxSize
-				cr->m_coll     ,
-				NULL       , // pbuf
-				m_niceness ) ) {
+	if (!m_oldDoc->set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, m_niceness)) {
 		log("build: failed to set old doc for %s",m_firstUrl.getUrl());
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		//int32_t saved = g_errno;
@@ -6232,11 +6225,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	mnew ( m_rootDoc , sizeof(XmlDoc),"xmldoc3");
 	// if we had the title rec, set from that
 	if ( *rtr ) {
-		if ( ! m_rootDoc->set2 ( m_rootTitleRec     ,
-					 m_rootTitleRecSize , // maxSize    ,
-					 cr->m_coll             ,
-					 NULL               , // pbuf
-					 m_niceness         ) ) {
+		if (!m_rootDoc->set2(m_rootTitleRec, m_rootTitleRecSize, cr->m_coll, m_niceness)) {
 			// it was corrupted... delete this
 			// possibly printed
 			// " uncompress uncompressed size=..." bad uncompress
@@ -15436,7 +15425,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ! m_setTr ) {
 		// . this completely resets us
 		// . this returns false with g_errno set on error
-		bool status = set2( *otr, 0, cr->m_coll, NULL, m_niceness);
+		bool status = set2( *otr, 0, cr->m_coll, m_niceness);
 
 		// sanity check
 		if ( ! status && ! g_errno ) {

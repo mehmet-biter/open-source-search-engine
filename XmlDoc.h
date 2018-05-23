@@ -280,7 +280,6 @@ public:
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    const char *coll,
-		    class SafeBuf *p,
 		    int32_t niceness ,
 		    class SpiderRequest *sreq = NULL );
 

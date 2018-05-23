@@ -258,7 +258,7 @@ void filterTitledbList(RdbList *list) {
 
 		if (!KEYNEG(rec)) {
 			XmlDoc xd;
-			if (xd.set2(rec, recSize, "main", NULL, 0)) {
+			if (xd.set2(rec, recSize, "main", 0)) {
 				if (isUrlBlocked(*(xd.getFirstUrl()))) {
 					++filteredCount;
 					continue;

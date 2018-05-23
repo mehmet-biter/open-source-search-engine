@@ -2442,7 +2442,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			xd->reset();
 			// uncompress the title rec
 			//TitleRec tr;
-			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			if (!xd->set2(rec, recSize, coll, 0)) {
 				//set2() may have logged something but not the docid
 				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 				continue;
@@ -3367,7 +3367,7 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 			xd->reset();
 
 			// uncompress the title rec
-			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			if (!xd->set2(rec, recSize, coll, 0)) {
 				//set2() may have logged something but not the docid
 				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 				continue;
@@ -3541,7 +3541,7 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 			xd->reset();
 
 			// uncompress the title rec
-			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			if (!xd->set2(rec, recSize, coll, 0)) {
 				//set2() may have logged something but not the docid
 				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 				continue;
@@ -3682,7 +3682,7 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 			xd->reset();
 
 			// uncompress the title rec
-			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			if (!xd->set2(rec, recSize, coll, 0)) {
 				//set2() may have logged something but not the docid
 				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 				continue;
@@ -3862,7 +3862,7 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 			xd->reset();
 
 			// uncompress the title rec
-			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			if (!xd->set2(rec, recSize, coll, 0)) {
 				//set2() may have logged something but not the docid
 				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 				continue;
@@ -3968,7 +3968,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	char *rec      = tlist.getCurrentRec();
 	int32_t  listSize = tlist.getListSize ();
 	XmlDoc xd;
-	if ( ! xd.set2 ( rec , listSize , coll , NULL , 0 ) ) {
+	if (!xd.set2(rec, listSize, coll, 0)) {
 		log(LOG_WARN, "build: speedtestxml: Error setting xml doc.");
 		return false;
 	}
@@ -3993,7 +3993,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// speed test
 	int64_t t = gettimeofdayInMilliseconds();
 	for ( int32_t k = 0 ; k < 100 ; k++ )
-		xd.set2 (rec, listSize, coll , NULL , 0 );
+		xd.set2(rec, listSize, coll, 0);
 	int64_t e = gettimeofdayInMilliseconds();
 	logf(LOG_DEBUG,"build: Took %.3f ms to set title rec.",
 	     (float)(e-t)/100.0);
@@ -4234,7 +4234,7 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 	// loop parse
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		XmlDoc xd;
-		if( !xd.set2 (rec, listSize, coll,NULL,0) ) {
+		if (!xd.set2(rec, listSize, coll, 0)) {
 			log(LOG_ERROR,"%s:%s: XmlDoc.set2 failed", __FILE__, __func__);
 			return false;
 		}
@@ -4923,7 +4923,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t output) {
 			}
 
 			XmlDoc xd;
-			if ( ! xd.set2 (rec, recSize, coll,NULL,0) )
+			if (!xd.set2(rec, recSize, coll, 0))
 				continue;
 
 			struct ip_info  *sipi ;

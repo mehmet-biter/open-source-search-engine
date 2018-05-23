@@ -1178,9 +1178,9 @@ bool Repair::injectTitleRec ( ) {
 		m_stage = STAGE_TITLEDB_0; // 0
 		return true;
 	}
-        mnew ( xd , sizeof(XmlDoc),"xmldocpr");    
+        mnew ( xd , sizeof(XmlDoc),"xmldocpr");
 
-	if ( ! xd->set2 ( titleRec,-1,m_cr->m_coll , NULL , MAX_NICENESS ) ) {
+	if (!xd->set2(titleRec, -1, m_cr->m_coll, MAX_NICENESS)) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
 		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
@@ -1323,7 +1323,7 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	
 	//decompress+decode xmldoc
 	XmlDoc xd;
-	if(!xd.set2(titleRec,titleRecSize, m_cr->m_coll, NULL, MAX_NICENESS))  {
+	if (!xd.set2(titleRec, titleRecSize, m_cr->m_coll, MAX_NICENESS)) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0;
 		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
