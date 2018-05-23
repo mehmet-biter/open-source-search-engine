@@ -166,14 +166,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	if ( st->m_strip ) {
 		st->m_printDisclaimer = false;
 	}
-	
-	// should we cache it?
-	char useCache = r->getLong ( "usecache" ,  1 );
-	char rcache   = r->getLong ( "rcache"   ,  1 );
-	char wcache   = r->getLong ( "wcache"   ,  1 );
-	int32_t cacheAge = r->getLong ( "cacheAge" , 60*60 ); // default one hour
-	if ( useCache == 0 ) { cacheAge = 0; wcache = 0; }
-	if ( rcache   == 0 )   cacheAge = 0; 
+
 	// . fetch the TitleRec
 	// . a max cache age of 0 means not to read from the cache
 	XmlDoc *xd = &st->m_xd;
