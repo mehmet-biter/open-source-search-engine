@@ -756,62 +756,49 @@ bool Msg25::getLinkInfo2(const char      *site,
 // . returns false if blocked, returns true otherwise
 // . returns true and sets g_errno on error
 bool Msg25::doReadLoop() {
-
-	//log("debug: entering doReadLoop this=%" PRIx32,(int32_t)this);
-
 	// sanity. no double entry.
-	if ( m_gettingList ) { g_process.shutdownAbort(true); }
+	if (m_gettingList) {
+		gbshutdownLogicError();
+	}
 
 	// . get the top X results from this termlist
 	// . but skip link: terms with a 1 (no link text) for a score
 	// . these keys are ordered from lowest to highest
-	key224_t startKey ;
-	key224_t endKey   ;
+	key224_t startKey;
+	key224_t endKey;
 
 	logTrace(g_conf.m_logTraceMsg25, "doReadLoop. m_site [%s] m_url [%s]", m_site, m_url);
 
-	int32_t siteHash32 = hash32n ( m_site );
+	int32_t siteHash32 = hash32n(m_site);
 
 	// access different parts of linkdb depending on the "mode"
-	if ( m_mode == MODE_SITELINKINFO ) {
-		startKey = Linkdb::makeStartKey_uk ( siteHash32 );
-		endKey   = Linkdb::makeEndKey_uk   ( siteHash32 );
-		//log("linkdb: getlinkinfo: "
-		//    "site=%s sitehash32=%" PRIu32,site,siteHash32);
+	if (m_mode == MODE_SITELINKINFO) {
+		startKey = Linkdb::makeStartKey_uk(siteHash32);
+		endKey = Linkdb::makeEndKey_uk(siteHash32);
 	} else {
-		startKey = Linkdb::makeStartKey_uk (siteHash32,m_linkHash64 );
-		endKey   = Linkdb::makeEndKey_uk   (siteHash32,m_linkHash64 );
+		startKey = Linkdb::makeStartKey_uk(siteHash32, m_linkHash64);
+		endKey = Linkdb::makeEndKey_uk(siteHash32, m_linkHash64);
 	}
 
 	// resume from where we left off?
-	if ( m_round > 0 ) 
-		//startKey = m_nextKey;
-		gbmemcpy ( &startKey , &m_nextKey , LDBKS );
+	if (m_round > 0) {
+		gbmemcpy (&startKey, &m_nextKey, LDBKS);
+	}
 
 	// but new links: algo does not need internal links with no link test
 	// see Links.cpp::hash() for score table
 
-	m_minRecSizes = READSIZE; // MAX_LINKERS_IN_TERMLIST * 10 + 6;
+	m_minRecSizes = READSIZE;
 
 	//It's expensive to do include the tree. Can we avoid it?
 	//When injecting a mass number of documents, eg a dump from wikipedia
 	//then the document titles are usually ok already (inlink texts already
 	//match the title). When crawling normally then the tree usyally holds
 	//the parent linker document links, so in that case we want the tree.
-	bool includeTree;
-	if(m_req25->m_isInjecting)
-		includeTree = false;
-	else
-		includeTree = true;
+	bool includeTree = !m_req25->m_isInjecting;
 
-	// debug log
-	if ( g_conf.m_logDebugLinkInfo ) {
-		const char *ms = "page";
-		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-		log(LOG_DEBUG, "msg25: reading linkdb list mode=%s site=%s url=%s "
-		    "docid=%" PRId64" linkdbstartkey=%s",
-		    ms,m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
-	}
+	logDebug(g_conf.m_logDebugLinkInfo, "msg25: reading linkdb list mode=%s site=%s url=%s docid=%" PRId64" linkdbstartkey=%s",
+	         m_mode == MODE_SITELINKINFO ? "site" : "page",m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
 
 	if (g_process.isShuttingDown()) {
 		log(LOG_DEBUG, "linkdb: shutting down. exiting link text loop.");
@@ -822,13 +809,11 @@ bool Msg25::doReadLoop() {
 	m_gettingList = true;
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	if ( ! cr ) {
+	if (!cr) {
 		log(LOG_WARN, "linkdb: no coll for collnum %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
-
-	//char *coll = cr->m_coll;
 
 	// . get the linkdb list
 	// . we now get the WHOLE list so we can see how many linkers there are
@@ -838,41 +823,39 @@ bool Msg25::doReadLoop() {
 	//   Now we hang indefinitely. We also fixed UdpServer to resend
 	//   requests after 30 seconds even though it was fully acked in case
 	//   the receiving host went down and is now back up.
-	if ( ! m_msg5.getList ( 
-				RDB_LINKDB      ,
-				cr->m_collnum          ,
-				&m_list         ,
-				(char*)&startKey,
-				(char*)&endKey  ,
-				m_minRecSizes   ,
-				includeTree     ,
-				0               , // startFileNum
-				-1              , // numFiles
-				this            ,
-				gotListWrapper  ,
-				m_niceness      ,
-				true            , // error correct?
-				-1,               //maxRetries
-				false))            //isRealMerge
-	{
-		//log("debug: msg0 blocked this=%" PRIx32,(int32_t)this);
+	if (!m_msg5.getList(RDB_LINKDB,
+	                    cr->m_collnum,
+	                    &m_list,
+	                    (char *)&startKey,
+	                    (char *)&endKey,
+	                    m_minRecSizes,
+	                    includeTree,
+	                    0,          // startFileNum
+	                    -1,         // numFiles
+	                    this,
+	                    gotListWrapper,
+	                    m_niceness,
+	                    true,       // error correct?
+	                    -1,         //maxRetries
+	                    false)) {   //isRealMerge
 		return false;
 	}
+
 	// all done
 	m_gettingList = false;
+
 	// debug log
-	if ( g_conf.m_logDebugBuild )
-		log("build: msg25 call to msg5 did not block");
+	logDebug(g_conf.m_logDebugBuild, "build: msg25 call to msg5 did not block");
 
 	// sanity
 	if ( !m_msg5.m_msg3.areAllScansCompleted()) { g_process.shutdownAbort(true); }
 
 	// return true on error
-	if ( g_errno ) {
-		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
-		    m_url,mstrerror(g_errno));
+	if (g_errno) {
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.", m_url, mstrerror(g_errno));
 		return true;
 	}
+
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
 	return gotList();
@@ -922,18 +905,15 @@ static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 bool Msg25::gotList() {
 	// all done
 	m_gettingList = false;
-	// reset # of docIds linking to us
-	//m_numDocIds = 0;
 
 	// sanity
-	if ( !m_msg5.m_msg3.areAllScansCompleted()) { g_process.shutdownAbort(true); }
-
-	//log("debug: entering gotlist this=%" PRIx32,(int32_t)this);
+	if (!m_msg5.m_msg3.areAllScansCompleted()) {
+		gbshutdownLogicError();
+	}
 
 	// return true on error
-	if ( g_errno ) {
-		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
-		    m_url,mstrerror(g_errno));
+	if (g_errno) {
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.", m_url, mstrerror(g_errno));
 		return true;
 	}
 
@@ -953,37 +933,44 @@ bool Msg25::gotList() {
 	m_numReplies    = 0;
 	m_numRequests   = 0;
 
-	if ( m_round == 0 ) {
+	if (m_round == 0) {
 		m_linkSpamOut   = 0;
 		m_numFromSameIp = 0;
 		memset ( m_inUse  , 0 , MAX_MSG20_OUTSTANDING );
-		// use this to dedup ips in linkdb to avoid looking up their
-		// title recs... saves a lot of lookups
-		//m_ipTable.set(256);
-		if (!m_ipTable.set(4,0,256,NULL,0,false,"msg25ips"))
+
+		// use this to dedup ips in linkdb to avoid looking up their title recs... saves a lot of lookups
+		if (!m_ipTable.set(4,0,256,NULL,0,false,"msg25ips")) {
 			return true;
-		int64_t needSlots = m_list.getListSize() / LDBKS;
-		// wtf?
-		if ( m_list.getListSize() > READSIZE + 10000 ) {
-			//g_process.shutdownAbort(true); }
-			log("linkdb: read very big linkdb list %" PRId32" bytes "
-			    "bigger than needed",
-			    m_list.getListSize() - READSIZE );
 		}
+
+		int64_t needSlots = m_list.getListSize() / LDBKS;
+
+		// wtf?
+		if (m_list.getListSize() > READSIZE + 10000) {
+			log(LOG_WARN, "linkdb: read very big linkdb list %" PRId32" bytes bigger than needed",
+			    m_list.getListSize() - READSIZE);
+		}
+
 		// triple for hash table speed
 		needSlots *= 3;
-		// ensure 256 min
-		if ( needSlots < 256 ) needSlots = 256;
-		
-		if ( ! m_fullIpTable.set(4,0,needSlots,NULL,0,false,"msg25ip32") )
-			return true;
 
-		if ( ! m_firstIpTable.set(4,0,needSlots,NULL,0,false,"msg25fip32") )
+		// ensure 256 min
+		if (needSlots < 256) {
+			needSlots = 256;
+		}
+
+		if (!m_fullIpTable.set(4, 0, needSlots, NULL, 0, false, "msg25ip32")) {
 			return true;
-		// this too
-		//m_docIdTable.set(256);
-		if ( ! m_docIdTable.set(8,0,needSlots, NULL,0,false,"msg25docid") )
+		}
+
+		if (!m_firstIpTable.set(4, 0, needSlots, NULL, 0, false, "msg25fip32")) {
 			return true;
+		}
+
+		if (!m_docIdTable.set(8, 0, needSlots, NULL, 0, false, "msg25docid")) {
+			return true;
+		}
+
 		// . how many link spam inlinks can we accept?
 		// . they do not contribute to quality
 		// . they only contribute to link text
@@ -997,8 +984,9 @@ bool Msg25::gotList() {
 	}
 
 	// if we are doing site linkinfo, bail now
-	if ( m_mode == MODE_SITELINKINFO ) {
-		logTrace(g_conf.m_logTraceMsg25, "Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32 ". mode=SITELINKINFO", m_url, m_siteNumInlinks);
+	if (m_mode == MODE_SITELINKINFO) {
+		logTrace(g_conf.m_logTraceMsg25, "Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32". mode=SITELINKINFO",
+		         m_url, m_siteNumInlinks);
 		return sendRequests();
 	}
 
@@ -1035,126 +1023,140 @@ bool Msg25::sendRequests() {
 	// because it can clog up one host!
 	float ratio = (float)g_hostdb.getNumHosts() / 128.0;
 	int32_t ourMax = (int32_t)(ratio * (float)MAX_MSG20_OUTSTANDING);
-	if ( ourMax > MAX_MSG20_OUTSTANDING )
+	if (ourMax > MAX_MSG20_OUTSTANDING) {
 		ourMax = MAX_MSG20_OUTSTANDING;
+	}
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	if ( ! cr ) {
-		log("linkdb: collnum %" PRId32" is gone 1",(int32_t)m_collnum);
+	if (!cr) {
+		log(LOG_WARN, "linkdb: collnum %" PRId32" is gone 1", (int32_t)m_collnum);
 		// that func doesn't set g_errno so we must
 		g_errno = ENOCOLLREC;
 		return true;
 	}
-	//char *coll = cr->m_coll;
 
 	// if more than 300 sockets in use max this 1. prevent udp socket clog.
-	if ( g_udpServer.getNumUsedSlots() >= 300 ) ourMax = 1;
+	if (g_udpServer.getNumUsedSlots() >= 300) {
+		ourMax = 1;
+	}
 
 	// keep sending requests
-	for ( ;; ) {
+	for (;;) {
 		// if we still haven't gotten enough good inlinks, quit after
 		// looking up this many titlerecs
-		if ( m_numRequests >= MAX_DOCIDS_TO_SAMPLE )
+		if (m_numRequests >= MAX_DOCIDS_TO_SAMPLE) {
 			break;
-
+		}
 
 		// . we only need at most MAX_LINKERS in our sample
 		// . but we do keep "losers" until the very end so we can
 		//   remove them in an order-independent fashion to guarantee
 		//   consistency. otherwise, "losers" will depend on the order
 		//   in which the Msg20Replies are received to some degree
-		if ( m_numReplyPtrs >= MAX_LINKERS )
+		if (m_numReplyPtrs >= MAX_LINKERS) {
 			break;
+		}
+
 		// do not have more than this many outstanding Msg23s
-		if ( m_numRequests-m_numReplies >= ourMax )
+		if (m_numRequests - m_numReplies >= ourMax) {
 			break;
+		}
+
 		// we may have pre-allocated the LinkText classes for
 		// use be currently outstanding Msg20 requests, therefore
 		// they are not available at this time... m_numReplyPtrs is
 		// how many replies we have kept.
-		if ( m_numReplyPtrs+m_numRequests-m_numReplies>=MAX_LINKERS) 
+		if (m_numReplyPtrs + m_numRequests - m_numReplies >= MAX_LINKERS) {
 			break;
-
+		}
 
 		// reset g_errno just in case
 		g_errno = 0;
 
-		char     isLinkSpam =  0;
-		//char     hc         = -1;
-		int32_t     itop  ;
-		uint32_t     ip32;
-		uint64_t docId ;
-		int32_t     discovered = 0;
+		char isLinkSpam = 0;
+		int32_t itop;
+		uint32_t ip32;
+		uint64_t docId;
+		int32_t discovered = 0;
 
 		// . recycle inlinks from the old link info guy
 		// . this keeps our inlinks persistent!!! very nice...
 		// . useful for when they disappear on an aggregator site
-		if ( m_list.isExhausted() && m_round == 0 ) {
+		if (m_list.isExhausted() && m_round == 0) {
 			// recycle old inlinks at this point
-			if ( m_k == (Inlink *)-1 ) m_k = NULL;
+			if (m_k == (Inlink *)-1) {
+				m_k = nullptr;
+			}
+
 			// get it
-			m_k = m_oldLinkInfo ? m_oldLinkInfo->getNextInlink ( m_k ) : NULL;
+			m_k = m_oldLinkInfo ? m_oldLinkInfo->getNextInlink(m_k) : nullptr;
+
 			// if none left, we really are done
-			if ( ! m_k )
+			if (!m_k) {
 				break;
+			}
 			// set these
 			itop       = m_k->m_ip & 0x00ffffff;
 			ip32       = m_k->m_ip;
 			isLinkSpam = m_k->m_isLinkSpam;
 			docId      = m_k->m_docId;
 			discovered = m_k->m_firstIndexedDate;
-		} else if ( m_list.isExhausted() && m_round != 0 ) {
+		} else if (m_list.isExhausted() && m_round != 0) {
 			break;
-		} else if ( m_mode == MODE_PAGELINKINFO ) { // is this a "url" key?
+		} else if (m_mode == MODE_PAGELINKINFO) {
 			// get the current key if list has more left
-			key224_t key; m_list.getCurrentKey( &key );
+			key224_t key;
+			m_list.getCurrentKey(&key);
 
-			itop       = Linkdb::getLinkerIp24_uk     ( &key );
-			ip32       = Linkdb::getLinkerIp_uk     ( &key );
-			isLinkSpam = Linkdb::isLinkSpam_uk  ( &key );
-			docId      = Linkdb::getLinkerDocId_uk    ( &key );
+			itop = Linkdb::getLinkerIp24_uk(&key);
+			ip32 = Linkdb::getLinkerIp_uk(&key);
+			isLinkSpam = Linkdb::isLinkSpam_uk(&key);
+			docId = Linkdb::getLinkerDocId_uk(&key);
 			discovered = Linkdb::getDiscoveryDate_uk(&key);
 
 			// update this
-			gbmemcpy ( &m_nextKey  , &key , LDBKS );
+			gbmemcpy (&m_nextKey, &key, LDBKS);
 
 			m_nextKey++;
 		} else {
 			// otherwise this is a "site" key. we are getting all the
 			// inlinks to any page on the site...
 			// get the current key if list has more left
-			key224_t key; m_list.getCurrentKey( &key );
+			key224_t key;
+			m_list.getCurrentKey(&key);
 
-			itop       = Linkdb::getLinkerIp24_uk     ( &key );
-			ip32       = Linkdb::getLinkerIp_uk     ( &key );
+			itop = Linkdb::getLinkerIp24_uk(&key);
+			ip32 = Linkdb::getLinkerIp_uk(&key);
 
 			isLinkSpam = 0;
-			docId      = Linkdb::getLinkerDocId_uk    ( &key );
+			docId = Linkdb::getLinkerDocId_uk(&key);
 
 			discovered = Linkdb::getDiscoveryDate_uk(&key);
 
 			// update this
-			gbmemcpy ( &m_nextKey  , &key , LDBKS );
+			gbmemcpy (&m_nextKey, &key, LDBKS);
 
 			m_nextKey++;
 		}
 
-
 		// advance to next rec if the list has more to go
-		if ( ! m_list.isExhausted() ) m_list.skipCurrentRecord();
+		if (!m_list.isExhausted()) {
+			m_list.skipCurrentRecord();
+		}
 
 		// clear this if we should
-		if ( ! m_doLinkSpamCheck )
+		if (!m_doLinkSpamCheck) {
 			isLinkSpam = 0;
+		}
 
 		// try using this to save mem then
-		if ( docId == lastDocId ) {
+		if (docId == lastDocId) {
 			m_docIdDupsLinkdb++;
 			continue;
 		}
+
 		// update this then
 		lastDocId = docId;
-
 
 		// count unique docids
 		m_numDocIds++;
@@ -1166,101 +1168,117 @@ bool Msg25::sendRequests() {
 		// . see Msg18.cpp:125 where we repeat this
 
 		// count unique ips for steve's stats
-		if ( ! m_fullIpTable.isInTable(&ip32) ) {
+		if (!m_fullIpTable.isInTable(&ip32)) {
 			// return true on error
-			if ( ! m_fullIpTable.addKey(&ip32) )
+			if (!m_fullIpTable.addKey(&ip32)) {
 				return true;
+			}
+
 			// count it
 			m_uniqueIps++;
 		}
 
 		// TODO: if inlinker is internal by having the same DOMAIN
 		// even though a different ip, we should adjust this logic!!
-		if ( itop != m_top ) {
-			int32_t slot = m_ipTable.getSlot ( &itop );
-			if ( slot != -1 ) {
+		if (itop != m_top) {
+			int32_t slot = m_ipTable.getSlot(&itop);
+			if (slot != -1) {
 				m_ipDupsLinkdb++;
 				continue;
 			}
+
 			// store it
-			if ( ! m_ipTable.addKey ( &itop ) )
+			if (!m_ipTable.addKey(&itop)) {
 				return true;
+			}
+
 			// count unique cblock inlinks
 			m_cblocks++;
-		}
-		// if we are local... allow up to 5 votes, weight is diminished
-		else {
+		} else {
+			// if we are local... allow up to 5 votes, weight is diminished
 			// count your own, only once!
-			if ( m_numFromSameIp == 0 )
+			if (m_numFromSameIp == 0) {
 				m_cblocks++;
+			}
+
 			// count it as internal
 			m_numFromSameIp++;
+
 			// only get link text from first 5 internal linkers,
 			// they will all count as one external linker
-			if ( m_numFromSameIp > MAX_INTERNAL_INLINKS ) {
+			if (m_numFromSameIp > MAX_INTERNAL_INLINKS) {
 				m_ipDupsLinkdb++;
 				continue;
 			}
 		}
 
-			
 		// count this request as launched
 		m_numRequests++;
+
 		// if linkspam, count this
-		if ( isLinkSpam ) m_linkSpamOut++;
+		if (isLinkSpam) {
+			m_linkSpamOut++;
+		}
 
 		// find a msg20 we can use
 		int32_t j ;
-		for(j=0; j<MAX_MSG20_OUTSTANDING; j++)
-			if(!m_inUse[j])
+		for (j = 0; j < MAX_MSG20_OUTSTANDING; j++) {
+			if (!m_inUse[j])
 				break;
+		}
+
 		// sanity check
-		if ( j >= MAX_MSG20_OUTSTANDING ) { g_process.shutdownAbort(true); }
+		if (j >= MAX_MSG20_OUTSTANDING) {
+			gbshutdownLogicError();
+		}
+
 		// "claim" it
-		m_inUse [j] = 1;
+		m_inUse[j] = 1;
 
 		// . this will return false if blocks
 		// . we EXPECT these recs to be there...
 		// . now pass in the score for the newAlgo
 		Msg20Request *r = &m_msg20Requests[j];
-		// clear it. reset to defaults.
 		r->reset();
+
 		// set the request
 		r->m_getLinkText     = true;
 		r->m_onlyNeedGoodInlinks = m_onlyNeedGoodInlinks;
+
 		// is linkee a site? then we will try to find link text
 		// to any page on that site...
 		// if we are in site mode, then m_url should be m_site!
-		if ( m_mode == MODE_PAGELINKINFO ) {
+		if (m_mode == MODE_PAGELINKINFO) {
 			r->m_isSiteLinkInfo = false;
-			r-> ptr_linkee = m_url;
-			r->size_linkee = strlen(m_url)+1; // include \0
-			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_url [%s], docId=%" PRId64 "", m_url, docId);
+			r->ptr_linkee = m_url;
+			r->size_linkee = strlen(m_url) + 1; // include \0
+			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_url [%s], docId=%" PRId64, m_url, docId);
 		} else {
 			r->m_isSiteLinkInfo = true;
-			r-> ptr_linkee = m_site;
-			r->size_linkee = strlen(m_site)+1; // include \0
-			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_site [%s], docId=%" PRId64 "", m_site, docId);
+			r->ptr_linkee = m_site;
+			r->size_linkee = strlen(m_site) + 1; // include \0
+			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_site [%s], docId=%" PRId64, m_site, docId);
 		}
+
 		r->m_collnum = cr->m_collnum;
-		r->m_docId           = docId;
-		r->m_niceness        = m_niceness;
-		r->m_state           = r;
-		r->m_state2          = this;
-		r->m_j               = j;
-		r->m_callback        = gotLinkTextWrapper;
+		r->m_docId = docId;
+		r->m_niceness = m_niceness;
+		r->m_state = r;
+		r->m_state2 = this;
+		r->m_j = j;
+		r->m_callback = gotLinkTextWrapper;
 		// do NOT get summary stuff!! slows us down...
-		r->m_numSummaryLines    = 0;
+		r->m_numSummaryLines = 0;
 		// get title now for steve
-		r->m_titleMaxLen        = 300;
-		r->m_summaryMaxLen      = 0;
-		r->m_discoveryDate      = discovered;
+		r->m_titleMaxLen = 300;
+		r->m_summaryMaxLen = 0;
+		r->m_discoveryDate = discovered;
 		// buzz sets the query to see if inlinker has the query terms
 		// so we can set <absScore2>
-		r->m_langId             = langUnknown; // no synonyms i guess
+		r->m_langId = langUnknown; // no synonyms i guess
 		r->m_prefferedResultLangId = langUnknown;
-		r->ptr_qbuf             = m_qbuf;
-		r->size_qbuf            = m_qbufSize;
+		r->ptr_qbuf = m_qbuf;
+		r->size_qbuf = m_qbufSize;
 
 		// place holder used below
 		r->m_isLinkSpam         = isLinkSpam;
@@ -1274,7 +1292,6 @@ bool Msg25::sendRequests() {
 		// makeLinkInfo() below.
 		r->m_getLinkInfo        = true;
 
-
 		r->m_ourHostHash32 = m_ourHostHash32;
 		r->m_ourDomHash32  = m_ourDomHash32;
 
@@ -1286,38 +1303,39 @@ bool Msg25::sendRequests() {
 		// . 2. if ad id gets banned, we still recycle it
 		// . 3. we cannot dedup by the vectors, because we do not
 		//      store those in the Inlink class (Msg25::isDup())
-		if ( m_k && m_k != (Inlink *)-1 ) {
+		if (m_k && m_k != (Inlink *)-1) {
 			Msg20Reply *rep = &m_msg20Replies[j];
 			rep->reset();
-			m_k->setMsg20Reply ( rep );
+			m_k->setMsg20Reply(rep);
+
 			// let receiver know we are a recycle
 			rep->m_recycled = 1;
+
 			// . this returns true if we are done
 			// . g_errno is set on error, and true is returned
-			if ( gotLinkText ( r ) )
+			if (gotLinkText(r)) {
 				return true;
+			}
+
 			// keep going
 			continue;
 		}
 
-		// debug log
-		if ( g_conf.m_logDebugLinkInfo ) {
-			const char *ms = "page";
-			if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-			log("msg25: getting single link mode=%s site=%s "
-			    "url=%s docid=%" PRId64" request=%" PRId32,
-			    ms,m_site,m_url,docId,m_numRequests-1);
-		}
+		logDebug(g_conf.m_logDebugLinkInfo, "msg25: getting single link mode=%s site=%s url=%s docid=%" PRId64" request=%" PRId32,
+		         m_mode == MODE_SITELINKINFO ? "site" : "page", m_site, m_url, docId, m_numRequests - 1);
 
 		// returns false if blocks, true otherwise
-		bool status = m_msg20s[j].getSummary ( r ) ;
+		bool status = m_msg20s[j].getSummary(r);
 		// if blocked launch another
-		if ( ! status ) continue;
+		if (!status) {
+			continue;
+		}
+
 		// . this returns true if we are done
 		// . g_errno is set on error, and true is returned
-		if ( gotLinkText ( r ) )
+		if (gotLinkText(r)) {
 			return true;
-		
+		}
 	}
 
 	// we may still be waiting on some replies to come in
@@ -1496,9 +1514,6 @@ static const char *getExplanation(const char *note) {
 // . returns true if done
 // . sets g_errno on error
 bool Msg25::gotLinkText(Msg20Request *msg20req) {
-
-	//log("debug: entering gotlinktext this=%" PRIx32,(int32_t)this);
-
 	int32_t j = -1;
 	Msg20 *msg20 = NULL;
 	Msg20Reply *msg20reply = NULL;
@@ -1577,147 +1592,162 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	// are we an "internal" inlink?
 	bool internal = false;
-	if ( msg20reply && iptop(msg20reply->m_firstIp) == m_top )
-		internal = true;
-	if ( msg20reply && iptop(msg20reply->m_ip) == m_top )
-		internal = true;
 
-	// . if the mid domain hash of the inlinker matches ours, no voting
-	// . this is set to 0 for recycles
-	if ( msg20reply && good && msg20reply->m_midDomHash == m_midDomHash && ! internal ) {
-		good = false;
-		m_sameMidDomain++;
-		note = "same mid domain";
-	}
+	if (msg20reply) {
+		if (iptop(msg20reply->m_firstIp) == m_top || iptop(msg20reply->m_ip) == m_top) {
+			internal = true;
+		}
 
-	// is the inlinker banned?
-	if ( msg20reply && good && msg20reply->m_isBanned ) {
-		// it is no longer good
-		good = false;
-		// inc the general count, too
-		m_spamLinks++;
-		// count each *type* of "link spam". the type is given
-		// by linkText->m_note and is a string...
-		note = "linker banned or filtered";
-	}
+		// . if the mid domain hash of the inlinker matches ours, no voting
+		// . this is set to 0 for recycles
+		if (good && msg20reply->m_midDomHash == m_midDomHash && !internal) {
+			good = false;
+			m_sameMidDomain++;
+			note = "same mid domain";
+		}
 
-	// get the linker url
-	Url linker; 
-	if ( msg20reply )
-		linker.set( msg20reply->ptr_ubuf, msg20reply->size_ubuf );
+		// is the inlinker banned?
+		if (good && msg20reply->m_isBanned) {
+			// it is no longer good
+			good = false;
+			// inc the general count, too
+			m_spamLinks++;
+			// count each *type* of "link spam". the type is given
+			// by linkText->m_note and is a string...
+			note = "linker banned or filtered";
+		}
 
-	// sanity check, Xml::set() requires this...
-	if ( msg20reply && msg20reply->size_rssItem > 0 && msg20reply->ptr_rssItem[msg20reply->size_rssItem-1]!=0 ) {
-		log(LOG_WARN, "admin: received corrupt rss item of size "
-		    "%" PRId32" not null terminated  from linker %s",
-		    msg20reply->size_rssItem,msg20reply->ptr_ubuf);
-		// ignore it for now
-		msg20reply->size_rssItem = 0;
-		msg20reply->ptr_rssItem  = NULL;
-	}
+		// get the linker url
+		Url linker;
+		linker.set(msg20reply->ptr_ubuf, msg20reply->size_ubuf);
 
-	// . if no link text, count as error
-	// . linkText->getLinkTextLen()
-	if ( msg20reply && good &&
-	     msg20reply->size_linkText <= 0 &&
-	     msg20reply->size_rssItem  <= 0 ) {
-		good = false;
-		m_noText++;
-		note = "no link text";
-	}
+		// sanity check, Xml::set() requires this...
+		if (msg20reply->size_rssItem > 0 && msg20reply->ptr_rssItem[msg20reply->size_rssItem - 1] != 0) {
+			log(LOG_WARN, "admin: received corrupt rss item of size %" PRId32" not null terminated  from linker %s",
+			    msg20reply->size_rssItem,msg20reply->ptr_ubuf);
+			// ignore it for now
+			msg20reply->size_rssItem = 0;
+			msg20reply->ptr_rssItem  = NULL;
+		}
 
+		// . if no link text, count as error
+		// . linkText->getLinkTextLen()
+		if (good &&
+		    msg20reply->size_linkText <= 0 &&
+		    msg20reply->size_rssItem <= 0) {
+			good = false;
+			m_noText++;
+			note = "no link text";
+		}
 
-	// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
-	// should not vote
-	if ( msg20reply && good && ! internal && msg20reply->m_isLinkSpam &&
-	     // we can no allow link spam iff it is below the max!
-	     ++m_spamCount >= m_maxSpam ) {
-		// it is no longer good
-		good = false;
-		// inc the general count, too
-		m_spamLinks++;
-		// count each *type* of "link spam". the type is given
-		// by linkText->m_note and is a string...
-		note    = msg20reply-> ptr_note;
-		noteLen = msg20reply->size_note - 1; // includes \0
+		// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
+		// should not vote
+		if (good && ! internal && msg20reply->m_isLinkSpam &&
+		     // we can no allow link spam iff it is below the max!
+		     ++m_spamCount >= m_maxSpam ) {
+			// it is no longer good
+			good = false;
+			// inc the general count, too
+			m_spamLinks++;
+			// count each *type* of "link spam". the type is given
+			// by linkText->m_note and is a string...
+			note    = msg20reply-> ptr_note;
+			noteLen = msg20reply->size_note - 1; // includes \0
+		}
 	}
 
 	// loop over all the replies we got so far to see if "msg20reply" is a dup
 	// or if another reply is a dup of "msg20reply"
 	int32_t n = m_numReplyPtrs;
+
 	// do not do the deduping if no reply given
-	if ( ! msg20reply ) n = 0;
-	// do not do this if "msg20reply" already considered bad
-	if ( ! good ) n = 0;
+	// or if "msg20reply" already considered bad
+	if (!msg20reply || !good) {
+		n = 0;
+	}
+
 	// this is the "dup"
-	Msg20Reply *dup  = NULL;
-	int32_t        dupi = -1;
+	Msg20Reply *dup = nullptr;
+	int32_t dupi = -1;
+
 	// . we do not actually remove the Msg20Replies at this point because 
 	//   this filter is dependent on the order in which we receive the 
 	//   Msg20Replies. we do the removal below after all replies are in.
 	// . NO! not anymore, i don't want to hit MAX_LINKERS and end up
 	//   removing all the dups below and end up with hardly any inlinkers
-	for ( int32_t i = 0 ; ! internal && i < n ; i++ ) {
+	for (int32_t i = 0; !internal && i < n; i++) {
 		// get the reply in a ptr
 		Msg20Reply *p = m_replyPtrs[i];
-		// is it internal
-		bool pinternal = false;
-		if ( iptop(p->m_ip) == m_top )
-			pinternal = true;
-		if ( iptop(p->m_firstIp) == m_top )
-			pinternal = true;
+
 		// allow internal inlinks to match
-		if ( pinternal )
+		if (iptop(p->m_ip) == m_top || iptop(p->m_firstIp) == m_top) {
 			continue;
+		}
+
 		// is "p" a dup of us? (or we of it?)
-		const char *dupNote = isDup ( msg20reply , p ) ;
+		const char *dupNote = isDup(msg20reply, p);
+
 		// if it is not a dup, keep going
-		if ( ! dupNote )
+		if (!dupNote) {
 			continue;
+		}
+
 		// getLoser() returns the lowest-scoring reply of "msg20reply" and "p"
-		Msg20Reply *tmp = getLoser ( msg20reply , p );
+		Msg20Reply *tmp = getLoser(msg20reply, p);
 		// is it worse than the current "dup"? if so, update "dup"
-		dup = getLoser ( tmp , dup );
+		dup = getLoser(tmp, dup);
+
 		// get the "i" value
-		if ( dup == msg20reply ) dupi = j;
-		if ( dup == p ) dupi = i;
+		if (dup == msg20reply) {
+			dupi = j;
+		}
+
+		if ( dup == p ) {
+			dupi = i;
+		}
+
 		// we got a dup
 		good = false;
 		note = dupNote;
 	}
 
-	// inc this count
-	if ( dup ) m_dupCount++;
+	if (dup) {
+		m_dupCount++;
 
-	// if "p" is the lower-scoring dup, put "msg20reply" in its place, and then
-	// set "msg20reply" to "p" doing a swap operation
-	if ( dup && dup != msg20reply ) {
-		// sanity check
-		if ( dupi < 0 ) { g_process.shutdownAbort(true); }
-		// HACK: swap them
-		Msg20Reply *tmp      = m_replyPtrs [dupi];
-		int32_t        tmpSize  = m_replySizes[dupi];
-		m_replyPtrs [dupi] = msg20reply;
-		m_replySizes[dupi] = replySize;
-		msg20reply           = tmp;
-		replySize            = tmpSize;
-		// make Msg20 point to that old "dup" reply
-		msg20->m_r            = msg20reply;
-		msg20->m_replyMaxSize = replySize;
+		// if "p" is the lower-scoring dup, put "msg20reply" in its place, and then
+		// set "msg20reply" to "p" doing a swap operation
+		if (dup != msg20reply) {
+			// sanity check
+			if (dupi < 0) {
+				gbshutdownLogicError();
+			}
+
+			// HACK: swap them
+			Msg20Reply *tmp = m_replyPtrs[dupi];
+			int32_t tmpSize = m_replySizes[dupi];
+			m_replyPtrs[dupi] = msg20reply;
+			m_replySizes[dupi] = replySize;
+			msg20reply = tmp;
+			replySize = tmpSize;
+			// make Msg20 point to that old "dup" reply
+			msg20->m_r = msg20reply;
+			msg20->m_replyMaxSize = replySize;
+		}
 	}
 
-	if ( msg20reply && good ) {
+	if (msg20reply && good) {
 		int32_t iptop1 = iptop(msg20reply->m_ip);
 		int32_t iptop2 = iptop(msg20reply->m_firstIp);
-		if ( m_firstIpTable.isInTable ( &iptop1 ) ||
-		     m_firstIpTable.isInTable ( &iptop2 ) ) {
+		if (m_firstIpTable.isInTable(&iptop1) ||
+		    m_firstIpTable.isInTable(&iptop2)) {
 			good = false;
 			m_ipDups++;
 			note = "first ip dup";
 		}
 		// add to table. return true with g_errno set on error
-		if ( ! m_firstIpTable.addKey(&iptop1) ) return true;
-		if ( ! m_firstIpTable.addKey(&iptop2) ) return true;
+		if (!m_firstIpTable.addKey(&iptop1) || !m_firstIpTable.addKey(&iptop2)) {
+			return true;
+		}
 	}
 
 
@@ -1725,18 +1755,22 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// at the linktext for indexing purposes anyway, but we do not
 	// want to count it towards the # of good siteinlinks because
 	// its internal
-	if ( internal && ! note ) {
+	if (internal && !note) {
 		m_ipDups++;
 		note = "ip dup";
 	}
 
-	if ( msg20reply && ! good && ! note )
+	if (msg20reply && !good && !note) {
 		note = "unknown reason";
+	}
 
 	// compile the reason it could not vote
-	if ( msg20reply && ! good ) {
+	if (msg20reply && !good) {
 		// set "noteLen" if not yet set
-		if ( note && noteLen == 0 ) noteLen = strlen ( note );
+		if ( note && noteLen == 0 ) {
+			noteLen = strlen ( note );
+		}
+
 		// add it to our table
 		addNote ( note , noteLen , msg20reply->m_docId );
 		// . free the reply since it cannot vote
@@ -1744,36 +1778,43 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	}
 
 	bool store = true;
-	if ( ! good ) store = false;
-	//if ( ! m_onlyNeedGoodInlinks ) store = true;
+	if (!good) {
+		store = false;
+	}
+
 	// . if doing for display, show good
 	// . steve needs to see the bad guys as well ppl can learn
-	if ( m_pbuf ) store = true;
+	if ( m_pbuf ) {
+		store = true;
+	}
 
 	// now for showing recommended link sources let's include the
 	// bad boys because we might have mislabelled them as bad, b/c maybe
 	// google thinks they are good! fix for 
 	// XmlDoc::getRecommendedLinksBuf()
-	if ( ! m_onlyNeedGoodInlinks ) store = true;
+	if (!m_onlyNeedGoodInlinks) {
+		store = true;
+	}
 
 	// how is this NULL?
-	if ( ! msg20reply )
+	if (!msg20reply) {
 		store = false;
+	}
 
-	if ( store ) {
+	if (store) {
 		// save the reply
-		m_replyPtrs [m_numReplyPtrs] = msg20reply;
+		m_replyPtrs[m_numReplyPtrs] = msg20reply;
 		m_replySizes[m_numReplyPtrs] = replySize;
 		// why we do this?
-		if ( note && ! msg20reply->ptr_note ) {
-			msg20reply->ptr_note = (char*)note;
-			msg20reply->size_note = noteLen+1;
+		if (note && !msg20reply->ptr_note) {
+			msg20reply->ptr_note = (char *)note;
+			msg20reply->size_note = noteLen + 1;
 		}
+
 		// store this in the reply for convenience
 		msg20reply->m_discoveryDate = msg20req->m_discoveryDate;
 		m_numReplyPtrs++;
-		// debug note
-		//log("linkdb: stored %" PRId32" msg20replies",m_numReplyPtrs);
+
 		// do not allow Msg20 to free it
 		msg20->m_r = NULL;
 	}
@@ -1782,13 +1823,16 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// we can't send out like 100,000 of these for yahoo.com to find
 	// less than 1000 good ones!
 	// tell msg20 to free the reply if not null
-	if ( msg20 ) msg20->reset();
+	if (msg20) {
+		msg20->reset();
+	}
 
 	// wait for all replies to come in
-	if ( m_numReplies < m_numRequests )
+	if (m_numReplies < m_numRequests) {
 		return false;
+	}
 
-	if ( m_gettingList ) {
+	if (m_gettingList) {
 		log("linkdb: gotLinkText: gettinglist2");
 		return false;
 	}
@@ -1798,33 +1842,24 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// READ MORE FROM LINKDB to avoid truncation
 	//
 	//
-	// youtube is doing like 180,000 rounds! wtf! limit to 10000
-	if ( m_list.getListSize() > 0 && // && m_round < 10000 ) {
-	     // no! now we shrink a list by removing dup docids from it
-	     // in Msg0.cpp before sending back to save memory and cpu and
-	     // network. so it can be well below m_minRecSizes and still need
-	     // to go on to the next round
-	     m_numReplyPtrs < MAX_LINKERS ) {
+
+	// no! now we shrink a list by removing dup docids from it
+	// in Msg0.cpp before sending back to save memory and cpu and
+	// network. so it can be well below m_minRecSizes and still need
+	// to go on to the next round
+	if (m_list.getListSize() > 0 && m_numReplyPtrs < MAX_LINKERS) {
 		// count it
 		m_round++;
-		// note it
-		const char *ms = "page";
-		if ( m_mode == MODE_SITELINKINFO ) {
-			ms = "site";
-		}
 
-		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s "
-		    "req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
-		    m_round,ms,m_site,(PTRTYPE)m_req25,m_numReplyPtrs);
+		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
+		         m_round, m_mode == MODE_SITELINKINFO ? "site" : "page", m_site, (PTRTYPE)m_req25, m_numReplyPtrs);
+
 		// and re-call. returns true if did not block.
 		// returns true with g_errno set on error.
-		if ( ! doReadLoop() )
+		if (!doReadLoop()) {
 			return false;
-		// it did not block!! wtf? i guess it read no more or
-		// launched no more requests.
-		//log("linkdb: doreadloop did not block");
+		}
 	}
-		
 
 	//
 	//
@@ -1832,23 +1867,17 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	//
 	//
 
-	// debug log
-	if ( g_conf.m_logDebugLinkInfo ) {
-		const char *ms = "page";
-		if ( m_mode == MODE_SITELINKINFO )
-			ms = "site";
-		log(LOG_DEBUG, "msg25: making final linkinfo mode=%s site=%s url=%s "
-		    "docid=%" PRId64,
-		    ms,m_site,m_url,m_docId);
-	}
+	logDebug(g_conf.m_logDebugLinkInfo, "msg25: making final linkinfo mode=%s site=%s url=%s docid=%" PRId64,
+	         m_mode == MODE_SITELINKINFO ? "site" : "page", m_site, m_url, m_docId);
 
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	if ( ! cr ) {
+	if (!cr) {
 		log(LOG_WARN, "linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
 		// that func doesn't set g_errno so we must
 		g_errno = ENOCOLLREC;
 		return true;
 	}
+
 	const char *coll = cr->m_coll;
 
 	// . this returns NULL and sets g_errno on error
@@ -1864,14 +1893,15 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		     this ,
 		     m_linkInfoBuf );
 	// return true with g_errno set on error
-	if ( ! m_linkInfoBuf->length() ) {
+	if (!m_linkInfoBuf->length()) {
 		log("build: msg25 linkinfo set: %s",mstrerror(g_errno));
 		return true;
 	}
 
 	// if nothing to print out, be on our way
-	if ( ! m_pbuf )
+	if (!m_pbuf) {
 		return true;
+	}
 
 	/////////////////////////////////////////
 	//
