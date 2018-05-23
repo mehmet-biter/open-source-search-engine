@@ -371,16 +371,17 @@ static void sendReplyWrapper(void *state) {
 
 	// shortcut
 	SafeBuf *info = m25->m_linkInfoBuf;
+
 	// steal this buffer
 	char *reply1 = info->getBufStart();
 	int32_t  replySize = info->length();
+
 	// sanity. no if collrec not found its 0!
-	if ( ! saved && replySize <= 0 ) { 
+	if (!saved && replySize <= 0) {
 		saved = g_errno = EBADENGINEER;
-		log("linkdb: sending back empty link text reply. did "
-		    "coll get deleted?");
-		//g_process.shutdownAbort(true); }
+		log(LOG_WARN, "linkdb: sending back empty link text reply. did coll get deleted?");
 	}
+
 	// get original request
 	Msg25Request *req = (Msg25Request *)slot2->m_readBuf;
 	// sanity
@@ -1808,7 +1809,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	     // in Msg0.cpp before sending back to save memory and cpu and
 	     // network. so it can be well below m_minRecSizes and still need
 	     // to go on to the next round
-	     //m_list.m_listSize >= m_minRecSizes && 
 	     m_numReplyPtrs < MAX_LINKERS ) {
 		// count it
 		m_round++;
