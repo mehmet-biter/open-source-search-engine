@@ -703,9 +703,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_wasContentInjected  = true;
 		m_contentType         = contentType;
 		m_contentTypeValid    = true;
-		// use this ip as well for now to avoid ip lookup
-		//m_ip      = atoip("127.0.0.1");
-		//m_ipValid = true;
+
 		// do not need robots.txt then
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
@@ -1041,14 +1039,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// set our easy stuff
 	gbmemcpy ( (void *)this , m_ubuf , headerSize );
 
-	// NOW set the XmlDoc::ptr_* and XmlDoc::size_* members
-	// like in Msg.cpp and Msg20Reply.cpp
-	if ( m_pbuf ) {
-		int32_t crc = hash32(m_ubuf,headerSize);
-		m_pbuf->safePrintf("crchdr=0x%" PRIx32" sizehdr=%" PRId32", ",
-				   crc,headerSize);
-	}
-
 
 	// point to the string data
 	char *up = m_ubuf + headerSize;
@@ -1098,12 +1088,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// point to the data. could be 64-bit ptr.
 		*pd = up;//(int32_t)up;
 
-		// debug
-		if ( m_pbuf ) {
-			int32_t crc = hash32(up,*ps);
-			m_pbuf->safePrintf("crc%" PRId32"=0x%" PRIx32" size%" PRId32"=%" PRId32", ",
-					   i,crc,i,*ps);
-		}
 		// skip over data
 		up += *ps;
 
