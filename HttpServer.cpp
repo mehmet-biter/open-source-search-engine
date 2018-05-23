@@ -36,7 +36,6 @@
 // a global class extern'd in .h file
 HttpServer g_httpServer;
 
-bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
 static bool sendPagePretty(TcpSocket *s, HttpRequest *r, const char *filename, const char *tabName);
 
 // we get like 100k submissions a day!!!
@@ -823,9 +822,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		return sendPageAPI ( s , r  );
 	if ( ! strncmp ( path ,"/api", pathLen ) )
 		return sendPageAPI ( s , r  );
-
-	if ( ! strncmp ( path ,"/print", pathLen ) )
-		return sendPageAnalyze ( s , r  );
 
 	// proxy should handle all regular file requests itself! that is
 	// generally faster i think, and, besides, sending pieces of a big
