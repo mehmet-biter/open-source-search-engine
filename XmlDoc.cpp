@@ -15523,18 +15523,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	bool getThatTitle = true;
 	if ( m_req->m_titleMaxLen <= 0 ) getThatTitle = false;
 	if ( m_reply.ptr_tbuf           ) getThatTitle = false;
-	// if steve's requesting the inlink summary we will want to get
-	// the title of each linker even if they are spammy!
-	// only get title here if NOT getting link text otherwise
-	// we only get it down below if not a spammy voter, because
-	// this sets the damn slow sections class
-	if ( m_req->m_getLinkText &&
-	     ! m_useSiteLinkBuf &&
-	     ! m_usePageLinkBuf &&
-	     // m_pbuf is used by pageparser.cpp now, not the other two things
-	     // above this.
-	     ! m_pbuf )
-		getThatTitle = false;
 
 	// if steve is getting the inlinks, bad and good, for displaying
 	// then get the title here now... otherwise, if we are just spidering
