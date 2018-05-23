@@ -175,18 +175,9 @@ class Msg25 {
 
 	// private:
 	// these need to be public for wrappers to call:
-	bool gotTermFreq(bool msg42Called);
-	bool getRootTitleRec();
-	bool gotRootTitleRec();
-	bool gotDocId();
-	bool gotRootLinkText();
-	bool gotRootLinkText2();
-	bool getLinkingDocIds();
 	bool gotList();
-	bool gotClusterRecs();
 	bool sendRequests();
 	bool gotLinkText(class Msg20Request *req);
-	bool gotMsg25Reply();
 	bool doReadLoop();
 
 	// input vars
@@ -200,8 +191,6 @@ class Msg25 {
 	uint64_t m_linkHash64;
 	key224_t m_nextKey;
 
-	bool       m_retried;
-	bool       m_prependWWW;
 	bool       m_onlyNeedGoodInlinks;
 	int64_t  m_docId;
 	collnum_t m_collnum;
@@ -231,9 +220,6 @@ class Msg25 {
 
 	Inlink *m_k;
 
-	// for getting the root title rec so we can share its pwids
-	Msg22 m_msg22;
-
 	int32_t      m_maxNumLinkers;
 
 	// should we free the m_replyPtrs on destruction? default=true
@@ -258,10 +244,6 @@ class Msg25 {
 
 	int32_t      m_minRecSizes;
 
-	// Msg20 is for getting the LinkInfo class from this same url's
-	// titleRec from another (usually much larger) gigablast cluster/netwrk
-	Msg20        m_msg20;
-
 	// how many msg20s have we sent/recvd?
 	int32_t      m_numRequests;
 	int32_t      m_numReplies;
@@ -278,20 +260,16 @@ class Msg25 {
 	bool         m_oneVotePerIpDom;
 	bool         m_doLinkSpamCheck;
 	bool         m_isInjecting;
-	char         m_canBeCancelled;
 	int32_t      m_lastUpdateTime;
 
 	Multicast m_mcast;
 
-	int32_t      m_good;
 	int32_t      m_errors;
 	int32_t      m_noText;
-	int32_t      m_reciprocal;
 
 	bool         m_spideringEnabled;
 
 	int32_t      m_dupCount;
-	int32_t      m_vectorDups;
 	int32_t      m_spamLinks;
 	int32_t      m_niceness;
 	int32_t      m_numFromSameIp;
@@ -301,9 +279,6 @@ class Msg25 {
 	int32_t      m_spamCount;
 	int32_t      m_spamWeight;
 	int32_t      m_maxSpam;
-
-	char m_siteQuality;
-	int32_t m_siteNumFreshInlinks;
 
 	// this is used for the linkdb list
 	HashTableX   m_ipTable;
@@ -320,9 +295,6 @@ class Msg25 {
 	int32_t      m_docIdDupsLinkdb;
 	int32_t      m_linkSpamLinkdb;
 	int32_t      m_ipDups;
-
-	uint32_t     m_groupId;
-	int64_t      m_probDocId;
 
 	LinkInfo    *m_oldLinkInfo;
 

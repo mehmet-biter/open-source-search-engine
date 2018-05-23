@@ -69,8 +69,6 @@ Msg25::Msg25() {
 	m_round = 0;
 	m_linkHash64 = 0;
 	memset(&m_nextKey, 0, sizeof(m_nextKey));
-	m_retried = false;
-	m_prependWWW = false;
 	m_onlyNeedGoodInlinks = false;
 	m_docId = 0;
 	m_collnum = 0;
@@ -98,15 +96,11 @@ Msg25::Msg25() {
 	m_oneVotePerIpDom = false;
 	m_doLinkSpamCheck = false;
 	m_isInjecting = false;
-	m_canBeCancelled = 0;
 	m_lastUpdateTime = 0;
-	m_good = 0;
 	m_errors = 0;
 	m_noText = 0;
-	m_reciprocal = 0;
 	m_spideringEnabled = false;
 	m_dupCount = 0;
-	m_vectorDups = 0;
 	m_spamLinks = 0;
 	m_niceness = 0;
 	m_numFromSameIp = 0;
@@ -114,14 +108,10 @@ Msg25::Msg25() {
 	m_spamCount = 0;
 	m_spamWeight = 0;
 	m_maxSpam = 0;
-	m_siteQuality = 0;
-	m_siteNumFreshInlinks = 0;
 	m_ipDupsLinkdb = 0;
 	m_docIdDupsLinkdb = 0;
 	m_linkSpamLinkdb = 0;
 	m_ipDups = 0;
-	m_groupId = 0;
-	m_probDocId = 0;
 	m_oldLinkInfo = NULL;
 	m_bufPtr = NULL;
 	m_bufEnd = NULL;
@@ -711,11 +701,9 @@ bool Msg25::getLinkInfo2(const char      *site,
 	m_bufPtr              = m_buf;
 	m_bufEnd              = m_buf + MAX_NOTE_BUF_LEN;
 	m_dupCount            = 0;
-	m_vectorDups          = 0;
 	m_spamLinks           = 0;
 	m_errors              = 0;
 	m_noText              = 0;
-	m_reciprocal          = 0;
 	m_ipDupsLinkdb        = 0;
 	m_docIdDupsLinkdb     = 0;
 	m_ipDups              = 0;
@@ -726,7 +714,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 	m_state               = state;
 	m_oneVotePerIpDom     = oneVotePerIpDom;
 	m_doLinkSpamCheck     = doLinkSpamCheck;
-	m_canBeCancelled      = canBeCancelled;
 	m_siteNumInlinks      = siteNumInlinks; // -1 --> unknown
 	m_qbuf                = qbuf;
 	m_qbufSize            = qbufSize;
@@ -751,11 +738,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 	Url u;
 	u.set(url);
 	m_midDomHash = hash32 ( u.getMidDomain() , u.getMidDomainLen() );
-
-	// do not prepend "www." to the root url
-	m_prependWWW = false;
-	// we have not done a retry yet
-	m_retried = false;
 
 	//log("debug: entering getlinkinfo this=%" PRIx32,(int32_t)this);
 
@@ -3009,28 +2991,6 @@ Inlink *LinkInfo::getNextInlink(Inlink *k) {
 	// otherwise, we are still good
 	return next;
 }
-
-
-// . returns false and sets g_errno on error
-// . returns true if no error was encountered
-// . call xml->isEmpty() to see if you got anything
-bool LinkInfo::getItemXml(Xml *xml) {
-	// reset it
-	xml->reset();
-	// loop through the Inlinks
-	Inlink *k = NULL;
-	for ( ; (k = getNextInlink(k)) ; ) {
-		// does it have an xml item? skip if not.
-		if ( k->size_rssItem <= 1 ) continue;
-		// got it
-		break;
-	}
-	// return if nada
-	if ( ! k ) return true;
-	// set the xml
-	return k->setXmlFromRSS ( xml );
-}
-
 
 bool Inlink::setXmlFromRSS(Xml *xml) {
 	// compute the length (excludes the \0's)
