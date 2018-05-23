@@ -33,7 +33,6 @@ public:
 	HttpRequest m_r;
 	char m_coll[MAX_COLL_LEN+2];
 	bool       m_isMasterAdmin;
-	bool       m_rtq;
 	SafeBuf m_qsb;
 	char m_qtmpBuf[128];
 	int32_t       m_qlen;
@@ -95,13 +94,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		return g_httpServer.sendErrorReply (s,500 ,mstrerror(g_errno));
 	}
 
-
-	// . should we do a sequential lookup?
-	// . we need to match summary here so we need to know this
-	//bool seq = r->getLong ( "seq" , false );
-	// restrict to root file?
-	bool rtq = r->getLong ( "rtq" , 0) ? true : false;
-
 	// . get the titleRec
 	// . TODO: redirect client to a better http server to save bandwidth
 	State2 *st ;
@@ -141,7 +133,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		st->m_qsb.safeStrcpy ( "" );
 	
 	st->m_qlen = qlen;
-	st->m_rtq      = rtq;
 	st->m_isBanned = false;
 	st->m_noArchive = false;
 	st->m_socket = s;
@@ -397,12 +388,11 @@ bool processLoop ( void *state ) {
 		// Moved over from PageResults.cpp
 		sb->safePrintf( "</span> - <a href=\""
 			      "/get?"
-			      "q=%s&amp;c=%s&amp;rtq=%" PRId32"&amp;"
+			      "q=%s&amp;c=%s&amp;"
 			      "d=%" PRId64"&amp;strip=1\""
 			      " style=\"%s\">"
 			      "[stripped]</a>", 
-			      q , st->m_coll , 
-			      (int32_t)st->m_rtq,
+			      q , st->m_coll ,
 			      st->m_docId, styleLink ); 
 
 		// a link to alexa
