@@ -106,7 +106,6 @@ Msg25::Msg25() {
 	m_numFromSameIp = 0;
 	m_sameMidDomain = 0;
 	m_spamCount = 0;
-	m_spamWeight = 0;
 	m_maxSpam = 0;
 	m_ipDupsLinkdb = 0;
 	m_docIdDupsLinkdb = 0;
@@ -991,7 +990,6 @@ bool Msg25::gotList() {
 		// . their number and weights depend on our ROOT QUALITY!
 		// . we need this because our filters are too stringent!
 		m_spamCount  = 0;
-		m_spamWeight = 0;
 		m_maxSpam    = 0;
 		m_numDocIds  = 0;
 		m_cblocks    = 0;
@@ -1005,22 +1003,23 @@ bool Msg25::gotList() {
 	}
 
 	// when MODE_PAGELINKINFO we must have a site quality for that site
-	if ( m_siteNumInlinks < 0 ) { g_process.shutdownAbort(true); }
+	if (m_siteNumInlinks < 0) {
+		gbshutdownLogicError();
+	}
 
-	// shortcut
-	int32_t n = m_siteNumInlinks;
-	if      ( n >= 1000 ) {m_spamWeight = 90; m_maxSpam = 4000;}
-	else if ( n >=  900 ) {m_spamWeight = 80; m_maxSpam = 3000;}
-	else if ( n >=  800 ) {m_spamWeight = 70; m_maxSpam = 2000;}
-	else if ( n >=  700 ) {m_spamWeight = 55; m_maxSpam = 1000;}
-	else if ( n >=  600 ) {m_spamWeight = 50; m_maxSpam =  100;}
-	else if ( n >=  500 ) {m_spamWeight = 15; m_maxSpam =   20;}
-	else if ( n >=  200 ) {m_spamWeight = 10; m_maxSpam =   15;}
-	else if ( n >=   70 ) {m_spamWeight = 07; m_maxSpam =   10;}
-	else if ( n >=   20 ) {m_spamWeight = 05; m_maxSpam =    7;}
+	if      ( m_siteNumInlinks >= 1000 ) {m_maxSpam = 4000;}
+	else if ( m_siteNumInlinks >=  900 ) {m_maxSpam = 3000;}
+	else if ( m_siteNumInlinks >=  800 ) {m_maxSpam = 2000;}
+	else if ( m_siteNumInlinks >=  700 ) {m_maxSpam = 1000;}
+	else if ( m_siteNumInlinks >=  600 ) {m_maxSpam =  100;}
+	else if ( m_siteNumInlinks >=  500 ) {m_maxSpam =   20;}
+	else if ( m_siteNumInlinks >=  200 ) {m_maxSpam =   15;}
+	else if ( m_siteNumInlinks >=   70 ) {m_maxSpam =   10;}
+	else if ( m_siteNumInlinks >=   20 ) {m_maxSpam =    7;}
 
+	logTrace(g_conf.m_logTraceMsg25, "Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32". mode=PAGELINKINFO",
+	         m_url, m_siteNumInlinks);
 
-	logTrace(g_conf.m_logTraceMsg25,"Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32 ". mode!=SITELINKINFO", m_url, m_siteNumInlinks);
 	// now send the requests
 	m_list.resetListPtr();
 	return sendRequests();

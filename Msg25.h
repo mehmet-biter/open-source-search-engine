@@ -275,7 +275,6 @@ class Msg25 {
 
 	// stats for allow some link spam inlinks to vote
 	int32_t      m_spamCount;
-	int32_t      m_spamWeight;
 	int32_t      m_maxSpam;
 
 	// this is used for the linkdb list
