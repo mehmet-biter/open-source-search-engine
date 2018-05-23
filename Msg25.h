@@ -42,7 +42,6 @@ public:
 	int32_t       m_niceness;
 	bool          m_doLinkSpamCheck;
 	bool          m_oneVotePerIpDom;
-	bool          m_canBeCancelled;
 	int32_t       m_lastUpdateTime;
 	bool          m_onlyNeedGoodInlinks;
 	int32_t       m_ourHostHash32;
@@ -140,7 +139,6 @@ class Msg25 {
 			   int32_t    niceness,
 			   bool       doLinkSpamCheck,
 			   bool       oneVotePerIpDom,
-			   bool       canBeCancelled,
 			   int32_t    lastUpdateTime,
 			   bool       onlyNeedGoodInlinks,
 			   // if an inlinking document has an outlink

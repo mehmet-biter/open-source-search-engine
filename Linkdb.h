@@ -60,7 +60,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   int32_t       niceness            ,
 		   bool       doLinkSpamCheck     ,
 		   bool       oneVotePerIpDom     ,
-		   bool       canBeCancelled      ,
 		   int32_t       lastUpdateTime      ,
 		   bool       onlyNeedGoodInlinks  ,
 		   // if an inlinking document has an outlink

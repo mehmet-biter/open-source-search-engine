@@ -6989,12 +6989,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 		return NULL;
 	}
 
-	// can we be cancelled?
-	bool canBeCancelled = true;
-	// not if pageparser though
-	if ( m_pbuf ) canBeCancelled = false;
-	// not if injecting
-	if ( ! m_sreqValid ) canBeCancelled = false;
 	// assume valid when it returns
 	m_siteLinkInfoValid = true;
 
@@ -7026,7 +7020,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				m_niceness          ,
 				cr->m_doLinkSpamCheck ,
 				cr->m_oneVotePerIpDom ,
-				canBeCancelled        ,
 				lastUpdateTime ,
 				onlyNeedGoodInlinks ,
 				0,
@@ -7809,14 +7802,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 
 		// do not redo it
 		m_calledMsg25 = true;
-		// shortcut
-		//Msg25 *m = &m_msg25;
-		// can we be cancelled?
-		bool canBeCancelled = true;
-		// not if pageparser though
-		if ( m_pbuf ) canBeCancelled = false;
-		// not if injecting
-		if ( ! m_sreqValid ) canBeCancelled = false;
 
 		// we do not want to waste time computing the page title
 		// of bad inlinks if we only want the good inlinks, because
@@ -7860,7 +7845,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					m_niceness          ,
 					doLinkSpamCheck ,
 					oneVotePerIpDom ,
-					canBeCancelled        ,
 					lastUpdateTime ,
 					onlyNeedGoodInlinks ,
 					0, // ourhosthash32 (special)

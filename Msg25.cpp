@@ -215,7 +215,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		 int32_t       niceness,
 		 bool       doLinkSpamCheck,
 		 bool       oneVotePerIpDom,
-		 bool       canBeCancelled,
 		 int32_t       lastUpdateTime,
 		 bool       onlyNeedGoodInlinks,
 		 int32_t       ourHostHash32,
@@ -280,7 +279,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	req->m_niceness = niceness;
 	req->m_doLinkSpamCheck = doLinkSpamCheck;
 	req->m_oneVotePerIpDom = oneVotePerIpDom;
-	req->m_canBeCancelled = canBeCancelled;
 	req->m_lastUpdateTime = lastUpdateTime;
 	req->m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
 	req->m_ourHostHash32 = ourHostHash32;
@@ -539,7 +537,6 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 				   req->m_niceness            ,
 				   req->m_doLinkSpamCheck     ,
 				   req->m_oneVotePerIpDom     ,
-				   req->m_canBeCancelled      ,
 				   req->m_lastUpdateTime      ,
 				   req->m_onlyNeedGoodInlinks  ,
 				   req->m_ourHostHash32 ,
@@ -649,7 +646,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 			 int32_t       niceness,
 			 bool       doLinkSpamCheck,
 			 bool       oneVotePerIpDom,
-			 bool       canBeCancelled,
 			 int32_t       lastUpdateTime,
 			 bool       onlyNeedGoodInlinks,
 			 int32_t       ourHostHash32,
