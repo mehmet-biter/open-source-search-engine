@@ -29,17 +29,11 @@ public:
 	int32_t       m_niceness;
 	XmlDoc     m_xd;
 	lang_t       m_langId;
-	//Msg8a      m_msg8a;
-	//SiteRec    m_sr;
-	//TagRec     m_tagRec;
 	TcpSocket *m_socket;
 	HttpRequest m_r;
 	char m_coll[MAX_COLL_LEN+2];
-	//CollectionRec *m_cr;
 	bool       m_isMasterAdmin;
-	//bool       m_seq;
 	bool       m_rtq;
-	//char       m_q[MAX_QUERY_LEN+1];
 	SafeBuf m_qsb;
 	char m_qtmpBuf[128];
 	int32_t       m_qlen;
@@ -51,7 +45,6 @@ public:
 	int32_t       m_strip;
 	bool	   m_cnsPage;      // Are we in the click 'n' scroll page?
 	bool	   m_printDisclaimer;
-	bool       m_netTestResults;
 	bool       m_isBanned;
 	bool       m_noArchive;
 	SafeBuf    m_sb;
@@ -65,7 +58,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	int32_t  collLen = 0;
 	const char *coll    = r->getString("c",&collLen);
 	if ( ! coll || ! coll[0] ) {
-		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( );
 		collLen = strlen(coll);
 	}
@@ -139,7 +131,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	}
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
 	// store query for query highlighting
-	st->m_netTestResults    = r->getLong ("rnettest", 0) ? true : false;
 	st->m_qsb.setBuf ( st->m_qtmpBuf,128,0,false );
 	st->m_qsb.setLabel ( "qsbpg" );
 
