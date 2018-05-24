@@ -58,10 +58,10 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 			   memmem(sb->getBufStart(),sb->length(),"element",7)==0 &&
 			   memmem(sb->getBufStart(),sb->length(),"Element",7)==0)
 			{
-				sb->safeReplace2("<br>",4,"",0,0);
+				sb->safeReplace2("<br>",4," ",1,0);
 				sb->safeReplace2("<b>",3,"",0,0);
 				sb->safeReplace2("<u>",3,"",0,0);
-				sb->safeReplace2("<p>",3,"",0,0);
+				sb->safeReplace2("<p>",3," ",1,0);
 			}
 		}
 		*s = sb->getBufStart();

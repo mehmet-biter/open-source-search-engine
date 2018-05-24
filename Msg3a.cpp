@@ -14,11 +14,19 @@
 #include "Conf.h"
 #include "Lang.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
 
-static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
+static const int signature_init = 0xb0a05d5a;
 
-Msg3a::Msg3a ( ) {
+static void gotReplyWrapper3a(void *state, void *state2);
+
+Msg3a::Msg3a()
+  : m_numRequests(0),
+    m_numReplies(0),
+    m_requestsBeingSubmitted(false)
+{
+	set_signature();
 	constructor();
 }
 
@@ -41,7 +49,6 @@ void Msg3a::constructor ( ) {
 	// Coverity
 	m_state = NULL;
 	m_callback = NULL;
-	m_numQueriedHosts = 0;
 	m_moreDocIdsAvail = false;
 	m_errno = 0;
 	m_startTime = 0;
@@ -66,6 +73,7 @@ Msg3a::~Msg3a ( ) {
 	reset();
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ )
 		m_mcast[j].destructor();
+	clear_signature();
 }
 
 void Msg3a::reset ( ) {
@@ -95,6 +103,26 @@ void Msg3a::reset ( ) {
 	m_collnums     = NULL;
 	m_numTotalEstimatedHits = 0LL;
 }
+
+
+void Msg3a::incrementRequestCount() {
+	ScopedLock sl(m_mtxCounters);
+	m_numRequests++;
+}
+
+bool Msg3a::incrementReplyCount() {
+	ScopedLock sl(m_mtxCounters);
+	if(m_numReplies>=m_numRequests)
+		gbshutdownCorrupted();
+	m_numReplies++;
+	return m_numReplies==m_numRequests && !m_requestsBeingSubmitted;
+}
+
+bool Msg3a::allRequestsReplied()	{
+	ScopedLock sl(m_mtxCounters);
+	return (!m_requestsBeingSubmitted) && (m_numReplies==m_numRequests);
+}
+
 
 
 
@@ -135,8 +163,8 @@ void Msg3a::reset ( ) {
 //   Msg25 to recompute the inlinker information used in
 //   Msg16::computeQuality(), but rather deserialize it from the TitleRec.
 //   Computing the link info takes a lot of time as well.
-bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
-	void (*callback)( void *state )) {
+bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state, void (*callback)( void *state )) {
+	verify_signature();
 
 	// in case re-using it
 	reset();
@@ -302,35 +330,28 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 	
 	int64_t qh = m_q->getQueryHash();
 
-	int32_t totalNumHosts = g_hostdb.getNumHosts();
-	
-	m_numQueriedHosts = 0;
+	int32_t totalNumShards = g_hostdb.getNumShards();
 	
 	// only send to one host?
 	if ( ! m_q->isSplit() ) {
-		totalNumHosts = 1;
+		totalNumShards = 1;
 	}
 
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = true;
+	}
 
 	// now we run it over ALL hosts that are up!
-	for ( int32_t i = 0; i < totalNumHosts ; i++ ) { // m_indexdbSplit; i++ ) {
+	for(int32_t shardNum = 0; shardNum < totalNumShards; shardNum++ ) {
 		// get that host
-		Host *h = g_hostdb.getHost(i);
-
-		if(!h->m_queryEnabled) {
-			continue;
-		}
+		Host *h = g_hostdb.getHostWithQueryingEnabled(shardNum);
 		
-		m_numQueriedHosts++;
-
 		// if not a full split, just round robin the group, i am not
 		// going to sweat over performance on non-fully split indexes
 		// because they suck really bad anyway compared to full
 		// split indexes. "gid" is already set if we are not split.
-		int32_t shardNum = h->m_shardNum;
 		int32_t firstHostId = h->m_hostId;
-		// get strip num
-		char *req = m_rbufPtr;
 		// if we are a non-split query, like gbdom:xyz.com just send
 		// to the host that has the first termid local. it will call
 		// msg2 to download all termlists. msg2 should be smart
@@ -370,7 +391,7 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		}
 
 		// send to this guy
-		Multicast *m = &m_mcast[i];
+		Multicast *m = &m_mcast[shardNum];
 		// clear it for transmit
 		m->reset();
 
@@ -395,22 +416,27 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		// . if that host takes more than about 5 secs then sends to
 		//   next host
 		// . key should be largest termId in group we're sending to
-		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_msg39req.m_niceness, firstHostId, true);
-		// if successfully launch, do the next one
-		if ( status ) {
-			continue;
+		incrementRequestCount();
+		if(m->send(m_rbufPtr, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_msg39req.m_niceness, firstHostId, true))
+		{
+			//successfully sent
+		} else {
+			incrementReplyCount();
+			// . this serious error should make the whole query fail
+			// . must allow other replies to come in though, so keep going
+			log("query: Multicast Msg3a had error: %s", mstrerror(g_errno));
+			m_errno = g_errno;
+			g_errno = 0;
 		}
-		// . this serious error should make the whole query fail
-		// . must allow other replies to come in though, so keep going
-		m_numReplies++;
-		log("query: Multicast Msg3a had error: %s", mstrerror(g_errno));
-		m_errno = g_errno;
-		g_errno = 0;
 	}
 
-	// return false if blocked on a reply
-	if ( m_numReplies < m_numQueriedHosts ) {
-		return false;//indexdbSplit )
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = false;
+		
+		//if we have outstanding requests then return false (a callback will be called)
+		if(m_numReplies!=m_numRequests)
+			return false;
 	}
 
 	// . otherwise, we did not block... error?
@@ -424,12 +450,14 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 
 
 
-void gotReplyWrapper3a ( void *state , void *state2 ) {
+static void gotReplyWrapper3a(void *state, void *state2) {
 	Msg3a *THIS = (Msg3a *)state;
-
-
-	// set it
 	Multicast *m = (Multicast *)state2;
+	THIS->gotReply(m);
+}
+
+void Msg3a::gotReply(Multicast *m) {
+	verify_signature();
 
 	// update host table
 	Host *h = m->m_replyingHost;
@@ -439,13 +467,13 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 
 	
 	// timestamp log
-	if ( THIS->m_debug )
+	if ( m_debug )
 	{
 		logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] got reply #%" PRId32" (of %" PRId32") in %" PRId64" ms. Hostid=%" PRId32". err=%s", 
-			(PTRTYPE)THIS, 
-			THIS->m_numReplies+1,
-			THIS->m_numQueriedHosts,
-		     endTime - THIS->m_startTime,
+		     (PTRTYPE)this,
+		     m_numReplies,
+		     m_numRequests,
+		     endTime - m_startTime,
 		     h ? h->m_hostId : -1,
 		     mstrerror(g_errno) );
 	}
@@ -453,7 +481,7 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 	if ( g_errno )
 	{
 		logf(LOG_DEBUG,"msg3a: error reply. [%" PTRFMT"] got reply #%" PRId32". Hostid=%" PRId32". err=%s", 
-			(PTRTYPE)THIS, THIS->m_numReplies ,
+		     (PTRTYPE)this, m_numReplies,
 		     h ? h->m_hostId : -1,
 		     mstrerror(g_errno) );
 	}
@@ -466,9 +494,9 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 	}
 
 	// record it
-	if ( g_errno && ! THIS->m_errno )
+	if ( g_errno && ! m_errno )
 	{
-		THIS->m_errno = g_errno;
+		m_errno = g_errno;
 	}
 
 	
@@ -488,15 +516,17 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 		}
 	}
 	// update count of how many replies we got
-	THIS->m_numReplies++;
-	// bail if still awaiting more replies
-	if ( THIS->m_numReplies < THIS->m_numQueriedHosts ) return;
+	bool done = incrementReplyCount();
+	if(!done)
+		return; //still more to go
 	// return if gotAllShardReplies() blocked
-	if ( ! THIS->gotAllShardReplies( ) ) return;
+	if ( ! gotAllShardReplies( ) )
+		return;
 	// set g_errno i guess so parent knows
-	if ( THIS->m_errno ) g_errno = THIS->m_errno;
+	if ( m_errno )
+		g_errno = m_errno;
 	// call callback if we did not block, since we're here. all done.
-	THIS->m_callback ( THIS->m_state );
+	m_callback(m_state);
 }
 
 bool Msg3a::gotAllShardReplies ( ) {
@@ -519,7 +549,8 @@ bool Msg3a::gotAllShardReplies ( ) {
 	m_numTotalEstimatedHits = 0;
 	double pctSearchedSum = 0.0;
 
-	for ( int32_t i = 0; i < m_numQueriedHosts ; i++ ) {
+
+	for(int32_t shardNum = 0; shardNum < g_hostdb.getNumShards(); shardNum++ ) {
 		// get that host that gave us the reply
 		//Host *h = g_hostdb.getHost(i);
 		// . get the reply from multicast
@@ -529,7 +560,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 		//   set so we can free the replies in Msg3a::reset()
 		// . if we don't call getBestReply() on it multicast should
 		//   free it, because Multicast::m_ownReadBuf is still true
-		Multicast *m = &m_mcast[i];
+		Multicast *m = &m_mcast[shardNum];
 		bool freeit = false;
 		int32_t  replySize = 0;
 		int32_t  replyMaxSize;
@@ -552,18 +583,20 @@ bool Msg3a::gotAllShardReplies ( ) {
 		// bad reply?
 		if(rbuf==NULL) {
 			m_skippedShards++;
-			log(LOG_LOGIC,"query: msg3a: Bad reply (null) from host #%d. Dead? Timeout? OOM?", i);
-			m_reply       [i] = NULL;
-			m_replyMaxSize[i] = 0;
+			log(LOG_LOGIC,"query: msg3a: Bad reply (null) from shard #%d. Dead? Timeout? OOM?", shardNum);
+			m_reply       [shardNum] = NULL;
+			m_replyMaxSize[shardNum] = 0;
 
 			// it might have been timed out, just ignore it!!
 			continue;
 		}
 		if((size_t)replySize < sizeof(Msg39Reply)) {
 			m_skippedShards++;
-			log(LOG_LOGIC,"query: msg3a: Too short reply (size=%d) from host #%d", replySize, i);
-			m_reply       [i] = NULL;
-			m_replyMaxSize[i] = 0;
+			log(LOG_LOGIC,"query: msg3a: Too short reply (size=%d) from shard #%d (host %d)",
+			    replySize, shardNum,
+			    m_mcast[shardNum].m_replyingHost ? m_mcast[shardNum].m_replyingHost->m_hostId : -1);
+			m_reply       [shardNum] = NULL;
+			m_replyMaxSize[shardNum] = 0;
 			mfree(rbuf, replyMaxSize, "Multicast");
 			// it might have been timed out, just ignore it!!
 			continue;
@@ -578,13 +611,13 @@ bool Msg3a::gotAllShardReplies ( ) {
 
 		// can this be non-null? we shouldn't be overwriting one
 		// without freeing it...
-		if ( m_reply[i] )
+		if ( m_reply[shardNum] )
 			// note the mem leak now
 			log(LOG_WARN,"query: mem leaking a 0x39 reply");
 
 		// cast it and set it
-		m_reply       [i] = mr;
-		m_replyMaxSize[i] = replyMaxSize;
+		m_reply       [shardNum] = mr;
+		m_replyMaxSize[shardNum] = replyMaxSize;
 		// sanity check
 		if ( mr->m_nqt != m_q->getNumTerms() ) {
 			g_errno = EBADREPLY;
@@ -636,7 +669,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 			logf( LOG_DEBUG,
 			     "query: msg3a: [%p] %03d shard=%d docId=%012" PRIu64" domHash=0x%02x score=%f flags=0x%04x",
 			     this,
-			     j, i,
+			     j, shardNum,
 			     docIds[j],
 			     (int32_t)Titledb::getDomHash8FromDocId(docIds[j]),
 			     scores[j],
@@ -644,7 +677,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 		}
 	}
 
-	m_pctSearched = pctSearchedSum/m_numQueriedHosts;
+	m_pctSearched = pctSearchedSum/m_numRequests;
 
 	// this seems to always return true!
 	mergeLists ( );
@@ -659,7 +692,8 @@ bool Msg3a::gotAllShardReplies ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error
 bool Msg3a::mergeLists() {
-
+	verify_signature();
+	
 	// time how long the merge takes
 	if(m_debug) {
 		logf( LOG_DEBUG, "query: msg3a: --- Final DocIds --- " );
@@ -674,7 +708,7 @@ bool Msg3a::mergeLists() {
 	m_moreDocIdsAvail = true;
 
 
-	if(m_numQueriedHosts > MAX_SHARDS) { g_process.shutdownAbort(true); }
+	if(m_numRequests > MAX_SHARDS) { g_process.shutdownAbort(true); }
 	if(m_docsToGet <= 0) { g_process.shutdownAbort(true); }
 
 	// . point to the various docids, etc. in each shard reply
@@ -685,7 +719,7 @@ bool Msg3a::mergeLists() {
 	unsigned    *flagsPtr[MAX_SHARDS];
 	key96_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
-	for(int32_t j = 0; j < m_numQueriedHosts ; j++) {
+	for(int32_t j = 0; j < g_hostdb.getNumShards(); j++) {
 		if(Msg39Reply *mr =m_reply[j]) {
 			diPtr[j] = (int64_t*)mr->ptr_docIds;
 			rsPtr[j] = (double*) mr->ptr_scores;
@@ -714,7 +748,7 @@ bool Msg3a::mergeLists() {
 	// . docid=8 score=4 bitScore=1 clusterRecs=key96_t clusterLevls=1
 	int32_t nd1 = m_docsToGet;
 	int32_t nd2 = 0;
-	for(int32_t j = 0; j < m_numQueriedHosts; j++) {
+	for(int32_t j = 0; j < g_hostdb.getNumShards(); j++) {
 		if(Msg39Reply *mr = m_reply[j])
 			nd2 += mr->m_numDocIds;
 	}
@@ -768,7 +802,7 @@ bool Msg3a::mergeLists() {
 		int32_t maxj = -1;
 
 		// get the next highest-scoring docids from all shard termlists
-		for(int32_t j = 0; j < m_numQueriedHosts; j++) {
+		for(int32_t j = 0; j < g_hostdb.getNumShards(); j++) {
 			// . skip exhausted lists
 			// . these both should be NULL if reply was skipped because
 			//   we did a gbdocid:| query
@@ -918,9 +952,9 @@ bool Msg3a::mergeLists() {
 
 	if(m_debug) {
 		// show how long it took
-		logf( LOG_DEBUG,"query: msg3a: [%" PTRFMT"] merged %" PRId32" docs from %" PRId32" shards in %" PRIu64" ms. ",
+		logf( LOG_DEBUG,"query: msg3a: [%" PTRFMT"] merged %" PRId32" docs from %d replies in %" PRIu64" ms. ",
 		      (PTRTYPE)this,
-		       m_numDocIds, (int32_t)m_numQueriedHosts,
+		       m_numDocIds, m_numReplies,
 		       gettimeofdayInMilliseconds() - m_startTime
 		      );
 		// show the final merged docids
@@ -948,6 +982,7 @@ bool Msg3a::mergeLists() {
 }
 
 void Msg3a::printTerms ( ) {
+	verify_signature();
 	// loop over all query terms
 	int32_t n = m_q->getNumTerms();
 	// do the loop

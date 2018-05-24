@@ -121,7 +121,7 @@ void QueryLanguage::processResponse(fxclient_request_ptr_t base_request, char *r
 			continue;
 		}
 
-		languages.emplace_back(language, static_cast<int>(strtod(pairs[1].c_str(), nullptr)));
+		languages.emplace_back(language, strtod(pairs[1].c_str(), nullptr));
 	}
 
 	// return default value if empty
