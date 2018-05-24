@@ -1178,8 +1178,9 @@ void Summary::maybeRemoveHtmlFormatting() {
 			i = p-m_summary;
 			if(i+4<m_summaryLen) {
 				if(memcmp(p,"<br>",4)==0) {
-					memmove(m_summary+i,m_summary+i+4,m_summaryLen-i-4);
-					m_summaryLen -= 4;
+					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
+					m_summaryLen -= 3;
+					m_summary[i] = ' ';
 				} else if(memcmp(p,"<b>",3)==0) {
 					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
 					m_summaryLen -= 3;
@@ -1187,8 +1188,9 @@ void Summary::maybeRemoveHtmlFormatting() {
 					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
 					m_summaryLen -= 3;
 				} else if(memcmp(p,"<p>",3)==0) {
-					memmove(m_summary+i,m_summary+i+3,m_summaryLen-i-3);
-					m_summaryLen -= 3;
+					memmove(m_summary+i,m_summary+i+2,m_summaryLen-i-2);
+					m_summaryLen -= 2;
+					m_summary[i] = ' ';
 				} else
 					i++;
 			} else

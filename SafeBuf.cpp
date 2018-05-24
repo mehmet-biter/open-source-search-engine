@@ -486,6 +486,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	if ( count == 0 ) return true;
 	
 	int32_t extra = (tlen - slen) * count;
+
 	// allocate new space
 	int32_t need = m_length + extra;
 	// make a new safebuf to copy into
@@ -493,9 +494,10 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	if ( ! bbb ) return false;
 	// do it
 	char *dst = bbb;
+	char *dend = bbb + need;
 	char *pend = m_buf + m_length;
 	// scan all
-	for ( char *p = m_buf ; p < pend ; p++ , dst++ ) {
+	for ( char *p = m_buf ; p < pend && dst < dend ; p++ , dst++ ) {
 		// assume not a match
 		*dst = *p;
 		// search
@@ -518,6 +520,10 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	bool status = safeMemcpy ( bbb , dst - bbb );
 	// clear what we had
 	mfree ( bbb , need , "saferplc");
+
+	if (!nullTerm()) {
+		pushChar('\0');
+	}
 	return status;
 }
 

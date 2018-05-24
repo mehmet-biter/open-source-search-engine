@@ -70,3 +70,11 @@ void BaseScoringParameters::traceToLog(const char *prefix) {
 		log(LOG_TRACE,"%s:  m_flagRankAdjustment[%d]=%d",prefix,i,m_flagRankAdjustment[i]);
 	}
 }
+
+
+bool BaseScoringParameters::allLanguageWeightsAreTheSame() const {
+	for(unsigned i=0; i<64; i++)
+		if(m_languageWeights[i]!=m_languageWeights[0])
+			return false;
+	return true;
+}
