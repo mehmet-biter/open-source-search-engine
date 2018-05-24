@@ -4016,7 +4016,7 @@ void Parms::init ( ) {
 		"set in the search controls and is usually something like "
 		"20.0. Which means that we multiply a result's score by 20 "
 		"if from the same language as the query or the language is "
-		"unknown.";
+		"unknown. Has no effect if any of the per-language weights have been specified.";
 	simple_m_set(SearchInput,m_sameLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_sameLangWeight);
 	m->m_cgi  = "langw";
@@ -4028,7 +4028,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Use this to override the default uknown language weight "
 		"for this collection. We multiply a result's score by this value "
 		"if the user requested a specific language, but the language of the "
-		"indexed page could not be determined.";
+		"indexed page could not be determined. Has no effect if any of the per-language weights have been specified.";
 	simple_m_set(SearchInput,m_unknownLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
 	m->m_cgi  = "ulangw";
@@ -4036,6 +4036,23 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	for(int i=0; i<MAX_LANGUAGES; i++) {
+		static char title[MAX_LANGUAGES][64];
+		sprintf(title[i],"Language weight for %s", getLanguageString(i));
+		static char cgi[MAX_LANGUAGES][64];
+		sprintf(cgi[i],"lw_%s", getLanguageAbbr(i));  //note: sendPageResults() relies on this
+		m->m_title = title[i];
+		m->m_desc  = "";
+		m->m_obj = OBJ_SI;
+		m->m_off = offsetof(SearchInput,m_baseScoringParameters.m_languageWeights) + sizeof(float)*i;
+		m->m_type = TYPE_FLOAT;
+		m->m_def   = "1.0";
+		m->m_cgi   = cgi[i];
+		m->m_flags = PF_API;
+		m->m_page  = PAGE_RESULTS;
+		m++;
+	}
+	
 	m->m_title = "site-rank multiplier";
 	m->m_desc  = "formula: score = (siterank*multiplier)+1";
 	simple_m_set(SearchInput,m_baseScoringParameters.m_siteRankMultiplier);

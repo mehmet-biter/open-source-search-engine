@@ -345,12 +345,28 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	                                                       tld_hint, strlen(tld_hint), true);
 
 
-	// Then try the external language detection server
-	if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
-		// blocked
-		return false;
+	//We can't use st->m_si.m_baseScoringParameters.allLanguageWeightsAreTheSame() because the cgi parameters have not set the members in SearchInput yet.
+	//So we have to check if any CGI parameter using the "lw_" prefix has been specified.
+	bool any_specific_language_weight_specified = false;
+	for(int32_t i = 0; i < hr->getNumFields(); i++) {
+		if(!hr->getValue(i))
+			continue;
+		const char *full_field_name = hr->getField(i);
+		if(strncmp(full_field_name,"lw_",3)==0) {
+			any_specific_language_weight_specified = true;
+			break;
+		}
+	}
+	
+	if(!any_specific_language_weight_specified) {
+		// Then try the external language detection server
+		if (g_queryLanguage.getLanguage(st, gotQueryLanguageWrapper, fx_qlang, fx_blang, fx_country, fx_fetld, query)) {
+			// blocked
+			return false;
+		}
 	} else
-		return gotQueryLanguage(st, {});
+		log(LOG_DEBUG,"Explicit language weight specified. Not contacting external language detection server");
+	return gotQueryLanguage(st, {});
 }
 
 static void gotQueryLanguageWrapper(void *state, const std::vector<std::pair<lang_t, double>> &language_weights) {

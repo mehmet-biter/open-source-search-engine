@@ -40,6 +40,7 @@ struct BaseScoringParameters {
 	BaseScoringParameters() { clear(); }
 	void clear();
 	void traceToLog(const char *prefix);
+	bool allLanguageWeightsAreTheSame() const;
 };
 
 #endif
