@@ -8,15 +8,13 @@
 
 class Url;
 
-bool setLinkSpam ( int32_t             ip                 ,
-                   const Url       *linker             ,
+bool setLinkSpam (const Url       *linker             ,
                    int32_t             siteNumInlinks     ,
 		   class Xml       *xml                ,
 		   class Links     *links              ,
 		   bool             isContentTruncated );
 
 bool isLinkSpam  ( const  Url       *linker         ,
-		   int32_t             ip             ,
 		   int32_t             siteNumInlinks ,
 		   class Xml       *xml            ,
 		   class Links     *links          ,

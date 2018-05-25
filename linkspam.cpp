@@ -366,8 +366,7 @@ static bool isWebstatisticsPage(const Xml *xml) {
 // . otherwise, each outlink in "links" is assigned a "note" to indicate if 
 //   the outlink is a spam link or not
 // . returns true on success, false on error
-bool setLinkSpam ( int32_t       ip                 ,
-		   const Url       *linker             ,
+bool setLinkSpam (const Url       *linker             ,
 		   int32_t       siteNumInlinks     ,
 		   Xml       *xml                ,
 		   Links     *links              ,
@@ -614,9 +613,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 
 bool isLinkSpam ( const Url *linker,
-		  int32_t ip ,
 		  int32_t siteNumInlinks ,
-		  //TitleRec *tr, 
 		  Xml *xml, 
 		  Links *links ,
 		  int32_t maxDocLen , 
@@ -631,11 +628,10 @@ bool isLinkSpam ( const Url *linker,
 		int32_t  h1len = linkee->getHostLen();
 		const char *h2    = linker->getHost();
 		int32_t h2len = linker->getHostLen();
-		//if ( tr ) h2    = tr->getUrl()->getHost();
-		//if ( tr ) h2len = tr->getUrl()->getHostLen();
 		if ( h1len == h2len && strncmp ( h1 , h2 , h1len ) == 0 ) 
 			return false;
 	}
+
 	// do not allow .info or .biz to vote ever for now
 	const char *tld    = linker->getTLD();
 	int32_t  tldLen = linker->getTLDLen();
@@ -671,9 +667,6 @@ bool isLinkSpam ( const Url *linker,
 	// do not allow any cgi url to vote
 	if ( linker->isCgi() ) { *note = "path is cgi"; return true; }
 
-	// if the page has just one rel=nofollow tag then we know they
-	// are not a guestbook
-	//if ( links->hasRelNoFollow() ) plen = 0;
 	if(isLinkfulPath(linker->getPath(),linker->getPathLen(),note))
 		return true;
 

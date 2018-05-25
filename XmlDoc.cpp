@@ -4268,8 +4268,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 
 	// . apply link spam settings
 	// . set the "spam bits" in the Links class
-	setLinkSpam ( *ip                ,
-		      u                  , // linker url
+	setLinkSpam (u                  , // linker url
 		      *sni               ,
 		      xml                ,
 		      &m_links           ,
@@ -15839,9 +15838,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		m_reply.size_rssItem = rssItemLen + 1;
 	}
 
-	if ( ! m_req->m_doLinkSpamCheck )
-		m_reply.m_isLinkSpam = 0;
-
 	if ( m_req->m_doLinkSpamCheck ) {
 		// reset to NULL to avoid strlen segfault
 		const char *note = NULL;
@@ -15853,7 +15849,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 
 		// get it. does not block.
 		m_reply.m_isLinkSpam = ::isLinkSpam ( linker ,
-						     m_ip ,
 						     m_siteNumInlinks,
 						     &m_xml,
 						     links,
@@ -15873,12 +15868,15 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 			m_reply.size_note = strlen(note)+1;
 		}
 		// log the reason why it is a log page
-		if ( m_reply.m_isLinkSpam )
-			log(LOG_DEBUG,"build: linker %s: %s.",
-			    linker->getUrl(),note);
-		// sanity
-		if ( m_reply.m_isLinkSpam && ! note )
-			log("linkspam: missing note for d=%" PRId64"!",m_docId);
+		if (m_reply.m_isLinkSpam) {
+			log(LOG_DEBUG, "build: linker %s: %s.", linker->getUrl(), note);
+
+			if (!note) {
+				log(LOG_WARN, "linkspam: missing note for d=%" PRId64"!", m_docId);
+			}
+		}
+	} else {
+		m_reply.m_isLinkSpam = 0;
 	}
 
 	// sanity check
@@ -16657,7 +16655,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	// . doc length over 100,000 bytes consider it link spam
 	m_isLinkSpamValid = true;
 	m_isLinkSpam = ::isLinkSpam ( getFirstUrl(), // linker
-				      *ip ,
 				      *sni ,
 				      xml,
 				      links,
