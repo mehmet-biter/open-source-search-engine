@@ -339,7 +339,10 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state, void (*callb
 
 	{
 		ScopedLock sl(m_mtxCounters);
+		if(m_requestsBeingSubmitted) gbshutdownLogicError();
 		m_requestsBeingSubmitted = true;
+		m_numRequests = 0;
+		m_numReplies = 0;
 	}
 
 	// now we run it over ALL hosts that are up!
