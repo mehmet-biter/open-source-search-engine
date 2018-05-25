@@ -105,6 +105,11 @@ class Conf {
 	unsigned m_maxOutstandingQueryLanguage;
 	unsigned m_queryLanguageTimeout;
 
+	char m_siteNumInlinksServerName[64];
+	int32_t m_siteNumInlinksServerPort;
+	unsigned m_maxOutstandingSiteNumInlinks;
+	unsigned m_siteNumInlinksTimeout;
+
 	char m_urlClassificationServerName[64];
 	int32_t m_urlClassificationServerPort;
 	unsigned m_maxOutstandingUrlClassifications;
@@ -416,6 +421,7 @@ class Conf {
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceRobotsCheckList;
+	bool m_logTraceSiteNumInlinks;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
 	bool m_logTraceReindex;

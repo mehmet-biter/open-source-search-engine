@@ -38,6 +38,7 @@
 #include "GbDns.h"
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "QueryLanguage.h"
+#include "SiteNumInlinks.h"
 #include <set>
 #include <fstream>
 
@@ -5468,7 +5469,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_queryLanguageServerName);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "localhost";
-	m->m_size  = sizeof(Conf::m_urlClassificationServerName);
+	m->m_size  = sizeof(Conf::m_queryLanguageServerName);
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
@@ -5511,6 +5512,57 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks server name";
+	m->m_desc  = "";
+	m->m_cgi   = "sitenum_inlinks_server_name";
+	m->m_off   = offsetof(Conf,m_siteNumInlinksServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_siteNumInlinksServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks server port";
+	m->m_desc  = "(0=disable; 8077=default server port)";
+	m->m_cgi   = "sitenum_inlinks_server_port";
+	simple_m_set(Conf,m_siteNumInlinksServerPort);
+	m->m_def   = "0";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "sitenum_inlinks_server_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingSiteNumInlinks);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "sitenum_inlinks_timeout";
+	simple_m_set(Conf,m_siteNumInlinksTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
 	m++;
 
 
@@ -9288,6 +9340,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for SiteNumInlinks";
+	m->m_cgi   = "ltrc_sni";
+	simple_m_set(Conf,m_logTraceSiteNumInlinks);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	simple_m_set(Conf,m_logTraceSpider);
@@ -10739,6 +10798,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildDnsSettings = false;
 	bool rebuildSpiderSettings = false;
 	bool rebuildQueryLanguageSettings = false;
+	bool rebuildSiteNumInlinksSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10839,6 +10899,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			if (parm->m_flags & PF_REBUILDQUERYLANGSETTINGS) {
 				rebuildQueryLanguageSettings = true;
 			}
+
+			if (parm->m_flags & PF_REBUILDSITENUMINLINKSSETTINGS) {
+				rebuildSiteNumInlinksSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10902,8 +10966,13 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	}
 
 	if (rebuildQueryLanguageSettings) {
-		log("parms: rebuild fxclient settings");
+		log("parms: rebuild querylanguage settings");
 		g_queryLanguage.reinitializeSettings();
+	}
+
+	if (rebuildSiteNumInlinksSettings) {
+		log("parms: rebuild sitenuminlinks settings");
+		g_siteNumInlinks.reinitializeSettings();
 	}
 
 	// note it

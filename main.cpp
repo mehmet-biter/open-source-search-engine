@@ -105,6 +105,7 @@
 #include "IpBlockList.h"
 #include "SpiderdbSqlite.h"
 #include "QueryLanguage.h"
+#include "SiteNumInlinks.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1455,6 +1456,7 @@ int main2 ( int argc , char *argv[] ) {
 	// initialize clients
 	g_urlRealtimeClassification.initialize();
 	g_queryLanguage.initialize();
+	g_siteNumInlinks.initialize();
 	
 	if(!WantedChecker::initialize())
 		return 0;

@@ -50,6 +50,7 @@
 #include "DocRebuild.h"
 #include "DocReindex.h"
 #include "QueryLanguage.h"
+#include "SiteNumInlinks.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -623,6 +624,7 @@ bool Process::shutdown2() {
 
 		g_urlRealtimeClassification.finalize();
 		g_queryLanguage.finalize();
+		g_siteNumInlinks.finalize();
 
 		WantedChecker::finalize();
 
