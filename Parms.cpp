@@ -3579,6 +3579,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "sto-based lemma word variations";
+	m->m_desc  = "";
+	simple_m_set(SearchInput,m_word_variations_config.m_lemmaWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_lemmaWordVariations);
+	m->m_cgi  = "sblwv";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "language-specific word variations";
 	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
 	simple_m_set(SearchInput,m_word_variations_config.m_languageSpecificWordVariations);
@@ -3871,6 +3880,15 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_explicitkeywords";
 	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
 	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "hashGroupWeightLemma";
+	m->m_desc  = "hashGroupWeightLemma";
+	m->m_cgi   = "hgw_lemma";
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightLemma);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightLemma);
 	m->m_def   = "16.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -4363,6 +4381,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_explicitkeywords";
 	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
 	m->m_def   = "16.000000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Hashgroup weight - lemma";
+	m->m_desc  = "";
+	m->m_cgi   = "hgw_lemma";
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightLemma);
+	m->m_def   = "0.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
@@ -7332,6 +7360,15 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	simple_m_set(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "sto-based lemma word variations";
+	m->m_desc  = "";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_lemmaWordVariations);
+	m->m_cgi  = "sblwv";
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m->m_flags = PF_API | PF_CLONE;
 	m++;

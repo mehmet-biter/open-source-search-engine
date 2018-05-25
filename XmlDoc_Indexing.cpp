@@ -14,6 +14,9 @@
 #include "UrlBlockCheck.h"
 #include "Domains.h"
 #include "FxExplicitKeywords.h"
+#include "Lemma.h"
+#include <unordered_set>
+#include <string>
 
 
 #ifdef _VALGRIND_
@@ -1748,6 +1751,8 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	const uint64_t *wids    = reinterpret_cast<const uint64_t*>(words->getWordIds());
 
 	HashTableX *dt = hi->m_tt;
+	std::unordered_set<std::string> candidate_lemma_words;
+	int32_t original_dist = m_dist;
 
 	// . sanity checks
 	// . posdb just uses the full keys with docid
@@ -2037,6 +2042,9 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 					      k))
 					return false;
 			}
+			
+			if(words->isAlpha(i))
+				candidate_lemma_words.emplace(wptrs[i],wlens[i]);
 		} //!skipword
 
 
@@ -2102,5 +2110,59 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// between calls? i.e. hashTitle() and hashBody()
 	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
 
+	if(m_langId==langDanish) {
+		//we only have a lexicon for Danish so far for this test
+		for(const auto &e : candidate_lemma_words) {
+			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
+			auto le = lemma_lexicon.lookup(e);
+			if(!le)
+				continue; //unknown word
+			auto wf = le->find_base_wordform();
+			if(!wf)
+				continue; //no base form
+			if(wf->written_form_length==e.size() && memcmp(wf->written_form,e.data(),e.size())==0)
+				continue; //already in base for
+			
+			key144_t k;
+			uint64_t h = hash64Lower_utf8(wf->written_form,wf->written_form_length);
+			Posdb::makeKey(&k,
+					h,
+					0LL,//docid
+					original_dist, // dist,
+					0,// densityRank , // 0-15
+					0, //diversityrank
+					0, //wordspamrank
+					0, // siterank
+					HASHGROUP_LEMMA,
+					m_langId, // we set to docLang final hash loop
+					0, // multiplier
+					false, // syn?
+					false, // delkey?
+					hi->m_shardByTermId);
+
+			// key should NEVER collide since we are always incrementing
+			// the distance cursor, m_dist
+			dt->addTerm144(&k);
+
+			// add to wts for PageParser.cpp display
+			if(wts) {
+				if(!storeTerm(wf->written_form,wf->written_form_length,
+					      h, hi,
+					      0, //word index. We could keep track of the first word that generated this base form. But we don't.
+					      m_dist, // wordPos
+					      0,// densityRank , // 0-15
+					      0, //diversityrank
+					      0, //wordspamrank
+					      HASHGROUP_LEMMA,
+					      wbuf,
+					      wts,
+					      SOURCE_NONE, // synsrc
+					      m_langId,
+					      k))
+					return false;
+			}
+		}
+	}
+	
 	return true;
 }

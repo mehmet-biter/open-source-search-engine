@@ -105,6 +105,7 @@
 #include "IpBlockList.h"
 #include "SpiderdbSqlite.h"
 #include "QueryLanguage.h"
+#include "Lemma.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1097,6 +1098,10 @@ int main2 ( int argc , char *argv[] ) {
 		countdomains( coll, numRecs, outpt );
 		g_log.m_disabled = true;
 		return 0;
+	}
+	
+	if(!load_lemma_lexicon()) {
+		return 1;
 	}
 
 	// file creation test, make sure we have dir control
