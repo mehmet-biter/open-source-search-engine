@@ -123,6 +123,7 @@ struct LexicalEntry {
 	}
 	std::vector<const WordForm *> query_all_explicit_word_forms() const;
 	const WordForm *find_first_wordform(const std::string &word) const;
+	const WordForm *find_base_wordform() const;
 };
 
 
