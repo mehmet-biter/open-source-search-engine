@@ -262,16 +262,20 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t primaryQueryLangua
 	log(LOG_INFO, "query: using primary query lang of %s", getLanguageAbbr(m_queryLangId));
 
 	if(!language_weights.empty()) {
+		//external language detection server had results
 		for(int i=0; i<64; i++)
 			m_baseScoringParameters.m_languageWeights[i] = 0.01; //server returns weights in the range [0..1]
 		for(const auto &e : language_weights)
 			m_baseScoringParameters.m_languageWeights[e.first] = e.second;
 	} else {
-		//query language server is unavailable.
-		for(int i=0; i<64; i++)
-			m_baseScoringParameters.m_languageWeights[i] = 1.0;
-		m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight; //backward compatible. questionable behaviour
-		m_baseScoringParameters.m_languageWeights[m_queryLangId] = m_sameLangWeight;
+		if(m_baseScoringParameters.allLanguageWeightsAreTheSame()) {
+			//query language server is unavailable.
+			for(int i=0; i<64; i++)
+				m_baseScoringParameters.m_languageWeights[i] = 1.0;
+			m_baseScoringParameters.m_languageWeights[langUnknown] = m_unknownLangWeight; //backward compatible. questionable behaviour
+			m_baseScoringParameters.m_languageWeights[m_queryLangId] = m_sameLangWeight;
+		}
+		//else: user specified language weights explicitly
 	}
 	
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
