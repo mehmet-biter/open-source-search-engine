@@ -5516,7 +5516,7 @@ void Parms::init ( ) {
 
 	m->m_title = "Site num inlinks server name";
 	m->m_desc  = "";
-	m->m_cgi   = "sitenum_inlinks_server_name";
+	m->m_cgi   = "sni_server_name";
 	m->m_off   = offsetof(Conf,m_siteNumInlinksServerName);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "localhost";
@@ -5529,7 +5529,7 @@ void Parms::init ( ) {
 
 	m->m_title = "Site num inlinks server port";
 	m->m_desc  = "(0=disable; 8077=default server port)";
-	m->m_cgi   = "sitenum_inlinks_server_port";
+	m->m_cgi   = "sni_server_port";
 	simple_m_set(Conf,m_siteNumInlinksServerPort);
 	m->m_def   = "0";
 	m->m_smin  = 0;
@@ -5542,7 +5542,7 @@ void Parms::init ( ) {
 
 	m->m_title = "Site num inlinks max outstanding requests";
 	m->m_desc  = "(0=disable)";
-	m->m_cgi   = "sitenum_inlinks_server_max_oustanding_requests";
+	m->m_cgi   = "sni_max_oustanding_requests";
 	simple_m_set(Conf,m_maxOutstandingSiteNumInlinks);
 	m->m_def   = "1000";
 	m->m_smin  = 0;
@@ -5554,7 +5554,7 @@ void Parms::init ( ) {
 
 	m->m_title = "Site num inlinks timeout";
 	m->m_desc  = "Per-request timeout.";
-	m->m_cgi   = "sitenum_inlinks_timeout";
+	m->m_cgi   = "sni_timeout";
 	simple_m_set(Conf,m_siteNumInlinksTimeout);
 	m->m_def   = "500";
 	m->m_units = "milliseconds";
