@@ -120,7 +120,7 @@ public:
 	int32_t getTLDLen() const { return m_tldLen; }
 
 	// w/o the tld
-	const char *getMidDomain() { return m_domain; }
+	const char *getMidDomain() const { return m_domain; }
 	int32_t getMidDomainLen() const { return m_mdlen; }
 
 	char       *getPath()       { return m_path; }
