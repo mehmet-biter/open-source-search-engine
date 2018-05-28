@@ -92,8 +92,11 @@ static inline bool is_alnum_utf8(const uint8_t *src) {
 
 bool is_alnum_utf8_string(const char *s, const char *send);
 bool is_upper_utf8_string(const char *s, const char *send); //string does not contain any lowercase letters
+bool is_wspace_utf8_string(const char *s, const char *send);
+bool has_wspace_utf8_string(const char *s, const char *send);
 
 bool is_alnum_api_utf8_string(const char *s, const char *send); //starts with letter or underscore, contains only ascii letters/digits and underscore
+bool is_ascii_digit_string(const char *s, const char *send); //consists of pure ascii digits 0-9
 
 
 static inline bool is_alpha_utf8(const char *src) {
@@ -123,6 +126,9 @@ static inline bool is_wspace_utf8(const uint8_t *src) {
 	return is_wspace_utf8((const char*)src);
 }
 
+static inline bool is_capitalized_utf8(const char *src) {//alpha and uppercase/titlecase
+	return is_alpha_utf8(src) && is_upper_utf8(src);
+}
 
 static inline bool ucIsWordChar_fast(UChar32 c) {
 	if (!(c & 0xffffff80))
@@ -130,5 +136,11 @@ static inline bool ucIsWordChar_fast(UChar32 c) {
 	return UnicodeMaps::is_wordchar(c);
 }
 
+static inline bool is_ignorable_fast(UChar32 c) {
+	if(c<0x034F) {
+		return c==0x00AD; //soft-hyphen is the only ignorable codepoint in the low range
+	} else
+		return UnicodeMaps::is_ignorable(c);
+}
 
 #endif //UTF8_FAST_H_

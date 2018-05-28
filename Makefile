@@ -55,7 +55,6 @@ OBJS_O2 = \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
 	UCPropTable.o UdpServer.o \
-	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
 
@@ -92,6 +91,7 @@ OBJS_O3 = \
 	InstanceInfoExchange.o \
 	ByteOrderMark.o \
 	utf8.o utf8_fast.o utf8_convert.o \
+	EGStack.o \
 	QueryLanguage.o \
 	FxClient.o \
 	SiteNumInlinks.o \
@@ -105,7 +105,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp -Iword_variations
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp -Iword_variations -Itokenizer
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -300,8 +300,9 @@ all: gb
 
 # third party libraries
 DIST_LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so libcares.so.2 slacktee.sh
-LIBFILES = $(DIST_LIBFILES) libword_variations.a libsto.a libunicode.a
+LIBFILES = $(DIST_LIBFILES) libword_variations.a libsto.a libtokenizer.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
+LIBS += -ltokenizer
 LIBS += -lword_variations -lsto -lunicode
 
 CLD2_SRC_DIR=third-party/cld2/internal
@@ -349,6 +350,11 @@ libsto.a:
 libunicode.a:
 	$(MAKE) -C unicode/
 	ln -sf unicode/libunicode.a libunicode.a
+
+.PHONY: libtokenizer.a
+libtokenizer.a:
+	$(MAKE) -C tokenizer libtokenizer.a
+	ln -sf tokenizer/libtokenizer.a libtokenizer.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
 	$(CXX) WantedCheckExampleLib.o -shared -o $@
@@ -461,6 +467,7 @@ clean:
 	$(MAKE) -C word_variations/ $@
 	$(MAKE) -C sto/ $@
 	$(MAKE) -C unicode/ $@
+	$(MAKE) -C tokenizer $@
 
 
 .PHONY: cleandb

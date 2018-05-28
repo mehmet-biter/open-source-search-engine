@@ -61,3 +61,39 @@ const int bytes_in_utf8_code[] = {
 	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
 	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,1,1,1,1,1,1,1,1
 };
+
+
+int decode_utf8_string(const char *utf8, size_t utf8len, UChar32 uc[]) {
+	const char *p = utf8;
+	const char *end = utf8+utf8len;
+	int codepoints = 0;
+	while(p<end) {
+		int cs = getUtf8CharSize(p);
+		if(p+cs>end)
+			return -1; //decode error
+		uc[codepoints++] = utf8Decode(p);
+		p += cs;
+	}
+	return codepoints;
+}
+
+size_t encode_utf8_string(UChar32 uc[], unsigned codepoints, char *utf8) {
+	size_t utf8len = 0;
+	for(unsigned i=0; i<codepoints; i++)
+		utf8len += utf8Encode(uc[i], utf8+utf8len);
+	return utf8len;
+}
+
+
+size_t strnlen_utf8(const char *p, size_t maxlen) {
+	const char *pend = p+maxlen;
+	size_t count = 0;
+	while(p<pend) {
+		char cs = getUtf8CharSize(p);
+		if(p+cs>pend)
+			break;
+		count++;
+		p += cs;
+	}
+	return count;
+}

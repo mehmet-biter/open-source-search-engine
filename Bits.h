@@ -91,7 +91,7 @@ typedef uint32_t wbit_t;
 // summary bits used for doing summaries at query time
 typedef uint16_t swbit_t;
 
-class Words;
+class TokenizerResult;
 
 class Bits {
 public:
@@ -99,8 +99,8 @@ public:
 	~Bits();
 
 	// . returns false and sets errno on error
-	bool set( const Words *words);
-	bool setForSummary( const Words *words );
+	bool set(const TokenizerResult *tr);
+	bool setForSummary(const TokenizerResult *tr);
 
 	void reset();
 
@@ -130,7 +130,7 @@ public:
 	int32_t m_swbitsSize;
 
  private:
-	const Words *m_words;
+	const TokenizerResult *m_tr;
 
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;

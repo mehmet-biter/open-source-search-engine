@@ -16,7 +16,6 @@ OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	RdbBaseTest.o RdbBucketsTest.o RdbIndexTest.o RdbListTest.o RdbTreeTest.o ResultOverrideTest.o RobotRuleTest.o RobotsCheckListTest.o RobotsTest.o \
 	SafeBufTest.o ScalingFunctionsTest.o SiteGetterTest.o SummaryTest.o \
 	UnicodeTest.o UrlBlockCheckTest.o UrlComponentTest.o UrlMatchListTest.o UrlParserTest.o UrlTest.o \
-	WordsTest.o \
 	XmlDocTest.o XmlTest.o \
 	DomainsTest.o \
 
@@ -57,7 +56,7 @@ libgtest.so:
 CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/word_variations  -I$(BASE_DIR)/unicode -isystem $(GTEST_DIR)/include
+CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/word_variations  -I$(BASE_DIR)/tokenizer -I$(BASE_DIR)/unicode -isystem $(GTEST_DIR)/include
 CPPFLAGS += -std=c++11
 
 # exported in parent make
@@ -65,7 +64,7 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre -lsqlite3 -ldl
-LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares -lword_variations -lsto -lunicode
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares -lword_variations -lsto -ltokenizer -lunicode
 
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@

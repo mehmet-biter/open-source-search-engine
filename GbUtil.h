@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
+#include <string.h>
 #include <vector>
 #include <string>
 
@@ -34,5 +35,12 @@ uint64_t getCurrentTimeNanoseconds();
 
 const char *formatTime(time_t when, char buf[32]);
 const char *formatTimeMs(int64_t when, char buf[32]);
+
+bool has_space(const char *start, const char *end); //space, tab, cr, nl
+
+static inline bool has_char(const char *start, const char *end, char c) {
+	return memchr(start,c,end-start)!=0;
+}
+
 
 #endif

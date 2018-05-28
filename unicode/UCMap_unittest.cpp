@@ -98,6 +98,19 @@ int main() {
 	}
 	
 	{
+		UnicodeMaps::FullMap<bool> m;
+		assert(m.load("unicode_is_ignorable.dat"));
+		assert(!m.lookup2('A'));
+		assert(!m.lookup2(' '));
+		assert(!m.lookup2('9'));
+		assert(!m.lookup2(0x00E6)); //æ
+		assert(m.lookup2(0x00AD)); //soft hyphen
+		assert(m.lookup2(0x034F)); //combining grapheme joiner
+		assert(m.lookup2(0x2064)); //invisible plus
+		assert(!m.lookup2(0x0306)); //combining breve
+	}
+	
+	{
 		UnicodeMaps::SparseMap<UChar32> m;
 		assert(m.load("unicode_to_lowercase.dat"));
 		{
@@ -183,5 +196,111 @@ int main() {
 		assert(e0->values[1]==0x0300);
 		
 		//hmm. we should probably also be able to decompose ligatures, eg U0133 ĳ
+	}
+	
+	{
+		UnicodeMaps::SparseBiMap<UChar32> m;
+		assert(m.load("unicode_combining_mark_decomposition.dat"));
+		assert(!m.lookup('A'));
+		assert(!m.lookup('Z'));
+		assert(!m.lookup('a'));
+		assert(!m.lookup('z'));
+		assert(!m.lookup('0'));
+		assert(!m.lookup('9'));
+		assert(!m.lookup(' '));
+		
+		assert(!m.lookup(0x00C6)); //cannot be decomposed: 00C6;LATIN CAPITAL LETTER AE
+		assert(!m.lookup(0x00E6)); //cannot be decomposed: 00E6;LATIN SMALL LETTER AE
+		
+		assert(m.reverse_lookup('A','A')==0);
+		
+		{
+			//00C0;LATIN CAPITAL LETTER A WITH GRAVE
+			auto e = m.lookup(0x00C0);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'A');
+			assert(e->values[1] == 0x0300);
+			
+			assert(m.reverse_lookup('A', 0x0300) == 0x00C0);
+		}
+		
+		{
+			//00C7;LATIN CAPITAL LETTER C WITH CEDILLA
+			auto e = m.lookup(0x00C7);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'C');
+			assert(e->values[1] == 0x0327);
+			
+			assert(m.reverse_lookup('C', 0x0327) == 0x00C7);
+		}
+		
+		{
+			//00DD;LATIN CAPITAL LETTER Y WITH ACUTE
+			auto e = m.lookup(0x00DD);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'Y');
+			assert(e->values[1] == 0x0301);
+			
+			assert(m.reverse_lookup('Y', 0x0301) == 0x00DD);
+		}
+		
+		{
+			//00E0;LATIN SMALL LETTER A WITH GRAVE
+			auto e = m.lookup(0x00E0);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'a');
+			assert(e->values[1] == 0x0300);
+			
+			assert(m.reverse_lookup('a', 0x0300) == 0x00E0);
+		}
+		
+		{
+			//00EB;LATIN SMALL LETTER E WITH DIAERESIS
+			auto e = m.lookup(0x00EB);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'e');
+			assert(e->values[1] == 0x0308);
+			
+			assert(m.reverse_lookup('e', 0x0308) == 0x00EB);
+		}
+		
+		{
+			//00FF;LATIN SMALL LETTER Y WITH DIAERESIS
+			auto e = m.lookup(0x00FF);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'y');
+			assert(e->values[1] == 0x0308);
+			
+			assert(m.reverse_lookup('y', 0x0308) == 0x00FF);
+		}
+		
+		{
+			//01AF;LATIN CAPITAL LETTER U WITH HORN
+			auto e = m.lookup(0x01AF);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 'U');
+			assert(e->values[1] == 0x031B);
+			
+			assert(m.reverse_lookup('U', 0x031B) == 0x01AF);
+		}
+		
+		{
+			//01D6;LATIN SMALL LETTER U WITH DIAERESIS AND MACRON
+			auto e = m.lookup(0x01D6);
+			assert(e);
+			assert(e->count==2);
+			assert(e->values[0] == 0x00FC || e->values[0]==0x016B);
+			assert(e->values[1] == 0x0304 || e->values[1]==0x0308);
+			
+			assert(m.reverse_lookup(e->values[0], e->values[1]) == 0x01D6);
+		}
+		
 	}
 }

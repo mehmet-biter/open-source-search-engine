@@ -8,7 +8,7 @@
 // the max popularity score a word can have
 #define MAX_POP 0x7fff
 
-class Words;
+class TokenizerResult;
 
 // the popularity vector for the Words class, 1-1 with those words
 class Pops {
@@ -20,7 +20,7 @@ public:
 	// . set m_pops to the popularity of each word in "words"
 	// . m_pops[] is 1-1 with the words in "words"
 	// . must have computed the word ids (words->m_wordIds must be valid)
-	bool set ( const Words *words, int32_t a, int32_t b );
+	bool set ( const TokenizerResult *tr, int32_t a, int32_t b );
 
 	// from 0.0 to 1.0
 	float getNormalizedPop( int32_t i ) const {

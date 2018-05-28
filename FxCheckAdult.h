@@ -19,10 +19,12 @@
 #ifndef FXCHECKADULT_H_
 #define FXCHECKADULT_H_
 
+#include "FxTermCheckList.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <string>
-#include "FxTermCheckList.h"
+
+class TokenizerResult;
 
 class CheckAdult {
 public:
@@ -45,7 +47,7 @@ private:
 
 	Url *m_url;
 	Xml *m_xml;
-	Words *m_words;
+	const TokenizerResult *m_tokenizerResult;
 	Phrases *m_phrases;
 
 	char *m_debbuf;

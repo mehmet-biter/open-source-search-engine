@@ -4,7 +4,7 @@
 #include "SafeBuf.h"
 #include "nodeid_t.h"
 
-class Words;
+class TokenizerResult;
 class Bits;
 class Url;
 
@@ -179,7 +179,7 @@ public:
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(const Words *w, Bits *bits, const Url *url, uint8_t contentType);
+	bool set(const TokenizerResult *tr, Bits *bits, const Url *url, uint8_t contentType);
 
 private:
 	bool verifySections ( ) ;
@@ -216,7 +216,7 @@ private:
 	void setTagHashes ( ) ;
 
 	// save it
-	const Words    *m_words;
+	const TokenizerResult *m_tr;
 	int32_t         m_nw;       //from m_word->getNumWords()
 	Bits           *m_bits;
 	uint8_t         m_contentType;
@@ -225,7 +225,7 @@ private:
 	bool  m_isRSSExt;
 
 public:
-	// these are 1-1 with the Words::m_words[] array
+	// these are 1-1 with the TokenizerResult::tokens[] array
 	Section **m_sectionPtrs;
 
 	// allocate m_sections[] buffer
@@ -240,11 +240,6 @@ private:
 	// this holds ptrs to sections 1-1 with words array, so we can
 	// see what section a word is in.
 	SafeBuf m_sectionPtrBuf;
-
-	const int64_t  *m_wids;
-	const int32_t      *m_wlens;
-	const char * const *m_wptrs;
-	const nodeid_t   *m_tids;
 
 	bool addSentenceSections ( ) ;
 

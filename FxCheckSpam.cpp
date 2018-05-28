@@ -21,7 +21,6 @@
 #include "Mem.h"
 #include "termid_mask.h"
 #include "Phrases.h"
-#include "Words.h"
 #include "XmlDoc.h"
 
 TermCheckList g_checkSpamList;
@@ -47,9 +46,9 @@ CheckSpam::CheckSpam(XmlDoc *xd, bool debug) :
 		m_xml = NULL;
 	}
 
-	m_words = xd->getWords();
-	if( m_words == (Words *)-1 ) {
-		m_words = NULL;
+	m_tokenizerResult = xd->getTokenizerResult();
+	if( m_tokenizerResult == (TokenizerResult*)-1 ) {
+		m_tokenizerResult = NULL;
 	}
 
 	m_phrases = xd->getPhrases();
@@ -130,21 +129,21 @@ bool CheckSpam::isDocSpam() {
 		// Score words and phrases from the document body text
 		//
 
-		if( m_words ) {
-			if (!uniqueTermIds.set(sizeof(int64_t), 0, m_words->getNumWords()+5000, NULL, 0, false, "uniquetermids", false, 0)) {
+		if( m_tokenizerResult ) {
+			if (!uniqueTermIds.set(sizeof(int64_t), 0, m_tokenizerResult->size()+5000, NULL, 0, false, "uniquetermids", false, 0)) {
 				log(LOG_ERROR,"isDocSpam: Could not initialize uniqueTermIds hash table");
 			}
 
-			if( !m_words->getNumWords() ) {
+			if( m_tokenizerResult->empty() ) {
 				// No words in document body
 				m_emptyDocumentBody = true;
 			}
 			else {
-				g_checkSpamList.getScore(m_words, m_phrases, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
-				m_numWordsChecked += m_words->getNumWords();
+				g_checkSpamList.getScore(*m_tokenizerResult, m_phrases, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+				m_numWordsChecked += m_tokenizerResult->size();
 			}
-			logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in body: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
-				m_words->getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
+			logTrace(g_conf.m_logTraceTermCheckList, "%zu words checked (%" PRId32 " unique) in body: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
+				m_tokenizerResult->size(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 		}
 		else {
 			// No words in document body
@@ -156,31 +155,32 @@ bool CheckSpam::isDocSpam() {
 		// Score words and phrases from the document meta tags
 		//
 		if( m_xml ) {
-			Words metaw;
+			TokenizerResult metatr;
 			Bits metab;
 			Phrases metap;
 			int32_t mtlen;
 
-			char *mtag = m_xml->getMetaContentPointer( "keywords", 8, "name", &mtlen );
+			const char *mtag = m_xml->getMetaContentPointer( "keywords", 8, "name", &mtlen );
 			if( mtlen > 0 ) {
-				metaw.set(mtag, mtlen);
+				plain_tokenizer_phase_1(mtag,mtlen, &metatr);
 			}
 			mtag = m_xml->getMetaContentPointer( "description", 11, "name", &mtlen );
 			if( mtlen > 0 ) {
-				metaw.addWords(mtag, mtlen);
+				plain_tokenizer_phase_1(mtag,mtlen, &metatr);
 			}
-			if( metaw.getNumWords() ) {
-				if( !metab.set(&metaw) ) {
+			if( !metatr.empty() ) {
+				plain_tokenizer_phase_2(langUnknown, nullptr, &metatr);
+				if( !metab.set(&metatr) ) {
 					log(LOG_ERROR,"isDocSpam: Could not set bits for meta words");
 				}
-				if( !metap.set(&metaw, &metab) ) {
+				if( !metap.set(metatr, metab) ) {
 					log(LOG_ERROR,"isDocSpam: Could not set phrases for meta words");
 				}
-				g_checkSpamList.getScore(&metaw, &metap, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
-				m_numWordsChecked += metaw.getNumWords();
+				g_checkSpamList.getScore(metatr, &metap, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+				m_numWordsChecked += metatr.size();
 
-				logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in meta tags: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
-					metaw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
+				logTrace(g_conf.m_logTraceTermCheckList, "%zu words checked (%" PRId32 " unique) in meta tags: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
+					metatr.size(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 			}
 		}
 
@@ -188,22 +188,22 @@ bool CheckSpam::isDocSpam() {
 		// Score words and phrases from URL
 		//
 		if( m_url ) {
-			Words urlw;
+			TokenizerResult urltr;
 			Bits urlb;
 			Phrases urlp;
 
-			urlw.set(m_url->getUrl(), m_url->getUrlLen());
-			if( !urlb.set(&urlw) ) {
+			plain_tokenizer_phase_1(m_url->getUrl(), m_url->getUrlLen(), &urltr);
+			if( !urlb.set(&urltr) ) {
 				log(LOG_ERROR,"isDocSpam: Could not set bits for URL words");
 			}
-			if( !urlp.set(&urlw, &urlb) ) {
+			if( !urlp.set(urltr, urlb) ) {
 				log(LOG_ERROR,"isDocSpam: Could not set phrases for URL words");
 			}
-			g_checkSpamList.getScore(&urlw, &urlp, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
-			m_numWordsChecked += urlw.getNumWords();
+			g_checkSpamList.getScore(urltr, &urlp, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+			m_numWordsChecked += urltr.size();
 
-			logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in URL: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "", 
-				urlw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
+			logTrace(g_conf.m_logTraceTermCheckList, "%zu words checked (%" PRId32 " unique) in URL: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "", 
+				urltr.size(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 		}
 
 

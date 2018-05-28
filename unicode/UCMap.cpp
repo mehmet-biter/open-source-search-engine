@@ -105,9 +105,69 @@ bool UnicodeMaps::SparseMap<V>::load(const char *filename) {
 }
 
 
+
+template<class V>
+void UnicodeMaps::SparseBiMap<V>::clear() {
+	if(mmap_ptr) {
+		m.clear();
+		m2.clear();
+		munmap(mmap_ptr,bytes);
+		mmap_ptr = nullptr;
+		bytes = 0;
+	}
+}
+
+
+template<class V>
+bool UnicodeMaps::SparseBiMap<V>::load(const char *filename) {
+	int fd = open(filename,O_RDONLY);
+	if(fd<0)
+		return false;
+	
+	struct stat st;
+	if(fstat(fd,&st)!=0) {
+		close(fd);
+		return false;
+	}
+	
+	bytes = (size_t)(st.st_size);
+	void *ptr = mmap(NULL, bytes, PROT_READ, MAP_SHARED, fd, 0);
+	if(ptr==MAP_FAILED) {
+		close(fd);
+		return false;
+	}
+	
+	close(fd);
+	
+	char *p = (char*)ptr;
+	char *end = p + bytes;
+	while(p+4+4<=end) {
+		UChar32 codepoint = *(UChar32*)p;
+		p += 4;
+		Entry *e = (Entry*)p;
+		if(e->count==0) return false;
+		if(e->count>2) return false;
+		
+		p+= sizeof(e->count) + sizeof(e->values[0])*e->count;
+		
+		m[codepoint] = e;
+		uint64_t x;
+		x = ((uint64_t)e->values[0]) << 32;
+		if(e->count==2)
+			x |= e->values[1];
+		m2[x] = codepoint;
+		if(p>end)
+			return false;
+	}
+	
+	return true;
+}
+
+
 //explicit template instantiations
 template class UnicodeMaps::FullMap<bool>;
 template class UnicodeMaps::FullMap<Unicode::script_t>;
 template class UnicodeMaps::FullMap<Unicode::general_category_t>;
 template class UnicodeMaps::FullMap<uint32_t>;
 template class UnicodeMaps::SparseMap<UChar32>;
+template class UnicodeMaps::SparseBiMap<UChar32>;

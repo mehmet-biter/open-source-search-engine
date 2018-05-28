@@ -11,6 +11,8 @@
 
 #define MAX_IMAGES 500
 
+class TokenizerResult;
+
 // a single serialized thumbnail:
 class ThumbnailInfo {
  public:
@@ -79,7 +81,7 @@ class Images {
 
 	// set the m_imageNodes[] array to the potential thumbnails
 	void setCandidates ( class Url      *pageUrl , 
-			     class Words    *words , 
+			     const TokenizerResult *tr,
 			     class Xml      *xml ,
 			     class Sections *sections );
 	

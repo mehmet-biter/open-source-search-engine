@@ -1332,13 +1332,12 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// this has been called, note it
 	m_hashedTitle = true;
 
-	const nodeid_t *tids = m_words.getTagIds();
-	int32_t      nw   = m_words.getNumWords();
+	int32_t      nw   = m_tokenizerResult.size();
 
 	// find the first <title> tag in the doc
 	int32_t i ;
 	for ( i = 0 ; i < nw ; i++ )
-		if ( tids[i] == TAG_TITLE ) break;
+		if ( m_tokenizerResult[i].nodeid == TAG_TITLE ) break;
 
 	// return true if no title
 	if ( i >= nw ) return true;
@@ -1354,7 +1353,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 
 	// find end of title, either another <title> or a <title> tag
 	for ( ; i < max ; i++ )
-		if ( (tids[i] & BACKBITCOMP) == TAG_TITLE ) break;
+		if ( (m_tokenizerResult[i].nodeid & BACKBITCOMP) == TAG_TITLE ) break;
 
 	// ends on a <title> tag?
 	if ( i == a ) return true;
@@ -1371,20 +1370,24 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	const char * const *wptrs = m_words.getWordPtrs();
-	const int32_t  *wlens = m_words.getWordLens();
-	const char  *title    = wptrs[a];
-	const char  *titleEnd = wptrs[i-1] + wlens[i-1];
-	int32_t   titleLen = titleEnd - title;
+	//FIXME: assumption: title tokens are the phase-1 tokens and the tokens are in contiguous memory
+	//FIXME: also grab the alternative tokens from phase 2 in the title part
+
+	//clean indexing:
+	//  if ( ! hashString(a, i, &hi) ) return false;
+	//but due to bad webmasters:
 	
+	const char  *title    = m_tokenizerResult[a].token_start;
+	const char  *titleEnd = m_tokenizerResult[i].token_end();
+	int32_t   titleLen = titleEnd - title;
 	StackBuf<1024> doubleDecodedContent;
 	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
 	
-	if ( ! hashString ( title, titleLen, &hi) ) return false;
+	if ( ! hashString(title, titleLen, &hi)) return false;
 
 	// now hash as without title: prefix
 	hi.m_prefix = NULL;
-	if ( ! hashString ( title, titleLen, &hi) ) return false;
+	if ( ! hashString(title, titleLen, &hi)) return false;
 
 	return true;
 }
@@ -1686,40 +1689,55 @@ bool XmlDoc::hashString( const char *s, int32_t slen, HashInfo *hi ) {
 	return   hashString3( s                ,
 			      slen             ,
 			      hi               ,
-			      &m_countTable    ,
 			      m_wts            ,
 			      &m_wbuf          );
+}
+
+bool XmlDoc::hashString(size_t begin_token, size_t end_token, HashInfo *hi) {
+	if(!m_versionValid)
+		gbshutdownLogicError();
+	return hashString3(begin_token, end_token, hi,
+			   m_wts,
+			   &m_wbuf);
 }
 
 
 bool XmlDoc::hashString3( const char       *s              ,
 		  int32_t        slen           ,
 		  HashInfo   *hi             ,
-		  HashTableX *countTable     ,
 		  HashTableX *wts            ,
 		  SafeBuf    *wbuf) {
-	Words   words;
+	TokenizerResult tr;
 	Bits    bits;
-	Phrases phrases;
 
-	if ( ! words.set(s, slen) )
-		return false;
-	if ( !bits.set(&words))
-		return false;
-	if ( !phrases.set( &words, &bits ) )
+	plain_tokenizer_phase_1(s,slen,&tr);
+	calculate_tokens_hashes(&tr);
+	if ( !bits.set(&tr))
 		return false;
 
 	// use primary langid of doc
 	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
-	return hashWords3( hi, &words, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
+	return hashWords3( hi, &tr, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
 }
+
+bool XmlDoc::hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
+			 HashTableX *wts, SafeBuf *wbuf)
+{
+	Bits    bits;
+
+	if ( !bits.set(&m_tokenizerResult))
+		return false;
+
+	return hashWords3( hi, &m_tokenizerResult, begin_token, end_token, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
+}
+
 
 bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	// sanity checks
-	if ( ! m_wordsValid   ) { g_process.shutdownAbort(true); }
-	if ( ! m_phrasesValid ) { g_process.shutdownAbort(true); }
-	if ( hi->m_useCountTable &&!m_countTableValid){g_process.shutdownAbort(true); }
+	if ( ! m_tokenizerResultValid   ) { g_process.shutdownAbort(true); }
+	if ( ! m_tokenizerResultValid2  ) { g_process.shutdownAbort(true); }
+	//if ( hi->m_useCountTable &&!m_countTableValid){g_process.shutdownAbort(true); }
 	if ( ! m_bitsValid ) { g_process.shutdownAbort(true); }
 	if ( ! m_sectionsValid) { g_process.shutdownAbort(true); }
 	//if ( ! m_synonymsValid) { g_process.shutdownAbort(true); }
@@ -1734,18 +1752,25 @@ bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	char *fragVec = m_fragBuf.getBufStart();
 	char *langVec = m_langVec.getBufStart();
 
-	return hashWords3(hi, &m_words, &m_phrases, &m_sections, &m_countTable, fragVec, wordSpamVec, langVec, m_wts, &m_wbuf);
+	return hashWords3(hi, &m_tokenizerResult, &m_sections, &m_bits, fragVec, wordSpamVec, langVec, m_wts, &m_wbuf);
 }
 
 // . this now uses posdb exclusively
-bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
-                         char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf) {
-	Sections *sections = sectionsArg;
+bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf)
+{
+	return hashWords3(hi,tr, 0,tr->size(), sections, bits, fragVec, wordSpamVec, langVec, wts, wbuf);
+}
+
+bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_token, size_t end_token,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf)
+{
 	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
-
-	// shortcuts
-	const uint64_t *wids    = reinterpret_cast<const uint64_t*>(words->getWordIds());
 
 	HashTableX *dt = hi->m_tt;
 
@@ -1763,10 +1788,6 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 	// ensure caller set the hashGroup
 	if ( hi->m_hashGroup < 0 ) { g_process.shutdownAbort(true); }
-
-	// handy
-	const char *const*wptrs = words->getWordPtrs();
-	const int32_t  *wlens = words->getWordLens();
 
 	// hash in the prefix
 	uint64_t prefixHash = 0LL;
@@ -1787,6 +1808,15 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	if ( hi->m_hashGroup == HASHGROUP_INTAG      ) hashIffUnique = true;
 	HashTableX ut; ut.set ( 8,0,0,NULL,0,false,"uqtbl");
 
+	//The diversity rank was effectively disabled (minweight=maxweigt) and the algortihm was either suspect or severely limited by phrases being only 2 words (bigrams).
+	//Currently disabled until we can investigate if it is worth fixing, worth implementing in another way, or simply dropped completely.
+	//
+	//Diversityrank is currently hardcoded to be 10 for individual words, and maxdiversityrank for bigrams
+	SafeBuf dwbuf;
+	if(!dwbuf.reserve(tr->size()*sizeof(char)))
+		return false;
+	memset(dwbuf.getBufStart(), MAXDIVERSITYRANK, tr->size());
+#if 0
 	///////
 	//
 	// diversity rank vector.
@@ -1798,12 +1828,13 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// phrase score. thus, a search for 'mexico' should not bring up
 	// the page for university of new mexico!
 	SafeBuf dwbuf;
-	if ( !getDiversityVec( words, phrases, countTable, &dwbuf ) ) {
+	if ( !getDiversityVec( tr, phrases, countTable, &dwbuf ) ) {
 		return false;
 	}
+#endif
 	char *wdv = dwbuf.getBufStart();
 
-	int32_t nw = words->getNumWords();
+	size_t nw = tr->size();
 
 	/////
 	//
@@ -1816,8 +1847,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// use a safebuf.
 	SafeBuf densBuf;
 	// returns false and sets g_errno on error
-	if ( ! getDensityRanks((int64_t *)wids,
-			       nw,
+	if ( ! getDensityRanks(tr,
 			       hi->m_hashGroup,
 			       &densBuf,
 			       sections))
@@ -1834,19 +1864,20 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	if ( sections ) sp = sections->m_sectionPtrs;
 
 	SafeBuf wpos;
-	if ( ! getWordPosVec ( words , sections, m_dist, fragVec, &wpos) )
+	if ( ! getWordPosVec ( tr, sections, m_dist, fragVec, &wpos) )
 		return false;
 
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
 
 	bool seen_slash = false;
-	int32_t i;
-	for ( i = 0 ; i < nw ; i++ ) {
-		if(wlens[i]==1 && wptrs[i][0]=='/')
+	for(unsigned i = begin_token; i < end_token; i++) {
+		const auto &token = (*tr)[i];
+		logTrace(g_conf.m_logTraceTokenIndexing,"Looking at token #%u: '%.*s', hash=%ld, nodeid=%u", i, (int)token.token_len, token.token_start, token.token_hash, token.nodeid);
+		if(token.token_len==1 && token.token_start[0]=='/')
 			seen_slash = true;
 		
-		if ( ! wids[i] ) continue;
+		if ( ! token.is_alfanum ) continue;
 		// ignore if in repeated fragment
 		if ( fragVec && i<MAXFRAGWORDS && fragVec[i] == 0 ) continue;
 		// ignore if in style section
@@ -1856,7 +1887,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		if ( wposvec[i] > MAXWORDPOS ) break;
 
 		// BR: 20160114 if digit, do not hash it if disabled
-		if( is_digit( wptrs[i][0] ) && !hi->m_hashNumbers ) {
+		if( is_digit( token.token_start[0] ) && !hi->m_hashNumbers ) {
 			continue;
 		}
 
@@ -1867,8 +1898,8 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		//   those IndexLists are hashed they used masked termIds.
 		//   So we should too...
 		uint64_t h ;
-		if ( plen > 0 ) h = hash64 ( wids[i] , prefixHash );
-		else            h = wids[i];
+		if ( plen > 0 ) h = hash64 ( token.token_hash, prefixHash );
+		else            h = token.token_hash;
 
 		int32_t hashGroup = hi->m_hashGroup;
 
@@ -1929,14 +1960,14 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 			if(!seen_slash) {
 				//Scheme/host/domain part of URL
 				//the http/https prefix is not indexed at all
-				if((wlens[i]==4 && memcmp(wptrs[i],"http",4)==0) ||
-				   (wlens[i]==5 && memcmp(wptrs[i],"https",5)==0))
+				if((token.token_len==4 && memcmp(token.token_start,"http",4)==0) ||
+				   (token.token_len==5 && memcmp(token.token_start,"https",5)==0))
 				{
 					// Never include as single word or in bigrams
 					continue; //skip to next word
 				}
 				//the terms .com .co .dk etc have lots of hits and give very little value for indexing. We only index the bigrams.
-				if(isTLD(wptrs[i], wlens[i])) {
+				if(isTLD(token.token_start, token.token_len)) {
 					skipword = true; //skip word by index bigram
 				}
 			} else {
@@ -1946,6 +1977,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		}
 
 		if(!skipword) {
+			logTrace(g_conf.m_logTraceTokenIndexing,"Indexing '%.*s', h=%ld, termid=%lld", (int)token.token_len, token.token_start, h, h&TERMID_MASK);
 			key144_t k;
 
 			Posdb::makeKey(&k,
@@ -1970,7 +2002,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 			// add to wts for PageParser.cpp display
 			if(wts) {
-				if(!storeTerm(wptrs[i],wlens[i],h,hi,i,
+				if(!storeTerm(token.token_start,token.token_len,h,hi,i,
 					      wposvec[i], // wordPos
 					      densvec[i],// densityRank , // 0-15
 					      wd,//v[i],
@@ -1983,61 +2015,9 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 					      k))
 					return false;
 			}
-
-			//
-			// STRIP POSSESSIVE WORDS for indexing
-			//
-			// . for now do simple stripping here
-			// . if word is "bob's" hash "bob"
-			//
-
-			//@todo BR 20160107: Is this always good? Is the same done in Query.cpp?
-			if(wlens[i] >= 3 &&
-			   wptrs[i][wlens[i]-2] == '\'' &&
-			   to_lower_a(wptrs[i][wlens[i]-1]) == 's')
-			{
-				int64_t nah = hash64Lower_utf8(wptrs[i], wlens[i]-2);
-				if(plen>0) nah = hash64(nah, prefixHash);
-				Posdb::makeKey(&k,
-					       nah,
-					       0LL,//docid
-					       wposvec[i], // dist,
-					       densvec[i],// densityRank , // 0-15
-					       wd,//v[i], // diversityRank ,
-					       ws, // wordSpamRank ,
-					       0, //siterank
-					       hashGroup,
-					       // we set to docLang final hash loop
-					       langUnknown, // langid
-					       0 , // multiplier
-					       true, // syn?
-					       false, // delkey?
-					       hi->m_shardByTermId );
-				// key should NEVER collide since we are always
-				// incrementing the distance cursor, m_dist
-				dt->addTerm144(&k);
-				// keep going if not debug
-				if(!wts) continue;
-				// print the synonym
-				if(!storeTerm(wptrs[i], // synWord,
-					      wlens[i] -2, // strlen(synWord),
-					      nah,  // termid
-					      hi,
-					      i, // wordnum
-					      wposvec[i], // wordPos
-					      densvec[i],// densityRank , // 0-15
-					      wd,//v[i],
-					      ws,
-					      hashGroup,
-					      //false, // is phrase?
-					      wbuf,
-					      wts,
-					      SOURCE_GENERATED,
-					      langId,
-					      k))
-					return false;
-			}
-		} //!skipword
+		} else {
+			logTrace(g_conf.m_logTraceTokenIndexing,"not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
+		}
 
 
 		////////
@@ -2046,61 +2026,101 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		//
 		////////
 
-		int64_t npid = phrases->getPhraseId(i);
-		uint64_t  ph2 = 0;
-
-		// repeat for the two word hash if different!
-		if ( npid ) {
-			// hash with prefix
-			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
-			else            ph2 = npid;
-			key144_t k;
-			Posdb::makeKey ( &k ,
-					  ph2 ,
-					  0LL,//docid
-					  wposvec[i],//dist,
-					  densvec[i],// densityRank , // 0-15
-					  MAXDIVERSITYRANK, //phrase
-					  ws, // wordSpamRank ,
-					  0,//siterank
-					  hashGroup,
-					  // we set to docLang final hash loop
-					  langUnknown, // langid
-					  0 , // multiplier
-					  false, // syn?
-					  false , // delkey?
-					  hi->m_shardByTermId );
-
-			// key should NEVER collide since we are always
-			// incrementing the distance cursor, m_dist
-			dt->addTerm144 ( &k );
-
-			// add to wts for PageParser.cpp display
-			if(wts) {
-				// get phrase as a string
-				int32_t plen;
-				char phraseBuffer[256];
-				phrases->getPhrase(i, phraseBuffer, sizeof(phraseBuffer), &plen);
-				// store it
-				if(!storeTerm(phraseBuffer,plen,ph2,hi,i,
-					      wposvec[i], // wordPos
-					      densvec[i],// densityRank , // 0-15
-					      MAXDIVERSITYRANK,//phrase
-					      ws,
-					      hashGroup,
-					      //true,
-					      wbuf,
-					      wts,
-					      SOURCE_BIGRAM, // synsrc
-					      langId,
-					      k))
-					return false;
+		//Find the first next alfanum token that starts at or after token.end_pos
+		//Also detect if we see a dont-pair-across token while scanning
+		unsigned j;
+		bool generate_bigram = true;
+		for(j=i+1; j<end_token; j++) {
+			const auto &t2 = (*tr)[j];
+			if(t2.is_alfanum && t2.start_pos>=token.end_pos)
+				break;
+			if(!bits->canBeInPhrase(i) && !bits->canPairAcross(j)) {
+				generate_bigram = false;
+				break;
 			}
+		}
+		if(j>=end_token)
+			generate_bigram = false;
+		
+		if(generate_bigram) {
+			unsigned first_match_start_pos = (*tr)[j].start_pos;
+			for( ; j<end_token && (*tr)[j].start_pos == first_match_start_pos; j++) {
+				const auto &token2 = (*tr)[j];
+				if(!token2.is_alfanum)
+					continue; //ampersand-rewrites in tokenizer2.cpp can result in non-alfanum tokens that must be ignored and skipped
+				int32_t pos = token.token_len;
+				int64_t npid = hash64Lower_utf8_cont(token2.token_start, token2.token_len, token.token_hash, &pos);
+				uint64_t  ph2;
+
+				logTrace(g_conf.m_logTraceTokenIndexing,"Indexing two-word phrase '%.*s'+'%.*s' with h=%ld, termid=%lld", (int)token.token_len, token.token_start, (int)token2.token_len, token2.token_start, npid, npid&TERMID_MASK);
+				// hash with prefix
+				if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
+				else            ph2 = npid;
+				key144_t k;
+				Posdb::makeKey ( &k ,
+						ph2 ,
+						0LL,//docid
+						wposvec[i],//dist,
+						densvec[i],// densityRank , // 0-15
+						MAXDIVERSITYRANK, //phrase
+						ws, // wordSpamRank ,
+						0,//siterank
+						hashGroup,
+						// we set to docLang final hash loop
+						langUnknown, // langid
+						0 , // multiplier
+						false, // syn?
+						false , // delkey?
+						hi->m_shardByTermId );
+
+				// key should NEVER collide since we are always
+				// incrementing the distance cursor, m_dist
+				dt->addTerm144 ( &k );
+
+				// add to wts for PageParser.cpp display
+				if(wts) {
+					// get phrase as a string
+					size_t plen;
+					char phraseBuffer[256];
+					//TODO: Collect the intermediate tokens too. It is complicated because the two tokens generating the bigram can be either primary or secondary tokens from the tonizer, and the non-alfanum tokens between too.
+					//simplification: just grab the chars from token+token2
+					if(token.token_len<=sizeof(phraseBuffer)) {
+						memcpy(phraseBuffer, token.token_start, token.token_len);
+						plen = token.token_len;
+					} else {
+						memcpy(phraseBuffer, token.token_start, sizeof(phraseBuffer));
+						plen = sizeof(phraseBuffer);
+					}
+					if(token2.token_len<=sizeof(phraseBuffer)-plen) {
+						memcpy(phraseBuffer+plen, token2.token_start, token2.token_len);
+						plen += token2.token_len;
+					} else {
+						memcpy(phraseBuffer+plen, token2.token_start, sizeof(phraseBuffer)-plen);
+						plen = sizeof(phraseBuffer);
+					}
+					// store it
+					if(!storeTerm(phraseBuffer,plen,ph2,hi,i,
+						wposvec[i], // wordPos
+						densvec[i],// densityRank , // 0-15
+						MAXDIVERSITYRANK,//phrase
+						ws,
+						hashGroup,
+						//true,
+						wbuf,
+						wts,
+						SOURCE_BIGRAM, // synsrc
+						langId,
+						k))
+						return false;
+				}
+			}
+		} else {
+			logTrace(g_conf.m_logTraceTokenIndexing,"NOT indexing two-word phrase(s)");
 		}
 	}
 
 	// between calls? i.e. hashTitle() and hashBody()
-	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
+	if ( nw > 0 ) m_dist = wposvec[nw-1] + 100;
 
 	return true;
 }

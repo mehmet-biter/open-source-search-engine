@@ -22,7 +22,7 @@
 
 const char *getSourceString ( char source );
 
-class Words;
+class TokenizerResult;
 class HashTableX;
 
 class Synonyms {
@@ -34,8 +34,8 @@ class Synonyms {
 
 	void reset();
 
-	int32_t getSynonyms(const Words *words,
-			    int32_t wordNum,
+	int32_t getSynonyms(const TokenizerResult *tr,
+			    unsigned wordNum,
 			    uint8_t langId,
 			    char *tmpBuf);
 
@@ -58,8 +58,8 @@ class Synonyms {
 	uint8_t    *m_langIds;
 
 private:
-	bool addWithoutApostrophe(const Words *words, int32_t wordNum, HashTableX *dt);
-	bool addAmpPhrase(const Words *words, int32_t wordNum, HashTableX *dt);
+	bool addWithoutApostrophe(const char *w, int32_t wlen, HashTableX *dt);
+	bool addAmpPhrase(const TokenizerResult *tr, unsigned wordNum, HashTableX *dt);
 	
 	char       *m_src;
 	

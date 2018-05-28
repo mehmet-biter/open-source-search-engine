@@ -25,7 +25,7 @@
 #include "HashTableX.h"
 
 class Phrases;
-class Words;
+class TokenizerResult;
 class Xml;
 class XmlDoc;
 class Url;
@@ -36,7 +36,7 @@ public:
 	~TermCheckList();
 	bool init(const char *fname1, const char *fname2=NULL);
 
-	bool getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, int32_t *docScore, int32_t *numUniqueWords, int32_t *numUniquePhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size);
+	bool getScore(const TokenizerResult &tr, Phrases *p, HashTableX *uniqueTermIds, int32_t *docScore, int32_t *numUniqueWords, int32_t *numUniquePhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size);
 
 private:
 	bool loadScoredTermList(HashTableX *ht, const char *filename);

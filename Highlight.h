@@ -10,7 +10,7 @@
 
 class Query;
 class SafeBuf;
-class Words;
+class TokenizerResult;
 class Matches;
 
 
@@ -24,13 +24,13 @@ public:
 	int32_t set( SafeBuf *sb, const char *content, int32_t contentLen, Query *q, const char *frontTag,
 				  const char *backTag );
 
-	int32_t set( SafeBuf *sb, const Words *words, const Matches *matches, const char *frontTag = NULL,
+	int32_t set( SafeBuf *sb, const TokenizerResult *tr, const Matches *matches, const char *frontTag = NULL,
 				 const char *backTag = NULL, const Query *q = NULL );
 
 	int32_t getNumMatches() { return m_numMatches; }
 
  private:
-	bool highlightWords ( const Words *words, const Matches *m, const Query *q=NULL );
+	bool highlightWords ( const TokenizerResult *tr, const Matches *m, const Query *q=NULL );
 
 	class SafeBuf *m_sb;
 

@@ -4048,91 +4048,78 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	    "parse docId %" PRId64".", (double)(e - t)/100.0,docId);
 
 
-	Words words;
+	TokenizerResult tr;
 
 	t = gettimeofdayInMilliseconds();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml ) ) {
-			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
-			return false;
-		}
+	for ( int32_t i = 0 ; i < 100 ; i++ ) {
+		xml_tokenizer_phase_1(&xml,&tr);
+		tr.clear();
+	}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
-	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
+	log("build: Words::set(xml) took %.3f ms for %zu words"
 	    " for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml ) ) {
-			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
-			return false;
-		}
-	// print time it took
-	e = gettimeofdayInMilliseconds();
-	log("build: Words::set(xml,computeIds=false) "
-	    "took %.3f ms for %" PRId32" words"
-	    " for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
-
-
-	t = gettimeofdayInMilliseconds();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( content ) ) {
-			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
-			return false;
-		}
+	for ( int32_t i = 0 ; i < 100 ; i++ ) {
+		plain_tokenizer_phase_1(content,contentLen,&tr);
+		tr.clear();
+	}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(content,computeIds=true) "
-	    "took %.3f ms for %" PRId32" words "
+	    "took %.3f ms for %zu words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 
 	Pos pos;
 	// computeWordIds from xml
-	words.set ( &xml ) ;
+	tr.clear();
+	xml_tokenizer_phase_1(&xml,&tr);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! pos.set ( &words ) ) {
+		if ( ! pos.set ( &tr ) ) {
 			log(LOG_WARN, "build: speedtestxml: pos set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Pos::set() "
-	    "took %.3f ms for %" PRId32" words "
+	    "took %.3f ms for %zu words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 
 	Bits bits;
 	// computeWordIds from xml
-	words.set ( &xml ) ;
+	tr.clear();
+	xml_tokenizer_phase_1(&xml,&tr);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! bits.setForSummary ( &words ) ) {
+		if ( ! bits.setForSummary ( &tr ) ) {
 			log(LOG_WARN, "build: speedtestxml: Bits set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Bits::setForSummary() "
-	    "took %.3f ms for %" PRId32" words "
+	    "took %.3f ms for %zu words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 
 	Sections sections;
 	// computeWordIds from xml
-	words.set ( &xml ) ;
-	bits.set(&words);
+	tr.clear();
+	xml_tokenizer_phase_1(&xml,&tr);
+	bits.set(&tr);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &bits, NULL, 0 ) ) {
+		if ( !sections.set( &tr, &bits, NULL, 0 ) ) {
 			log(LOG_WARN, "build: speedtestxml: sections set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4140,9 +4127,9 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Scores::set() "
-	    "took %.3f ms for %" PRId32" words "
+	    "took %.3f ms for %zu words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 	
 
@@ -4150,16 +4137,16 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	Phrases phrases;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ )
-		if ( !phrases.set( &words, &bits ) ) {
+		if ( !phrases.set( tr, bits ) ) {
 			log(LOG_WARN, "build: speedtestxml: Phrases set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Phrases::set() "
-	    "took %.3f ms for %" PRId32" words "
+	    "took %.3f ms for %zu words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds();
@@ -4182,10 +4169,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
 			return false;
 		}
-		if ( ! words.set ( buf ) ) {
-			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
-			return false;
-		}
+		plain_tokenizer_phase_1(buf,bufLen,&tr);
+		tr.clear();
 	}
 
 	// print time it took
@@ -4200,20 +4185,21 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	Query q;
 	q.set(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
-	words.set ( &xml ) ;
+	tr.clear();
+	xml_tokenizer_phase_1(&xml,&tr);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
-		if ( ! matches.addMatches ( &words ) ) {
+		if ( ! matches.addMatches ( &tr ) ) {
 			log(LOG_WARN, "build: speedtestxml: matches set: %s", mstrerror(g_errno));
 			return false;
 		}
 	}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
-	log("build: Matches::set() took %.3f ms for %" PRId32" words"
+	log("build: Matches::set() took %.3f ms for %zu words"
 	    " for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),docId);
+	    (double)(e - t)/100.0,tr.size(),docId);
 
 
 

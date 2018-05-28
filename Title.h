@@ -25,7 +25,7 @@ public:
 
 	void setTitle(const std::string &title);
 
-	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, const Query *query, LinkInfo *linkInfo, const Url *firstUrl,
+	bool setTitle( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen, const Query *query, LinkInfo *linkInfo, const Url *firstUrl,
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
 				   uint8_t langId );
 
@@ -42,8 +42,8 @@ public:
 	int32_t getTitleTagEnd() const { return m_titleTagEnd; }
 
 private:
-	bool copyTitle(Words *words, int32_t t0, int32_t t1);
-	float getSimilarity(Words *w1, int32_t i0, int32_t i1, Words  *w2, int32_t t0, int32_t t1);
+	bool copyTitle(const TokenizerResult *tr, int32_t t0, int32_t t1);
+	float getSimilarity(const TokenizerResult *tr1, int32_t i0, int32_t i1, const TokenizerResult *tr2, int32_t t0, int32_t t1);
 
 	char m_title[MAX_TITLE_LEN];
 	int32_t m_titleLen;

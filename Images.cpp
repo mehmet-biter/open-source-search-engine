@@ -3,7 +3,7 @@
 #include "Conf.h"
 #include "Query.h"
 #include "Xml.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Sections.h"
 #include "XmlDoc.h"
 #include "Collectiondb.h"
@@ -69,7 +69,7 @@ void Images::reset() {
 	m_tdy = 0;
 }
 
-void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *sections ) {
+void Images::setCandidates(Url *pageUrl, const TokenizerResult *tr, Xml *xml, Sections *sections) {
 	// not valid for now
 	m_thumbnailValid = false;
 	// reset our array of image node candidates
@@ -134,9 +134,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 
 	//m_pageSite  = pageSite;
 	// scan the words
-	int32_t       nw     = words->getNumWords();
-	const nodeid_t *tids   = words->getTagIds();
-	const int64_t  *wids   = words->getWordIds();
+	int32_t       nw     = tr->size();
 	//int32_t      *scores = scoresArg->m_scores;
 	Section **sp = NULL; 
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -150,7 +148,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// skip if in bad section
 		if ( sp && (sp[i]->m_flags & badFlags) ) continue;
-		if ( wids[i]   != 0 ) continue;
+		if ( (*tr)[i].is_alfanum ) continue;
 		// set first positive scoring guy
 		if ( firstPosScore == -1 ) firstPosScore = i;
 		// keep track of last guy
@@ -164,14 +162,15 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 	memset ( tc , 0 , 512 );
 	int32_t a = firstPosScore;
 	for ( ; a >= 0 ; a-- ) {
+		const auto &token = (*tr)[a];
 		// get the tid
-		nodeid_t tid = tids[a];
+		nodeid_t tid = token.token_hash;
 		// remove back bit, if any
 		tid &= BACKBITCOMP;
 		// skip if not a tag, or a generic xml tag
 		if ( tid <= 1 ) continue;
 		// mark it
-		if ( words->isBackTag(a) ) tc[tid] |= 0x02;
+		if ( token.token_hash&BACKBIT ) tc[tid] |= 0x02;
 		else                       tc[tid] |= 0x01;
 		// continue if not a full front/back pair
 		if ( tc[tid] != 0x03 ) continue;
@@ -190,10 +189,11 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 
 	// now look for the image urls within this window
 	for ( int32_t i = a ; i < lastPosScore ; i++ ) {
+		const auto &token = (*tr)[i];
 		// skip if not <img> tag
-		if (tids[i] != TAG_IMG ) continue;
+		if (token.nodeid != TAG_IMG ) continue;
 		// get the node num into Xml.cpp::m_nodes[] array
-		int32_t nn = words->getNodes()[i];
+		int32_t nn = token.xml_node_index;
 		// check width to rule out small decorating imgs
 		int32_t width = xml->getLong(nn,nn+1,"width", -1 );
 		if ( width != -1 && width < 50 ) continue;

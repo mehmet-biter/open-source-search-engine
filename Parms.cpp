@@ -9404,6 +9404,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for token indexing";
+	m->m_cgi   = "ltrc_tkindex";
+	simple_m_set(Conf,m_logTraceTokenIndexing);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for UrlMatchList";
 	m->m_cgi   = "ltrc_urlbl";
 	simple_m_set(Conf,m_logTraceUrlMatchList);

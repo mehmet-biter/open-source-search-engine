@@ -35,6 +35,39 @@ const sto::WordForm *sto::LexicalEntry::find_first_wordform(const std::string &w
 }
 
 
+//Find the base form of the lexical entry. That means:
+//  verbs: infinitive mood, active voice
+//  nouns: indefinite singular nominative
+//  adjectives: positive, common gender
+//  other: <null>
+const sto::WordForm *sto::LexicalEntry::find_base_wordform() const {
+	const char *p = reinterpret_cast<const char*>(query_first_explicit_word_form());
+	for(unsigned i=0; i<explicit_word_form_count; i++) {
+		const WordForm *e = reinterpret_cast<const WordForm*>(p);
+		switch(part_of_speech) {
+			case part_of_speech_t::deponentVerb:
+			case part_of_speech_t::mainVerb: {
+				if(e->has_attribute(word_form_attribute_t::verbFormMood_infinitive) &&
+				   e->has_attribute(word_form_attribute_t::voice_activeVoice))
+					return e;
+				break;
+			}
+			case part_of_speech_t::commonNoun: {
+				if((e->has_attribute(word_form_attribute_t::definiteness_indefinite) || e->has_attribute(word_form_attribute_t::definiteness_unspecified)) &&
+				   (e->has_attribute(word_form_attribute_t::grammaticalNumber_singular) || e->has_attribute(word_form_attribute_t::grammaticalNumber_unspecified)) &&
+				   (e->has_attribute(word_form_attribute_t::case_unspecified) || e->has_attribute(word_form_attribute_t::case_nominativeCase)))
+					return e;
+				break;
+			}
+			default:
+				return NULL;
+		}
+		p += e->size();
+	}
+	return NULL;
+}
+
+
 bool sto::Lexicon::load(const std::string &filename) {
 	unload();
 	
@@ -386,6 +419,109 @@ int main(void) {
 		auto m1 = l.query_lexical_entries_with_same_morphological_unit_id(l.lookup("boos"));
 		assert(m1.size()==1);
 		assert(m1[0]==l.lookup("boos"));
+	}
+	
+	//file with three entries, for testing LexicalEntry::find_base_wordform()
+	//  verb: aaa1(imperative mood, active voice), aaa2(indicative mood, passive voice), aaa2(indicative mood, active voice)
+	//  verb: bbb1(imperative mood, active voice), bbb2(indicative mood, passive voice)
+	//  noun: ccc1(definite, singular, unspecified case), ccc1(indefinite, singular, unspecified case)
+	{
+		int fd = open("sto.unittest",O_WRONLY|O_CREAT|O_TRUNC,0666);
+		char tmp[16];
+		write(fd,version_2_signature,sizeof(version_2_signature));
+		
+		//le#0
+		tmp[0] = (char)part_of_speech_t::mainVerb;
+		write(fd, tmp, 1);
+		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
+		write(fd, tmp, 1);
+		write(fd,"\003",1); //morph-unit-id len
+		write(fd,"\003",1); //#wordforms
+		write(fd, "aaa",3); //morph-unit-id
+		//le#0:wf#0
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::verbFormMood_imperative;
+		tmp[1]=(char)word_form_attribute_t::voice_activeVoice;
+		write(fd,tmp,6);
+		write(fd,"\004aaa1",5);
+		//le#0:wf#1
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::verbFormMood_infinitive;
+		tmp[1]=(char)word_form_attribute_t::voice_passiveVoice;
+		write(fd,tmp,6);
+		write(fd,"\004aaa2",5);
+		//le#0:wf#1
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::verbFormMood_infinitive;
+		tmp[1]=(char)word_form_attribute_t::voice_activeVoice;
+		write(fd,tmp,6);
+		write(fd,"\004aaa3",5);
+
+		//le#1
+		tmp[0] = (char)part_of_speech_t::mainVerb;
+		write(fd, tmp, 1);
+		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
+		write(fd, tmp, 1);
+		write(fd,"\003",1); //morph-unit-id len
+		write(fd,"\002",1); //#wordforms
+		write(fd, "bbb",3); //morph-unit-id
+		//le#0:wf#0
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::verbFormMood_imperative;
+		tmp[1]=(char)word_form_attribute_t::voice_activeVoice;
+		write(fd,tmp,6);
+		write(fd,"\004bbb1",5);
+		//le#0:wf#1
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::verbFormMood_infinitive;
+		tmp[1]=(char)word_form_attribute_t::voice_passiveVoice;
+		write(fd,tmp,6);
+		write(fd,"\004bbb2",5);
+
+		//le#2
+		tmp[0] = (char)part_of_speech_t::commonNoun;
+		write(fd, tmp, 1);
+		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
+		write(fd, tmp, 1);
+		write(fd,"\003",1); //morph-unit-id len
+		write(fd,"\002",1); //#wordforms
+		write(fd, "ccc",3); //morph-unit-id
+		//le#0:wf#0
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::definiteness_definite;
+		tmp[1]=(char)word_form_attribute_t::grammaticalNumber_singular;
+		tmp[2]=(char)word_form_attribute_t::case_unspecified;
+		write(fd,tmp,6);
+		write(fd,"\004ccc1",5);
+		//le#0:wf#1
+		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
+		tmp[0]=(char)word_form_attribute_t::definiteness_indefinite;
+		tmp[1]=(char)word_form_attribute_t::grammaticalNumber_singular;
+		tmp[2]=(char)word_form_attribute_t::case_unspecified;
+		write(fd,tmp,6);
+		write(fd,"\004ccc2",5);
+
+		close(fd);
+		
+		Lexicon l;
+		assert(l.load("sto.unittest"));
+		assert(l.lookup("aaa1")!=NULL);
+		assert(l.lookup("aaa2")!=NULL);
+		assert(l.lookup("aaa3")!=NULL);
+		
+		const sto::LexicalEntry *le1 = l.lookup("aaa1");
+		const WordForm *wf1 = le1->find_base_wordform();
+		assert(wf1);
+		assert(std::string(wf1->written_form,wf1->written_form_length)=="aaa3");
+		
+		const sto::LexicalEntry *le2 = l.lookup("bbb1");
+		const WordForm *wf2 = le2->find_base_wordform();
+		assert(!wf2);
+		
+		const sto::LexicalEntry *le3 = l.lookup("ccc1");
+		const WordForm *wf3 = le3->find_base_wordform();
+		assert(wf3);
+		assert(std::string(wf3->written_form,wf3->written_form_length)=="ccc2");
 	}
 	
 }

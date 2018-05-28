@@ -3,7 +3,7 @@
 #ifndef GB_MATCHES_H
 #define GB_MATCHES_H
 
-#include "Words.h"
+#include "tokenizer.h"
 #include "Pos.h"
 #include "Bits.h"
 
@@ -64,7 +64,7 @@ class Match {
 
 	// . for convenience, these four class ptrs are used by Summary.cpp
 	// . m_wordNum is relative to this "words" class (and scores,bits,pos)
-	const Words    *m_words;
+	const TokenizerResult  *m_tr;
 	const Sections *m_sections;
 	const Bits     *m_bits;
 	const Pos      *m_pos;
@@ -76,7 +76,7 @@ class Matches {
 
 	void setQuery(const Query *q);
 
-	bool set(const Words *bodyWords, Phrases *bodyPhrases,
+	bool set(const TokenizerResult *bodyTr, Phrases *bodyPhrases,
 		 const Sections *bodySections, const Bits *bodyBits, const Pos *bodyPos, Xml *xml,
 		 const Title *tt, const Url *firstUrl, LinkInfo *linkInfo);
 
@@ -86,7 +86,7 @@ class Matches {
 	// . m_matches[i] is -1 if it matches no term in the query
 	// . m_matches[i] is X if it matches term #X in the query
 	// . returns false and sets errno on error
-	bool addMatches(const Words *words, Phrases *phrases = NULL, const Sections *sections = NULL,
+	bool addMatches(const TokenizerResult *tr, Phrases *phrases = NULL, const Sections *sections = NULL,
 			const Bits *bits = NULL, const Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
@@ -105,7 +105,7 @@ class Matches {
 private:
 	void reset2();
 	bool isMatchableTerm(const QueryTerm *qt) const;
-	int32_t getNumWordsInMatch(const Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+	int32_t getNumWordsInMatch(const TokenizerResult *tr, unsigned wn, int32_t n, int32_t *numQWords, int32_t *qwn,
 				   bool allowPunctInPhrase = true);
 
 	// . 1-1 with Query::m_qwords[] array of QWords
@@ -136,7 +136,7 @@ private:
 	// . a single meta summary tag is a match group, ...
 	int32_t      m_numMatchGroups;
 
-	Words    m_wordsArray    [MAX_MATCHGROUPS];
+	TokenizerResult  m_tokenizerResultArray[MAX_MATCHGROUPS];
 	Bits     m_bitsArray     [MAX_MATCHGROUPS];
 	Pos      m_posArray      [MAX_MATCHGROUPS];
 };

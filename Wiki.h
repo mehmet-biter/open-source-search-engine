@@ -7,7 +7,7 @@
 #include "BigFile.h"
 #include "HashTableX.h"
 
-class Words;
+class TokenizerResult;
 
 class Wiki {
 public:
@@ -16,7 +16,7 @@ public:
 
 	void reset();
 
-	int32_t getNumWordsInWikiPhrase ( int32_t i, const Words *words );
+	int32_t getNumWordsInWikiPhrase(unsigned i, const TokenizerResult *tr);
 
 	// . load from disk
 	// . wikititles.txt (loads wikititles.dat if and date is newer)

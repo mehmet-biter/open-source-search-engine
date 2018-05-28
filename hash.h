@@ -138,16 +138,6 @@ static inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t s
 				[(uint8_t)to_lower_a(*p)];
 			continue;
 		}
-		// convert utf8 apostrophe to ascii apostrophe so Words.cpp
-		// gets the right wid for stuff like "you're" when the
-		// apostrophe is in utf8
-		//if ( p[0]==(char)0xe2 && 
-		//     p[1]==(char)0x80 && 
-		//     cs==3 && 
-		//     (p[2]==(char)0x99||p[2]==(char)0x9c) ) {
-		//	h ^= g_hashtab [i++][(uint8_t)'\''];
-		//	continue;
-		//}
 		// otherwise, lower case it
 		x = utf8Decode(p);
 		// convert to lower
