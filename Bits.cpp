@@ -246,7 +246,6 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	bool startSent = true;
 	bool startFrag = true;
 	bool inQuote = false;
-	bool inParens = false;
 
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;
@@ -293,10 +292,6 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 			if ( inQuote ) {
 				m_swbits[i] |= D_IN_QUOTES;
 				inQuote = false;
-			}
-
-			if ( inParens ) {
-				m_swbits[i] |= D_IN_PARENS;
 			}
 
 			// apply any other flags we got
