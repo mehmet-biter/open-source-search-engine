@@ -243,8 +243,8 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT
 
-	bool startSent = true;
-	bool startFrag = true;
+	bool startSentence = true;
+	bool startFragment = true;
 	bool inQuote = false;
 
 	// the ongoing accumulation flag we apply to each word
@@ -259,7 +259,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 			// is it a "breaking tag"?
 			if ( g_nodes[tid].m_isBreaking ) {
-				startSent = true;
+				startSentence = true;
 				inQuote   = false;
 			}
 
@@ -279,14 +279,14 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 		// if alnum, might start sentence or fragment
 		if ( token.is_alfanum ) {
-			if ( startFrag ) {
-				m_swbits[i] |= D_STARTS_FRAG;
-				startFrag = false;
+			if ( startFragment ) {
+				m_swbits[i] |= D_STARTS_FRAGMENT;
+				startFragment = false;
 			}
 
-			if ( startSent ) {
+			if ( startSentence ) {
 				m_swbits[i] |= D_STARTS_SENTENCE;
-				startSent = false;
+				startSentence = false;
 			}
 
 			if ( inQuote ) {
@@ -328,7 +328,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 		// it can start a fragment if not a single space char
 		if ( wlen != 1 || !is_wspace_utf8( wp ) ) {
-			startFrag = true;
+			startFragment = true;
 		}
 
 		// ". " denotes end of sentence
@@ -339,7 +339,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 			}
 
 			// ok, really the end of a sentence
-			startSent = true;
+			startSentence = true;
 		}
 
 		// are we a "strong connector", meaning that

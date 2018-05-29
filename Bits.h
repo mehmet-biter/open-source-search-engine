@@ -63,7 +63,7 @@
 #define D_STARTS_SENTENCE       0x0002
 // . or does it start a sentence fragment, like after a comma or something
 // . the summary excerpt will get *some* bonus points for this
-#define D_STARTS_FRAG           0x0004
+#define D_STARTS_FRAGMENT       0x0004
 // . does this word have a quote right before it?
 #define D_IN_QUOTES             0x0008
 // more bits so we can get rid of Summary::setSummaryScores() so that
