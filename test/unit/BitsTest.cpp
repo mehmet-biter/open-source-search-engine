@@ -45,7 +45,19 @@ TEST(BitsTest, two_sentences) {
 }
 
 
-//todo: test for sentences ending with question marks and non-english stop/question marks
+TEST(BitsTest, two_nonlatin_sentences) {
+	static const char str[]="Γειά σου Κόσμε. Πώς είσαι σήμερα; Πρόστιμο;";
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(str,strlen(str), &tr);
+	Bits bits;
+	ASSERT_TRUE(bits.setForSummary(&tr));
+	int num_sentence_starts = 0;
+	for(unsigned i=0; i<tr.size(); i++)
+		if(bits.m_swbits[i]&D_STARTS_SENTENCE)
+			num_sentence_starts++;
+	ASSERT_EQ(num_sentence_starts,3);
+}
+
 
 TEST(BitsTest, parentheses) {
 	static const char str[]="Hello (small and beautiful) world.";

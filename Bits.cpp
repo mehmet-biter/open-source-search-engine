@@ -331,6 +331,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 			startFragment = true;
 		}
 
+		// Detect end of sentences so we can set the start-sentence flag on the next word.
 		// ". " denotes end of sentence
 		if ( wlen >= 2 && wp[0] == '.' && is_wspace_utf8( wp + 1 ) ) {
 			// but not if preceeded by an initial
@@ -340,7 +341,20 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 			// ok, really the end of a sentence
 			startSentence = true;
+		} else {
+			//other punctuations marking end of sentences, that aren't overloaded for abbreviation indication as period/fullstop is.
+			int cs = getUtf8CharSize(wp);
+			UChar32 cp = utf8Decode(wp);
+			if(wlen >= cs+1 && is_wspace_utf8(wp+cs) && (cp=='?' ||
+				                                     cp=='!' ||
+				                                     cp==0x037E ||  //greek question mark (although the regular 0x003b is preferred)
+				                                     cp==0x203D ||  //interrobang
+				                                     cp==0x06D4))   //arabic full stop
+			{
+				startSentence = true;
+			}
 		}
+
 
 		// are we a "strong connector", meaning that
 		// Summary.cpp should not split on us if possible
