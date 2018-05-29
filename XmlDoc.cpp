@@ -4504,6 +4504,9 @@ HashTableX *XmlDoc::getCountTable ( ) {
 // . a special function used by XmlDoc::getCountTable() above
 // . kinda similar to XmlDoc::hashString()
 bool XmlDoc::hashString_ct(HashTableX *ct, const char *s, int32_t slen) {
+	if(slen<0) {
+		return true; //nothing to count
+	}
 
 	TokenizerResult   tr;
 	Bits    bits;
