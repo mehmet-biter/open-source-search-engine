@@ -1370,15 +1370,36 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	//FIXME: assumption: title tokens are the phase-1 tokens and the tokens are in contiguous memory
 	//FIXME: also grab the alternative tokens from phase 2 in the title part
 
 	//clean indexing:
 	//  if ( ! hashString(a, i, &hi) ) return false;
-	//but due to bad webmasters:
+	//but due to bad webmasters we have to decode html entities multiple times.
 	
-	const char  *title    = m_tokenizerResult[a].token_start;
-	const char  *titleEnd = m_tokenizerResult[i].token_end();
+	bool any_non_primary_tokens = false;
+	for(int j=a; j<=i; j++) {
+		if(!m_tokenizerResult[j].is_primary) {
+			any_non_primary_tokens = true;
+			break;
+		}
+	}
+	
+	const char  *title;
+	const char  *titleEnd;
+	StackBuf<1024> tmpTitleBuf;
+	
+	if(!any_non_primary_tokens) {
+		//use the raw source memory because the tokens match up
+		title    = m_tokenizerResult[a].token_start;
+		titleEnd = m_tokenizerResult[i].token_end();
+	} else {
+		//copy primary tokens to tmpTitleBuf
+		for(int j=a; j<=i; j++)
+			tmpTitleBuf.safeMemcpy(m_tokenizerResult[j].token_start,m_tokenizerResult[j].token_len);
+		title    = tmpTitleBuf.getBufStart();
+		titleEnd = tmpTitleBuf.getBufPtr();
+		//TODO: Investigate if it isn't better to just find the relevant XmlNode and get the text (title) from there.
+	}
 	int32_t   titleLen = titleEnd - title;
 	StackBuf<1024> doubleDecodedContent;
 	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
