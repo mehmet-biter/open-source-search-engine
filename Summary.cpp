@@ -904,7 +904,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		int32_t t = 100;
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 
@@ -965,7 +965,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 

@@ -305,9 +305,9 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 		
 		// this is not 100%
 		if ( has_char(wp,wp+wlen, '(' ) ) {
-			flags |= D_IN_PARENS;
+			flags |= D_IN_PARENTHESES;
 		} else if ( has_char(wp,wp+wlen, ')' ) ) {
-			flags &= ~D_IN_PARENS;
+			flags &= ~D_IN_PARENTHESES;
 		}
 
 		// apply curent flags

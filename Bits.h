@@ -69,7 +69,7 @@
 // more bits so we can get rid of Summary::setSummaryScores() so that
 // Summary::getBestWindow() just uses these bits to score the window now
 #define D_IN_TITLE              0x0010
-#define D_IN_PARENS             0x0020
+#define D_IN_PARENTHESES        0x0020
 #define D_IN_HYPERLINK          0x0040
 #define D_IN_BOLDORITALICS      0x0080
 #define D_IN_LIST               0x0100
