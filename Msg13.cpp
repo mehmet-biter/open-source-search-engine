@@ -18,6 +18,7 @@
 #include "Pages.h"
 #include "Statistics.h"
 #include "Sanity.h"
+#include "UrlMatchList.h"
 #include <string.h>
 
 
@@ -644,23 +645,28 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 
 	bool useProxies = false;
 
-	// for diffbot turn ON if use robots is off
-	if ( r->m_forceUseFloaters ) useProxies = true;
-
-	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-
-	// if you turned on automatically use proxies in spider controls...
-	if ( ! useProxies && 
-	     cr &&
-	     r->m_urlIp != 0 &&
-	     r->m_urlIp != -1 &&
-	     cr->m_automaticallyUseProxies &&
-	     isIpInTwitchyTable( cr, r->m_urlIp ) )
-		useProxies = true;
-
 	// we gotta have some proxy ips that we can use
-	if ( ! g_conf.m_proxyIps.hasDigits() ) useProxies = false;
+	if (g_conf.m_proxyIps.hasDigits()) {
+		// for diffbot turn ON if use robots is off
+		if (r->m_forceUseFloaters) {
+			useProxies = true;
+		}
 
+		CollectionRec *cr = g_collectiondb.getRec(r->m_collnum);
+
+		// if you turned on automatically use proxies in spider controls...
+		if (!useProxies &&
+		    cr && cr->m_automaticallyUseProxies &&
+		    r->m_urlIp != 0 && r->m_urlIp != -1 && isIpInTwitchyTable(cr, r->m_urlIp)) {
+			useProxies = true;
+		}
+
+		Url url;
+		url.set(r->ptr_url, r->size_url);
+		if (g_urlProxyList.isUrlMatched(url)) {
+			useProxies = true;
+		}
+	}
 
 	// we did not need a spider proxy ip so send this reuest to a host
 	// to download the url
