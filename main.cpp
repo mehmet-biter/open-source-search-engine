@@ -1308,6 +1308,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
 	g_urlProxyList.init();
+	g_urlRetryProxyList.init();
 
 	g_robotsCheckList.init();
 

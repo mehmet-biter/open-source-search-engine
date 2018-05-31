@@ -43,6 +43,8 @@ private:
 
 extern UrlMatchList g_urlBlackList;
 extern UrlMatchList g_urlWhiteList;
+
 extern UrlMatchList g_urlProxyList;
+extern UrlMatchList g_urlRetryProxyList;
 
 #endif //GB_URLMATCHLIST_H_

@@ -1042,6 +1042,34 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	return false;
 }
 
+static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
+	HttpMime mime;
+	mime.set(ts->m_readBuf, ts->m_readOffset, nullptr);
+
+	int32_t httpStatus = mime.getHttpStatus();
+	if (httpStatus == 301 || httpStatus == 302 || httpStatus == 307 || httpStatus == 308) {
+		// check original & redirected url
+		Url url;
+		url.set(r->ptr_url, r->size_url);
+
+		// we only retry when list matches redirected url & does not match original url
+		if (g_urlRetryProxyList.isUrlMatched(url)) {
+			return false;
+		}
+
+		const Url *location = mime.getLocationUrl();
+		if (g_urlRetryProxyList.isUrlMatched(*location)) {
+			*msg = "redir url match list";
+			return true;
+		}
+
+		return false;
+	}
+
+	// @todo ALC check content
+
+	return false;
+}
 
 static void appendCrawlBan(const char *group, const char *url, int urlLen) {
 	char filename[1024];
@@ -1336,6 +1364,12 @@ void gotHttpReply2 ( void *state ,
 		    , banMsg
 		    , iptoa(r->m_urlIp,ipbuf)
 		    );
+	}
+
+	if (retryProxy(ts, &banMsg, r)) {
+		banned = true;
+		char ipbuf[16];
+		log("msg13: retry using proxy for url %s due to %s, for ip %s", r->ptr_url, banMsg, iptoa(r->m_urlIp, ipbuf));
 	}
 
 	if(crawlWasBanned(ts,&banMsg,r)) {
