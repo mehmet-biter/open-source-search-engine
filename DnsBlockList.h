@@ -19,9 +19,9 @@
 #ifndef FX_DNSBLOCKLIST_H
 #define FX_DNSBLOCKLIST_H
 
-#include "BlockList.h"
+#include "MatchList.h"
 
-class DnsBlockList : public BlockList<std::string> {
+class DnsBlockList : public MatchList<std::string> {
 public:
 	DnsBlockList();
 	bool isDnsBlocked(const char *dns);

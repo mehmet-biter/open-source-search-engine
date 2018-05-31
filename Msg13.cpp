@@ -19,6 +19,7 @@
 #include "Statistics.h"
 #include "Sanity.h"
 #include "UrlMatchList.h"
+#include "ContentMatchList.h"
 #include <string.h>
 
 
@@ -1066,9 +1067,10 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 		return false;
 	}
 
-	// @todo ALC check content
-
-	return false;
+	size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
+	size_t haystack_size = ts->m_readOffset - pre_size;
+	const char *haystack = ts->m_readBuf + pre_size;
+	return g_contentRetryProxyList.isContentMatched(haystack, haystack_size);
 }
 
 static void appendCrawlBan(const char *group, const char *url, int urlLen) {

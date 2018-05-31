@@ -29,7 +29,7 @@ static const char s_contenttype_filename[] = "contenttypeblocklist.txt";
 static const char s_contenttype_allowed_filename[] = "contenttypeallowed.txt";
 
 ContentTypeBlockList::ContentTypeBlockList()
-	: BlockList(s_contenttype_filename)
+	: MatchList(s_contenttype_filename)
 	, m_contenttype_allowed()
 	, m_contenttype_allowed_mtx(PTHREAD_MUTEX_INITIALIZER) {
 }
@@ -43,7 +43,7 @@ bool ContentTypeBlockList::init() {
 		m_contenttype_allowed.push_back(line);
 	}
 
-	return BlockList::init();
+	return MatchList::init();
 }
 
 void ContentTypeBlockList::addContentTypeAllowed(const char *contentType, size_t contentTypeLen) {
@@ -65,7 +65,7 @@ bool ContentTypeBlockList::isContentTypeBlocked(const char *contentType, size_t 
 		return false;
 	}
 
-	auto contentTypeBlockList = getBlockList();
+	auto contentTypeBlockList = getMatchList();
 
 	for (auto const &contentTypeBlock : *contentTypeBlockList) {
 		if (contentTypeBlock.back() == '*') {

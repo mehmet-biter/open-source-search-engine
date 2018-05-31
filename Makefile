@@ -59,8 +59,8 @@ OBJS_O2 = \
 
 
 OBJS_O3 = \
-	BlockList.o \
-	ContentTypeBlockList.o \
+	MatchList.o \
+	ContentMatchList.o ContentTypeBlockList.o \
 	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
 	IPAddressChecks.o IpBlockList.o \
 	LanguageResultOverride.o Linkdb.o \

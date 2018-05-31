@@ -9049,9 +9049,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for BlockList";
+	m->m_title = "log trace info for MatchList";
 	m->m_cgi   = "ltrc_bl";
-	simple_m_set(Conf,m_logTraceBlockList);
+	simple_m_set(Conf,m_logTraceMatchList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

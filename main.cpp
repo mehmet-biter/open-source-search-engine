@@ -105,6 +105,7 @@
 #include "IpBlockList.h"
 #include "SpiderdbSqlite.h"
 #include "QueryLanguage.h"
+#include "ContentMatchList.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1304,6 +1305,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_dnsBlockList.init();
 	g_contentTypeBlockList.init();
 	g_ipBlockList.init();
+	g_contentRetryProxyList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
