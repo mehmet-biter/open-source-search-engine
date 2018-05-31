@@ -526,6 +526,7 @@ public:
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
+	void sortTokenizerResult(TokenizerResult *tr);
 
 	class Url *getBaseUrl ( ) ;
 
