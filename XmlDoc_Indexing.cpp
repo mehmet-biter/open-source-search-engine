@@ -1377,7 +1377,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	//but due to bad webmasters we have to decode html entities multiple times.
 	
 	bool any_non_primary_tokens = false;
-	for(int j=a; j<=i; j++) {
+	for(int j=a; j<i; j++) {
 		if(!m_tokenizerResult[j].is_primary) {
 			any_non_primary_tokens = true;
 			break;
@@ -1394,7 +1394,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 		titleEnd = m_tokenizerResult[i].token_end();
 	} else {
 		//copy primary tokens to tmpTitleBuf
-		for(int j=a; j<=i; j++)
+		for(int j=a; j<i; j++)
 			tmpTitleBuf.safeMemcpy(m_tokenizerResult[j].token_start,m_tokenizerResult[j].token_len);
 		title    = tmpTitleBuf.getBufStart();
 		titleEnd = tmpTitleBuf.getBufPtr();
