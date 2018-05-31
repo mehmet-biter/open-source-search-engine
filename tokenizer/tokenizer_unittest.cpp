@@ -667,6 +667,13 @@ int main(void) {
 		assert(t.has_token("Johns"));
 	}
 	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John''''s dog",langEnglish);
+		assert(!t.has_token("John's"));
+		assert(!t.has_token("Johns"));
+	}
+	
 	
 	//hyphenation
 	printf("Test line %d\n",__LINE__);

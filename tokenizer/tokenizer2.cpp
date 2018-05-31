@@ -433,7 +433,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 		//t1 must be a single blotch
 		if(t1.token_len>4)
 			continue;
-		UChar32 uc[2];
+		UChar32 uc[4];
 		int ucs = decode_utf8_string(t1.token_start,t1.token_len,uc);
 		if(ucs!=1)
 			continue;
