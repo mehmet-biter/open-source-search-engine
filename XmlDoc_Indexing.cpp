@@ -1421,7 +1421,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mk , mklen , &hi);
+	return hashString4(mk, mklen, &hi);
 }
 
 
