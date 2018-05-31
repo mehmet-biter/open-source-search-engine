@@ -572,12 +572,25 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		StackBuf<1024> doubleDecodedContent;
 		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent, true);
 
+		lang_t lang_id;
+		const char *countryCode;
+		getLanguageAndCountry(&lang_id,&countryCode);
+		
+		TokenizerResult tr;
+		plain_tokenizer_phase_1(s,len,&tr);
+		plain_tokenizer_phase_2(lang_id, countryCode, &tr);
+		calculate_tokens_hashes(&tr);
+		Bits bits;
+		if(!bits.set(&tr))
+			return false;
+		sortTokenizerResult(&tr);
+
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
 		// desc is NULL, prefix will be used as desc
-		bool status = hashString ( s,len, &hi );
+		bool status = hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf);
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
@@ -1352,20 +1365,12 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	
 	//get language and country if known, so tokenizer phase 2 can do its magic
 	lang_t lang_id;
-	uint8_t *tmpLangId = getLangId();
-	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
-		lang_id = (lang_t)*tmpLangId;
-	else
-		lang_id = langUnknown;
-	
-	const char *countryCode = NULL;
-	uint16_t *countryId = getCountryId();
-	if(countryId!=NULL && countryId!=(uint16_t*)-1)
-		countryCode = g_countryCode.getAbbr(*countryId);
+	const char *countryCode;
+	getLanguageAndCountry(&lang_id,&countryCode);
 	
 	TokenizerResult tr;
 	plain_tokenizer_phase_1(title,titleLen,&tr);
-	plain_tokenizer_phase_2((lang_t)lang_id, countryCode, &tr);
+	plain_tokenizer_phase_2(lang_id, countryCode, &tr);
 	calculate_tokens_hashes(&tr);
 	sortTokenizerResult(&tr);
 	
@@ -1613,6 +1618,21 @@ void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
 		return tr0.start_pos < tr1.start_pos ||
 		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
 	});
+}
+
+void XmlDoc::getLanguageAndCountry(lang_t *lang, const char **country_code) {
+	//get language and country if known, so tokenizer phase 2 can do its magic
+	uint8_t *tmpLangId = getLangId();
+	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
+		*lang = (lang_t)*tmpLangId;
+	else
+		*lang = langUnknown;
+	
+	uint16_t *countryId = getCountryId();
+	if(countryId!=NULL && countryId!=(uint16_t*)-1)
+		*country_code = g_countryCode.getAbbr(*countryId);
+	else
+		*country_code = NULL;
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {

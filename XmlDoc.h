@@ -527,6 +527,7 @@ public:
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
 	void sortTokenizerResult(TokenizerResult *tr);
+	void getLanguageAndCountry(lang_t *lang, const char **country_code);
 
 	class Url *getBaseUrl ( ) ;
 
