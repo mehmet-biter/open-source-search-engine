@@ -1052,13 +1052,13 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 
 	int32_t httpStatus = mime.getHttpStatus();
 	if (httpStatus == 301 || httpStatus == 302 || httpStatus == 307 || httpStatus == 308) {
-		// check original & redirected url
 		// we only retry when list matches redirected url & does not match original url
 		if (g_urlRetryProxyList.isUrlMatched(url)) {
 			return false;
 		}
 
 		const Url *location = mime.getLocationUrl();
+
 		if (g_urlRetryProxyList.isUrlMatched(*location)) {
 			*msg = "redir url proxy match list";
 			return true;
@@ -1374,8 +1374,9 @@ void gotHttpReply2 ( void *state ,
 		    );
 	}
 
+	bool retry_proxy = false;
 	if (retryProxy(ts, &banMsg, r)) {
-		banned = true;
+		retry_proxy = true;
 		char ipbuf[16];
 		log("msg13: retry using proxy for url %s due to %s, for ip %s", r->ptr_url, banMsg, iptoa(r->m_urlIp, ipbuf));
 	}
@@ -1417,8 +1418,7 @@ void gotHttpReply2 ( void *state ,
 	if ( banned && 
 	     // retry iff we haven't already, but if we did stop the inf loop
 	     ! r->m_wasInTableBeforeStarting &&
-	     cr &&
-	     ( cr->m_automaticallyBackOff || cr->m_automaticallyUseProxies ) &&
+	     cr && ( cr->m_automaticallyBackOff || cr->m_automaticallyUseProxies ) &&
 	     // but this is not for proxies... only native crawlbot backoff
 	     ! r->m_proxyIp ) {
 		// note this as well
@@ -1433,6 +1433,19 @@ void gotHttpReply2 ( void *state ,
 		// twitchy table.
 		downloadTheDocForReals2 ( r );
 		// that's it. if it had an error it will send back a reply.
+		return;
+	}
+
+	if (retry_proxy) {
+		// note this as well
+		log("msg13: retrying spidered page with proxy for %s", r->ptr_url);
+
+		// reset error
+		g_errno = 0;
+
+		r->m_forceUseFloaters = 1;
+
+		downloadTheDocForReals2(r);
 		return;
 	}
 
