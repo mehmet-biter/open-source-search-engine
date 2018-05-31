@@ -1060,7 +1060,7 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 
 		const Url *location = mime.getLocationUrl();
 		if (g_urlRetryProxyList.isUrlMatched(*location)) {
-			*msg = "redir url match list";
+			*msg = "redir url proxy match list";
 			return true;
 		}
 
@@ -1070,7 +1070,13 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
 	size_t haystack_size = ts->m_readOffset - pre_size;
 	const char *haystack = ts->m_readBuf + pre_size;
-	return g_contentRetryProxyList.isContentMatched(haystack, haystack_size);
+
+	if (g_contentRetryProxyList.isContentMatched(haystack, haystack_size)) {
+		*msg = "content proxy match list";
+		return true;
+	}
+
+	return false;
 }
 
 static void appendCrawlBan(const char *group, const char *url, int urlLen) {
