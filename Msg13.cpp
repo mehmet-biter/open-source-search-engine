@@ -1044,15 +1044,15 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 }
 
 static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
+	Url url;
+	url.set(r->ptr_url, r->size_url);
+
 	HttpMime mime;
-	mime.set(ts->m_readBuf, ts->m_readOffset, nullptr);
+	mime.set(ts->m_readBuf, ts->m_readOffset, &url);
 
 	int32_t httpStatus = mime.getHttpStatus();
 	if (httpStatus == 301 || httpStatus == 302 || httpStatus == 307 || httpStatus == 308) {
 		// check original & redirected url
-		Url url;
-		url.set(r->ptr_url, r->size_url);
-
 		// we only retry when list matches redirected url & does not match original url
 		if (g_urlRetryProxyList.isUrlMatched(url)) {
 			return false;
