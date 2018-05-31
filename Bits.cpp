@@ -243,10 +243,9 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT
 
-	bool startSent = true;
-	bool startFrag = true;
+	bool startSentence = true;
+	bool startFragment = true;
 	bool inQuote = false;
-	bool inParens = false;
 
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;
@@ -260,7 +259,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 			// is it a "breaking tag"?
 			if ( g_nodes[tid].m_isBreaking ) {
-				startSent = true;
+				startSentence = true;
 				inQuote   = false;
 			}
 
@@ -280,23 +279,19 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 		// if alnum, might start sentence or fragment
 		if ( token.is_alfanum ) {
-			if ( startFrag ) {
-				m_swbits[i] |= D_STARTS_FRAG;
-				startFrag = false;
+			if ( startFragment ) {
+				m_swbits[i] |= D_STARTS_FRAGMENT;
+				startFragment = false;
 			}
 
-			if ( startSent ) {
+			if ( startSentence ) {
 				m_swbits[i] |= D_STARTS_SENTENCE;
-				startSent = false;
+				startSentence = false;
 			}
 
 			if ( inQuote ) {
 				m_swbits[i] |= D_IN_QUOTES;
 				inQuote = false;
-			}
-
-			if ( inParens ) {
-				m_swbits[i] |= D_IN_PARENS;
 			}
 
 			// apply any other flags we got
@@ -310,9 +305,9 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 		
 		// this is not 100%
 		if ( has_char(wp,wp+wlen, '(' ) ) {
-			flags |= D_IN_PARENS;
+			flags |= D_IN_PARENTHESES;
 		} else if ( has_char(wp,wp+wlen, ')' ) ) {
-			flags &= ~D_IN_PARENS;
+			flags &= ~D_IN_PARENTHESES;
 		}
 
 		// apply curent flags
@@ -333,9 +328,10 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 
 		// it can start a fragment if not a single space char
 		if ( wlen != 1 || !is_wspace_utf8( wp ) ) {
-			startFrag = true;
+			startFragment = true;
 		}
 
+		// Detect end of sentences so we can set the start-sentence flag on the next word.
 		// ". " denotes end of sentence
 		if ( wlen >= 2 && wp[0] == '.' && is_wspace_utf8( wp + 1 ) ) {
 			// but not if preceeded by an initial
@@ -344,8 +340,21 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 			}
 
 			// ok, really the end of a sentence
-			startSent = true;
+			startSentence = true;
+		} else {
+			//other punctuations marking end of sentences, that aren't overloaded for abbreviation indication as period/fullstop is.
+			int cs = getUtf8CharSize(wp);
+			UChar32 cp = utf8Decode(wp);
+			if(wlen >= cs+1 && is_wspace_utf8(wp+cs) && (cp=='?' ||
+				                                     cp=='!' ||
+				                                     cp==0x037E ||  //greek question mark (although the regular 0x003b is preferred)
+				                                     cp==0x203D ||  //interrobang
+				                                     cp==0x06D4))   //arabic full stop
+			{
+				startSentence = true;
+			}
 		}
+
 
 		// are we a "strong connector", meaning that
 		// Summary.cpp should not split on us if possible

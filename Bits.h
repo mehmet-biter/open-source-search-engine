@@ -63,13 +63,13 @@
 #define D_STARTS_SENTENCE       0x0002
 // . or does it start a sentence fragment, like after a comma or something
 // . the summary excerpt will get *some* bonus points for this
-#define D_STARTS_FRAG           0x0004
+#define D_STARTS_FRAGMENT       0x0004
 // . does this word have a quote right before it?
 #define D_IN_QUOTES             0x0008
 // more bits so we can get rid of Summary::setSummaryScores() so that
 // Summary::getBestWindow() just uses these bits to score the window now
 #define D_IN_TITLE              0x0010
-#define D_IN_PARENS             0x0020
+#define D_IN_PARENTHESES        0x0020
 #define D_IN_HYPERLINK          0x0040
 #define D_IN_BOLDORITALICS      0x0080
 #define D_IN_LIST               0x0100

@@ -14,6 +14,7 @@
 #include "UrlBlockCheck.h"
 #include "Domains.h"
 #include "FxExplicitKeywords.h"
+#include <algorithm>
 
 
 #ifdef _VALGRIND_
@@ -31,7 +32,7 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 	
 	//require &amp; following by a second semicolon
 	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
-	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s))!=NULL) ||
+	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s)-5)!=NULL) ||
 	   (memmem(*s,*len,"&lt;",4)!=NULL && memmem(*s,*len,"&gt;",4)!=NULL)) {
 		//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
 		StackBuf<1024> tmpBuf;
@@ -1332,63 +1333,59 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// this has been called, note it
 	m_hashedTitle = true;
 
-	int32_t      nw   = m_tokenizerResult.size();
-
-	// find the first <title> tag in the doc
-	int32_t i ;
-	for ( i = 0 ; i < nw ; i++ )
-		if ( m_tokenizerResult[i].nodeid == TAG_TITLE ) break;
-
-	// return true if no title
-	if ( i >= nw ) return true;
-
-	// skip tag
-	i++;
-	// mark it as start of title
-	int32_t a = i;
-
-	// limit end
-	int32_t max = i + 40;
-	if ( max > nw ) max = nw;
-
-	// find end of title, either another <title> or a <title> tag
-	for ( ; i < max ; i++ )
-		if ( (m_tokenizerResult[i].nodeid & BACKBITCOMP) == TAG_TITLE ) break;
-
-	// ends on a <title> tag?
-	if ( i == a ) return true;
-
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_prefix    = "title";
-
-	// the new posdb info
-	hi.m_hashGroup      = HASHGROUP_TITLE;
-
-	// . hash it up! use 0 for the date
-	// . use XmlDoc::hashWords()
-	// . use "title" as both prefix and description
-	//if ( ! hashWords (a,i,&hi ) ) return false;
-
-	//FIXME: assumption: title tokens are the phase-1 tokens and the tokens are in contiguous memory
-	//FIXME: also grab the alternative tokens from phase 2 in the title part
-
-	//clean indexing:
-	//  if ( ! hashString(a, i, &hi) ) return false;
-	//but due to bad webmasters:
+	//getXml()->getUtf8Content() results in the HTML to be ~mostly~ decoded but lt/gt/amp are still there escaped.
+	//So get the title text from m_xml, retokenize it, and then index that
+	int rawTitleLen;
+	const char *rawTitle = m_xml.getString("title",&rawTitleLen);
+	if(!rawTitle) {
+		//no title - nothing to do
+		return true;
+	}
 	
-	const char  *title    = m_tokenizerResult[a].token_start;
-	const char  *titleEnd = m_tokenizerResult[i].token_end();
-	int32_t   titleLen = titleEnd - title;
+	//The amp/lt/gt are still there so decode them once again to get rid of them.
+	//Due to bad webmasters there can be double-encoded entities in the title. Technically it is
+	//their error but we can make some repairs on those pages.
+	const char *title    = rawTitle;
+	int32_t     titleLen = rawTitleLen;
 	StackBuf<1024> doubleDecodedContent;
 	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
 	
-	if ( ! hashString(title, titleLen, &hi)) return false;
-
-	// now hash as without title: prefix
-	hi.m_prefix = NULL;
-	if ( ! hashString(title, titleLen, &hi)) return false;
-
+	//get language and country if known, so tokenizer phase 2 can do its magic
+	lang_t lang_id;
+	uint8_t *tmpLangId = getLangId();
+	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
+		lang_id = (lang_t)*tmpLangId;
+	else
+		lang_id = langUnknown;
+	
+	const char *countryCode = NULL;
+	uint16_t *countryId = getCountryId();
+	if(countryId!=NULL && countryId!=(uint16_t*)-1)
+		countryCode = g_countryCode.getAbbr(*countryId);
+	
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(title,titleLen,&tr);
+	plain_tokenizer_phase_2((lang_t)lang_id, countryCode, &tr);
+	calculate_tokens_hashes(&tr);
+	sortTokenizerResult(&tr);
+	
+	Bits bits;
+	if(!bits.set(&tr))
+		return false;
+	
+	HashInfo hi;
+	hi.m_tt        = tt;
+	hi.m_hashGroup = HASHGROUP_TITLE;
+	
+	// hash with title: prefix
+	hi.m_prefix    = "title";
+	if(!hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf))
+		return false;
+	// hash without title: prefix
+	hi.m_prefix    = NULL;
+	if(!hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf))
+		return false;
+	
 	return true;
 }
 
@@ -1609,6 +1606,13 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	}
 	// all done
 	return true;
+}
+
+void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
+	std::sort(tr->tokens.begin(), tr->tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
+		return tr0.start_pos < tr1.start_pos ||
+		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
+	});
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {

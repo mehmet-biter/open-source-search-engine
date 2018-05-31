@@ -729,7 +729,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 
 		// find out the first instance of a fragment (comma, etc)
 		// watch out! because frag also means 's' in there's
-		if ( ( bb[a] & D_STARTS_FRAG ) && !(bb[a-1] & D_IS_STRONG_CONNECTOR) && firstFrag == -1 ) {
+		if ( ( bb[a] & D_STARTS_FRAGMENT ) && !(bb[a-1] & D_IS_STRONG_CONNECTOR) && firstFrag == -1 ) {
 			firstFrag = a;
 		}
 
@@ -904,7 +904,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		int32_t t = 100;
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 
@@ -965,7 +965,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 
@@ -1007,7 +1007,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		// this a 20k bonus if it starts a sentence
 		if ( bb[a] & D_STARTS_SENTENCE ) {
 			score += 8000;
-		} else if ( bb[a] & D_STARTS_FRAG ) {
+		} else if ( bb[a] & D_STARTS_FRAGMENT ) {
 			// likewise, a fragment, like after a comma
 			score += 4000;
 		}
