@@ -573,6 +573,7 @@ public:
 			Sections *sections, const Bits *bits,
 			const char *fragVec, const char *wordSpamVec, const char *langVec,
 			HashTableX *wts, SafeBuf *wbuf);
+	bool hashString4(const char *s, int32_t slen, HashInfo *hi);
 
 
 	// print out for PageTitledb.cpp and PageParser.cpp

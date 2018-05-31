@@ -572,32 +572,14 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		StackBuf<1024> doubleDecodedContent;
 		possiblyDecodeHtmlEntitiesAgain(&s, &len, &doubleDecodedContent, true);
 
-		lang_t lang_id;
-		const char *countryCode;
-		getLanguageAndCountry(&lang_id,&countryCode);
-		
-		TokenizerResult tr;
-		plain_tokenizer_phase_1(s,len,&tr);
-		plain_tokenizer_phase_2(lang_id, countryCode, &tr);
-		calculate_tokens_hashes(&tr);
-		Bits bits;
-		if(!bits.set(&tr))
-			return false;
-		sortTokenizerResult(&tr);
-
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
-		// desc is NULL, prefix will be used as desc
-		bool status = hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf);
+		bool status = hashString4(s,len,&hi);
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
-
-		// return false with g_errno set on error
-		//if ( ! hashNumberForSorting ( buf , bufLen , &hi ) )
-		//	return false;
 	}
 
 	return true;
@@ -1511,7 +1493,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta summary";
 	// hash it
-	if ( ! hashString ( ms , mslen , &hi )) return false;
+	if(!hashString4(ms,mslen,&hi))
+		return false;
 
 
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
@@ -1522,7 +1505,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
 	// . TODO: only hash if unique????? set a flag on ht then i guess
-	if ( ! hashString ( md , mdlen , &hi ) ) return false;
+	if(!hashString4(md,mdlen, &hi))
+		return false;
 
 	return true;
 }
@@ -1754,6 +1738,23 @@ bool XmlDoc::hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
 		return false;
 
 	return hashWords3( hi, &m_tokenizerResult, begin_token, end_token, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
+}
+
+bool XmlDoc::hashString4(const char *s, int32_t slen, HashInfo *hi) {
+	TokenizerResult tr;
+	Bits    bits;
+	lang_t lang_id;
+	const char *countryCode;
+	
+	getLanguageAndCountry(&lang_id,&countryCode);
+	plain_tokenizer_phase_1(s,slen,&tr);
+	plain_tokenizer_phase_2(lang_id,countryCode,&tr);
+	calculate_tokens_hashes(&tr);
+	sortTokenizerResult(&tr);
+	if(!bits.set(&tr))
+		return false;
+
+	return hashWords3( hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf );
 }
 
 
