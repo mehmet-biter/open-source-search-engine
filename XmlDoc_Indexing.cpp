@@ -31,7 +31,7 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 	
 	//require &amp; following by a second semicolon
 	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
-	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s))!=NULL) ||
+	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s)-5)!=NULL) ||
 	   (memmem(*s,*len,"&lt;",4)!=NULL && memmem(*s,*len,"&gt;",4)!=NULL)) {
 		//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
 		StackBuf<1024> tmpBuf;
@@ -1391,7 +1391,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	if(!any_non_primary_tokens) {
 		//use the raw source memory because the tokens match up
 		title    = m_tokenizerResult[a].token_start;
-		titleEnd = m_tokenizerResult[i].token_end();
+		titleEnd = m_tokenizerResult[i-1].token_end();
 	} else {
 		//copy primary tokens to tmpTitleBuf
 		for(int j=a; j<i; j++)
