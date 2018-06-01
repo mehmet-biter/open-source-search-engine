@@ -14,6 +14,7 @@
 #include "UrlBlockCheck.h"
 #include "Domains.h"
 #include "FxExplicitKeywords.h"
+#include <algorithm>
 
 
 #ifdef _VALGRIND_
@@ -31,7 +32,7 @@ static void possiblyDecodeHtmlEntitiesAgain(const char **s, int32_t *len, SafeBu
 	
 	//require &amp; following by a second semicolon
 	const char *amppos = (const char*)memmem(*s,*len, "&amp;", 5);
-	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s))!=NULL) ||
+	if((amppos && memchr(amppos+5, ';', *len-(amppos-*s)-5)!=NULL) ||
 	   (memmem(*s,*len,"&lt;",4)!=NULL && memmem(*s,*len,"&gt;",4)!=NULL)) {
 		//shortest entity is 4 char (&lt;), longest utf8 encoding of a codepoint is 4 + a bit
 		StackBuf<1024> tmpBuf;
@@ -575,15 +576,10 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
-		// desc is NULL, prefix will be used as desc
-		bool status = hashString ( s,len, &hi );
+		bool status = hashString4(s,len,&hi);
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
-
-		// return false with g_errno set on error
-		//if ( ! hashNumberForSorting ( buf , bufLen , &hi ) )
-		//	return false;
 	}
 
 	return true;
@@ -1266,7 +1262,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 		// . we still have the score punish from # of words though!
 		// . for inlink texts that are the same it should accumulate
 		//   and use the reserved bits as a multiplier i guess...
-		if ( ! hashString ( txt,tlen,&hi) ) return false;
+		if ( ! hashString4(txt,tlen,&hi) ) return false;
 		// now record this so we can match the link text to
 		// a matched offsite inlink text term in the scoring info
 		//k->m_wordPosEnd = hi.m_startDist;
@@ -1332,84 +1328,51 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// this has been called, note it
 	m_hashedTitle = true;
 
-	int32_t      nw   = m_tokenizerResult.size();
-
-	// find the first <title> tag in the doc
-	int32_t i ;
-	for ( i = 0 ; i < nw ; i++ )
-		if ( m_tokenizerResult[i].nodeid == TAG_TITLE ) break;
-
-	// return true if no title
-	if ( i >= nw ) return true;
-
-	// skip tag
-	i++;
-	// mark it as start of title
-	int32_t a = i;
-
-	// limit end
-	int32_t max = i + 40;
-	if ( max > nw ) max = nw;
-
-	// find end of title, either another <title> or a <title> tag
-	for ( ; i < max ; i++ )
-		if ( (m_tokenizerResult[i].nodeid & BACKBITCOMP) == TAG_TITLE ) break;
-
-	// ends on a <title> tag?
-	if ( i == a ) return true;
-
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_prefix    = "title";
-
-	// the new posdb info
-	hi.m_hashGroup      = HASHGROUP_TITLE;
-
-	// . hash it up! use 0 for the date
-	// . use XmlDoc::hashWords()
-	// . use "title" as both prefix and description
-	//if ( ! hashWords (a,i,&hi ) ) return false;
-
-	//FIXME: also grab the alternative tokens from phase 2 in the title part
-
-	//clean indexing:
-	//  if ( ! hashString(a, i, &hi) ) return false;
-	//but due to bad webmasters we have to decode html entities multiple times.
-	
-	bool any_non_primary_tokens = false;
-	for(int j=a; j<=i; j++) {
-		if(!m_tokenizerResult[j].is_primary) {
-			any_non_primary_tokens = true;
-			break;
-		}
+	//getXml()->getUtf8Content() results in the HTML to be ~mostly~ decoded but lt/gt/amp are still there escaped.
+	//So get the title text from m_xml, retokenize it, and then index that
+	int rawTitleLen;
+	const char *rawTitle = m_xml.getString("title",&rawTitleLen);
+	if(!rawTitle) {
+		//no title - nothing to do
+		return true;
 	}
 	
-	const char  *title;
-	const char  *titleEnd;
-	StackBuf<1024> tmpTitleBuf;
-	
-	if(!any_non_primary_tokens) {
-		//use the raw source memory because the tokens match up
-		title    = m_tokenizerResult[a].token_start;
-		titleEnd = m_tokenizerResult[i].token_end();
-	} else {
-		//copy primary tokens to tmpTitleBuf
-		for(int j=a; j<=i; j++)
-			tmpTitleBuf.safeMemcpy(m_tokenizerResult[j].token_start,m_tokenizerResult[j].token_len);
-		title    = tmpTitleBuf.getBufStart();
-		titleEnd = tmpTitleBuf.getBufPtr();
-		//TODO: Investigate if it isn't better to just find the relevant XmlNode and get the text (title) from there.
-	}
-	int32_t   titleLen = titleEnd - title;
+	//The amp/lt/gt are still there so decode them once again to get rid of them.
+	//Due to bad webmasters there can be double-encoded entities in the title. Technically it is
+	//their error but we can make some repairs on those pages.
+	const char *title    = rawTitle;
+	int32_t     titleLen = rawTitleLen;
 	StackBuf<1024> doubleDecodedContent;
 	possiblyDecodeHtmlEntitiesAgain(&title, &titleLen, &doubleDecodedContent, false);
 	
-	if ( ! hashString(title, titleLen, &hi)) return false;
-
-	// now hash as without title: prefix
-	hi.m_prefix = NULL;
-	if ( ! hashString(title, titleLen, &hi)) return false;
-
+	//get language and country if known, so tokenizer phase 2 can do its magic
+	lang_t lang_id;
+	const char *countryCode;
+	getLanguageAndCountry(&lang_id,&countryCode);
+	
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(title,titleLen,&tr);
+	plain_tokenizer_phase_2(lang_id, countryCode, &tr);
+	calculate_tokens_hashes(&tr);
+	sortTokenizerResult(&tr);
+	
+	Bits bits;
+	if(!bits.set(&tr))
+		return false;
+	
+	HashInfo hi;
+	hi.m_tt        = tt;
+	hi.m_hashGroup = HASHGROUP_TITLE;
+	
+	// hash with title: prefix
+	hi.m_prefix    = "title";
+	if(!hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf))
+		return false;
+	// hash without title: prefix
+	hi.m_prefix    = NULL;
+	if(!hashWords3(&hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf))
+		return false;
+	
 	return true;
 }
 
@@ -1458,7 +1421,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mk , mklen , &hi);
+	return hashString4(mk, mklen, &hi);
 }
 
 
@@ -1491,7 +1454,7 @@ bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
 		hi.m_tt         = tt;
 		hi.m_desc       = "explicit keywords";
 		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
-		return hashString(ptr_explicitKeywords, size_explicitKeywords, &hi);
+		return hashString4(ptr_explicitKeywords, size_explicitKeywords, &hi);
 	} else
 		return true; //nothing done - no error
 }
@@ -1530,7 +1493,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta summary";
 	// hash it
-	if ( ! hashString ( ms , mslen , &hi )) return false;
+	if(!hashString4(ms,mslen,&hi))
+		return false;
 
 
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
@@ -1541,7 +1505,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
 	// . TODO: only hash if unique????? set a flag on ht then i guess
-	if ( ! hashString ( md , mdlen , &hi ) ) return false;
+	if(!hashString4(md,mdlen, &hi))
+		return false;
 
 	return true;
 }
@@ -1561,7 +1526,7 @@ bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mgp , mgplen , &hi);
+	return hashString4(mgp, mgplen, &hi);
 }
 
 
@@ -1630,6 +1595,28 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	}
 	// all done
 	return true;
+}
+
+void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
+	std::sort(tr->tokens.begin(), tr->tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
+		return tr0.start_pos < tr1.start_pos ||
+		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
+	});
+}
+
+void XmlDoc::getLanguageAndCountry(lang_t *lang, const char **country_code) {
+	//get language and country if known, so tokenizer phase 2 can do its magic
+	uint8_t *tmpLangId = getLangId();
+	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
+		*lang = (lang_t)*tmpLangId;
+	else
+		*lang = langUnknown;
+	
+	uint16_t *countryId = getCountryId();
+	if(countryId!=NULL && countryId!=(uint16_t*)-1)
+		*country_code = g_countryCode.getAbbr(*countryId);
+	else
+		*country_code = NULL;
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
@@ -1751,6 +1738,23 @@ bool XmlDoc::hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
 		return false;
 
 	return hashWords3( hi, &m_tokenizerResult, begin_token, end_token, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
+}
+
+bool XmlDoc::hashString4(const char *s, int32_t slen, HashInfo *hi) {
+	TokenizerResult tr;
+	Bits    bits;
+	lang_t lang_id;
+	const char *countryCode;
+	
+	getLanguageAndCountry(&lang_id,&countryCode);
+	plain_tokenizer_phase_1(s,slen,&tr);
+	plain_tokenizer_phase_2(lang_id,countryCode,&tr);
+	calculate_tokens_hashes(&tr);
+	sortTokenizerResult(&tr);
+	if(!bits.set(&tr))
+		return false;
+
+	return hashWords3( hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf );
 }
 
 
@@ -2055,7 +2059,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 			const auto &t2 = (*tr)[j];
 			if(t2.is_alfanum && t2.start_pos>=token.end_pos)
 				break;
-			if(!bits->canBeInPhrase(i) && !bits->canPairAcross(j)) {
+			if(!bits->canBeInPhrase(j) && !bits->canPairAcross(j)) {
 				generate_bigram = false;
 				break;
 			}

@@ -3967,10 +3967,7 @@ TokenizerResult *XmlDoc::getTokenizerResult2() {
 	m_sectionsValid = false;
 	m_posValid = false;
 	//and the bigram generation in XmlDoc::hashWords3() requires that the tokens are sorted by <startpos,endpos>
-	std::sort(m_tokenizerResult.tokens.begin(), m_tokenizerResult.tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
-		return tr0.start_pos < tr1.start_pos ||
-		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
-	});
+	sortTokenizerResult(&m_tokenizerResult);
 	
 	logQueryTimingEnd( __func__, start );
 

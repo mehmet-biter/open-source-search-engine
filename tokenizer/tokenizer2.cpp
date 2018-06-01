@@ -433,7 +433,7 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 		//t1 must be a single blotch
 		if(t1.token_len>4)
 			continue;
-		UChar32 uc[2];
+		UChar32 uc[4];
 		int ucs = decode_utf8_string(t1.token_start,t1.token_len,uc);
 		if(ucs!=1)
 			continue;
@@ -781,6 +781,8 @@ static void recognize_telephone_numbers_sweden(TokenizerResult *tr) {
 				}
 			}
 		}
+		if(last_digit_token_idx>=org_token_count)
+			last_digit_token_idx = org_token_count-1;
 		if(digit_count<5)
 			continue;
 		if(digit_count>10)
@@ -1171,7 +1173,9 @@ static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *cou
 
 static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len) {
 	char *s = NULL;
-	for(const auto &t : tr->tokens) {
+	size_t org_token_count = tr->size();
+	for(size_t i=1; i<org_token_count; i++) {
+		const auto &t = (*tr)[i];
 		if(t.token_len==1 && *t.token_start=='&') {
 			if(!s) {
 				s = (char*)tr->egstack.alloc(ampersand_word_len);
