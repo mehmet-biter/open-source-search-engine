@@ -1171,7 +1171,9 @@ static void rewrite_ampersands(TokenizerResult *tr, lang_t lang, const char *cou
 
 static void rewrite_ampersands(TokenizerResult *tr, const char *ampersand_word, size_t ampersand_word_len) {
 	char *s = NULL;
-	for(const auto &t : tr->tokens) {
+	size_t org_token_count = tr->size();
+	for(size_t i=1; i<org_token_count; i++) {
+		const auto &t = (*tr)[i];
 		if(t.token_len==1 && *t.token_start=='&') {
 			if(!s) {
 				s = (char*)tr->egstack.alloc(ampersand_word_len);
