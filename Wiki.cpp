@@ -1,7 +1,6 @@
 #include "Wiki.h"
 
 #include "Query.h"
-#include "Words.h"
 #include "Titledb.h"
 #include "Process.h"
 #include "Conf.h"
@@ -108,12 +107,11 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		// do not use '(' since too many non-phraes in ()'s (for love)
 		for (eol = p; eol < pend && *eol !='\n' ; eol++) ;
 		// parse into words
-		Words w;
-		if ( !w.set( p, eol - p ) ) {
-			return false;
-		}
+		TokenizerResult tr;
+		plain_tokenizer_phase_1(p,eol-p, &tr);
+		calculate_tokens_hashes(&tr);
 
-		int32_t nw = w.getNumWords();
+		int32_t nw = tr.size();
 
 		// skip if it begins with 'the', like 'the uk' because it
 		// is causing uk to get a low score in 'boots in the uk'.
@@ -123,7 +121,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		// if no words, bail
 		if ( start >= nw ) continue;
 		// remove last words if not alnum
-		if ( nw > 0 && !w.isAlnum(nw-1) ) nw--;
+		if ( nw > 0 && !tr[nw-1].is_alfanum ) nw--;
 		// if no words, bail
 		if ( start >= nw ) continue;
 		// skip this line if no words
@@ -140,8 +138,6 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		//if ( ! pp ) printf("%s\n",p);
 		*eol = c;
 		if ( pp ) continue;
-		// get these
-		const int64_t *wids = w.getWordIds();
 		// reset hash
 		uint32_t h = 0;
 		// count the words in the phrase
@@ -149,9 +145,9 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		// hash the word ids together
 		for ( int32_t i = start ; i < nw ; i++ ) {
 			// skip if not a proper word
-			if ( ! w.isAlnum(i) ) continue;
+			if ( !tr[i].is_alfanum ) continue;
 			// add into hash quickly
-			h = hash32Fast ( wids[i] & 0xffffffff , h );
+			h = hash32Fast ( tr[i].token_hash & 0xffffffff , h );
 			// count them
 			count++;
 		}
@@ -179,12 +175,8 @@ bool Wiki::loadText ( int32_t fileSize ) {
 
 // if a phrase in a query is in a wikipedia title, then increase
 // its affWeights beyond the normal 1.0
-int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
-	const int64_t *wids = w->getWordIds();
-	if ( ! wids[i] ) return 0;
-	int32_t nw = w->getNumWords();
-	const char * const *wptrs = w->getWordPtrs();
-	const int32_t  *wlens = w->getWordLens();
+int32_t Wiki::getNumWordsInWikiPhrase(unsigned i, const TokenizerResult *tr) {
+	if(!(*tr)[i].is_alfanum) return 0;
 	// how many in the phrase
 	int32_t maxCount = 0;
 	// accumulate a hash of the word ids
@@ -192,15 +184,16 @@ int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 	uint32_t h = 0;
 	int32_t      wcount = 0;
 	// otherwise, increase affinity high for included words
-	for ( int32_t j = i ; j < nw && j < i + 12 ; j++ ) {
+	for(unsigned j = i; j < tr->size() && j < i + 12; j++ ) {
+		const auto &token = (*tr)[j];
 		// count all words
 		wcount++;
 		// skip if not alnum
-		if ( ! wids[j] ) continue;
+		if ( !token.is_alfanum ) continue;
 		// add to hash
 		//h = hash64 ( wids[j] , h );
 		// add into hash quickly
-		h = hash32Fast ( wids[j] & 0xffffffff , h );
+		h = hash32Fast ( token.token_hash & 0xffffffff , h );
 		// skip single words, we only want to check phrases
 		if ( j == i ) continue;
 		// look in table
@@ -214,17 +207,17 @@ int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 			// fix for "Make a" being a phrase because "Makea"
 			// is in the wikipedia. fix for
 			// 'how to make a lock pick set'
-			if ( wlens[i+2] <= 2 ) continue;
+			if ( (*tr)[i+2].token_len <= 2 ) continue;
 			// special hash
 			uint64_t h64 = 0;
 			int32_t conti = 0;
 			// add into hash quickly
-			h64 = hash64Lower_utf8_cont(wptrs[i], 
-						    wlens[i],
+			h64 = hash64Lower_utf8_cont((*tr)[i].token_start,
+						    (*tr)[i].token_len,
 						    h64,
 						    &conti );
-			h64 = hash64Lower_utf8_cont(wptrs[i+2], 
-						    wlens[i+2],
+			h64 = hash64Lower_utf8_cont((*tr)[i+2].token_start,
+						    (*tr)[i+2].token_len,
 						    h64,
 						    &conti );
 			// try looking that up

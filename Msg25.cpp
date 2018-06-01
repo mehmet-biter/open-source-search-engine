@@ -4,7 +4,6 @@
 #include "linkspam.h"
 #include "Xml.h"
 #include "HashTableX.h"
-#include "Words.h"
 #include "Titledb.h"
 #include "Collectiondb.h"
 #include "Process.h"

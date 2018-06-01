@@ -289,6 +289,26 @@ bool is_upper_utf8_string(const char *s, const char *send) {
 	return true;
 }
 
+bool is_wspace_utf8_string(const char *s, const char *send) {
+	char cs = 0;
+	for( ; s < send ; s += cs) {
+		cs = getUtf8CharSize(s);
+		if(!is_wspace_utf8(s))
+			return false;
+	}
+	return true;
+}
+
+bool has_wspace_utf8_string(const char *s, const char *send) {
+	char cs = 0;
+	for( ; s < send ; s += cs) {
+		cs = getUtf8CharSize(s);
+		if(is_wspace_utf8(s))
+			return true;
+	}
+	return false;
+}
+
 bool is_alnum_api_utf8_string(const char *s, const char *send) {
 	if(s==send)
 		return false; //empty string is not an identifyer
@@ -308,6 +328,16 @@ bool is_alnum_api_utf8_string(const char *s, const char *send) {
 	}
 	return true;
 }
+
+bool is_ascii_digit_string(const char *s, const char *send) {
+	while(s<send) {
+		char c = *s++;
+		if(c<'0' || c>'9')
+			return false;
+	}
+	return true;
+}
+
 
 // . returns bytes stored into "dst" from "src"
 // . just do one character, which may be from 1 to 4 bytes

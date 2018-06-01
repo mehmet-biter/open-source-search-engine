@@ -19,7 +19,7 @@
 #define GB_XMLDOC_H
 
 #include "Lang.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Bits.h"
 #include "Pos.h"
 #include "Phrases.h"
@@ -56,6 +56,9 @@
 
 // forward declaration
 class GetMsg20State;
+class HashTableX;
+class HashInfo;
+
 
 namespace GbDns {
 	struct DnsResponse;
@@ -73,17 +76,16 @@ namespace GbDns {
 #define MAX_SURROUNDING_TEXT_WIDTH 600
 #define MAX_RSSITEM_SIZE  30000
 
-bool getDensityRanks ( const int64_t *wids,
-		       int32_t nw,
+bool getDensityRanks ( const TokenizerResult *tr,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
 		       const Sections *sections);
 
 // diversity vector
-bool getDiversityVec ( const Words *words ,
+bool getDiversityVec ( const TokenizerResult *tr,
 		       const Phrases *phrases ,
 		       class HashTableX *countTable ,
-		       class SafeBuf *sbWordVec );
+		       SafeBuf *sbWordVec );
 
 float computeSimilarity ( const int32_t   *vec0,
 			  const int32_t   *vec1,
@@ -115,7 +117,7 @@ int gbcompress(unsigned char *dest,
 // . *pend must equal \0
 int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
 
-bool getWordPosVec ( const Words *words,
+bool getWordPosVec ( const TokenizerResult *tr,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
@@ -280,7 +282,7 @@ public:
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    const char *coll,
-		    class SafeBuf *p,
+		    SafeBuf *p,
 		    int32_t niceness ,
 		    class SpiderRequest *sreq = NULL );
 
@@ -294,7 +296,7 @@ public:
 	bool set4 ( class SpiderRequest *sreq  , 
 		    const key96_t       *doledbKey,
 		    const char      *coll      ,
-		    class SafeBuf   *pbuf      , 
+		    SafeBuf   *pbuf      , 
 		    int32_t          niceness  ,
 		    char            *utf8Content = NULL ,
 		    bool             deleteFromIndex = false ,
@@ -354,8 +356,9 @@ public:
 	lang_t getContentLangIdCLD2();
 	lang_t getContentLangIdCLD3();
 
-	uint8_t computeLangId ( Sections *sections ,Words *words , char *lv ) ;
-	class Words *getWords ( ) ;
+	uint8_t computeLangId(Sections *sections, const TokenizerResult *tr, char *lv);
+	TokenizerResult *getTokenizerResult();
+	TokenizerResult *getTokenizerResult2();
 	class Bits *getBits ( ) ;
 	class Bits *getBitsForSummary ( ) ;
 	class Pos *getPos ( );
@@ -364,11 +367,11 @@ public:
 	int32_t *getLinkSiteHashes ( );
 	class Links *getLinks ( bool doQuickSet = false ) ;
 	class HashTableX *getCountTable ( ) ;
-	bool hashString_ct ( class HashTableX *ht, char *s , int32_t slen ) ;
+	bool hashString_ct(HashTableX *ht, const char *s, int32_t slen);
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
-	int32_t computeVector ( class Words *words, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
+	int32_t computeVector ( const TokenizerResult *tr, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
 	int64_t *getExactContentHash64();
@@ -453,13 +456,13 @@ public:
 	int32_t *getIndexCode ( ) ;
 	SafeBuf *getNewTagBuf ( ) ;
 
-	void logIt ( class SafeBuf *bb = NULL ) ;
+	void logIt ( SafeBuf *bb = NULL ) ;
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 
 	void printMetaList() const;
 	void printMetaList ( char *metaList , char *metaListEnd ,
-			     class SafeBuf *pbuf );
+			     SafeBuf *pbuf );
 	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
 	bool hashMetaList ( class HashTableX *ht        ,
 			    char       *p         ,
@@ -500,7 +503,7 @@ public:
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
 			   int64_t docId ,
-			   class SafeBuf *buf = NULL );
+			   SafeBuf *buf = NULL );
 
 	bool addTable224 ( HashTableX *tt1 ) ;
 
@@ -523,6 +526,8 @@ public:
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
+	void sortTokenizerResult(TokenizerResult *tr);
+	void getLanguageAndCountry(lang_t *lang, const char **country_code);
 
 	class Url *getBaseUrl ( ) ;
 
@@ -553,13 +558,23 @@ public:
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
+	bool hashString(size_t begin_token, size_t end_token, HashInfo *hi);
 
-	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
-					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
-					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
+	bool hashString3(const char *s, int32_t slen, class HashInfo *hi,
+			 HashTableX *wts, SafeBuf *wbuf);
+	bool hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
+			 HashTableX *wts, SafeBuf *wbuf);
+	
+	bool hashWords3(HashInfo *hi, const TokenizerResult *tr,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf);
+	bool hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_token, size_t end_token,
+			Sections *sections, const Bits *bits,
+			const char *fragVec, const char *wordSpamVec, const char *langVec,
+			HashTableX *wts, SafeBuf *wbuf);
+	bool hashString4(const char *s, int32_t slen, HashInfo *hi);
 
-	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
-			  class HashTableX *wts, class SafeBuf *wbuf);
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
@@ -643,7 +658,7 @@ public:
 	// . these classes are only set on demand
 	Xml        m_xml;
 	Links      m_links;
-	Words      m_words;
+	TokenizerResult m_tokenizerResult;
 	Bits       m_bits;
 	Bits       m_bits2;
 	Pos        m_pos;
@@ -717,7 +732,8 @@ public:
 	bool m_isContentTruncatedValid;
 	bool m_xmlValid;
 	bool m_linksValid;
-	bool m_wordsValid;
+	bool m_tokenizerResultValid;
+	bool m_tokenizerResultValid2;
 	bool m_bitsValid;
 	bool m_bits2Valid;
 	bool m_posValid;

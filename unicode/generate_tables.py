@@ -16,6 +16,9 @@ last_codepoint = max(UnicodeData.data.keys())
 
 print "Last codepoint: %d"%last_codepoint
 
+def is_interesting(codepoint):
+	return codepoint in [0x002D, 0x00AD, 0x2010, 0x2011]
+
 ## Generate codepoint->script mapping
 script_name_to_code_mapping = {
 	"Adlam":1,
@@ -220,6 +223,7 @@ with open("unicode_properties.dat","w") as f:
 	for codepoint in range(0,last_codepoint+1):
 		if codepoint in UnicodeData.data:
 			cpi = UnicodeData.data[codepoint]
+			if is_interesting(codepoint): print "U+%04X: props: %s"%(codepoint,cpi.props)
 			prop_bits = 0
 			for p in cpi.props:
 				if p in property_to_bit_mapping:
@@ -295,24 +299,43 @@ with open("unicode_wordchars.dat","w") as f:
 			cpi = UnicodeData.data[codepoint]
 			if "Alphabetic" in cpi.derived_core_props or \
 			   "Grapheme_Extend" in cpi.derived_core_props:
-				#if codepoint<1024*9: print "U+%04X: '%s' = true"%(codepoint,unichr(codepoint))
 				is_wordchar = True
 			elif cpi.general_category=='Nd' or \
 			     cpi.general_category=='Nl' or \
 			     cpi.general_category=='No':
 				is_wordchar = True
 			else:
-				#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
 				is_wordchar = False
 		else:
-			#if codepoint<1024*9: print "U+%04X: '%s' = false"%(codepoint,unichr(codepoint))
 			is_wordchar = False #missing codepoint
+		if is_interesting(codepoint): print "U+%04X: '%s' : wordchar=%s"%(codepoint,unichr(codepoint),is_wordchar)
 		if is_wordchar:
 			f.write('\1')
 		else:
 			f.write('\0')
 print "Done."
 
+
+#ignorable codepoints. used in conjunction with is_alfanum and script checks. If a codepoint is ignoreable then it can be skipped or included or whatever. It doesn't matter.
+print "Generating unicode_is_ignorable.dat"
+with open("unicode_is_ignorable.dat","w") as f:
+	for codepoint in range(0,last_codepoint+1):
+		is_ignorable = False
+		if codepoint in UnicodeData.data:
+			cpi = UnicodeData.data[codepoint]
+			if "Default_Ignorable_Code_Point" in cpi.derived_core_props:
+				is_ignorable = True
+			else:
+				is_ignorable = False
+		else:
+			is_ignorable = False #missing codepoint
+		if is_interesting(codepoint): print "U+%04X: '%s' : is_ignorable=%s"%(codepoint,unichr(codepoint),is_ignorable)
+		if is_ignorable:
+			f.write('\1')
+		else:
+			f.write('\0')
+				
+print "Done"
 
 print "Generating unicode_is_alphabetic.dat"
 with open("unicode_is_alphabetic.dat","w") as f:
@@ -389,4 +412,47 @@ with open("unicode_canonical_decomposition.dat","w") as f:
 			f.write(struct.pack("@I",len(cpi.decomposition)))
 			for decomposition_codepoint in cpi.decomposition:
 				f.write(struct.pack("@I",decomposition_codepoint))
+print "Done"
+
+
+#findx-specific decomposition
+#This is used for decomposing codepoints, then examining which combining marks should be removed, and then composing again.
+#This includes the canonical and compatible decompositions, except:
+#  - compatibility-decompositions to a single codepoint, eg. microsign μ (U+00B5) ->  u (U+03BC),
+#  - any decomposition that doesn't result in at least one combining mark/diacritic
+#  - isn't alphabetic
+#The other marks categories:
+#  - "Mc" are spacing marks and mostly used for vowel signs.
+#  - "Me" enclosing marks cyrillic hundred/thousand/million/... modifiers to letters apparently used in church slavonic, or they are enclosing circle/diamond/square/...
+def any_combining_marks(decomposition):
+	for codepoint in decomposition:
+		if codepoint in UnicodeData.data and UnicodeData.data[codepoint].general_category=="Mn":
+			return True #nonspacing mark
+		if codepoint in UnicodeData.data:
+			if UnicodeData.data[codepoint].decomposition:
+				#multi-layer decomposition. Guess that it does have one or more combining marks.
+				#this case only appears for 4 codepoints in unicode v10.0 data (Ǆ/ǅ/ǆ/ﬅ)
+				return True
+	return False
+
+print "Generating unicode_combining_mark_decomposition.dat"
+with open("unicode_combining_mark_decomposition.dat","w") as f:
+	for codepoint,cpi in UnicodeData.data.iteritems():
+		if "Alphabetic" in cpi.derived_core_props and cpi.decomposition and len(cpi.decomposition)>1:
+			generate_decomposition = False
+			if cpi.decomposition_type==None: #canonical
+				generate_decomposition = True
+			elif cpi.decomposition_type=="compat":
+				if any_combining_marks(cpi.decomposition):
+					generate_decomposition = True
+			if generate_decomposition:
+				if is_interesting(codepoint): print "U+%04X: '%s' : decompose"%(codepoint,unichr(codepoint))
+				f.write(struct.pack("@I",codepoint))
+				f.write(struct.pack("@I",len(cpi.decomposition)))
+				for decomposition_codepoint in cpi.decomposition:
+					f.write(struct.pack("@I",decomposition_codepoint))
+			else:
+				if is_interesting(codepoint): print "U+%04X: '%s' : no decomposition"%(codepoint,unichr(codepoint))
+		else:
+			if is_interesting(codepoint): print "U+%04X: '%s' : no decomposition entry (non-alfa/no-comp/comp-len<2"%(codepoint,unichr(codepoint))
 print "Done"

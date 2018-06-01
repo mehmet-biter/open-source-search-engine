@@ -424,6 +424,7 @@ class Conf {
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
+	bool m_logTraceTokenIndexing;
 	bool m_logTraceUrlMatchList;
 	bool m_logTraceUrlResultOverride;
 	bool m_logTraceWordSpam;

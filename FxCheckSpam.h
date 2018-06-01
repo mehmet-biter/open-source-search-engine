@@ -19,10 +19,12 @@
 #ifndef FXCHECKSPAM_H_
 #define FXCHECKSPAM_H_
 
+#include "FxTermCheckList.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <string>
-#include "FxTermCheckList.h"
+
+class TokenizerResult;
 
 class CheckSpam {
 public:
@@ -42,7 +44,7 @@ public:
 private:
 	Url *m_url;
 	Xml *m_xml;
-	Words *m_words;
+	TokenizerResult *m_tokenizerResult;
 	Phrases *m_phrases;
 
 	char *m_debbuf;

@@ -2,7 +2,6 @@
 
 #include "Query.h"
 #include "Title.h"
-#include "Words.h"
 #include "Sections.h"
 #include "Pops.h"
 #include "Pos.h"
@@ -16,6 +15,8 @@
 #include "Conf.h"
 #include "Xml.h"
 #include "Mem.h"
+#include "GbUtil.h"
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -141,17 +142,26 @@ enum class title_source_t {
 };
 #define MAX_TIT_CANDIDATES 100
 
+static bool isAlpha(const TokenRange &token) {
+	if(!token.is_alfanum)
+		return false;
+	if(is_ascii_digit_string(token.token_start,token.token_end()))
+		return true;
+	return false;
+}
+
+
 // does word qualify as a subtitle delimeter?
-static bool isWordQualified(const char *wp, int32_t wlen) {
+static bool isWordQualified(const TokenRange &token) {
 	// must be punct word
-	if ( is_alnum_utf8( wp ) ) {
+	if ( token.is_alfanum ) {
 		return false;
 	}
 
 	// scan the chars
-	int32_t x;
-	for ( x = 0; x < wlen; x++ ) {
-		if ( wp[x] == ' ' ) {
+	unsigned x;
+	for ( x = 0; x < token.token_len; x++ ) {
+		if ( token.token_start[x] == ' ' ) {
 			continue;
 		}
 		break;
@@ -159,12 +169,12 @@ static bool isWordQualified(const char *wp, int32_t wlen) {
 
 	// does it qualify as a subtitle delimeter?
 	bool qualified = false;
-	if ( x < wlen ) {
+	if ( x < token.token_len ) {
 		qualified = true;
 	}
 
 	// fix amazon.com from splitting on period
-	if ( wlen == 1 ) {
+	if ( token.token_len == 1 ) {
 		qualified = false;
 	}
 
@@ -173,7 +183,7 @@ static bool isWordQualified(const char *wp, int32_t wlen) {
 
 
 // returns false and sets g_errno on error
-bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query *query,
+bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen, const Query *query,
                        LinkInfo *linkInfo, const Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
                        uint8_t contentType, uint8_t langId ) {
 	// make Msg20.cpp faster if it is just has
@@ -191,7 +201,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// assume no title
 	reset();
 
-	int32_t NW = words->getNumWords();
+	int32_t NW = tr->size();
 
 	//
 	// now get all the candidates
@@ -204,7 +214,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	int32_t as[MAX_TIT_CANDIDATES];
 	int32_t bs[MAX_TIT_CANDIDATES];
 	float scores[MAX_TIT_CANDIDATES];
-	Words *cptrs[MAX_TIT_CANDIDATES];
+	const TokenizerResult *cptrs[MAX_TIT_CANDIDATES];
 	title_source_t types[MAX_TIT_CANDIDATES];
 	int32_t parent[MAX_TIT_CANDIDATES];
 
@@ -222,7 +232,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 
 	// xml and words class for each link info, rss item
 	Xml   tx[MAX_TIT_CANDIDATES];
-	Words tw[MAX_TIT_CANDIDATES];
+	TokenizerResult ttr[MAX_TIT_CANDIDATES];
 	int32_t  ti = 0;
 
 	// restrict how many link texts and rss blobs we check for titles
@@ -268,14 +278,13 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 			}
 
 			// now the words.
-			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1 ) ) {
-				return false;
-			}
+			plain_tokenizer_phase_1(k->getLinkText(), k->size_linkText - 1, &(ttr[ti]));
+			calculate_tokens_hashes(&(ttr[ti]));
 
 			// set the bookends, it is the whole thing
-			cptrs   [n] = &tw[ti];
+			cptrs   [n] = &ttr[ti];
 			as      [n] = 0;
-			bs      [n] = tw[ti].getNumWords();
+			bs      [n] = ttr[ti].size();
 			// score higher if same host
 			if ( sh ) scores[n] = 1.05;
 			// do not count so high if remote!
@@ -303,14 +312,13 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		// skip if empty
 		if ( tslen <= 0 ) continue;
 		// now set words to that
-		if ( !tw[ti].set( ts, tslen ) ) {
-			return false;
-		}
+		plain_tokenizer_phase_1(ts, tslen, &(ttr[ti]));
+		calculate_tokens_hashes(&(ttr[ti]));
 
 		// point to that
-		cptrs   [n] = &tw[ti];
+		cptrs   [n] = &ttr[ti];
 		as      [n] = 0;
-		bs      [n] = tw[ti].getNumWords();
+		bs      [n] = ttr[ti].size();
 		// increment since we are using it
 		ti++;
 		// base score for rss title
@@ -335,7 +343,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// . up here we set words that are not allowed to be in candidates,
 	//   like words that are in a link that is not a self link
 
-	int32_t  need = words->getNumWords();
+	int32_t  need = tr->size();
 	StackBuf<10000> flagsBuf;
 	if(!flagsBuf.reserve(need))
 		return false;
@@ -344,26 +352,24 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// clear it
 	memset ( flags , 0 , need );
 
-	// check tags in body
-	const nodeid_t *tids = words->getTagIds();
-
 	// scan to set link text flags
 	// loop over all "words" in the html body
 	bool inLink   = false;
 	bool selfLink = false;
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
+		const auto &token = (*tr)[i];
 		// if in a link that is not self link, cannot be in a candidate
 		if ( inLink && ! selfLink ) {
 			flags[i] |= 0x02;
 		}
 
 		// out of a link
-		if ( tids[i] == (TAG_A | BACKBIT) ) {
+		if ( token.nodeid == (TAG_A | BACKBIT) ) {
 			inLink = false;
 		}
 
 		// if not start of <a> tag, skip it
-		if ( tids[i] != TAG_A ) {
+		if ( token.nodeid != TAG_A ) {
 			continue;
 		}
 
@@ -371,7 +377,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		inLink = true;
 
 		// get the node in the xml
-		int32_t xn = words->getNodes()[i];
+		int32_t xn = token.xml_node_index;
 
 		// is it a self link?
 		int32_t len;
@@ -442,14 +448,13 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		}
 
 		// ok, process it
-		if ( ! tw[ti].set ( atitle, atlen )) {
-			return false;
-		}
+		plain_tokenizer_phase_1(atitle, atlen, &(ttr[ti]));
+		calculate_tokens_hashes(&(ttr[ti]));
 
 		// set the bookends, it is the whole thing
-		cptrs   [n] = &tw[ti];
+		cptrs   [n] = &ttr[ti];
 		as      [n] = 0;
-		bs      [n] = tw[ti].getNumWords();
+		bs      [n] = ttr[ti].size();
 		scores  [n] = 3.0; // not ALWAYS solid gold!
 		types   [n] = title_source_t::TT_TITLEATT;
 
@@ -485,30 +490,24 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// clear table counts
 	memset(table, 0, sizeof(table));
 
-	// the first word
-	const char *wstart = NULL;
-	if ( NW > 0 ) {
-		wstart = words->getWord(0);
-	}
-
 	// loop over all "words" in the html body
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
 		// come back up here if we encounter another "title-ish" tag
 		// within our first alleged "title-ish" tag
 	subloop:
 		// stop after 30k of text
-		if ( words->getWord(i) - wstart > 200000 ) {
+		if ( (*tr)[i].start_pos > 200000 ) {
 			break; // 1106
 		}
 
 		// get the tag id minus the back tag bit
-		nodeid_t tid = tids[i] & BACKBITCOMP;
+		nodeid_t tid = (*tr)[i].nodeid & BACKBITCOMP;
 
 
 		// pen up and pen down for these comment like tags
 		if ( tid == TAG_SCRIPT || tid == TAG_STYLE ) {
 			// ignore "titles" in script or style tags
-			if ( ! (tids[i] & BACKBIT) ) {
+			if ( ! ((*tr)[i].nodeid & BACKBIT) ) {
 				continue;
 			}
 		}
@@ -520,7 +519,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		}
 
 		// must NOT be a back tag
-		if ( tids[i] & BACKBIT ) {
+		if ( (*tr)[i].nodeid & BACKBIT ) {
 			continue;
 		}
 
@@ -547,14 +546,14 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		for (  ; i < NW && i < max ; i++ ) {
 			// hey we got it, BUT we got no alnum word first
 			// so the thing was empty, so loop back to subloop
-			if ( (tids[i] & BACKBITCOMP) == tid  &&   
-			     (tids[i] & BACKBIT    ) && 
+			if ( ((*tr)[i].nodeid & BACKBITCOMP) == tid  &&   
+			     ((*tr)[i].nodeid & BACKBIT    ) && 
 			     start == -1 ) {
 				goto subloop;
 			}
 
 			// if we hit another title-ish tag, loop back up
-			if ( (tids[i] & BACKBITCOMP) == TAG_TITLE || (tids[i] & BACKBITCOMP) == TAG_A ) {
+			if ( ((*tr)[i].nodeid & BACKBITCOMP) == TAG_TITLE || ((*tr)[i].nodeid & BACKBITCOMP) == TAG_A ) {
 				// if no alnum text, restart at the top
 				if ( start == -1 ) {
 					goto subloop;
@@ -565,15 +564,15 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 			}
 
 			// if we hit a breaking tag...
-			if ( isBreakingTagId ( tids[i] & BACKBITCOMP ) &&
+			if ( isBreakingTagId ( (*tr)[i].nodeid & BACKBITCOMP ) &&
 			     // do not consider <span> tags breaking for 
 			     // our purposes. i saw a <h1><span> setup before.
-			     tids[i] != TAG_SPAN ) {
+			     (*tr)[i].nodeid != TAG_SPAN ) {
 				break;
 			}
 
 			// skip if not alnum word
-			if ( ! words->isAlnum(i) ) {
+			if ( ! (*tr)[i].is_alfanum ) {
 				continue;
 			}
 
@@ -605,7 +604,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 
 		// . skip if too many bytes
 		// . this does not include the length of word #i, but #(i-1)
-		if ( words->getStringSize ( start , i ) > 1000 ) {
+		if ( (*tr)[i].end_pos - (*tr)[start].start_pos > 1000 ) {
 			continue;
 		}
 
@@ -633,7 +632,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		}
 
 		// point to words class of the body that was passed in to us
-		cptrs[n] = words;
+		cptrs[n] = tr;
 		as[n] = start;
 		bs[n] = i;
 		if ( tid == TAG_B ) {
@@ -700,7 +699,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		// make "i" point to first alphabetical word in the document
 		int32_t i ;
 
-		for ( i = 0 ; i < NW && !words->isAlpha(i) ; i++);
+		for ( i = 0 ; i < NW && !isAlpha((*tr)[i]) ; i++);
 
 		// if we got a first alphabetical word, then assume that to be the start of our title
 		if ( i < NW && n < MAX_TIT_CANDIDATES ) {
@@ -711,8 +710,8 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 
 			// set i to the end now. we MUST find a \n to terminate the
 			// title, otherwise we will not have a valid title
-			while (i < NW && numWords < maxTitleWords && (words->isAlnum(i) || !words->hasChar(i, '\n'))) {
-				if(words->isAlnum(i)) {
+			while (i < NW && numWords < maxTitleWords && ((*tr)[i].is_alfanum || !has_char((*tr)[i].token_start,(*tr)[i].token_end(), '\n'))) {
+				if((*tr)[i].is_alfanum) {
 					numWords++;
 				}
 
@@ -728,7 +727,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 			}
 
 			// set the ptrs
-			cptrs   [n] =  words;
+			cptrs   [n] =  tr;
 
 			// this is the last resort i guess...
 			scores  [n] =  0.5;
@@ -786,14 +785,13 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		// did we get any?
 		if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
 			// now set words to that
-			if ( ! tw[ti].set ( p, (pend - p) )) {
-				return false;
-			}
+			plain_tokenizer_phase_1(p, pend-p, &(ttr[ti]));
+			calculate_tokens_hashes(&(ttr[ti]));
 
 			// point to that
-			cptrs   [n] = &tw[ti];
+			cptrs   [n] = &ttr[ti];
 			as      [n] = 0;
-			bs      [n] = tw[ti].getNumWords();
+			bs      [n] = ttr[ti].size();
 			scores  [n] = 1.0;
 			types   [n] = title_source_t::TT_URLPATH;
 
@@ -876,7 +874,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 			// stop if no root title segments
 			if ( nr <= 0 ) break;
 			// get the word info
-			Words *w = cptrs[i];
+			const TokenizerResult *tr = cptrs[i];
 			int32_t   a = as[i];
 			int32_t   b = bs[i];
 			// init
@@ -886,17 +884,16 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 			//int32_t charlen = 1;
 			// see how many we add
 			int32_t added = 0;
-			const char *skipTo = NULL;
+			size_t skipTo = 0;
 			bool qualified = true;
 			// . scan the words looking for a token
 			// . sometimes the candidates end in ": " so put in "k < b-1"
 			// . made this from k<b-1 to k<b to fix
 			//   "Hot Tub Time Machine (2010) - IMDb" to strip IMDb
 			for ( int32_t k = a ; k < b && n + 3 < MAX_TIT_CANDIDATES; k++){
-				// get word
-				const char *wp = w->getWord(k);
+				const auto &token = (*tr)[k];
 				// skip if not alnum
-				if ( ! w->isAlnum(k) ) {
+				if ( !token.is_alfanum ) {
 					// in order for next alnum word to
 					// qualify for "clipping" if it matches
 					// the root title, there has to be more
@@ -905,19 +902,19 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 					// "T. D. Jakes: Biography from Answers.com"
 					// becomes
 					// "T. D. Jakes: Biography from"
-					qualified=isWordQualified(wp,w->getWordLen(k));
+					qualified=isWordQualified(token);
 					continue;
 				}
 				// gotta be qualified!
 				if ( ! qualified ) continue;
 				// skip if in root title
-				if ( skipTo && wp < skipTo ) continue;
+				if ( token.start_pos<skipTo ) continue;
 				// does this match any root page title segments?
 				int32_t j;
 				for ( j = 0 ; j < nr ; j++ ) {
 					// . compare to root title
 					// . break out if we matched!
-					if ( ! strncmp( wp, rootTitles[j], rootTitleLens[j] ) ) {
+					if ( ! strncmp( token.token_start, rootTitles[j], rootTitleLens[j] ) ) {
 						break;
 					}
 				}
@@ -927,13 +924,13 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 				if ( j >= nr ) continue;
 				// . we got a root title match!
 				// . skip over
-				skipTo = wp + rootTitleLens[j];
+				skipTo = token.start_pos + rootTitleLens[j]; //FIXME: the whole skipTo logic looks overly complicated and may be unnecessary
 				// must land on qualified punct then!!
 				int32_t e = k+1;
-				for ( ; e<b && w->getWord(e)<skipTo ; e++ );
+				for ( ; e<b && (*tr)[e].start_pos<skipTo ; e++ );
 				// ok, word #e must be a qualified punct
 				if ( e<b &&
-				     ! isWordQualified(w->getWord(e),w->getWordLen(e)))
+				     ! isWordQualified((*tr)[e]))
 					// assume no match then!!
 					continue;
 				// if we had a previous guy, reset the end of the
@@ -1005,18 +1002,15 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	//
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// point to the words
-		Words *w = cptrs[i];
+		const TokenizerResult *tr = cptrs[i];
 
 		// skip if got nuked above
-		if ( ! w ) {
+		if ( ! tr ) {
 			continue;
 		}
 
-		// the word ptrs
-		const char * const *wptrs = w->getWordPtrs();
-
 		// skip if empty
-		if ( w->getNumWords() <= 0 ) {
+		if ( tr->empty() ) {
 			continue;
 		}
 
@@ -1033,13 +1027,14 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
+			const auto &token = (*tr)[j];
 			// skip stop words
-			if(isQueryStopWord(w->getWord(j), w->getWordLen(i), w->getWordId(i), langId)) {
+			if(isQueryStopWord(token.token_start, token.token_len, token.token_hash, langId)) {
 				continue;
 			}
 
 			// punish if uncapitalized non-stopword
-			if ( ! w->isCapitalized(j) ) {
+			if ( ! is_capitalized_utf8(token.token_start) ) {
 				uncapped = true;
 			}
 
@@ -1048,7 +1043,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 				continue;
 			}
 
-			int64_t wid = w->getWordId(j);
+			int64_t wid = (*tr)[j].token_hash;
 
 			// reward if in the query
 			if ( query->getWordNum(wid) >= 0 ) {
@@ -1065,8 +1060,9 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 		}
 
 		// punish if a http:// title thingy
-		const char *s = wptrs[a];
-		int32_t size = w->getStringSize(a,b);
+		const char *s = (*tr)[a].token_start;
+		int32_t size = (*tr)[b].end_pos-(*tr)[a].start_pos;
+		if(size<0) size=0;
 		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
 			ncb *= .10;
 		}
@@ -1085,10 +1081,10 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	// . give a boost if matches
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// point to the words
-		Words *w1 = cptrs[i];
+		const TokenizerResult *tr1 = cptrs[i];
 
 		// skip if got nuked above
-		if ( ! w1 ) {
+		if ( ! tr1 ) {
 			continue;
 		}
 
@@ -1190,15 +1186,15 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 				continue;
 
 			// get our words
-			Words *w2 = cptrs[j];
+			const TokenizerResult *tr2 = cptrs[j];
 
 			// skip if got nuked above
-			if ( ! w2 ) continue;
+			if ( ! tr2 ) continue;
 			int32_t   a2 = as   [j];
 			int32_t   b2 = bs   [j];
 
 			// how similar is title #i to title #j ?
-			float fp = getSimilarity ( w2 , a2 , b2 , w1 , a1 , b1 );
+			float fp = getSimilarity ( tr2 , a2 , b2 , tr1 , a1 , b1 );
 
 			// error?
 			if ( almostEqualFloat(fp, -1.0) ) return false;
@@ -1283,9 +1279,10 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	if ( winner == -1 ) {
 		// last resort use file name
 		if ((contentType == CT_PDF) && (firstUrl->getFilenameLen() != 0)) {
-			Words w;
-			w.set(firstUrl->getFilename(), firstUrl->getFilenameLen());
-			if (!copyTitle(&w, 0, w.getNumWords())) {
+			TokenizerResult tr;
+			plain_tokenizer_phase_1(firstUrl->getFilename(), firstUrl->getFilenameLen(), &tr);
+			calculate_tokens_hashes(&tr);
+			if (!copyTitle(&tr, 0, tr.size())) {
 				return false;
 			}
 		}
@@ -1293,18 +1290,18 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 	}
 
 	// point to the words class of the winner
-	Words *w = cptrs[winner];
+	const TokenizerResult *tr4 = cptrs[winner];
 	// skip if got nuked above
-	if ( ! w ) { g_process.shutdownAbort(true); }
+	if ( ! tr4 ) { g_process.shutdownAbort(true); }
 
 	// the string ranges from word #a up to and including word #b
 	int32_t a = as[winner];
 	int32_t b = bs[winner];
 	// sanity check
-	if ( a < 0 || b > w->getNumWords() ) { g_process.shutdownAbort(true); }
+	if ( a < 0 || (unsigned)b > tr4->size() ) { g_process.shutdownAbort(true); }
 
 	// save the title
-	if ( ! copyTitle(w, a, b) ) {
+	if ( ! copyTitle(tr4, a, b) ) {
 		return false;
 	}
 
@@ -1405,11 +1402,11 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, const Query 
 // . Scores class applies to w1 only, use NULL if none
 // . use word popularity information for scoring rarer term matches more
 // . ONLY CHECKS FIRST 1000 WORDS of w2 for speed
-float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
-			     Words  *w2 , int32_t t0 , int32_t t1 ) {
+float Title::getSimilarity ( const TokenizerResult *tr1, int32_t i0 , int32_t i1 ,
+			     const TokenizerResult *tr2, int32_t t0 , int32_t t1 ) {
 	// if either empty, that's 0% contained
-	if ( w1->getNumWords() <= 0 ) return 0;
-	if ( w2->getNumWords() <= 0 ) return 0;
+	if ( tr1->empty() ) return 0;
+	if ( tr2->empty() ) return 0;
 	if ( i0 >= i1 ) return 0;
 	if ( t0 >= t1 ) return 0;
 
@@ -1426,11 +1423,11 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	//   but it would have to be language dependent
 	Pops pops1;
 	Pops pops2;
-	if ( ! pops1.set ( w1 , i0 , i1 ) ) return -1.0;
-	if ( ! pops2.set ( w2 , t0 , t1 ) ) return -1.0;
+	if ( ! pops1.set ( tr1 , i0 , i1 ) ) return -1.0;
+	if ( ! pops2.set ( tr2 , t0 , t1 ) ) return -1.0;
 
 	// now hash the words in w1, the needle in the haystack
-	int32_t nw1 = w1->getNumWords();
+	int32_t nw1 = tr1->size();
 	if ( i1 > nw1 ) i1 = nw1;
 	HashTable table;
 
@@ -1448,15 +1445,16 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// sum up everything we add
 	float sum = 0.0;
 
-	// loop over all words in "w1" and hash them
+	// loop over all words in "tr1" and hash them
 	for ( int32_t i = i0 ; i < i1 ; i++ ) {
-		// the word id
-		int64_t wid = w1->getWordId(i);
+		const auto &token = (*tr1)[i];
 
 		// skip if not indexable
-		if ( wid == 0 ) {
+		if ( !token.is_alfanum ) {
 			continue;
 		}
+		// the word id
+		int64_t wid = token.token_hash;
 
 		// no room left in table!
 		if ( count++ > maxCount ) {
@@ -1519,15 +1517,16 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// reset
 	lastWid = -1LL;
 
-	// loop over all words in "w1" and hash them
+	// loop over all words in "tr2" and hash them
 	for ( int32_t i = t0 ; i < t1 ; i++ ) {
-		// the word id
-		int64_t wid = w2->getWordId(i);
+		const auto &token = (*tr2)[i];
 
 		// skip if not indexable
-		if ( wid == 0 ) {
+		if ( !token.is_alfanum ) {
 			continue;
 		}
+		// the word id
+		int64_t wid = token.token_hash;
 
 		// . make this a float. it ranges from 0.0 to 1.0
 		// . 1.0 means the word occurs in 100% of documents sampled
@@ -1594,11 +1593,9 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 
 // . copy just words in [t0,t1)
 // . returns false on error and sets g_errno
-bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
+bool Title::copyTitle(const TokenizerResult *tr, int32_t t0, int32_t t1) {
 	// skip initial punct
-	const char *const *wp    = w->getWordPtrs();
-	const int32_t     *wlens = w->getWordLens();
-	int32_t            nw    = w->getNumWords();
+	int32_t            nw    = tr->size();
 
 	// sanity check
 	if ( t1 < t0 ) { g_process.shutdownAbort(true); }
@@ -1614,10 +1611,10 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		return true;
 	}
 
-	const char *end = wp[t1-1] + wlens[t1-1] ;
+	const char *end = (*tr)[t1-1].token_end();
 
 	// allocate title
-	int32_t need = end - wp[t0];
+	int32_t need = end - (*tr)[t0].token_start;
 
 	// add 3 bytes for "..." and 1 for \0
 	need += 5;
@@ -1631,7 +1628,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	}
 
 	// point to the title to transcribe
-	const char *src    = wp[t0];
+	const char *src    = (*tr)[t0].token_start;
 	const char *srcEnd = end;
 
 	// include a \" or \'
@@ -1639,6 +1636,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		src--;
 	}
 
+	//FIXME: assumption that tokens are contiguous in memory
 	// and remove terminating | or :
 	for ( ; 
 	      srcEnd > src && 

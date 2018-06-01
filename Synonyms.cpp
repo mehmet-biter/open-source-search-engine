@@ -1,9 +1,10 @@
 #include "Synonyms.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Bits.h"
 #include "Phrases.h"
 #include "Wiktionary.h"
 #include "Lang.h"
+#include "GbUtil.h"
 #include "Sanity.h"
 
 #ifdef _VALGRIND_
@@ -50,17 +51,19 @@ void Synonyms::reset() {
 //   which we pre-alloc upon calling the set() function based on the # of
 //   words we got
 // . returns # of synonyms stored into "tmpBuf"
-int32_t Synonyms::getSynonyms ( const Words *words , 
-			     int32_t wordNum , 
+int32_t Synonyms::getSynonyms(const TokenizerResult *tr,
+			      unsigned wordNum,
 			     uint8_t langId ,
 			     char *tmpBuf ) {
 
+	if ( wordNum >= tr->size() ) gbshutdownLogicError();
+	
+	const auto &token = (*tr)[wordNum];
+	
 	// punct words have no synoyms
-	if ( ! words->getWordId(wordNum) )
+	if ( !token.is_alfanum )
 		return 0;
 
-	// sanity check
-	if ( wordNum > words->getNumWords() ) gbshutdownLogicError();
 
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
@@ -126,8 +129,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIdsPtr = m_langIds;
 
 	
-	const char *w = words->getWord(wordNum);
-	int32_t  wlen = words->getWordLen(wordNum);
+	const char *w = token.token_start;
+	int32_t  wlen = token.token_len;
 
 	//
 	// NOW hit wiktionary
@@ -175,14 +178,14 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 	// try looking up bigram so "new jersey" gets "nj" as synonym
 	if ( wikiLangId && 
-	     wordNum+2< words->getNumWords() &&
-	     words->getWordId(wordNum+2)) {
+	     wordNum+2 < tr->size() &&
+	     (*tr)[wordNum+2].is_alfanum) {
 		// get phrase id bigram then
 		int32_t conti = 0;
 		bwid = hash64Lower_utf8_cont(w,wlen,0,&conti);
 		// then the next word
-		const char *wp2 = words->getWord(wordNum+2);
-		int32_t  wlen2 = words->getWordLen(wordNum+2);
+		const char *wp2 = (*tr)[wordNum+2].token_start;
+		int32_t  wlen2 = (*tr)[wordNum+2].token_len;
 		bwid = hash64Lower_utf8_cont(wp2,wlen2,bwid,&conti);
 		baseNumAlnumWords = 2;
 		ss = g_wiktionary.getSynSet( bwid, wikiLangId );
@@ -191,7 +194,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	// need a language for wiktionary to work with
 	if ( wikiLangId && ! ss ) {
 		// get raw word id
-		bwid = words->getWordId(wordNum);
+		bwid = token.token_hash;
 		baseNumAlnumWords = 1;
 		//if ( bwid == 1424622907102375150LL)
 		//	log("a");
@@ -365,12 +368,17 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
-			Words sw;
-			sw.set ( const_cast<char*>(p), e - p );
+			TokenizerResult tmptr;
+			plain_tokenizer_phase_1(p,e-p,&tmptr);
+			calculate_tokens_hashes(&tmptr);
 
-			*(int64_t *)m_wids0Ptr = sw.getWordId(0);
-			*(int64_t *)m_wids1Ptr = sw.getWordId(2);
-			*(int32_t  *)m_numAlnumWordsPtr = sw.getNumAlnumWords();
+			*(int64_t *)m_wids0Ptr = tmptr[0].token_hash;
+			*(int64_t *)m_wids1Ptr = tmptr[2].token_hash;
+			int alfanumCount=0;
+			for(const auto &t : tmptr.tokens)
+				if(t.is_alfanum)
+					alfanumCount++;
+			*(int32_t  *)m_numAlnumWordsPtr = alfanumCount;
 		}
 
 		m_wids0Ptr++;
@@ -399,7 +407,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	if ( m_aidsPtr - m_aids > maxSyns ) return m_aidsPtr - m_aids;
 
 	// returns false with g_errno set
-	if ( ! addAmpPhrase(words, wordNum, &dt) ) return m_aidsPtr - m_aids;
+	if ( ! addAmpPhrase(tr, wordNum, &dt) ) return m_aidsPtr - m_aids;
 
 	// do not breach
 	if ( m_aidsPtr - m_aids > maxSyns ) return m_aidsPtr - m_aids;
@@ -408,18 +416,14 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	if ( wlen>= 3 &&
 	     w[wlen-1] == 's' && 
 	     w[wlen-2]=='\'' &&
-	     ! addWithoutApostrophe(words, wordNum, &dt) )
+	     ! addWithoutApostrophe(token.token_start,token.token_len, &dt) )
 		return m_aidsPtr - m_aids;
 
 	return m_aidsPtr - m_aids;
 }
 
 
-bool Synonyms::addWithoutApostrophe(const Words *words, int32_t wordNum, HashTableX *dt) {
-
-	int32_t  wlen = words->getWordLen(wordNum);
-	const char *w    = words->getWord(wordNum);
-
+bool Synonyms::addWithoutApostrophe(const char *w, int32_t wlen, HashTableX *dt) {
 	wlen -= 2;
 	
 	uint64_t h = hash64Lower_utf8 ( w, wlen );
@@ -453,23 +457,27 @@ bool Synonyms::addWithoutApostrophe(const Words *words, int32_t wordNum, HashTab
 
 
 // just index the first bigram for now to give a little bonus
-bool Synonyms::addAmpPhrase(const Words* words, int32_t wordNum, class HashTableX* dt)
+bool Synonyms::addAmpPhrase(const TokenizerResult *tr, unsigned wordNum, class HashTableX* dt)
 {
 	// . "D & B" --> dandb
 	// . make the "andb" a suffix
-	//char tbuf[100];
-	if ( wordNum +2 >= words->getNumWords() ) return true;
-	if ( ! words->getWordId(wordNum+2)     ) return true;
-	if ( words->getWordLen(wordNum+2) > 50 ) return true;
-	if ( ! words->hasChar(wordNum+1,'&')   ) return true;
-
-	int32_t  wlen = words->getWordLen(wordNum);
-	const char *w    = words->getWord(wordNum);
+	
+	if ( wordNum+2 >= tr->size() ) return true;
+	const auto &t0 = (*tr)[wordNum];
+	const auto &t1 = (*tr)[wordNum+1];
+	const auto &t2 = (*tr)[wordNum+2];
+	
+	if(!has_char(t1.token_start,t1.token_end(),'&'))
+		return true;
+	if(!t2.is_alfanum)
+		return true;
+	if(t2.token_len > 50)
+		return true;
 
 	// need this for hash continuation procedure
 	int32_t conti = 0;
 	// hack for "d & b" -> "dandb"
-	uint64_t h = hash64Lower_utf8_cont ( w , wlen,0LL,&conti );
+	uint64_t h = hash64Lower_utf8_cont(t0.token_start,t0.token_len,0LL,&conti );
 	// just make it a bigram with the word "and" after it
 	// . we usually ignore stop words like and when someone does the query
 	//   but we give out bonus points if the query term's left or right
@@ -495,8 +503,8 @@ bool Synonyms::addAmpPhrase(const Words* words, int32_t wordNum, class HashTable
 	*m_termPtrsPtr++ = NULL;
 
 	*m_termOffsPtr++ = m_synWordBuf.length();
-	*m_termLensPtr++ = wlen+4;
-	m_synWordBuf.safeMemcpy ( w , wlen );
+	*m_termLensPtr++ = t0.token_len;
+	m_synWordBuf.safeMemcpy(t0.token_start,t0.token_len);
 	m_synWordBuf.safeStrcpy (" and");
 	m_synWordBuf.pushChar('\0');
 

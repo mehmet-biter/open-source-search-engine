@@ -138,9 +138,9 @@ public:
 	char *getString( int32_t node, bool skipLeadingSpaces, int32_t *len ) const;
 
 	// used for title/summary generation
-	bool getTagContent( const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
-						int32_t minLength, int32_t maxLength, int32_t *contentLenPtr,
-						bool ignoreExpandedIframe = false, nodeid_t expectedNodeId = LAST_TAG );
+	bool getTagContent(const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
+			   unsigned minLength, unsigned maxLength, int32_t *contentLenPtr,
+			   bool ignoreExpandedIframe = false, nodeid_t expectedNodeId = LAST_TAG);
 
 	bool getTagValue(const char *fieldName, const char *fieldContent, const char *fieldValueName,
 	                 const char **valuePtr, int32_t *valueLenPtr, bool ignoreExpandedIframe,

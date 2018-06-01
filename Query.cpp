@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Query.h"
-#include "Words.h"
 #include "Bits.h"
 #include "Phrases.h"
 #include "Url.h"
@@ -22,6 +21,7 @@
 #include "Conf.h"
 #include "termid_mask.h"
 #include "Collectiondb.h"
+#include "GbUtil.h"
 #include <set>
 #include "Lemma.h"
 
@@ -29,8 +29,12 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 
+static int count_quotes(const char *s, size_t len);
+
+	
 Query::Query()
   : m_queryWordBuf("Query4"),
+    m_tr(),
     m_filteredQuery("qrystk"),
     m_originalQuery("oqbuf"),
     m_bigramWeight(1.0),
@@ -71,6 +75,7 @@ void Query::reset ( ) {
 
 	m_queryTermBuf.purge();
 	m_qterms = NULL;
+	m_tr.clear();
 
 	m_filteredQuery.purge();
 	m_originalQuery.purge();
@@ -260,15 +265,14 @@ bool Query::set(const char *query,
 	if(m_filteredQuery.length() != queryLen || memcmp(m_filteredQuery.getBufStart(),query,queryLen)!=0)
 		log(LOG_INFO,"query: m_filteredQuery=%*.*s", m_filteredQuery.length(),m_filteredQuery.length(),m_filteredQuery.getBufStart());
 
-	Words words;
 	Phrases phrases;
 
 	// set m_qwords[] array from m_buf
-	if ( ! setQWords ( boolFlag , keepAllSingles , words , phrases ) ) 
+	if ( ! setQWords(boolFlag, keepAllSingles, phrases) ) 
 		return false;
 
 	// set m_qterms from m_qwords, always succeeds
-	setQTerms ( words );
+	setQTerms();
 
 	// disable stuff for site:, ip: and url: queries
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
@@ -360,18 +364,18 @@ bool Query::set(const char *query,
 	if ( ! redo ) return true;
 
 	// . set the query terms again if we have a long query
-	if ( ! setQTerms ( words ) )
+	if ( ! setQTerms() )
 		return false;
 
 	return true;
 }
 
 // returns false and sets g_errno on error
-bool Query::setQTerms ( const Words &words ) {
+bool Query::setQTerms() {
 	if(g_conf.m_logTraceQuery) {
-		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
-		for(int i=0; i<words.getNumWords(); i++) {
-			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
+		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%zu)", m_tr.size());
+		for(unsigned i=0; i<m_tr.size(); i++) {
+			logTrace(g_conf.m_logTraceQuery, "  word #%u: '%*.*s'", i, (int)m_tr[i].token_len, (int)m_tr[i].token_len, m_tr[i].token_start);
 			int64_t phraseTermId = m_qwords[i].m_bigramId&TERMID_MASK;
 			int64_t wordTermId = m_qwords[i].m_wordId&TERMID_MASK;
 			logTrace(g_conf.m_logTraceQuery, "    m_bigramId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_bigramLen=%d", m_qwords[i].m_bigramId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_bigramLen);
@@ -446,7 +450,7 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_wordLen == 1 ) continue;
 			// set the synonyms for this word
 			char tmpBuf [ TMPSYNBUFSIZE ];
-			int32_t naids = syn.getSynonyms ( &words ,
+			int32_t naids = syn.getSynonyms ( &m_tr,
 							  i ,
 							  // language of the query.
 							  // 0 means unknown. if this
@@ -815,7 +819,7 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_wordLen == 1 ) continue;
 			// set the synonyms for this word
 			char tmpBuf [ TMPSYNBUFSIZE ];
-			int32_t naids = syn.getSynonyms ( &words ,
+			int32_t naids = syn.getSynonyms ( &m_tr,
 							  i ,
 							  // language of the query.
 							  // 0 means unknown. if this
@@ -1050,9 +1054,9 @@ bool Query::setQTerms ( const Words &words ) {
 	if(m_word_variations_config.m_lemmaWordVariations && m_langId==langDanish) {
 		logTrace(g_conf.m_logTraceQuery, "Lexicon-based lemma synonyms");
 		for(int32_t i = 0; i<m_numWords && n<numQueryTerms; i++) {
-			if(!words.isAlpha(i))
+			if(!m_tr[i].is_alfanum)
 				continue;
-			std::string w(words.getWord(i),words.getWordLen(i));
+			std::string w(m_tr[i].token_start,m_tr[i].token_len);
 			logTrace(g_conf.m_logTraceQuery, "@@ Checking lemma for '%s'", w.c_str());
 			auto le = lemma_lexicon.lookup(w);
 			if(!le)
@@ -1325,17 +1329,105 @@ bool Query::setQTerms ( const Words &words ) {
 
 bool Query::setQWords ( char boolFlag , 
 			bool keepAllSingles ,
-			Words &words ,
 			Phrases &phrases ) {
 
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length() ) ) {
-		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
-		return false;
+	plain_tokenizer_phase_1(m_filteredQuery.getBufStart(), m_filteredQuery.length(), &m_tr);
+	calculate_tokens_hashes(&m_tr);
+	
+	//hackety-hack...
+	//The tokenizer phase 2 also recognizes "C++" and "john's", but we cannot use phase 2 because Phrases and Query are
+	//incompatible with phase-2 tokens (too many assumptions about strictly increasing positions and contiguous memory layout)
+	//So instead we implement special cases here, until we have time to fix the whole Query class.
+	for(size_t i=0; i+1<m_tr.size(); i++) {
+		//Hack for C++
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='c' || m_tr[i].token_start[0]=='C') &&
+		   m_tr[i+1].token_len>=2 && memcmp(m_tr[i+1].token_start,"++",2)==0)
+		{
+			m_tr[i].token_len += 2;
+			m_tr[i].end_pos += 2;
+			m_tr[i+1].start_pos += 2;
+			m_tr[i+1].token_start += 2;
+			m_tr[i+1].token_len -= 2;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for F#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='f' || m_tr[i].token_start[0]=='F') &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"#",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for C#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && (m_tr[i].token_start[0]=='c' || m_tr[i].token_start[0]=='C') &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"#",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for C#
+		if(m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum &&
+		   m_tr[i].token_len==1 && m_tr[i].token_start[0]=='A' &&
+		   m_tr[i+1].token_len>=1 && memcmp(m_tr[i+1].token_start,"*",1)==0)
+		{
+			m_tr[i].token_len += 1;
+			m_tr[i].end_pos += 1;
+			m_tr[i+1].start_pos += 1;
+			m_tr[i+1].token_start += 1;
+			m_tr[i+1].token_len -= 1;
+			if(m_tr[i+1].token_len==0)
+				m_tr.tokens.erase(m_tr.tokens.begin()+i+1);
+			continue;
+		}
+		//Hack for possessive-apostrophe (no need for extra codepoint checks - people usually don't type them in a search field)
+		if(i+2<m_tr.size() &&
+		   m_tr[i].is_alfanum && !m_tr[i+1].is_alfanum && m_tr[i+2].is_alfanum &&
+		   m_tr[i+1].token_len==1 && (m_tr[i+1].token_start[0]=='\'' || m_tr[i+1].token_start[0]=='`') &&
+		   m_tr[i+2].token_len==1 && (m_tr[i+2].token_start[0]=='s' || m_tr[i+2].token_start[0]=='S'))
+		{
+			m_tr[i].end_pos = m_tr[i+2].end_pos;
+			m_tr[i].token_len += m_tr[i+1].token_len + m_tr[i+2].token_len;
+			m_tr.tokens.erase(m_tr.tokens.begin()+i+1,m_tr.tokens.begin()+i+3);
+			continue;
+		}
 	}
-	int32_t numWords = words.getNumWords();
+	for(size_t i=0; i+2<m_tr.size(); ) {
+		const auto &t0 = m_tr[i+0];
+		const auto &t1 = m_tr[i+1];
+		const auto &t2 = m_tr[i+2];
+		if(t0.token_end()==t1.token_start && t1.token_end()==t2.token_start &&
+		   is_slash_abbreviation(t0.token_start, t0.token_len+t1.token_len+t2.token_len))
+		{
+			size_t sl = t0.token_len+t2.token_len;
+			char *s = (char*)m_tr.egstack.alloc(sl);
+			memcpy(s, t0.token_start, t0.token_len);
+			memcpy(s+t0.token_len, t2.token_start, t2.token_len);
+			m_tr.tokens.emplace_back(t0.start_pos, t2.end_pos, s,sl, false, true);
+			m_tr.tokens.erase(m_tr.tokens.begin()+i, m_tr.tokens.begin()+i+3);
+		} else
+			i++;
+	}
+
+	int32_t numWords = m_tr.size();
 	// truncate it
 	if ( numWords > ABS_MAX_QUERY_WORDS ) {
 		log("query: Had %" PRId32" words. Max is %" PRId32". Truncating.",
@@ -1444,7 +1536,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	// set the Bits used for making phrases from the Words class
 	Bits bits;
-	if ( !bits.set(&words)) {
+	if ( !bits.set(&m_tr)) {
 		log(LOG_WARN, "query: Had error processing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -1474,9 +1566,9 @@ bool Query::setQWords ( char boolFlag ,
 		qw->m_ignoreWord   = IGNORE_DEFAULT;
 		qw->m_ignorePhrase = IGNORE_DEFAULT;
 		qw->m_ignoreWordInBoolQuery = false;
-		qw->m_word    = words.getWord(i);
-		qw->m_wordLen = words.getWordLen(i);
-		qw->m_isPunct = words.isPunct(i);
+		qw->m_word    = m_tr[i].token_start;
+		qw->m_wordLen = m_tr[i].token_len;
+		qw->m_isPunct = !m_tr[i].is_alfanum;
 
 		qw->m_posNum = posNum;
 
@@ -1493,21 +1585,21 @@ bool Query::setQWords ( char boolFlag ,
 			const char *wp = qw->m_word;
 			int32_t  wplen = qw->m_wordLen;
 			// simple space or sequence of just white space
-			if ( words.isSpaces(i) ) 
+			if ( is_wspace_utf8_string(m_tr[i].token_start, m_tr[i].token_end()))
 				posNum += 0;
 			// 'cd-rom'
 			else if ( wp[0]=='-' && wplen==1 ) 
 				posNum += 0;
 			// 'mr. x'
-			else if ( wp[0]=='.' && words.isSpaces(i,1))
+			else if ( wp[0]=='.' && is_wspace_utf8_string(m_tr[i].token_start+1, m_tr[i].token_end()))
 				posNum += 0;
 			// animal (dog)
 			else 
 				posNum++;
 		}
 
-		const char *w = words.getWord(i);
-		int32_t wlen = words.getWordLen(i);
+		const char *w = m_tr[i].token_start;
+		int32_t wlen = m_tr[i].token_len;
 		// assume it is a query weight operator
 		qw->m_queryOp = true;
 		// ignore it? (this is for query weight operators)
@@ -1526,8 +1618,8 @@ bool Query::setQWords ( char boolFlag ,
 		     w[0]=='L'&&w[1]=='e'&&w[2]=='F'&&w[3]=='t'&&w[4]=='B'&& 
 		     i+4 < numWords ) {
 			// s MUST point to a number
-			const char *s = words.getWord(i+2);
-			int32_t slen = words.getWordLen(i+2);
+			const char *s = m_tr[i+2].token_start;
+			int32_t slen = m_tr[i+2].token_len;
 
 			// if no number, it must be
 			// " leFtB w RiGhB " or " leFtB p RiGhB "
@@ -1551,7 +1643,7 @@ bool Query::setQWords ( char boolFlag ,
 				// get the number
 				float fval = atof2 (s, slen);
 				// s2 MUST point to the a,r,ap,rp string
-				const char *s2 = words.getWord(i+4);
+				const char *s2 = m_tr[i+4].token_start;
 				// is it a phrase?
 				if(s2[0] == 'w') {
 					userWeightForWord = fval;
@@ -1578,14 +1670,14 @@ bool Query::setQWords ( char boolFlag ,
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
 		bool endField = false;
-		if(words.hasSpace(i) && ! inQuotes)
+		if(has_space(m_tr[i].token_start, m_tr[i].token_end()) && ! inQuotes)
 			endField = true;
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		// if there's a quote before the first space then
 		// it's ok!!!
 		if ( endField ) {
-			const char *s = words.getWord(i);
-			const char *send = s + words.getWordLen(i);
+			const char *s = m_tr[i].token_start;
+			const char *send = s + m_tr[i].token_len;
 			for ( ; s < send ; s++ ) {
 				// if the space is inside the quotes then it
 				// doesn't count!
@@ -1608,7 +1700,7 @@ bool Query::setQWords ( char boolFlag ,
 		}
 		// . maintain inQuotes and quoteStart
 		// . quoteStart is the word # that starts the current quote
-		int32_t nq = words.getNumQuotes(i) ;
+		int32_t nq = count_quotes(m_tr[i].token_start, m_tr[i].token_len);
 
 		if ( nq > 0 ) { // && ! ignoreQuotes ) {
 			// toggle quotes if we need to
@@ -1635,11 +1727,11 @@ bool Query::setQWords ( char boolFlag ,
 		// if we were in a field
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		bool cancelField = false;
-		if ( words.hasSpace(i) && ! inQuotes )
+		if ( has_space(m_tr[i].token_start,  m_tr[i].token_end()) && ! inQuotes )
 			cancelField = true;
 		// fix title:"foo bar" "another quote" so "another quote"
 		// is not in the title: field
-		if ( words.hasSpace(i) && inQuotes && nq>= 2 ) 
+		if ( has_space(m_tr[i].token_start,  m_tr[i].token_end()) && inQuotes && nq>= 2 ) 
 			cancelField = true;
 
 		// BUT if we have a quote, and they just got turned off,
@@ -1672,8 +1764,9 @@ bool Query::setQWords ( char boolFlag ,
 		// . is this word potentially a field? 
 		// . it cannot be another field name in a field
 		if(i < m_numWords-2 &&
-		   w[wlen]  == ':' && ! is_wspace_utf8(w+wlen+1) &&
-		   (!is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' || w[wlen+1]=='-') &&
+		   m_tr[i+1].token_len==1 && m_tr[i+1].token_start[0]==':' &&
+		   !is_wspace_utf8_string(m_tr[i+2].token_start,m_tr[i+2].token_end()) &&
+		   (!is_punct_utf8(m_tr[i+2].token_start) || m_tr[i+2].token_start[0]=='\"' || m_tr[i+2].token_start[0]=='-') &&
 		   ! fieldCode && ! inQuotes)
 		{
 			// field name may have started before though if it
@@ -1694,21 +1787,23 @@ bool Query::setQWords ( char boolFlag ,
 			}
 
 			// advance j to a non-punct word
-			while (words.isPunct(j))
+			while (!m_tr[i].is_alfanum)
 				j++;
 
 			// ignore all of these words then, 
 			// they're part of field name
 			int32_t tlen = 0;
 			for ( int32_t k = j ; k <= i ; k++ )
-				tlen += words.getWordLen(k);
+				tlen += m_tr[k].token_len;
 			// set field name to the compound name if it is
-			field     = words.getWord (j);
+			field     = m_tr[j].token_start;
 			fieldLen  = tlen;
 			if(j == i)
 				fieldSign = wordSign;
 			else
 				fieldSign = m_qwords[j].m_wordSign;
+			//FIXME: TokenizerResult does not promise that tokens that are adjacent in the source string also are adjacent in memory
+			// (but since Query only does phase-1 tokenization and the tokenizer currently only does tricky things in phase 2 it currently holds)
 
 			// . is it recognized field name,like "title" or "url"?
 			fieldCode = getFieldCode (field, fieldLen);
@@ -1731,7 +1826,7 @@ bool Query::setQWords ( char boolFlag ,
 		qw->m_fieldCode = fieldCode;
 		// if we are a punct word, see if we end in a sign that can
 		// be applied to the next word, a non-punct word
-		if ( words.isPunct(i) ) {
+		if ( !m_tr[i].is_alfanum ) {
 			wordSign = w[wlen-1];
 			if ( wordSign != '-' && wordSign != '+') wordSign = 0; 
 			if ( wlen>1 &&!is_wspace_a (w[wlen-2]) ) wordSign = 0;
@@ -1792,9 +1887,7 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
 			// . make "end" point to the end of the entire query
-			const char *end =
-					(words.getWord(words.getNumWords() - 1) +
-					 words.getWordLen(words.getNumWords() - 1));
+			const char *end = m_tr[m_tr.size()-1].token_end();
 			// use this for gbmin:price:1.99 etc.
 			int32_t firstColonLen = -1;
 			int32_t lastColonLen = -1;
@@ -1966,7 +2059,7 @@ bool Query::setQWords ( char boolFlag ,
 		// . add single-word term id
 		// . this is computed by hash64AsciiLower() 
 		// . but only hash64Lower_a if _HASHWITHACCENTS_ is true
-		uint64_t wid = words.getWordId(i);
+		uint64_t wid = m_tr[i].token_hash;
 		qw->m_rawWordId = wid;
 		// we now have a first word already set
 		firstWord = false;
@@ -1974,11 +2067,13 @@ bool Query::setQWords ( char boolFlag ,
 		// . NEVER count as stop word if it's in all CAPS and 
 		//   not all letters in the whole query is NOT in all CAPS
 		// . It's probably an acronym
-		if ( words.isUpper(i) && words.getWordLen(i)>1 && ! allUpper ){
+		if ( m_tr[i].token_len>1 &&
+		     is_upper_utf8_string(m_tr[i].token_start, m_tr[i].token_end()) &&
+		     ! allUpper )
+		{
 			qw->m_isQueryStopWord = false;
 			qw->m_isStopWord      = false;
-		}
-		else {
+		} else {
 			qw->m_isQueryStopWord =::isQueryStopWord (w,wlen,wid,
 								  m_langId);
 			// . BUT, if it is a single letter contraction thing
@@ -2021,7 +2116,7 @@ bool Query::setQWords ( char boolFlag ,
 	int numAlfanumWordsHighFreqTerms = 0;
 	int alfanumWordIndex = -1;
 	for(int i=0; i<numWords; i++) {
-		if(words.isAlnum(i)) {
+		if(m_tr[i].is_alfanum) {
 			alfanumWordIndex = i;
 			numAlfanumWords++;
 			if(m_qwords[i].m_ignoreWord==IGNORE_HIGHFREMTERM)
@@ -2049,10 +2144,10 @@ bool Query::setQWords ( char boolFlag ,
 		QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignoreWord ) continue;
 		if ( i + 2 < numWords && ! m_qwords[i+2].m_ignoreWord&&
-		     isConnection(words.getWord(i+1),words.getWordLen(i+1)) )
+		     isConnection(i+1) )
 			qw->m_rightConnected = true;
 		if ( i - 2 >= 0 && ! m_qwords[i-2].m_ignoreWord && 
-		     isConnection(words.getWord(i-1),words.getWordLen(i-1) ) )
+		     isConnection(i-1) )
 			qw->m_leftConnected  = true;
 	}
 	
@@ -2070,11 +2165,12 @@ bool Query::setQWords ( char boolFlag ,
 			b = D_CAN_PAIR_ACROSS;
 		}
 		// is this word a sequence of punctuation and spaces?
-		else if ( words.isPunct(i) ) {
+		else if ( !m_tr[i].is_alfanum ) {
 			// pair across ANY punct, even double spaces by default
 			b |= D_CAN_PAIR_ACROSS;
 			// but do not pair across anything with a quote in it
-			if ( words.getNumQuotes(i) >0) b &= ~D_CAN_PAIR_ACROSS;
+			if ( count_quotes(m_tr[i].token_start, m_tr[i].token_len) > 0 )
+				b &= ~D_CAN_PAIR_ACROSS;
 			// continue if we're in quotes
 			else if ( qw->m_quoteStart >= 0 ) goto next;
 			// continue if we're in a field
@@ -2086,8 +2182,8 @@ bool Query::setQWords ( char boolFlag ,
 			if ( i +1 < numWords && m_qwords[i+1].m_fieldCode > 0 )
 				b &= ~D_CAN_PAIR_ACROSS;
 			// do not pair across ".." when not in quotes/field
-			const char *w = words.getWord(i);
-			int32_t  wlen = words.getWordLen(i);
+			const char *w = m_tr[i].token_start;
+			int32_t  wlen = m_tr[i].token_len;
 			for ( int32_t j = 0 ; j < wlen-1 ; j++ ) {
 				if ( w[j  ]!='.' ) continue;
 				if ( w[j+1]!='.' ) continue;
@@ -2129,12 +2225,12 @@ bool Query::setQWords ( char boolFlag ,
 		// skip all but strongly connected words
 		if ( m_qwords[j].m_ignoreWord != IGNORE_CONNECTED &&
 		     // must also be non punct word OR a space
-		     ( !words.isPunct(j) || words.getWord(j)[0] == ' ' ) ) {
+		     ( m_tr[j].is_alfanum || *m_tr[j].token_start==' ' ) ) {
 			// break the "quote", if any
 			qs = -1; continue; }
 		// if he is punctuation and qs is -1, skip him,
 		// punctuation words can no longer start a quote
-		if ( words.isPunct(j) && qs == -1 ) continue;
+		if ( !m_tr[j].is_alfanum && qs == -1 ) continue;
 		// uningore him if we should
 		if ( keepAllSingles ) m_qwords[j].m_ignoreWord = IGNORE_NO_IGNORE;
 		// if already in quotes, don't bother!
@@ -2153,7 +2249,7 @@ bool Query::setQWords ( char boolFlag ,
 	int32_t first = -1;
 	for ( j = 0 ; j < numWords ; j++ ) {
 		// stop when we hit spaces
-		if ( words.hasSpace(j) ) {
+		if ( has_wspace_utf8_string(m_tr[j].token_start, m_tr[j].token_end()) ) {
 			first = -1;
 			continue;
 		}
@@ -2169,7 +2265,7 @@ bool Query::setQWords ( char boolFlag ,
 			// must have punct then another alnum word
 			if ( j+2 >= numWords ) break;
 			// spaces screw it up
-			if ( words.hasSpace(j+1) ) continue;
+			if ( has_wspace_utf8_string(m_tr[j+1].token_start, m_tr[j+1].token_end()) ) continue;
 			// then an alnum word after
 			first = j;
 		}
@@ -2179,10 +2275,8 @@ bool Query::setQWords ( char boolFlag ,
 	}
 
 	// make the phrases from the words and the tweaked Bits class
-	if ( !phrases.set( &words, &bits ) )
+	if ( !phrases.set(m_tr,bits) )
 		return false;
-
-	const int64_t *wids = words.getWordIds();
 
 	// do phrases stuff
 	for ( int32_t i = 0 ; i < numWords ; i++ ) {
@@ -2198,11 +2292,11 @@ bool Query::setQWords ( char boolFlag ,
 		qw->m_leftPhraseStart = -1;
 		for ( int32_t j = i - 1 ; j >= 0 ; j-- ) {
 			if ( ! bits.canPairAcross(j+1) ) break;
-			if ( ! wids[j] ) continue;
+			if ( !m_tr[j].is_alfanum ) continue;
 
 			qw->m_leftPhraseStart = j;
 			// we can't pair across alnum words now, we just want bigrams
-			if ( wids[j] ) break;
+			if ( m_tr[j].is_alfanum ) break;
 			// now we do bigrams so only allow two words even
 			// if they are stop words
 			break;
@@ -2312,7 +2406,7 @@ bool Query::setQWords ( char boolFlag ,
 
 			for ( j = i ; j < maxj ; j++ ) {
 				// skip punct
-				if ( words.isPunct(j)         ) continue;
+				if ( !m_tr[j].is_alfanum      ) continue;
 				// break out if not a stop word
 				if ( ! bits.isStopWord(j)     ) break;
 				// break out if has a term sign
@@ -2392,7 +2486,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . if all unignored words are in the same set of quotes then change
 	//   all '*' (soft-required) phrase signs to '+'
 	for ( j= 0 ; j < numWords ; j++ ) {
-		if ( words.isPunct(j)) continue;
+		if ( !m_tr[j].is_alfanum) continue;
 		if ( m_qwords[j].m_quoteStart < 0 ) break;
 		if ( m_qwords[j].m_ignoreWord ) continue;
 		if ( j < 2 ) continue;
@@ -2517,10 +2611,10 @@ bool Query::setQWords ( char boolFlag ,
 		// assume none
 		qw->m_wikiPhraseId = 0;
 		// skip if punct
-		if ( ! wids[i] ) continue;
+		if ( !m_tr[i].is_alfanum ) continue;
 		// get word
 		int32_t nwk ;
-		nwk = g_wiki.getNumWordsInWikiPhrase ( i , &words );
+		nwk = g_wiki.getNumWordsInWikiPhrase ( i , &m_tr );
 		// bail if none
 		if ( nwk <= 1 ) continue;
 
@@ -3022,9 +3116,10 @@ const char *getFieldCodeName(field_code_t fc) {
 
 
 // guaranteed to be punctuation
-bool Query::isConnection(const char *s, int32_t len) const {
-	if ( len == 1 ) {
-		switch (*s) {
+bool Query::isConnection(unsigned i) const {
+	auto const &token = m_tr[i];
+	if(token.token_len==1) {
+		switch(*token.token_start) {
 			// . only allow apostrophe if it's NOT a 's
 			// . so contractions are ok, and names too
 		case '\'': 
@@ -3046,7 +3141,9 @@ bool Query::isConnection(const char *s, int32_t len) const {
 		}
 	}
 	//if ( len == 3 && s[0]==' ' && s[1]=='&' && s[2]==' ' ) return true;
-	if ( len == 3 && s[0]==':' && s[1]=='/' && s[2]=='/' ) return true;
+	if(token.token_len==3 &&
+	   token.token_start[0]==':' && token.token_start[1]=='/' && token.token_start[2]=='/' )
+		return true;
 	return false;
 }
 
@@ -3368,4 +3465,13 @@ void QueryWord::constructor () {
 
 void QueryWord::destructor () {
 	m_synWordBuf.purge();
+}
+
+
+static int count_quotes(const char *s, size_t len) {
+	int count = 0;
+	while(len--)
+		if(*s++ == '\"')
+			count++;
+	return count;
 }

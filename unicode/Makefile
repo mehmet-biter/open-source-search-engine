@@ -1,6 +1,11 @@
 #UCDDIR must point to where the data files from unicode.org are.
 UCDDIR?=.
-CPPFLAGS += -O3 -g
+ifeq ($(config),$(filter $(config),release release-safe))
+CPPFLAGS += -O3 -march=core-avx-i -msse4.2
+else
+CPPFLAGS += -O0
+endif
+CPPFLAGS += -g
 CPPFLAGS += -std=c++11
 CPPFLAGS += -Wall
 
@@ -17,8 +22,8 @@ endif
 all: $(ALL)
 
 
-libunicode.a: UCMap.o UCMaps.o UCDecompose.o
-	ar rcs $@ UCMap.o UCMaps.o
+libunicode.a: UCMap.o UCMaps.o UCDecompose.o UCCMDecompose.o
+	ar rcs $@ UCMap.o UCMaps.o UCDecompose.o UCCMDecompose.o
 
 UCMap.o: UCMap.h UCMap.cpp
 UCMap_unittest.o: UCMap.h UCMap_unittest.cpp
@@ -41,6 +46,16 @@ UCDecompose_unittest: UCDecompose_unittest.o UCDecompose.o UCMap.o UCMaps.o
 .PHONY: UCDecompose_unittest_run
 UCDecompose_unittest_run: UCDecompose_unittest $(DATFILES)
 	./UCDecompose_unittest
+
+
+UCCMDecompose.o: UCCMDecompose.h UCCMDecompose.cpp
+UCCMDecompose_unittest.o: UCMaps.h UCMap.h UCCMDecompose_unittest.cpp
+UCCMDecompose_unittest: UCCMDecompose_unittest.o UCCMDecompose.o UCMap.o UCMaps.o
+	g++ -g	UCCMDecompose_unittest.o UCCMDecompose.o UCMap.o UCMaps.o -o $@
+
+.PHONY: UCCMDecompose_unittest_run
+UCCMDecompose_unittest_run: UCCMDecompose_unittest $(DATFILES)
+	./UCCMDecompose_unittest
 
 
 .PHONY: datfiles

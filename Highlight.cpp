@@ -1,5 +1,5 @@
 #include "Highlight.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include "Query.h"
 #include "Matches.h"
 #include "Xml.h"
@@ -42,38 +42,36 @@ static const char s_styleSheet[] =
 // . if "isQueryTerms" is true, we do typical anchors in a special way
 int32_t Highlight::set( SafeBuf *sb, const char *content, int32_t contentLen, Query *q, const char *frontTag,
 			const char *backTag ) {
-	Words words;
-	//todo: get Words clas fixed for constness so we can avoaid the const_cast here
-	if ( ! words.set ( const_cast<char*>(content), contentLen ) ) {
-		return -1;
-	}
+	TokenizerResult tr;
+	plain_tokenizer_phase_1(content, contentLen, &tr);
+	calculate_tokens_hashes(&tr);
 
 	Bits bits;
-	if ( !bits.set(&words)) {
+	if ( !bits.set(&tr)) {
 		return -1;
 	}
 
 	Phrases phrases;
-	if ( !phrases.set( &words, &bits ) ) {
+	if ( !phrases.set(tr,bits) ) {
 		return -1;
 	}
 
 	Matches matches;
 	matches.setQuery ( q );
 
-	if ( !matches.addMatches( &words, &phrases ) ) {
+	if ( !matches.addMatches( &tr, &phrases ) ) {
 		return -1;
 	}
 
 	// store
 	m_numMatches = matches.getNumMatches();
 
-	return set ( sb, &words, &matches, frontTag, backTag, q);
+	return set ( sb, &tr, &matches, frontTag, backTag, q);
 }
 
 // New version
-int32_t Highlight::set( SafeBuf *sb, const Words *words, const Matches *matches, const char *frontTag,
-						const char *backTag, const Query *q ) {
+int32_t Highlight::set( SafeBuf *sb, const TokenizerResult *tr, const Matches *matches, const char *frontTag,
+			const char *backTag, const Query *q ) {
 	// save stuff
 	m_frontTag    = frontTag;
 	m_backTag     = backTag;
@@ -91,7 +89,7 @@ int32_t Highlight::set( SafeBuf *sb, const Words *words, const Matches *matches,
 	// label it
 	m_sb->setLabel ("highw");
 
-	if ( ! highlightWords ( words, matches, q ) ) {
+	if ( ! highlightWords ( tr, matches, q ) ) {
 		return -1;
 	}
 
@@ -102,11 +100,7 @@ int32_t Highlight::set( SafeBuf *sb, const Words *words, const Matches *matches,
 	return m_sb->length();
 }
 
-bool Highlight::highlightWords ( const Words *words, const Matches *m, const Query *q ) {
-	// get num of words
-	int32_t numWords = words->getNumWords();
-	// some convenience ptrs to word info
-
+bool Highlight::highlightWords ( const TokenizerResult *tr, const Matches *m, const Query *q ) {
 	// set nexti to the word # of the first word that matches a query word
 	int32_t nextm = -1;
 	int32_t nexti = -1;
@@ -118,19 +112,19 @@ bool Highlight::highlightWords ( const Words *words, const Matches *m, const Que
 	int32_t backTagi = -1;
 	bool inTitle  = false;
 
-	for ( int32_t i = 0 ; i < numWords  ; i++ ) {
+	for ( int32_t i = 0 ; (size_t)i < tr->size(); i++ ) {
+		const auto &token = (*tr)[i];
 		// set word's info
-		const char *w    = words->getWord(i);
-		int32_t  wlen = words->getWordLen(i);
 		bool endHead = false;
 		bool endHtml = false;
 
-		if ( (words->getTagId(i) ) == TAG_TITLE ) {
-			inTitle = !(words->isBackTag(i));
-		} else if ( (words->getTagId(i) ) == TAG_HTML ) {
-			endHtml = words->isBackTag( i );
-		} else if ( (words->getTagId(i) ) == TAG_HEAD ) {
-			endHead = words->isBackTag(i);
+		nodeid_t base_nodeid = token.nodeid&BACKBITCOMP;
+		if ( base_nodeid == TAG_TITLE ) {
+			inTitle = (token.nodeid&BACKBIT)==0;
+		} else if ( base_nodeid == TAG_HTML ) {
+			endHtml = (token.nodeid&BACKBIT)!=0;
+		} else if ( base_nodeid == TAG_HEAD ) {
+			endHead = (token.nodeid&BACKBIT)!=0;
 		}
 
 		// This word is a match...see if we're gonna tag it
@@ -172,7 +166,7 @@ bool Highlight::highlightWords ( const Words *words, const Matches *m, const Que
 				nexti = -1;
 		}
 
-		m_sb->safeMemcpy ( w , wlen );
+		m_sb->safeMemcpy ( token.token_start, token.token_len );
 
 		// back tag
 		if ( i == backTagi-1 ) {

@@ -21,7 +21,7 @@
 #include "Log.h"
 #include "termid_mask.h"
 #include "Phrases.h"
-#include "Words.h"
+#include "tokenizer.h"
 #include <fstream>
 #include <sys/stat.h>
 
@@ -116,9 +116,9 @@ bool TermCheckList::loadScoredTermList(HashTableX *ht, const char *filename) {
 
 
 
-bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, int32_t *docScore, int32_t *numUniqueWords, int32_t *numUniquePhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size) {
+bool TermCheckList::getScore(const TokenizerResult &tr, Phrases *p, HashTableX *uniqueTermIds, int32_t *docScore, int32_t *numUniqueWords, int32_t *numUniquePhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size) {
 
-	if( !w || !uniqueTermIds || !docScore || !numUniqueWords || !numUniquePhrases ) {
+	if( !uniqueTermIds || !docScore || !numUniqueWords || !numUniquePhrases ) {
 		return false;
 	}
 
@@ -127,22 +127,21 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 	}
 
 	int rc;
-	const uint64_t *wids = reinterpret_cast<const uint64_t*>(w->getWordIds());
-	int32_t nw = w->getNumWords();
 
-	for(int32_t i=0; i < nw; i++) {
-		if( !wids[i] ) {
+	for(size_t i=0; i < tr.size(); i++) {
+		const auto &token = tr[i];
+		if(!token.is_alfanum || token.token_hash==0) {
 			continue;
 		}
 
 		const char *s = NULL;
 		int32_t slen = 0;
 		if( g_conf.m_logTraceTermCheckList || debbuf ) {
-			s = w->getWord(i);
-			slen = w->getWordLen(i);
+			s = token.token_start;
+			slen = token.token_len;
 		}
 
-		int64_t termId = w->getWordId(i);
+		int64_t termId = token.token_hash;
 
 		// only process if we haven't seen it before
 		if ( uniqueTermIds->getSlot( &termId ) >= 0 ) {
@@ -156,7 +155,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 
 			int32_t *sc = (int32_t*)m_terms.getValue64(termId);
 			if( sc ) {
-				logTrace(g_conf.m_logTraceTermCheckList, "Match word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
+				logTrace(g_conf.m_logTraceTermCheckList, "Match word %d: %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", (int)i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
 				(*docScore) += *sc;
 				(*numUniqueWords)++;
 
@@ -191,7 +190,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 		int32_t plen=0;
 		char pbuf[256]={0};
 		if( g_conf.m_logTraceTermCheckList || debbuf ) {
-			p->getPhrase(i, pbuf, sizeof(pbuf)-1, &plen);
+			p->getPhrase(i, tr, pbuf, sizeof(pbuf)-1, &plen);
 		}
 
 		int64_t phraseId = p->getPhraseId(i);
@@ -208,7 +207,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 
 		int32_t *sc = (int32_t*)m_terms.getValue64(phraseId);
 		if( sc ) {
-			logTrace(g_conf.m_logTraceTermCheckList, "Match phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
+			logTrace(g_conf.m_logTraceTermCheckList, "Match phrase %d: %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", (int)i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
 			(*docScore) += *sc;
 			(*numUniquePhrases)++;
 
