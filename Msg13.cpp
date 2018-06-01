@@ -1054,6 +1054,15 @@ static void appendRetryProxy(const char *url, int urlLen) {
 }
 
 static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
+	if (!ts) {
+		return false;
+	}
+
+	//we only do proxy checks if there weren't any other error
+	if (g_errno != 0) {
+		return false;
+	}
+
 	Url url;
 	url.set(r->ptr_url, r->size_url);
 
