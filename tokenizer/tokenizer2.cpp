@@ -781,6 +781,8 @@ static void recognize_telephone_numbers_sweden(TokenizerResult *tr) {
 				}
 			}
 		}
+		if(last_digit_token_idx>=org_token_count)
+			last_digit_token_idx = org_token_count-1;
 		if(digit_count<5)
 			continue;
 		if(digit_count>10)

@@ -851,6 +851,12 @@ int main(void) {
 		T2 t("foo 040-99 88 77 boo",langSwedish);
 		assert(t.has_token("040998877"));
 	}
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("foo 08-24 50 55",langSwedish);
+		assert(t.has_token("08245055"));
+	}
+return 0;
 	
 	printf("Test line %d\n",__LINE__);
 	{
