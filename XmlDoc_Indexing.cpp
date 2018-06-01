@@ -1262,7 +1262,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 		// . we still have the score punish from # of words though!
 		// . for inlink texts that are the same it should accumulate
 		//   and use the reserved bits as a multiplier i guess...
-		if ( ! hashString ( txt,tlen,&hi) ) return false;
+		if ( ! hashString4(txt,tlen,&hi) ) return false;
 		// now record this so we can match the link text to
 		// a matched offsite inlink text term in the scoring info
 		//k->m_wordPosEnd = hi.m_startDist;
@@ -1454,7 +1454,7 @@ bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
 		hi.m_tt         = tt;
 		hi.m_desc       = "explicit keywords";
 		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
-		return hashString(ptr_explicitKeywords, size_explicitKeywords, &hi);
+		return hashString4(ptr_explicitKeywords, size_explicitKeywords, &hi);
 	} else
 		return true; //nothing done - no error
 }
@@ -1526,7 +1526,7 @@ bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mgp , mgplen , &hi);
+	return hashString4(mgp, mgplen, &hi);
 }
 
 
