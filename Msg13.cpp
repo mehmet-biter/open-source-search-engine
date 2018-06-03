@@ -1043,12 +1043,12 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	return false;
 }
 
-static void appendRetryProxy(const char *url, int urlLen) {
+static void appendRetryProxy(const char *url, int urlLen, const char *location = nullptr, int locationLen = 0) {
 	char filename[1024];
 	sprintf(filename,"%s/retryproxy.txt", g_hostdb.m_myHost->m_dir);
 	FILE *fp = fopen(filename,"a");
 	if (fp) {
-		fprintf(fp,"%.*s\n",urlLen,url);
+		fprintf(fp, "%.*s|%.*s\n", urlLen, url, locationLen, location);
 		fclose(fp);
 	}
 }
@@ -1080,7 +1080,7 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 
 		if (g_urlRetryProxyList.isUrlMatched(*location)) {
 			*msg = "redir url proxy match list";
-			appendRetryProxy(location->getUrl(), location->getUrlLen());
+			appendRetryProxy(url.getUrl(), url.getUrlLen(), location->getUrl(), location->getUrlLen());
 			return true;
 		}
 
