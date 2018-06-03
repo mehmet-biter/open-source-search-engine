@@ -1063,6 +1063,11 @@ static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
 		return false;
 	}
 
+	// don't check for retries if it's already done
+	if (r->m_proxyTries > 0) {
+		return false;
+	}
+
 	Url url;
 	url.set(r->ptr_url, r->size_url);
 
