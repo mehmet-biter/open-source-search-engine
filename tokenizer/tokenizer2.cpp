@@ -1289,6 +1289,8 @@ bool is_slash_abbreviation(const char *s, size_t slen) {
 
 
 static void collapse_slash_abbreviations(TokenizerResult *tr) {
+	//Replace simple <singleletter> '/' <singleletter> with a single token without the slash.
+#if 0
 	size_t org_token_count = tr->size();
 	for(size_t i=1; i+2<org_token_count; i++) {
 		const auto &t0 = (*tr)[i+0];
@@ -1313,4 +1315,43 @@ static void collapse_slash_abbreviations(TokenizerResult *tr) {
 		org_token_count -= 3;
 		i -= 2;
 	}
+#endif
+	//The ifdef'fed-out code above is the clean and simple algorithm. But it is horribly inefficient when encountering
+	//documents consisting almost entirely of slash-abbreviations, such as genome tables.
+	//Instead we iterate over the tokens with src,dst iterators, copying, deleting and modifying underway without causing
+	//reallocation of the underlying token vector (the eg stack is used though).
+	if(tr->size()<3)
+		return;
+	size_t src_idx = 0;
+	size_t dst_idx = 0;
+	size_t org_token_count = tr->tokens.size();
+	while(src_idx+2<org_token_count) {
+		const auto &t0 = (*tr)[src_idx+0];
+		const auto &t1 = (*tr)[src_idx+1];
+		const auto &t2 = (*tr)[src_idx+2];
+		if((!t0.is_alfanum || t1.is_alfanum || !t2.is_alfanum) ||
+		   (t1.token_len!=1 || t1.token_start[0]!='/') ||
+		   (!t0.is_primary || !t1.is_primary || !t2.is_primary) ||
+		   (t0.token_end()!=t1.token_start || t1.token_end()!=t2.token_start) ||
+		   (!is_slash_abbreviation(t0.token_start, t0.token_len+t1.token_len+t2.token_len)))
+		{
+			if(src_idx!=dst_idx)
+				tr->tokens[dst_idx] = tr->tokens[src_idx];
+			src_idx++;
+			dst_idx++;
+		} else {
+			size_t sl = t0.token_len + t2.token_len;
+			char *s = (char*)tr->egstack.alloc(sl);
+			memcpy(s, t0.token_start, t0.token_len);
+			memcpy(s+t0.token_len, t2.token_start, t2.token_len);
+			tr->tokens[dst_idx] = TokenRange(t0.start_pos, t2.end_pos, s,sl, false, true);
+			
+			dst_idx++;
+			src_idx += 3;
+		}
+	}
+	while(src_idx<org_token_count)
+		tr->tokens[dst_idx++] = tr->tokens[src_idx++];
+	if(src_idx!=dst_idx)
+		tr->tokens.erase(tr->tokens.begin()+dst_idx,tr->tokens.end());
 }
