@@ -45,6 +45,9 @@ public:
 		for(unsigned i=0; i<tr.size(); i++)
 			if(!tr[i].is_primary || i>=p1tokens)
 				printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
+		printf("all tokens: %u\n", (unsigned)(tr.size()));
+		for(unsigned i=0; i<tr.size(); i++)
+			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
 	}
 	bool empty() const { return tr.empty(); }
 	size_t token_count() const { return tr.size(); }
@@ -675,6 +678,16 @@ int main(void) {
 		assert(!t.has_token("Johns"));
 	}
 	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("John's cat bit Mary's dog's tail",langEnglish);
+		assert(t.has_token("John's"));
+		assert(t.has_token("cat"));
+		assert(t.has_token("bit"));
+		assert(t.has_token("Mary's"));
+		assert(t.has_token("dog's"));
+		assert(t.has_token("tail"));
+	}
 	
 	//hyphenation
 	printf("Test line %d\n",__LINE__);
@@ -1069,7 +1082,7 @@ int main(void) {
 
 	printf("Test line %d\n",__LINE__);
 	{
-		T2 t("The smurf drove 80 km/h on the highway",langUnknown);
+		T2 t("The smurf drove 80 km/h on the highway, which is 22 m/s approximately",langUnknown);
 		assert(t.has_token("The"));
 		assert(t.has_token("smurf"));
 		assert(t.has_token("drove"));
@@ -1081,6 +1094,10 @@ int main(void) {
 		assert(t.has_token("on"));
 		assert(t.has_token("the"));
 		assert(t.has_token("highway"));
+		assert(t.has_token("which"));
+		assert(t.has_token("is"));
+		assert(t.has_token("ms"));
+		assert(t.has_token("approximately"));
 	}
 	
 	return 0;
