@@ -1350,6 +1350,8 @@ static void collapse_slash_abbreviations(TokenizerResult *tr) {
 			src_idx += 3;
 		}
 	}
+	while(src_idx<org_token_count)
+		tr->tokens[dst_idx++] = tr->tokens[src_idx++];
 	if(src_idx!=dst_idx)
 		tr->tokens.erase(tr->tokens.begin()+dst_idx,tr->tokens.end());
 }
