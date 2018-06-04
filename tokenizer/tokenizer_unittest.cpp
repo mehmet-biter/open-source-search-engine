@@ -42,8 +42,9 @@ public:
 		while(p1tokens<tr.size() && tr[p1tokens].is_primary)
 			p1tokens++;
 		printf("phase2-tokens: %u\n", (unsigned)(tr.size()-p1tokens));
-		for(unsigned i=p1tokens; i<tr.size(); i++)
-			printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
+		for(unsigned i=0; i<tr.size(); i++)
+			if(!tr[i].is_primary || i>=p1tokens)
+				printf("  #%u: [%lu..%lu) '%.*s'\n", i, tr[i].start_pos, tr[i].end_pos, (int)tr[i].token_len, tr[i].token_start);
 	}
 	bool empty() const { return tr.empty(); }
 	size_t token_count() const { return tr.size(); }
@@ -1069,11 +1070,17 @@ int main(void) {
 	printf("Test line %d\n",__LINE__);
 	{
 		T2 t("The smurf drove 80 km/h on the highway",langUnknown);
+		assert(t.has_token("The"));
+		assert(t.has_token("smurf"));
+		assert(t.has_token("drove"));
+		assert(t.has_token("80"));
 		assert(t.has_token("kmh"));
 		assert(!t.has_token("km"));
 		assert(!t.has_token("h"));
 		assert(t.has_token("80"));
 		assert(t.has_token("on"));
+		assert(t.has_token("the"));
+		assert(t.has_token("highway"));
 	}
 	
 	return 0;
