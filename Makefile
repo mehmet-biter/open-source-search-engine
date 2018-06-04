@@ -431,7 +431,7 @@ doc:
 
 # used for tools/unittest
 libgb.a: $(OBJS) libsto.a libword_variations.a libunicode.a
-	ar rcs $@ $^ word_variations/*.o sto/*.o unicode/*.o
+	ar rcs $@ $^ word_variations/*.o sto/*.o unicode/*.o tokenizer/*.o
 
 .PHONY: tools
 tools:
