@@ -56,6 +56,7 @@
 #include "PageTemperatureRegistry.h"
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "SiteDefaultPageTemperatureRemoteRegistry.h"
+#include "SiteNumInlinks.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -6744,6 +6745,16 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	return &m_firstIp;
 }
 
+static void gotSiteNumInlinksWrapper(void *context, long count) {
+	XmlDoc *xmlDoc = reinterpret_cast<XmlDoc*>(context);
+	if (count != -1) {
+		xmlDoc->m_siteNumInlinks = count;
+		xmlDoc->m_siteNumInlinksValid = true;
+	}
+
+	xmlDoc->m_masterLoop(xmlDoc->m_masterState);
+}
+
 // this is the # of GOOD INLINKS to the site. so it is no more than
 // 1 per c block, and it has to pass link spam detection. this is the
 // highest-level count of inlinks to the site. use it a lot.
@@ -6779,6 +6790,15 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		}
 		m_siteNumInlinks = min;
 		return &m_siteNumInlinks;
+	}
+
+	int32_t *sh32 = getSiteHash32();
+	if (!sh32 || sh32 == (void *)-1) {
+		return (int32_t *)sh32;
+	}
+
+	if (g_siteNumInlinks.getSiteNumInlinks(this, gotSiteNumInlinksWrapper, *sh32)) {
+		return (int32_t*)-1;
 	}
 
 	setStatus ( "getting site num inlinks");
