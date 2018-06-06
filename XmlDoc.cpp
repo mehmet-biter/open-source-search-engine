@@ -17684,7 +17684,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		if ( linkdbHostNum < numHosts ) {
 			linkdbHostId = hosts[linkdbHostNum].m_hostId ;
 			if( !hosts[linkdbHostNum].m_spiderEnabled) {
-				linkdbHostId = g_hostdb.getHostIdWithSpideringEnabled(linkdbShardNum, true);
+				linkdbHostId = g_hostdb.getHostIdWithSpideringEnabled(linkdbShardNum, false);
 			}
 		}
 		else {

@@ -526,6 +526,7 @@ public:
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
 	void sortTokenizerResult(TokenizerResult *tr);
+	void getLanguageAndCountry(lang_t *lang, const char **country_code);
 
 	class Url *getBaseUrl ( ) ;
 
@@ -571,6 +572,7 @@ public:
 			Sections *sections, const Bits *bits,
 			const char *fragVec, const char *wordSpamVec, const char *langVec,
 			HashTableX *wts, SafeBuf *wbuf);
+	bool hashString4(const char *s, int32_t slen, HashInfo *hi);
 
 
 	// print out for PageTitledb.cpp and PageParser.cpp

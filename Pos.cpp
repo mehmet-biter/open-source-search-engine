@@ -285,7 +285,7 @@ unsigned Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addE
 
 
 			bool resetPunctCount = true;
-			if ( is_punct_utf8( p ) ) {
+			if (is_punct_utf8(p) && !is_wspace_utf8(p)) {
 				if ( ( cs == lastPunctSize) && ( memcmp(lastPunct, p, cs) == 0 ) ) {
 					resetPunctCount = false;
 					++samePunctCount;

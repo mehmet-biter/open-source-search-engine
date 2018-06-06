@@ -576,15 +576,10 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// are used in user searches automatically.
 		hi.m_prefix = NULL;
 
-		// desc is NULL, prefix will be used as desc
-		bool status = hashString ( s,len, &hi );
+		bool status = hashString4(s,len,&hi);
 
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
-
-		// return false with g_errno set on error
-		//if ( ! hashNumberForSorting ( buf , bufLen , &hi ) )
-		//	return false;
 	}
 
 	return true;
@@ -1267,7 +1262,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 		// . we still have the score punish from # of words though!
 		// . for inlink texts that are the same it should accumulate
 		//   and use the reserved bits as a multiplier i guess...
-		if ( ! hashString ( txt,tlen,&hi) ) return false;
+		if ( ! hashString4(txt,tlen,&hi) ) return false;
 		// now record this so we can match the link text to
 		// a matched offsite inlink text term in the scoring info
 		//k->m_wordPosEnd = hi.m_startDist;
@@ -1352,20 +1347,12 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	
 	//get language and country if known, so tokenizer phase 2 can do its magic
 	lang_t lang_id;
-	uint8_t *tmpLangId = getLangId();
-	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
-		lang_id = (lang_t)*tmpLangId;
-	else
-		lang_id = langUnknown;
-	
-	const char *countryCode = NULL;
-	uint16_t *countryId = getCountryId();
-	if(countryId!=NULL && countryId!=(uint16_t*)-1)
-		countryCode = g_countryCode.getAbbr(*countryId);
+	const char *countryCode;
+	getLanguageAndCountry(&lang_id,&countryCode);
 	
 	TokenizerResult tr;
 	plain_tokenizer_phase_1(title,titleLen,&tr);
-	plain_tokenizer_phase_2((lang_t)lang_id, countryCode, &tr);
+	plain_tokenizer_phase_2(lang_id, countryCode, &tr);
 	calculate_tokens_hashes(&tr);
 	sortTokenizerResult(&tr);
 	
@@ -1434,7 +1421,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mk , mklen , &hi);
+	return hashString4(mk, mklen, &hi);
 }
 
 
@@ -1467,7 +1454,7 @@ bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
 		hi.m_tt         = tt;
 		hi.m_desc       = "explicit keywords";
 		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
-		return hashString(ptr_explicitKeywords, size_explicitKeywords, &hi);
+		return hashString4(ptr_explicitKeywords, size_explicitKeywords, &hi);
 	} else
 		return true; //nothing done - no error
 }
@@ -1506,7 +1493,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta summary";
 	// hash it
-	if ( ! hashString ( ms , mslen , &hi )) return false;
+	if(!hashString4(ms,mslen,&hi))
+		return false;
 
 
 	//len = m_xml.getMetaContent ( buf , 2048 , "description" , 11 );
@@ -1517,7 +1505,8 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	// udpate hashing parms
 	hi.m_desc = "meta desc";
 	// . TODO: only hash if unique????? set a flag on ht then i guess
-	if ( ! hashString ( md , mdlen , &hi ) ) return false;
+	if(!hashString4(md,mdlen, &hi))
+		return false;
 
 	return true;
 }
@@ -1537,7 +1526,7 @@ bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
 	hi.m_hashGroup  = HASHGROUP_INMETATAG;
 
 	// call XmlDoc::hashString
-	return hashString ( mgp , mgplen , &hi);
+	return hashString4(mgp, mgplen, &hi);
 }
 
 
@@ -1613,6 +1602,21 @@ void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
 		return tr0.start_pos < tr1.start_pos ||
 		       (tr0.start_pos == tr1.start_pos && tr0.end_pos<tr1.end_pos);
 	});
+}
+
+void XmlDoc::getLanguageAndCountry(lang_t *lang, const char **country_code) {
+	//get language and country if known, so tokenizer phase 2 can do its magic
+	uint8_t *tmpLangId = getLangId();
+	if(tmpLangId!=NULL && tmpLangId!=(uint8_t*)-1)
+		*lang = (lang_t)*tmpLangId;
+	else
+		*lang = langUnknown;
+	
+	uint16_t *countryId = getCountryId();
+	if(countryId!=NULL && countryId!=(uint16_t*)-1)
+		*country_code = g_countryCode.getAbbr(*countryId);
+	else
+		*country_code = NULL;
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
@@ -1734,6 +1738,23 @@ bool XmlDoc::hashString3(size_t begin_token, size_t end_token, HashInfo *hi,
 		return false;
 
 	return hashWords3( hi, &m_tokenizerResult, begin_token, end_token, NULL, &bits, NULL, NULL, NULL, wts, wbuf );
+}
+
+bool XmlDoc::hashString4(const char *s, int32_t slen, HashInfo *hi) {
+	TokenizerResult tr;
+	Bits    bits;
+	lang_t lang_id;
+	const char *countryCode;
+	
+	getLanguageAndCountry(&lang_id,&countryCode);
+	plain_tokenizer_phase_1(s,slen,&tr);
+	plain_tokenizer_phase_2(lang_id,countryCode,&tr);
+	calculate_tokens_hashes(&tr);
+	sortTokenizerResult(&tr);
+	if(!bits.set(&tr))
+		return false;
+
+	return hashWords3( hi, &tr, NULL, &bits, NULL, NULL, NULL, m_wts, &m_wbuf );
 }
 
 
@@ -2038,7 +2059,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 			const auto &t2 = (*tr)[j];
 			if(t2.is_alfanum && t2.start_pos>=token.end_pos)
 				break;
-			if(!bits->canBeInPhrase(i) && !bits->canPairAcross(j)) {
+			if(!bits->canBeInPhrase(j) && !bits->canPairAcross(j)) {
 				generate_bigram = false;
 				break;
 			}
