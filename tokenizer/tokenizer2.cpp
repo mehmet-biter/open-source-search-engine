@@ -415,6 +415,7 @@ static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 nativ
 //that could conceivably stand in for apostrophe. We do this in all languages because the abuse seem to know no language barrier
 static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 	//Loop through original tokens, looking for <word> <blotch> "s". Combine the word with the letter s.
+	bool any_deleted = false;
 	const size_t org_token_count = tr->size();
 	for(size_t i=0; i+2<org_token_count; i++) {
 		const auto &t0 = (*tr)[i];
@@ -473,7 +474,23 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 		//  car
 		//and XmlDoc_indexing.cpp will generate the bigram "johns+car", but also "s+car".
 		//We remove the 's' token because it (a) causes trouble with weird bigrams, and (b) it has little meaning by itself.
-		tr->tokens.erase(tr->tokens.begin()+i+2);
+		tr->tokens[i+2].token_len = 0; //mark for delete
+		any_deleted = true;
+		//tr->tokens.erase(tr->tokens.begin()+i+2);
+	}
+	if(any_deleted) {
+		size_t src_idx=0;
+		size_t dst_idx = 0;
+		while(src_idx<tr->size()) {
+			if(tr->tokens[src_idx].token_len!=0) {
+				if(src_idx!=dst_idx)
+					tr->tokens[dst_idx] = tr->tokens[src_idx];
+				src_idx++;
+				dst_idx++;
+			} else
+				src_idx++;
+		}
+		tr->tokens.erase(tr->tokens.begin()+dst_idx,tr->tokens.end());
 	}
 }
 
