@@ -240,7 +240,7 @@ public:
 	// . returns the length of the node
 	// . pureXml is true if node cannot be an html tag, except comment
 	//int32_t set ( char *node , bool pureXml );
-	int32_t set (char *node , bool pureXml );
+	int32_t set(char *node, int maxNodeLen, bool pureXml);
 
 	// . called by set() to get the length of a COMMENT node (and set it)
 	int32_t setCommentNode ( char *node );
