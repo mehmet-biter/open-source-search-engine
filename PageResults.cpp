@@ -34,6 +34,9 @@
 #include "RobotsBlockedResultOverride.h"
 #include "QueryLanguage.h"
 #include "FxLanguage.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 static bool printSearchResultsHeader(State0 *st);
@@ -1765,7 +1768,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		     si->m_format == FORMAT_HTML ) 
 			continue;
 		const char *str   = k->getLinkText();//ptr_linkText;
-		int32_t strLen = k->size_linkText;
+		int32_t strLen = strnlen(k->getLinkText(),k->size_linkText);
 
 		const char *frontTag =
 		     "<font style=\"color:black;background-color:yellow\">" ;
