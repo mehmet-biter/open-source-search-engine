@@ -341,7 +341,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, char contentType ) {
 		XmlNode *xi = &m_nodes[m_numNodes];
 
 		// set that node
-		i += xi->set( &m_xml[i], pureXml );
+		i += xi->set( &m_xml[i], m_xmlLen-i, pureXml );
 
 		// set his parent xml node if is xml
 		xi->m_parent = parent;
