@@ -1101,6 +1101,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	
 	if(!load_lemma_lexicon()) {
+		log(LOG_ERROR,"db: could not load lemma lexicon");
 		return 1;
 	}
 
