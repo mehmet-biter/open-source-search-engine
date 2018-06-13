@@ -609,6 +609,49 @@ int main(void) {
 		assert(t.str(6)=="Noel");
 	}
 
+	//italian diacritics
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("aaa bbb",langItalian);
+		assert(t.token_count()==3);
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Ragù",langItalian);
+		assert(t.token_count()==1);
+		assert(t.str(0)=="Ragù");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("àèìòùéç",langItalian);
+		assert(t.token_count()==1);
+		assert(t.str(0)=="àèìòùéç");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("ÀÈÌÒÙÉÇ",langItalian);
+		assert(t.token_count()==1);
+		assert(t.str(0)=="ÀÈÌÒÙÉÇ");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("monaco münchen",langItalian);
+		assert(t.token_count()==4);
+		assert(t.str(3)=="munchen");
+	}
+	
+	printf("Test line %d\n",__LINE__);
+	{
+		T2 t("Eskişehir",langItalian);
+		assert(t.token_count()==2);
+		assert(t.str(1)=="Eskisehir");
+	}
+	
+	
 	//diacritics hands-off
 	printf("Test line %d\n",__LINE__);
 	{
