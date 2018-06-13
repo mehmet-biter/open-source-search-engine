@@ -230,6 +230,7 @@ static void remove_combining_marks_norwegian(TokenizerResult *tr);
 static void remove_combining_marks_swedish(TokenizerResult *tr);
 static void remove_combining_marks_german(TokenizerResult *tr);
 static void remove_combining_marks_swiss_german(TokenizerResult *tr);
+static void remove_combining_marks_italian(TokenizerResult *tr);
 static void remove_some_combining_marks(TokenizerResult *tr, const UChar32 native_marked_letters[], size_t native_marked_letters_count);
 
 
@@ -250,6 +251,9 @@ static void remove_combining_marks(TokenizerResult *tr, lang_t lang, const char 
 			else	
 				remove_combining_marks_swiss_german(tr);
 			return;
+		case langItalian:
+			remove_combining_marks_italian(tr);
+			break;
 		default:
 			break;
 	}
@@ -330,6 +334,37 @@ static void remove_combining_marks_german(TokenizerResult *tr) {
 static void remove_combining_marks_swiss_german(TokenizerResult *tr) {
 	//Uhmm... let's do the same as for the other German (Germany/Lichtenstein/Austria) and see how that goes
 	remove_combining_marks_german(tr);
+}
+
+
+//Combining marks in Italian:
+//  - grave		àèìòù	Mandatory for lowercase. Dedicated keys on keyboard
+//  - acute		é	Mandatory for lowercase. Dedicated keys on keyboard
+//  - cedilla		ç	Non-native. Dedicated key on keyboard - lowercase only
+//Swiss-Italian keyboard has access to umlaut.
+//Major problem is that none the the three Italian keyboard layouts have easy access to uppercase accented letters, so the accents are frequently
+//omitted or typed as apostrophe. More discussion here: https://italian.stackexchange.com/questions/3878/how-do-italians-customarily-insert-uppercase-italian-vowels-with-diacritics-with
+//So one way to deal with this is to just remove all diacritics in both diocument and query, but that would lose precision. But given that most documents has been run through word
+//processing software the documents are mostly written correctly, and that when users type queries they rarely use uppercase so the accents are probably also typed correctly there.
+//So we keep the native and easily accessible marks. Then on a later date we should detect the incorrect forms and fix them (requires a dictionary though).
+static void remove_combining_marks_italian(TokenizerResult *tr) {
+	static const UChar32 native_marked_letters[] = {
+		0x00C0, //À
+		0x00C8, //È
+		0x00CC, //Ì
+		0x00D2, //Ò
+		0x00D9, //Ù
+		0x00E0, //à
+		0x00E8, //è
+		0x00EC, //ì
+		0x00F2, //ò
+		0x00F9, //ù
+		0x00C9, //É
+		0x00E9, //é
+		0x00C7, //Ç
+		0x00E7, //ç
+	};
+	remove_some_combining_marks(tr, native_marked_letters, sizeof(native_marked_letters)/sizeof(native_marked_letters[0]));
 }
 
 

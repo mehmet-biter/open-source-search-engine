@@ -34,6 +34,9 @@
 #include "RobotsBlockedResultOverride.h"
 #include "QueryLanguage.h"
 #include "FxLanguage.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 static bool printSearchResultsHeader(State0 *st);
@@ -85,7 +88,7 @@ State0::State0()
 	, m_primaryQueryLanguage(langUnknown) {
 }
 
-static bool sendReply(State0 *st, char *reply) {
+static bool sendReply(State0 *st, const char *reply, int32_t rlen) {
 
 	int32_t savedErr = g_errno;
 
@@ -114,8 +117,6 @@ static bool sendReply(State0 *st, char *reply) {
 	}
 
 
-	int32_t rlen = 0;
-	if ( reply ) rlen = strlen(reply);
 	logf(LOG_DEBUG,"gb: sending back %" PRId32" bytes",rlen);
 
 	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, savedErr, (gettimeofdayInMilliseconds() - st->m_startTime));
@@ -255,7 +256,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	// copy yhits
 	if (!st->m_hr.copy(hr)) {
-		return sendReply(st, nullptr);
+		return sendReply(st,nullptr,0);
 	}
 
 	// set this in case SearchInput::set fails!
@@ -391,7 +392,7 @@ static bool gotQueryLanguage(State0 *st, const std::vector<std::pair<lang_t, dou
 	if (!si->set(st->m_socket, &st->m_hr, st->m_primaryQueryLanguage, language_weights)) {
 		log("query: set search input: %s",mstrerror(g_errno));
 		if ( ! g_errno ) g_errno = EBADENGINEER;
-		return sendReply ( st, NULL );
+		return sendReply(st,NULL,0);
 	}
 
 	// save collnum now
@@ -408,7 +409,7 @@ static bool gotQueryLanguage(State0 *st, const std::vector<std::pair<lang_t, dou
 	// for now disable queries
 	if (!g_conf.m_queryingEnabled) {
 		g_errno = EQUERYINGDISABLED;
-		return sendReply(st, nullptr);
+		return sendReply(st, nullptr,0);
 	}
 
 	// LAUNCH RESULTS
@@ -480,7 +481,7 @@ static bool gotResults ( void *state ) {
 	// mess with their TcpSocket settings.
 	if ( ! st->m_socket ) {
 		log("results: socket is NULL. sending failed.");
-		return sendReply(st,NULL);
+		return sendReply(st,NULL,0);
 	}
 
 	// if we skipped a shard because it was dead, usually we provide
@@ -495,7 +496,7 @@ static bool gotResults ( void *state ) {
 			 , msg40->m_msg3a.m_skippedShards
 			 , g_hostdb.m_numShards );
 	       g_errno = ESHARDDOWN;
-	       return sendReply(st,reply);
+	       return sendReply(st,reply,strlen(reply));
 	}
 
 
@@ -504,7 +505,7 @@ static bool gotResults ( void *state ) {
 	CollectionRec *cr = si->m_cr;//g_collectiondb.getRec ( collnum );
 	if ( ! cr ) { // || cr != si->m_cr ) {
 		g_errno = ENOCOLLREC;
-		return sendReply(st,NULL);
+		return sendReply(st,NULL,0);
 	}
 
 	// this causes ooms everywhere, not a good fix
@@ -512,7 +513,7 @@ static bool gotResults ( void *state ) {
 		log("msg40: failed to get results q=%s",si->m_q.originalQuery());
 	 	//g_errno = ENOMEM;
 		g_errno = msg40->m_errno;
-	 	return sendReply(st,NULL);
+		return sendReply(st,NULL,0);
 	}
 
 
@@ -548,7 +549,6 @@ static bool gotResults ( void *state ) {
 	if ( hadPrintError ) {
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		log("query: had error: %s",mstrerror(g_errno));
-		//return sendReply ( st , sb.getBufStart() );
 	}
 
 	// wrap it up with Next 10 etc.
@@ -560,7 +560,7 @@ static bool gotResults ( void *state ) {
 		sb->safePrintf("</div>");
 
 	// send it off
-	sendReply ( st , st->m_sb.getBufStart() );
+	sendReply(st, st->m_sb.getBufStart(), st->m_sb.length());
 
 	return true;
 }
@@ -930,7 +930,6 @@ static bool printSearchResultsHeader(State0 *st) {
 		log("query: Query failed. Had error processing query: %s",
 		    mstrerror(st->m_errno));
 		g_errno = st->m_errno;
-		//return sendReply(st,sb->getBufStart());
 		return false;
 	}
 
@@ -1224,7 +1223,7 @@ static bool printSearchResultsHeader(State0 *st) {
 	       si->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS);
 	//syn-todo: in the call above si->m_queryExpansion was used for both 'queryExpansion' and 'useQueryStopWords'. Why?
 
-	if ( g_errno ) return false;//sendReply (st,NULL);
+	if ( g_errno ) return false;
 
 	DocIdScore *dpx = NULL;
 	if ( numResults > 0 ) dpx = msg40->getScoreInfo(0);
@@ -1765,7 +1764,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		     si->m_format == FORMAT_HTML ) 
 			continue;
 		const char *str   = k->getLinkText();//ptr_linkText;
-		int32_t strLen = k->size_linkText;
+		int32_t strLen = strnlen(k->getLinkText(),k->size_linkText);
 
 		const char *frontTag =
 		     "<font style=\"color:black;background-color:yellow\">" ;

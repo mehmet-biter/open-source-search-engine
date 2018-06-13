@@ -400,14 +400,11 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state, void (*callb
 
 		// if all hosts in group dead, just skip it!
 		if ( g_hostdb.isShardDead ( shardNum ) ) {
-			m_numReplies++;
-			log("msg3a: skipping dead shard # %i "
-			    "(elapsed=%li)",(int)shardNum,elapsed);
+			log(LOG_DEBUG,"msg3a: skipping dead shard # %i (elapsed=%li)", (int)shardNum, elapsed);
 			continue;
 		}
 
 		if ( si && !si->m_askOtherShards && h!=g_hostdb.getMyHost()) {
-			m_numReplies++;
 			continue;
 		}
 
