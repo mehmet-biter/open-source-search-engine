@@ -419,6 +419,8 @@ void XmlDoc::reset ( ) {
 	// do not cache the http reply in msg13 etc.
 	m_maxCacheAge = 0;
 
+	m_calledServiceSiteNumInlinks = false;
+
 	// reset these ptrs too!
 	void *px    = &ptr_firstUrl;
 	void *pxend = &m_dummyEnd;
@@ -6797,7 +6799,9 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		return (int32_t *)sh32;
 	}
 
-	if (g_siteNumInlinks.getSiteNumInlinks(this, gotSiteNumInlinksWrapper, *sh32)) {
+	// make sure we only call site num inlink server once
+	if (!m_calledServiceSiteNumInlinks && g_siteNumInlinks.getSiteNumInlinks(this, gotSiteNumInlinksWrapper, *sh32)) {
+		m_calledServiceSiteNumInlinks = true;
 		return (int32_t*)-1;
 	}
 

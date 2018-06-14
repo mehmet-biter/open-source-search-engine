@@ -1179,6 +1179,8 @@ public:
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	void callCallback();
+
+	bool m_calledServiceSiteNumInlinks;
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling
