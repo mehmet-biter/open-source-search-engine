@@ -121,7 +121,7 @@ static uint64_t wordformattrs2bitmask(const sto::WordForm &wf) {
 
 static bool same_wordform_as_source(const sto::WordForm &wf, const std::string source_word) {
 	return wf.written_form_length==source_word.length() &&
-	memcmp(wf.written_form,source_word.data(),source_word.length())==0;
+	       memcmp(wf.written_form,source_word.data(),source_word.length())==0;
 }
 
 
