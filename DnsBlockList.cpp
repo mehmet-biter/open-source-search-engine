@@ -25,11 +25,11 @@ DnsBlockList g_dnsBlockList;
 static const char s_dns_filename[] = "dnsblocklist.txt";
 
 DnsBlockList::DnsBlockList()
-	: BlockList(s_dns_filename) {
+	: MatchList(s_dns_filename) {
 }
 
 bool DnsBlockList::isDnsBlocked(const char *dns) {
-	auto dnsBlockList = getBlockList();
+	auto dnsBlockList = getMatchList();
 
 	for (auto const &dnsBlock : *dnsBlockList) {
 		if (dnsBlock.front() == '*') {

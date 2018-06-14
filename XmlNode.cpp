@@ -4,7 +4,7 @@
 #include "Mem.h"
 #include "Sanity.h"
 
-static int32_t getTagLen(const char *node);
+static int32_t getTagLen(const char *node, int maxNodeLen);
 
 // . Here's a nice list of all the html nodes names, lengths, whether they're
 //   a breaking node or not and their node id
@@ -274,7 +274,7 @@ static bool isTagStart(const char *s) {
 // . called by Xml class
 // . returns the length of the node
 // . TODO: "node" is now guaranteed to be \0 terminated -- make this faster
-int32_t XmlNode::set( char *node, bool pureXml ) {
+int32_t XmlNode::set( char *node, int maxNodeLen, bool pureXml ) {
 	// save head of node
 	m_node = node;
 
@@ -352,7 +352,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 
 	// . otherwise it's a regular tag
 	// . might be <!DOCTYPE ...> or something though
-	m_nodeLen = getTagLen ( node );
+	m_nodeLen = getTagLen(node, maxNodeLen);
 
 	// . get the node's name's length (i-1)
 	// . node name ends at non alnum char 
@@ -400,13 +400,13 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 }
 
 // . return the length of a node starting at "node"
-static int32_t getTagLen ( const char *node ) {
+static int32_t getTagLen ( const char *node, int maxNodeLen) {
 	// skip over first <
 	int32_t i ;
 
 	// . keep looping until we hit a < or > OR while we're in quotes
 	// . ignore < and > when they're in quotes
-	for ( i = 1 ; node[i] ; i++ ) {
+	for ( i = 1 ; node[i] && i<maxNodeLen; i++ ) {
 		// this switch should speed things up... no!
 		if ( node[i] != '<'  &&
 		     node[i] != '>'  &&
@@ -439,17 +439,23 @@ static int32_t getTagLen ( const char *node ) {
 			while ( node[i] && node[i]!='\"' ) {
 				// crap some pages have unbalanced quotes.
 				// see /test/doc.14541556377486183454.html
-				if ( node[i  ]=='>' && 
-				     node[i-1]=='\"' ) {
-					i--;
-					break;
-				}
-
-				if ( node[i  ]=='>' && 
-				     node[i-1]==' ' &&
-				     node[i-2]=='\"' ) {
-					i--;
-					break;
+				if(node[i]=='>') {
+					if((node[i-1]=='\"') ||
+					   (node[i-1]==' ' && node[i-2]=='\"'))
+					{
+						//Well, what about those ther have balanced quotes and just happen to have a '>' first in an attribute value?
+						//Scan forward and check if '<' or '>' comes first. If '>' comes first then this (node[i]) greater-than sign
+						//is really a greater-than sign in an attribute value.
+						int max_bytes_to_scan = std::min(maxNodeLen-i,100);
+						const char *next_gt = (const char*)memchr(node+i+1,'>',max_bytes_to_scan);
+						const char *next_lt = (const char*)memchr(node+i+1,'<',max_bytes_to_scan);
+						if(!next_lt || (next_gt && next_gt<next_lt))
+							; // greater-than comes first
+						else {
+							i--;
+							break;
+						}
+					}
 				}
 
 				// skip this char

@@ -20,11 +20,11 @@
 #define FX_CONTENTTYPEBLOCKLIST_H
 
 
-#include "BlockList.h"
+#include "MatchList.h"
 #include <pthread.h>
 #include <vector>
 
-class ContentTypeBlockList : public BlockList<std::string> {
+class ContentTypeBlockList : public MatchList<std::string> {
 public:
 	ContentTypeBlockList();
 

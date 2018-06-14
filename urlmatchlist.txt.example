@@ -98,6 +98,12 @@ param	bad	xyz
 #   allows: www.example.com/en/wp-admin
 path	/wp-admin
 
+# block partial path
+#   blocks: www.example.com/badpath 
+#   blocks: www.example.com/en/badpath 
+#   blocks: www.example.com/badpath/subpath
+pathpartial	/badpath
+
 # regex example
 # =============
 # blocks url by regex

@@ -41,6 +41,10 @@ public:
 					    const std::vector<std::string> &source_words,
 					    const std::vector<std::string> &lower_source_words,
 					    float weight);
+	void handle_adjective_grammatical_gender_simplification(std::vector<WordVariationGenerator::Variation> &variations,
+					                        const std::vector<std::string> &source_words,
+					                        const std::vector<std::string> &lower_source_words,
+					                        float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -91,6 +95,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		find_simple_attribute_match_wordforms(variations,lower_source_words,weights.simple_spelling_variants);
 	}
 	
+	if(weights.adjective_grammatical_gender_simplification >= threshold) {
+		handle_adjective_grammatical_gender_simplification(variations,source_words,lower_source_words, weights.simple_spelling_variants);
+	}
+	
 	//currently inactive because Query.cpp/PosdbTable.cpp cannot handle wordvariations spanning more than one word
 	//make_proper_noun_part_genetive(variations,source_words,lower_source_words,1.2);
 	
@@ -121,7 +129,7 @@ static uint64_t wordformattrs2bitmask(const sto::WordForm &wf) {
 
 static bool same_wordform_as_source(const sto::WordForm &wf, const std::string source_word) {
 	return wf.written_form_length==source_word.length() &&
-	memcmp(wf.written_form,source_word.data(),source_word.length())==0;
+	       memcmp(wf.written_form,source_word.data(),source_word.length())==0;
 }
 
 
@@ -644,6 +652,59 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 		v0_0.weight = weight;
 		v0_0.source_word_start = i;
 		v0_0.source_word_end = i+5;
+		variations.push_back(v0_0);
+	}
+}
+
+
+void WordVariationGenerator_danish::handle_adjective_grammatical_gender_simplification(std::vector<WordVariationGenerator::Variation> &variations,
+					                                               const std::vector<std::string> &source_words,
+					                                               const std::vector<std::string> &lower_source_words,
+					                                               float weight)
+{
+	//In Danish there are officially two grammatical genders: common and neuter. Adjectives have to agree when in singular indefinite.
+	//However, Western Jutland generally doesn't distinguish. And for objects of abstract nature or non-obvious grammatical gender people don't always follow the rule.
+	//So a document may have "Et internationalt marked" but the user searches for "international marked".
+	//The opposite can also happen but it is less common.
+	
+	//So locate adjectives with gender=common number=singular definitenes=indefinite, find the corresponding wordform for gender=neuter and generate that
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word0(lower_source_words[i]);
+		if(source_word0==" ")
+			continue;
+		
+		//find adjective
+		bool is_common_singular_indefinite = false;
+		const sto::WordForm *wordform_neuter_singular_indefinite = NULL;
+		auto matches(lexicon.query_matches(source_word0));
+		for(auto match : matches) {
+			if(match->part_of_speech==sto::part_of_speech_t::adjective) {
+				auto wordforms(match->query_all_explicit_word_forms());
+				for(auto wordform : wordforms) {
+					if(wordform->has_attribute(sto::word_form_attribute_t::grammaticalGender_neuter) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalNumber_singular) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::definiteness_indefinite))
+					{
+						wordform_neuter_singular_indefinite = wordform;
+					}
+					if(same_wordform_as_source(*wordform,source_word0) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalGender_commonGender) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalNumber_singular) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::definiteness_indefinite))
+					{
+						is_common_singular_indefinite = wordform;
+					}
+				}
+			}
+		}
+		if(!is_common_singular_indefinite || !wordform_neuter_singular_indefinite)
+			continue;
+		
+		WordVariationGenerator::Variation v0_0;
+		v0_0.word = std::string(wordform_neuter_singular_indefinite->written_form,wordform_neuter_singular_indefinite->written_form_length);
+		v0_0.weight = weight;
+		v0_0.source_word_start = i;
+		v0_0.source_word_end = i+1;
 		variations.push_back(v0_0);
 	}
 }
