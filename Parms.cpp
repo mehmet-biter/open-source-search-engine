@@ -1550,11 +1550,11 @@ bool Parms::printParm( SafeBuf* sb,
 	// . make at least as big as a int64_t
 	if ( j >= jend ) s = "\0\0\0\0\0\0\0\0";
 	// delimit each cgi var if we need to
-	if ( m->m_cgi && strlen(m->m_cgi) > 45 ) {
+	char cgi[128];
+	if ( m->m_cgi && strlen(m->m_cgi)+10 >= sizeof(cgi) ) { //10 digits
 		log(LOG_LOGIC,"admin: Cgi variable is TOO big.");
 		g_process.shutdownAbort(true);
 	}
-	char cgi[64];
 	if ( m->m_cgi ) {
 		if ( j > 0 ) sprintf ( cgi , "%s%" PRId32 , m->m_cgi , j );
 		else         sprintf ( cgi , "%s"    , m->m_cgi     );
