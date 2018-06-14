@@ -3670,6 +3670,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "adjective neuter<->common variants";
+	m->m_desc  = "Extend to both grammatical genders";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_cgi  = "lwv_adjective_grammatical_gender_simplification";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
@@ -7423,6 +7432,15 @@ void Parms::init ( ) {
 	m->m_def   = "0.95";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
 	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "adjective neuter<->common variants";
+	m->m_desc  = "Extend to both grammatical genders";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_cgi  = "lwv_adjective_grammatical_gender_simplification";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;
