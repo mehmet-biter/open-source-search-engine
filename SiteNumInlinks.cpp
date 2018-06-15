@@ -62,7 +62,7 @@ void SiteNumInlinks::convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t s
 
 void SiteNumInlinks::processResponse(fxclient_request_ptr_t base_request, char *response) {
 	std::shared_ptr<SiteNumInlinksRequest> request = std::dynamic_pointer_cast<SiteNumInlinksRequest>(base_request);
-	logTrace(g_conf.m_logTraceQueryLanguage, "Got result='%s' for sitehash=%d", response, request->m_sitehash);
+	logTrace(g_conf.m_logTraceSiteNumInlinks, "Got result='%s' for sitehash=%d", response, request->m_sitehash);
 
 	unsigned long site_num_inlinks = strtoul(response, nullptr, 10);
 	(request->m_callback)(request->m_context, site_num_inlinks);
