@@ -51,7 +51,6 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Json.h"
 #include "Posdb.h"
-#include "SiteDefaultPageTemperatureRemoteRegistry.h" //SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t
 
 
 // forward declaration
@@ -337,7 +336,6 @@ public:
 
 	bool *checkBlockList();
 	unsigned *getDefaultSitePageTemperature();
-	static void gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result);
 
 	bool *parseRobotsMetaTag();
 	void parseRobotsMetaTagContent(const char *content, int32_t contentLen);
@@ -1130,7 +1128,8 @@ public:
 	bool m_checkedIpBlockList;
 
 	unsigned m_defaultSitePageTemperature;
-	bool m_defaultSitePageTemperatureIsUnset;
+	bool m_calledServiceSiteMedianPageTemperature;
+
 	bool m_parsedRobotsMetaTag;
 	bool m_robotsNoIndex;
 	bool m_robotsNoFollow;

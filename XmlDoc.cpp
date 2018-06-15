@@ -55,8 +55,8 @@
 #include "IpBlockList.h"
 #include "PageTemperatureRegistry.h"
 #include "SiteMedianPageTemperatureRegistry.h"
-#include "SiteDefaultPageTemperatureRemoteRegistry.h"
 #include "SiteNumInlinks.h"
+#include "SiteMedianPageTemperature.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -182,7 +182,7 @@ void XmlDoc::reset ( ) {
 	m_checkedIpBlockList = false;
 	m_defaultSitePageTemperature = 0;
 	m_defaultSitePageTemperatureValid = false;
-	m_defaultSitePageTemperatureIsUnset = false;
+	m_calledServiceSiteMedianPageTemperature = false;
 	m_parsedRobotsMetaTag = false;
 	m_robotsNoIndex = false;
 	m_robotsNoFollow = false;
@@ -1986,52 +1986,47 @@ bool* XmlDoc::checkBlockList() {
 	return &m_blockedDoc;
 }
 
+static void gotDefaultSitePageTemperature(void *context, long count) {
+	XmlDoc *xmlDoc = reinterpret_cast<XmlDoc*>(context);
+	if (count != -1) {
+		xmlDoc->m_defaultSitePageTemperature = count;
+		xmlDoc->m_defaultSitePageTemperatureValid = true;
+	}
+
+	xmlDoc->m_masterLoop(xmlDoc->m_masterState);
+}
 
 unsigned *XmlDoc::getDefaultSitePageTemperature() {
 	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
-	if(m_defaultSitePageTemperatureIsUnset) {
-		//already tried to look up. Don't try it again
-		logTrace(g_conf.m_logTraceXmlDoc, "END, already tried, (unset)");
-		return NULL;
-	}
-	if(m_defaultSitePageTemperatureValid) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. m_defaultSitePageTemperature=%u" , m_defaultSitePageTemperature);
+
+	if (m_defaultSitePageTemperatureValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. m_defaultSitePageTemperature=%u", m_defaultSitePageTemperature);
 		return &m_defaultSitePageTemperature;
 	}
-	
+
 	int64_t *docId = getDocId();
-	if(!docId || docId==(int64_t*)-1) {
+	if (!docId || docId == (int64_t *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getDocId() failed or blocked");
-		return (unsigned*)docId;
+		return (unsigned *)docId;
 	}
-	
+
 	int32_t *sitehash32 = getSiteHash32();
-	if(sitehash32==NULL || sitehash32==(int32_t*)-1) {
+	if (sitehash32 == NULL || sitehash32 == (int32_t *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed/blocked");
-		return (unsigned*)sitehash32;
+		return (unsigned *)sitehash32;
 	}
 
-	m_defaultSitePageTemperatureIsUnset = true; //make sure we try this only once
-	if(!SiteDefaultPageTemperatureRemoteRegistry::lookup(*sitehash32, m_docId, this, &XmlDoc::gotDefaultSitePageTemperature)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry is disabled");
-		return NULL;
+
+	if (!m_calledServiceSiteMedianPageTemperature &&
+		g_siteMedianPageTemperature.getSiteMedianPageTemperature(this, gotDefaultSitePageTemperature, *sitehash32)) {
+		m_calledServiceSiteMedianPageTemperature = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperature::getSiteMedianPageTemperature is blocked");
+		return (unsigned *)-1;
 	}
-	
-	logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry::lookup() blocked");
-	return (unsigned*)-1;
-}
 
-void XmlDoc::gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result) {
-	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN, siteDefaultPageTemperature=%u, result=%d", siteDefaultPageTemperature,(int)result);
-	XmlDoc *that = reinterpret_cast<XmlDoc*>(ctx);
-	if(result==SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t::site_temperature_known) {
-		that->m_defaultSitePageTemperature = siteDefaultPageTemperature;
-		that->m_defaultSitePageTemperatureValid = true;
-	} else
-		that->m_defaultSitePageTemperatureIsUnset = true;
-	indexDocWrapper(that);
+	logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperature is disabled");
+	return nullptr;
 }
-
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true

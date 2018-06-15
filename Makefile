@@ -19,7 +19,7 @@ OBJS_O0 =  \
 	File.o \
 	FxTermCheckList.o FxCheckAdult.o FxCheckSpam.o \
 	GbMutex.o \
-	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o SiteDefaultPageTemperatureRemoteRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o Log.o \
