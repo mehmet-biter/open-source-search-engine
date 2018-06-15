@@ -2010,13 +2010,7 @@ unsigned *XmlDoc::getDefaultSitePageTemperature() {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed/blocked");
 		return (unsigned*)sitehash32;
 	}
-	
-	if(g_smptr.lookup(*sitehash32, &m_defaultSitePageTemperature)) {
-		m_defaultSitePageTemperatureValid = true;
-		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperatureRegistry hit");
-		return &m_defaultSitePageTemperature;
-	}
-	
+
 	m_defaultSitePageTemperatureIsUnset = true; //make sure we try this only once
 	if(!SiteDefaultPageTemperatureRemoteRegistry::lookup(*sitehash32, m_docId, this, &XmlDoc::gotDefaultSitePageTemperature)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry is disabled");
