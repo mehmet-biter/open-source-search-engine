@@ -39,6 +39,7 @@
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "QueryLanguage.h"
 #include "SiteNumInlinks.h"
+#include "SiteMedianPageTemperature.h"
 #include <set>
 #include <fstream>
 
@@ -5523,6 +5524,57 @@ void Parms::init ( ) {
 	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
 	m++;
 
+	m->m_title = "Site median page temperature server name";
+	m->m_desc  = "";
+	m->m_cgi   = "smpt_server_name";
+	m->m_off   = offsetof(Conf,m_siteMedianPageTemperatureServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_siteNumInlinksServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature server port";
+	m->m_desc  = "(0=disable; 8076=default server port)";
+	m->m_cgi   = "smpt_server_port";
+	simple_m_set(Conf,m_siteMedianPageTemperatureServerPort);
+	m->m_def   = "0";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "smpt_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingSiteMedianPageTemperature);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "smpt_timeout";
+	simple_m_set(Conf,m_siteMedianPageTemperatureTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
 	m->m_title = "Site num inlinks server name";
 	m->m_desc  = "";
 	m->m_cgi   = "sni_server_name";
@@ -9358,6 +9410,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for SiteMedianPageTemperature";
+	m->m_cgi   = "ltrc_smpt";
+	simple_m_set(Conf,m_logTraceSiteMedianPageTemperature);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for SiteNumInlinks";
 	m->m_cgi   = "ltrc_sni";
 	simple_m_set(Conf,m_logTraceSiteNumInlinks);
@@ -10824,6 +10883,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildSpiderSettings = false;
 	bool rebuildQueryLanguageSettings = false;
 	bool rebuildSiteNumInlinksSettings = false;
+	bool rebuildSiteMedianPageTemperatureSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10928,6 +10988,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			if (parm->m_flags & PF_REBUILDSITENUMINLINKSSETTINGS) {
 				rebuildSiteNumInlinksSettings = true;
 			}
+
+			if (parm->m_flags & PF_REBUILDSITEMEDIANPAGETEMPSETTINGS) {
+				rebuildSiteMedianPageTemperatureSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10998,6 +11062,11 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	if (rebuildSiteNumInlinksSettings) {
 		log("parms: rebuild sitenuminlinks settings");
 		g_siteNumInlinks.reinitializeSettings();
+	}
+
+	if (rebuildSiteMedianPageTemperatureSettings) {
+		log("parms: rebuild sitemedianpagetemperature settings");
+		g_siteMedianPageTemperature.reinitializeSettings();
 	}
 
 	// note it

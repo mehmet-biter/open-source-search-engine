@@ -78,7 +78,7 @@ enum parameter_type_t {
 
 #define PF_REBUILDRANKINGSETTINGS   0x00200000 // ranking setting. Reinitialize any derived values
 #define PF_TABLESPLIT               0x00400000 // split into separate table
-
+#define PF_REBUILDSITEMEDIANPAGETEMPSETTINGS    0x00800000
 
 class Parm {
  public:

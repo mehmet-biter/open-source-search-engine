@@ -95,6 +95,7 @@ OBJS_O3 = \
 	QueryLanguage.o \
 	FxClient.o \
 	SiteNumInlinks.o \
+	SiteMedianPageTemperature.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)

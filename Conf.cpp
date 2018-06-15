@@ -65,6 +65,11 @@ Conf::Conf ( ) {
 	m_maxOutstandingQueryLanguage = 0;
 	m_queryLanguageTimeout = 0;
 
+	m_siteMedianPageTemperatureServerName[0] = '\0';
+	m_siteMedianPageTemperatureServerPort = 0;
+	m_maxOutstandingSiteMedianPageTemperature = 0;
+	m_siteMedianPageTemperatureTimeout = 0;
+
 	m_siteNumInlinksServerName[0] = '\0';
 	m_siteNumInlinksServerPort = 0;
 	m_maxOutstandingSiteNumInlinks = 0;
@@ -275,6 +280,7 @@ Conf::Conf ( ) {
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
 	m_logTraceReindex = false;
+	m_logTraceSiteMedianPageTemperature = false;
 	m_logTraceSiteNumInlinks = false;
 	m_logTraceSpiderdbRdbSqliteBridge = false;
 	m_logTraceSummary = false;
