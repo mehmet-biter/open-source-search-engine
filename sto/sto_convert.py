@@ -205,10 +205,7 @@ parser.add_argument("command",type=str,default="convert",nargs='?',choices=["con
 
 args=parser.parse_args()
 
-if args.input_file==None and args.input_tree==None:
-	print("Either input_file or input_tree must be specified",file=sys.stderr)
-	sys.exit(1)
-if args.command=="signature" and (args.input_file==None and args.input_tree==None):
+if args.command=="signature" and (args.input_file!=None or args.input_tree!=None):
 	print("input_file/input_tree cannot be specified when generating signature", file=sys.stderr)
 	sys.exit(1)
 if args.command=="convert" and args.input_file==None and args.input_tree==None:
