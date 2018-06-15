@@ -107,6 +107,7 @@
 #include "QueryLanguage.h"
 #include "SiteNumInlinks.h"
 #include "ContentMatchList.h"
+#include "SiteMedianPageTemperature.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1461,6 +1462,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_urlRealtimeClassification.initialize();
 	g_queryLanguage.initialize();
 	g_siteNumInlinks.initialize();
+	g_siteMedianPageTemperature.initialize();
 	
 	if(!WantedChecker::initialize())
 		return 0;
