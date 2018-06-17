@@ -1,10 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/python2
+from __future__ import print_function
 import xml.etree.ElementTree
 import struct
 import argparse
 import sys
 import os
 
+#hack to make utf-8 values work
+import sys
+reload(sys)
+sys.setdefaultencoding("utf_8")
 
 part_of_speech_map={
 	"adjective":1,
@@ -86,6 +91,16 @@ word_form_attribute_map={
 total_entry_count = None
 total_wordform_count = None
 
+warnings = {}
+skips = {}
+
+def emit_warning(id,what):
+	global warnings
+	warnings[id] = what
+def emit_skip(id,why):
+	global skips
+	skips[id] = why
+
 
 def process_lexcial_entry(lexicalentry,output_file):
 	global total_entry_count, total_wordform_count
@@ -109,10 +124,11 @@ def process_lexcial_entry(lexicalentry,output_file):
 			morphological_unit_id=val
 		#todo:decomposition
 	if part_of_speech==None:
-		print("Entry %s doesn't have partOfSpeech"%id, file=sys.stderr)
+		emit_skip(id,"No partOfSpeech")
+		return
 	if morphological_unit_id==None:
-		print("Entry %s doesn't have morphologicalUnitId"%id, file=sys.stderr)
-		sys.exit(2)
+		emit_skip(id,"No morphologicalUnitId")
+		return
 	
 	raw_wordforms = b""
 	wordform_count = 0
@@ -130,12 +146,11 @@ def process_lexcial_entry(lexicalentry,output_file):
 				print("Entry %s: Unknown wordform feat: %s"%(id,s),file=sys.stderr)
 				sys.exit(2)
 		if len(attributes)==0:
-			print("Entry %s: No feat?"%(id),file=sys.stderr)
-			#happens for a few entries such as "Chippendale". We convert it anyway beucase at least we know the part-of-speech
-			#sys.exit(2)
+			emit_warning(id,"No <feat> attributes")
+			#happens for a few entries such as "Chippendale". We convert it anyway because at least we know the part-of-speech
 		if len(attributes)>6:
-			print("Entry %s: Too many feat (%d)"%(id,len(attributes)),file=sys.stderr)
-			sys.exit(2)
+			emit_skip(id,"Too many <feat>")
+			return
 		while len(attributes)<6:
 			attributes.append(0)
 		for formrepresentation in wordform.findall("FormRepresentation"):
@@ -228,4 +243,14 @@ else:
 	sys.exit(99)
 
 output_file.close()
+
+if len(warnings)>0:
+	print("===Warnings:", file=sys.stderr)
+	for (k,v) in warnings.iteritems():
+		print("%s: %s"%(k,v), file=sys.stderr)
+if len(skips)>0:
+	print("===Skips:", file=sys.stderr)
+	for (k,v) in skips.iteritems():
+		print("%s: %s"%(k,v), file=sys.stderr)
+
 sys.exit(0)
