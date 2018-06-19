@@ -393,6 +393,7 @@ class Conf {
 	bool m_logTraceBigFile;
 	bool m_logTraceMatchList;
 	bool m_logTraceContentTypeBlockList;
+	bool m_logTraceDocid2FlagsAndSiteMap;
 	bool m_logTraceDocProcess;
 	bool m_logTraceDns;
 	bool m_logTraceDnsBlockList;

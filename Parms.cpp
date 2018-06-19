@@ -9185,6 +9185,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for Docid2FlagsAndSiteMap";
+	m->m_cgi   = "ltrc_dtofsm";
+	simple_m_set(Conf,m_logTraceDocid2FlagsAndSiteMap);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for DocProcess";
 	m->m_cgi   = "ltrc_docpro";
 	simple_m_set(Conf,m_logTraceDocProcess);

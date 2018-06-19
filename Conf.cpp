@@ -245,6 +245,7 @@ Conf::Conf ( ) {
 	m_logTraceBigFile = false;
 	m_logTraceMatchList = false;
 	m_logTraceContentTypeBlockList = false;
+	m_logTraceDocid2FlagsAndSiteMap = false;
 	m_logTraceDocProcess = false;
 	m_logTraceDns = false;
 	m_logTraceDnsBlockList = false;

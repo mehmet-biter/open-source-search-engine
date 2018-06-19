@@ -3930,6 +3930,7 @@ void PosdbTable::intersectLists_real() {
 				if(g_pageTemperatureRegistry.query_page_temperature(m_docId, range_min, range_max, &page_temperature)) {
 					//excellent, we know the page's temperature
 				} else if(g_d2fasm.lookupSiteHash(m_docId,&sitehash32) && g_smptr.lookup(sitehash32,&raw_default_site_page_temperature)) {
+					// we'll only use site median page temperature when we have updated docid2siteflags file
 					//hmm, use the site-default page temperature
 					page_temperature = g_pageTemperatureRegistry.scale_temperature(range_min, range_max, raw_default_site_page_temperature);
 				} else {
