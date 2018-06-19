@@ -1446,7 +1446,7 @@ bool XmlDoc::injectDoc(const char *url,
 		m_indexCodeValid = true;
 	}
 
-	if (httpStatus != 200) {
+	if (httpStatus != 0 && httpStatus != 200) {
 		m_httpStatus = httpStatus;
 		m_httpStatusValid = true;
 	}
