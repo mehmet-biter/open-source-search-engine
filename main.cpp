@@ -440,6 +440,12 @@ int main2 ( int argc , char *argv[] ) {
 
 	//initialize IP address checks
 	initialize_ip_address_checks();
+
+	// Make sure TLD table is initializing before calling any URL handling function
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log( LOG_ERROR, "Domains initialization failed!" );
+		return 1;
+	}
 	
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
@@ -1234,11 +1240,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the wiki titles
 	if ( ! g_wiki.load() ) {
 		log( LOG_ERROR, "Wiki initialization failed!" );
-		return 1;
-	}
-
-	if(!initializeDomains(g_hostdb.m_dir)) {
-		log( LOG_ERROR, "Domains initialization failed!" );
 		return 1;
 	}
 	
