@@ -1290,6 +1290,9 @@ bool Repair::injectTitleRec ( ) {
 	xd->m_blockedDocValid = true;
 	xd->m_blockedDoc = false;
 
+	// don't check site median page temperature
+	xd->m_calledServiceSiteMedianPageTemperature = true;
+
 	// . get the meta list to add
 	// . sets m_usePosdb, m_useTitledb, etc.
 	logTrace(g_conf.m_logTraceRepairs,"Calling indexDoc");
