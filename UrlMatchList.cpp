@@ -247,6 +247,8 @@ bool UrlMatchList::load() {
 					if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
 						if (!parseDomain(&tmpUrlMatchList, col2, col3, col4)) {
 							logError("Invalid line found. Ignoring line='%s'", line.c_str());
+							// catch domain parsing errors here
+							gbshutdownLogicError();
 							continue;
 						}
 					} else {
