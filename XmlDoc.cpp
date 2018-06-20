@@ -13980,9 +13980,11 @@ skipNewAdd2:
 
 			// store data
 			if (ds) {
-				// store data size
-				*(int32_t *)nptr = ds;
-				nptr += 4;
+				// only store data size if it's not fixed sized
+				if (getDataSizeFromRdbId(rdbId) == -1) {
+					*(int32_t *) nptr = ds;
+					nptr += 4;
+				}
 
 				gbmemcpy (nptr, data, ds);
 				nptr += ds;
