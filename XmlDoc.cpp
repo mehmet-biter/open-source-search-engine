@@ -13489,7 +13489,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		g_process.shutdownAbort(true);
 	}
 
-	if(m_defaultSitePageTemperatureValid) {
+	if(!forDelete && m_defaultSitePageTemperatureValid) {
 		*m_p++ = RDB_SITEDEFAULTPAGETEMPERATURE;
 		uint64_t k = (m_docId<<1) | 0x01; //magic bit shuffling so msg4 can treat it as a normal rdb key with negative-bit etc.
 		memcpy(m_p, &k, 8);
