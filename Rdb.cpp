@@ -1830,14 +1830,19 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 		case RDB_LINKDB:
 		case RDB2_LINKDB2:
 			return sizeof(key224_t); // 28
-		case RDB_NONE:
-		case RDB_END:
-			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
-			g_process.shutdownAbort(true);
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2:
+		case RDB_CLUSTERDB:
+		case RDB2_CLUSTERDB2:
+		case RDB_DOLEDB:
+			return sizeof(key96_t); // 12
 		case RDB_SITEDEFAULTPAGETEMPERATURE:
 			return 8; //fake
+		case RDB_NONE:
+		case RDB_END:
 		default:
-			return sizeof(key96_t); // 12
+			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
+			g_process.shutdownAbort(true);
 	}
 }
 
