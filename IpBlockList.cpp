@@ -42,7 +42,7 @@ bool IpBlockList::isIpBlocked(uint32_t ip) {
 	return false;
 }
 
-void IpBlockList::addToBlockList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line) {
+void IpBlockList::addToMatchList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line) {
 	in_addr addr;
 
 	if (inet_pton(AF_INET, line.c_str(), &addr) != 1) {
