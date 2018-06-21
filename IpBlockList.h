@@ -27,7 +27,7 @@ public:
 	bool isIpBlocked(uint32_t ip);
 
 protected:
-	void addToBlockList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line);
+	void addToMatchList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line);
 
 };
 
