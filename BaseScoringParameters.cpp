@@ -60,6 +60,7 @@ void BaseScoringParameters::traceToLog(const char *prefix) {
 	log(LOG_TRACE,"%s:  m_hashGroupWeightInternalLinkText=%.3f",prefix,m_hashGroupWeightInternalLinkText);
 	log(LOG_TRACE,"%s:  m_hashGroupWeightInUrl=%.3f",prefix,m_hashGroupWeightInUrl);
 	log(LOG_TRACE,"%s:  m_hashGroupWeightInMenu=%.3f",prefix,m_hashGroupWeightInMenu);
+	log(LOG_TRACE,"%s:  m_hashGroupWeightExplicitKeywords=%.3f",prefix,m_hashGroupWeightExplicitKeywords);
 	log(LOG_TRACE,"%s:  m_synonymWeight=%.3f",prefix,m_synonymWeight);
 	log(LOG_TRACE,"%s:  m_bigramWeight=%.3f",prefix,m_bigramWeight);
 	log(LOG_TRACE,"%s:  m_pageTemperatureWeightMin=%.3f",prefix,m_pageTemperatureWeightMin);
