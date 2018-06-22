@@ -873,6 +873,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	int32_t slen = fu->getUrlLen();
 
 	SafeBuf sb_punyDecodedHost;
+	//no-index support was added in version 126. So if noindex is not present, or if un-indexing an older titlerecversion then do the index
 	if (!*ini || m_version <= 126) {
 		setStatus("hashing inurl colon");
 
