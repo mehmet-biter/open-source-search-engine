@@ -2176,17 +2176,22 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	if ( nw > 0 ) m_dist = wposvec[nw-1] + 100;
 
 	if(m_langId==langDanish) {
+		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		//we only have a lexicon for Danish so far for this test
 		for(const auto &e : candidate_lemma_words) {
 			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
+			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
 			auto le = lemma_lexicon.lookup(e);
 			if(!le)
 				continue; //unknown word
+			logTrace(g_conf.m_logTraceTokenIndexing,"lexicalentry found for for lemma: %s", e.c_str());
+			
 			auto wf = le->find_base_wordform();
 			if(!wf)
 				continue; //no base form
 			if(wf->written_form_length==e.size() && memcmp(wf->written_form,e.data(),e.size())==0)
 				continue; //already in base for
+			logTrace(g_conf.m_logTraceTokenIndexing,"baseform is different: '%.*s'", (int)wf->written_form_length, wf->written_form);
 			
 			key144_t k;
 			uint64_t h = hash64Lower_utf8(wf->written_form,wf->written_form_length);
