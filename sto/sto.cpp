@@ -164,7 +164,7 @@ void sto::Lexicon::unload() {
 const sto::LexicalEntry *sto::Lexicon::lookup(const std::string &word) const {
 	MapEntry me_word(word.data(),word.length(),0);
 	auto iter = std::lower_bound(entries.begin(),entries.end(),me_word,MapEntry::compare);
-	if(iter!=entries.end())
+	if(iter!=entries.end() && iter->length==word.length() && memcmp(iter->str,word.data(),iter->length)==0)
 		return iter->entry;
 	else
 		return 0;
