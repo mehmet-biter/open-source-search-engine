@@ -85,8 +85,9 @@
 #define HASHGROUP_INURL                9
 #define HASHGROUP_INMENU               10 // body implied
 #define HASHGROUP_EXPLICIT_KEYWORDS    11
-#define HASHGROUP_LEMMA                12
-#define HASHGROUP_END                  13
+#define HASHGROUP_MIDDOMAIN            12
+#define HASHGROUP_LEMMA                13
+#define HASHGROUP_END                  14
 
 #define POSDB_DELETEDOC_TERMID    0
 
@@ -262,7 +263,7 @@ class Posdb {
 		//return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
 		//posdb sometimes have crap in it, so protect intersection from dealing with undefined hash groups
 		unsigned char tmp = ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
-		return tmp<=10 ? tmp : 10;
+		return tmp<HASHGROUP_END ? tmp : HASHGROUP_END-1;
 
 	}
 

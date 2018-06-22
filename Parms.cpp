@@ -3895,6 +3895,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "hashGroupWeightMidDomain";
+	m->m_desc  = "hashGroupWeightMidDomain";
+	m->m_cgi   = "hgw_middomain";
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightMidDomain);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightMidDomain);
+	m->m_def   = "8.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+	
 	m->m_title = "hashGroupWeightLemma";
 	m->m_desc  = "hashGroupWeightLemma";
 	m->m_cgi   = "hgw_lemma";
@@ -4392,6 +4401,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_explicitkeywords";
 	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
 	m->m_def   = "16.000000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Hashgroup weight - mid-domain";
+	m->m_desc  = "";
+	m->m_cgi   = "hgw_middomain";
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightMidDomain);
+	m->m_def   = "8.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;

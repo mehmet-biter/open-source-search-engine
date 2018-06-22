@@ -201,6 +201,7 @@ public:
 	bool isPunycodeSafeTld() const;
 	bool hasPunycode() const;
 	bool getPunycodeDecodedHost(SafeBuf *sb) const;
+	bool getPunycodeDecodedMidDomain(SafeBuf *sb) const;
 
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripCommonFile,
