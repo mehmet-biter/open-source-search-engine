@@ -424,7 +424,7 @@ void FxClient::reinitializeSettings(const char *hostname, int port, unsigned max
 }
 
 bool FxClient::sendRequest(fxclient_request_ptr_t request) {
-	if (m_outstanding_request_count >= m_max_outstanding) {
+	if (m_max_outstanding > 0 && m_outstanding_request_count >= m_max_outstanding) {
 		return false;
 	}
 
@@ -433,7 +433,7 @@ bool FxClient::sendRequest(fxclient_request_ptr_t request) {
 		return false;
 	}
 
-	if (m_outstanding_request_count + m_queued_requests.size() >= m_max_outstanding) {
+	if (m_max_outstanding > 0 && m_outstanding_request_count + m_queued_requests.size() >= m_max_outstanding) {
 		return false;
 	}
 

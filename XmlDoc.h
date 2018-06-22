@@ -51,7 +51,6 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Json.h"
 #include "Posdb.h"
-#include "SiteDefaultPageTemperatureRemoteRegistry.h" //SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t
 
 
 // forward declaration
@@ -282,7 +281,6 @@ public:
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    const char *coll,
-		    SafeBuf *p,
 		    int32_t niceness ,
 		    class SpiderRequest *sreq = NULL );
 
@@ -338,7 +336,6 @@ public:
 
 	bool *checkBlockList();
 	unsigned *getDefaultSitePageTemperature();
-	static void gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result);
 
 	bool *parseRobotsMetaTag();
 	void parseRobotsMetaTagContent(const char *content, int32_t contentLen);
@@ -582,13 +579,9 @@ public:
 	bool printDocForProCog ( class SafeBuf *sb , HttpRequest *hr ) ;
 	bool printGeneralInfo ( class SafeBuf *sb , HttpRequest *hr ) ;
 	bool printRainbowSections ( class SafeBuf *sb , HttpRequest *hr );
-	bool printSiteInlinks ( class SafeBuf *sb , HttpRequest *hr );
 	bool printPageInlinks ( class SafeBuf *sb , HttpRequest *hr );
 	bool printTermList ( class SafeBuf *sb , HttpRequest *hr );
-	bool printSpiderStats ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
-
-	void printTermList() const;
 
 	char *getTitleBuf             ( );
 	char *getRootTitleBuf         ( );
@@ -1098,10 +1091,6 @@ public:
 	HashTableX m_wtsTable;
 	SafeBuf m_wbuf;
 
-	// Msg25.cpp stores its pageparser.cpp output into this one
-	SafeBuf m_pageLinkBuf;
-	SafeBuf m_siteLinkBuf;
-
 	// which set() function was called above to set us?
 	bool          m_setFromTitleRec;
 	bool          m_setFromSpiderRec;
@@ -1139,7 +1128,8 @@ public:
 	bool m_checkedIpBlockList;
 
 	unsigned m_defaultSitePageTemperature;
-	bool m_defaultSitePageTemperatureIsUnset;
+	bool m_calledServiceSiteMedianPageTemperature;
+
 	bool m_parsedRobotsMetaTag;
 	bool m_robotsNoIndex;
 	bool m_robotsNoFollow;
@@ -1188,6 +1178,8 @@ public:
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	void callCallback();
+
+	bool m_calledServiceSiteNumInlinks;
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling

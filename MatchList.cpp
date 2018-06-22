@@ -16,7 +16,7 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#include "BlockList.h"
+#include "MatchList.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
@@ -26,31 +26,31 @@
 #include <atomic>
 
 template <class T>
-BlockList<T>::BlockList(const char *filename)
+MatchList<T>::MatchList(const char *filename)
 	: m_filename(filename)
 	, m_loading(false)
-	, m_blockList(new blocklist_t<T>)
+	, m_matchList(new matchlist_t<T>)
 	, m_lastModifiedTime(0) {
 }
 
 template <class T>
-bool BlockList<T>::init() {
-	log(LOG_INFO, "Initializing BlockList with %s", m_filename);
+bool MatchList<T>::init() {
+	log(LOG_INFO, "Initializing MatchList with %s", m_filename);
 
-	if (!g_loop.registerSleepCallback(60000, this, &reload, "BlockList<T>::reload", 0)) {
-		log(LOG_WARN, "BlockList<T>:: Failed to register callback.");
+	if (!g_loop.registerSleepCallback(60000, this, &reload, "MatchList<T>::reload", 0)) {
+		log(LOG_WARN, "MatchList<T>:: Failed to register callback.");
 		return false;
 	}
 
 	// we do a load here instead of using sleep callback with immediate set to true so
-	// we don't rely on g_loop being up and running to use blocklist
+	// we don't rely on g_loop being up and running to use matchlist
 	load();
 
 	return true;
 }
 
 template <class T>
-void BlockList<T>::reload(int /*fd*/, void *state) {
+void MatchList<T>::reload(int /*fd*/, void *state) {
 	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
 		return;
 	}
@@ -60,36 +60,36 @@ void BlockList<T>::reload(int /*fd*/, void *state) {
 }
 
 template <class T>
-void BlockList<T>::reload(void *state) {
-	BlockList *blockList = static_cast<BlockList*>(state);
+void MatchList<T>::reload(void *state) {
+	MatchList *matchList = static_cast<MatchList*>(state);
 
 	// don't load multiple times at the same time
-	if (blockList->m_loading.exchange(true)) {
+	if (matchList->m_loading.exchange(true)) {
 		return;
 	}
 
-	blockList->load();
-	blockList->m_loading = false;
+	matchList->load();
+	matchList->m_loading = false;
 }
 
 template <class T>
-bool BlockList<T>::load() {
-	logTrace(g_conf.m_logTraceBlockList, "Loading %s", m_filename);
+bool MatchList<T>::load() {
+	logTrace(g_conf.m_logTraceMatchList, "Loading %s", m_filename);
 
 	struct stat st;
 	if (stat(m_filename, &st) != 0) {
 		// probably not found
-		log(LOG_INFO, "BlockList<T>::load: Unable to stat %s", m_filename);
+		log(LOG_INFO, "MatchList<T>::load: Unable to stat %s", m_filename);
 		return false;
 	}
 
 	if (m_lastModifiedTime != 0 && m_lastModifiedTime == st.st_mtime) {
 		// not modified. assume successful
-		logTrace(g_conf.m_logTraceBlockList, "%s not modified", m_filename);
+		logTrace(g_conf.m_logTraceMatchList, "%s not modified", m_filename);
 		return true;
 	}
 
-	blocklist_ptr_t<T> tmpBlockList(new blocklist_t<T>);
+	matchlist_ptr_t<T> tmpMatchList(new matchlist_t<T>);
 
 	std::ifstream file(m_filename);
 	std::string line;
@@ -99,37 +99,37 @@ bool BlockList<T>::load() {
 			continue;
 		}
 
-		addToBlockList(tmpBlockList, line);
-		logTrace(g_conf.m_logTraceBlockList, "Adding criteria '%s' to list", line.c_str());
+		addToMatchList(tmpMatchList, line);
+		logTrace(g_conf.m_logTraceMatchList, "Adding criteria '%s' to list", line.c_str());
 	}
 
-	swapBlockList(tmpBlockList);
+	swapMatchList(tmpMatchList);
 	m_lastModifiedTime = st.st_mtime;
 
-	logTrace(g_conf.m_logTraceBlockList, "Loaded %s", m_filename);
+	logTrace(g_conf.m_logTraceMatchList, "Loaded %s", m_filename);
 	return true;
 }
 
 template <class T>
-void BlockList<T>::addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line) {
+void MatchList<T>::addToMatchList(matchlist_ptr_t<T> &matchList, const std::string &line) {
 	gbshutdownLogicError();
 }
 
 template <>
-void BlockList<std::string>::addToBlockList(blocklist_ptr_t<std::string> &blockList, const std::string &line) {
-	blockList->emplace_back(line);
+void MatchList<std::string>::addToMatchList(matchlist_ptr_t<std::string> &matchList, const std::string &line) {
+	matchList->emplace_back(line);
 }
 
 template <class T>
-blocklistconst_ptr_t<T> BlockList<T>::getBlockList() {
-	return m_blockList;
+matchlistconst_ptr_t<T> MatchList<T>::getMatchList() {
+	return m_matchList;
 }
 
 template <class T>
-void BlockList<T>::swapBlockList(blocklistconst_ptr_t<T> blockList) {
-	std::atomic_store(&m_blockList, blockList);
+void MatchList<T>::swapMatchList(matchlistconst_ptr_t<T> matchList) {
+	std::atomic_store(&m_matchList, matchList);
 }
 
 // explicit instantiations
-template class BlockList<std::string>;
-template class BlockList<uint32_t>;
+template class MatchList<std::string>;
+template class MatchList<uint32_t>;

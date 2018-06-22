@@ -55,7 +55,8 @@
 #include "IpBlockList.h"
 #include "PageTemperatureRegistry.h"
 #include "SiteMedianPageTemperatureRegistry.h"
-#include "SiteDefaultPageTemperatureRemoteRegistry.h"
+#include "SiteNumInlinks.h"
+#include "SiteMedianPageTemperature.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -181,7 +182,7 @@ void XmlDoc::reset ( ) {
 	m_checkedIpBlockList = false;
 	m_defaultSitePageTemperature = 0;
 	m_defaultSitePageTemperatureValid = false;
-	m_defaultSitePageTemperatureIsUnset = false;
+	m_calledServiceSiteMedianPageTemperature = false;
 	m_parsedRobotsMetaTag = false;
 	m_robotsNoIndex = false;
 	m_robotsNoFollow = false;
@@ -336,8 +337,6 @@ void XmlDoc::reset ( ) {
 
 	m_wtsTable.reset();
 	m_wbuf.reset();
-	m_pageLinkBuf.reset();
-	m_siteLinkBuf.reset();
 	m_esbuf.reset();
 	m_tagRecBuf.reset();
 
@@ -419,6 +418,8 @@ void XmlDoc::reset ( ) {
 
 	// do not cache the http reply in msg13 etc.
 	m_maxCacheAge = 0;
+
+	m_calledServiceSiteNumInlinks = false;
 
 	// reset these ptrs too!
 	void *px    = &ptr_firstUrl;
@@ -555,7 +556,7 @@ bool XmlDoc::loadFromOldTitleRec() {
 
 	// use that. decompress it! this will also set
 	// m_setFromTitleRec to true
-	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, nullptr, m_niceness)) {
+	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, m_niceness)) {
 		// we are now loaded, do not re-call
 		m_loaded = true;
 
@@ -705,9 +706,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_wasContentInjected  = true;
 		m_contentType         = contentType;
 		m_contentTypeValid    = true;
-		// use this ip as well for now to avoid ip lookup
-		//m_ip      = atoip("127.0.0.1");
-		//m_ipValid = true;
+
 		// do not need robots.txt then
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
@@ -840,7 +839,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 bool XmlDoc::set2 ( char    *titleRec ,
 		    int32_t     maxSize  ,
 		    const char    *coll     ,
-		    SafeBuf *pbuf     ,
 		    int32_t     niceness ,
 		    SpiderRequest *sreq ) {
 
@@ -849,36 +847,11 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	setStatus ( "setting xml doc from title rec");
 
-	// . it resets us, so save this
-	// . we only save these for set2() not the other sets()!
-	//void (*cb1)(void *state) = m_callback1;
-	//bool (*cb2)(void *state) = m_callback2;
-	//void *state = m_state;
-
-	// . clear it all out
-	// . no! this is clearing our msg20/msg22 reply...
-	// . ok, but repair.cpp needs it so do it there then
-	//reset();
-
-	// restore callbacks
-	//m_callback1 = cb1;
-	//m_callback2 = cb2;
-	//m_state     = state;
-
 	// sanity check - since we do not reset
 	if ( m_contentValid ) { g_process.shutdownAbort(true); }
 
 	// this is true
 	m_setFromTitleRec = true;
-
-	// this is valid i guess. includes key, etc.
-	//m_titleRec      = titleRec;
-	//m_titleRecSize  = *(int32_t *)(titleRec+12) + sizeof(key96_t) + 4;
-	//m_titleRecValid = true;
-	// . should we free m_cbuf on our reset/destruction?
-	// . no because doCOnsistencyCheck calls XmlDoc::set2 with a titleRec
-	//   that should not be freed, besides the alloc size is not known!
-	//m_freeTitleRec  = false;
 
 	// it must be there!
 	if ( !titleRec ) { g_errno=ENOTFOUND; return false; }
@@ -900,8 +873,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 	m_titleRecBufValid = true;
 
-	//m_coll               = coll;
-	m_pbuf               = pbuf;
 	m_niceness           = niceness;
 
 	// set our collection number
@@ -1071,14 +1042,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// set our easy stuff
 	gbmemcpy ( (void *)this , m_ubuf , headerSize );
 
-	// NOW set the XmlDoc::ptr_* and XmlDoc::size_* members
-	// like in Msg.cpp and Msg20Reply.cpp
-	if ( m_pbuf ) {
-		int32_t crc = hash32(m_ubuf,headerSize);
-		m_pbuf->safePrintf("crchdr=0x%" PRIx32" sizehdr=%" PRId32", ",
-				   crc,headerSize);
-	}
-
 
 	// point to the string data
 	char *up = m_ubuf + headerSize;
@@ -1128,12 +1091,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// point to the data. could be 64-bit ptr.
 		*pd = up;//(int32_t)up;
 
-		// debug
-		if ( m_pbuf ) {
-			int32_t crc = hash32(up,*ps);
-			m_pbuf->safePrintf("crc%" PRId32"=0x%" PRIx32" size%" PRId32"=%" PRId32", ",
-					   i,crc,i,*ps);
-		}
 		// skip over data
 		up += *ps;
 
@@ -1489,7 +1446,7 @@ bool XmlDoc::injectDoc(const char *url,
 		m_indexCodeValid = true;
 	}
 
-	if (httpStatus != 200) {
+	if (httpStatus != 0 && httpStatus != 200) {
 		m_httpStatus = httpStatus;
 		m_httpStatusValid = true;
 	}
@@ -2029,58 +1986,47 @@ bool* XmlDoc::checkBlockList() {
 	return &m_blockedDoc;
 }
 
+static void gotDefaultSitePageTemperature(void *context, long count) {
+	XmlDoc *xmlDoc = reinterpret_cast<XmlDoc*>(context);
+	if (count != -1) {
+		xmlDoc->m_defaultSitePageTemperature = count;
+		xmlDoc->m_defaultSitePageTemperatureValid = true;
+	}
+
+	xmlDoc->m_masterLoop(xmlDoc->m_masterState);
+}
 
 unsigned *XmlDoc::getDefaultSitePageTemperature() {
 	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
-	if(m_defaultSitePageTemperatureIsUnset) {
-		//already tried to look up. Don't try it again
-		logTrace(g_conf.m_logTraceXmlDoc, "END, already tried, (unset)");
-		return NULL;
-	}
-	if(m_defaultSitePageTemperatureValid) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. m_defaultSitePageTemperature=%u" , m_defaultSitePageTemperature);
+
+	if (m_defaultSitePageTemperatureValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. m_defaultSitePageTemperature=%u", m_defaultSitePageTemperature);
 		return &m_defaultSitePageTemperature;
 	}
-	
+
 	int64_t *docId = getDocId();
-	if(!docId || docId==(int64_t*)-1) {
+	if (!docId || docId == (int64_t *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getDocId() failed or blocked");
-		return (unsigned*)docId;
+		return (unsigned *)docId;
 	}
-	
+
 	int32_t *sitehash32 = getSiteHash32();
-	if(sitehash32==NULL || sitehash32==(int32_t*)-1) {
+	if (sitehash32 == NULL || sitehash32 == (int32_t *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed/blocked");
-		return (unsigned*)sitehash32;
+		return (unsigned *)sitehash32;
 	}
-	
-	if(g_smptr.lookup(*sitehash32, &m_defaultSitePageTemperature)) {
-		m_defaultSitePageTemperatureValid = true;
-		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperatureRegistry hit");
-		return &m_defaultSitePageTemperature;
-	}
-	
-	m_defaultSitePageTemperatureIsUnset = true; //make sure we try this only once
-	if(!SiteDefaultPageTemperatureRemoteRegistry::lookup(*sitehash32, m_docId, this, &XmlDoc::gotDefaultSitePageTemperature)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry is disabled");
-		return NULL;
-	}
-	
-	logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry::lookup() blocked");
-	return (unsigned*)-1;
-}
 
-void XmlDoc::gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result) {
-	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN, siteDefaultPageTemperature=%u, result=%d", siteDefaultPageTemperature,(int)result);
-	XmlDoc *that = reinterpret_cast<XmlDoc*>(ctx);
-	if(result==SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t::site_temperature_known) {
-		that->m_defaultSitePageTemperature = siteDefaultPageTemperature;
-		that->m_defaultSitePageTemperatureValid = true;
-	} else
-		that->m_defaultSitePageTemperatureIsUnset = true;
-	indexDocWrapper(that);
-}
 
+	if (!m_calledServiceSiteMedianPageTemperature &&
+		g_siteMedianPageTemperature.getSiteMedianPageTemperature(this, gotDefaultSitePageTemperature, *sitehash32)) {
+		m_calledServiceSiteMedianPageTemperature = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperature::getSiteMedianPageTemperature is blocked");
+		return (unsigned *)-1;
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperature is disabled");
+	return nullptr;
+}
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true
@@ -4363,8 +4309,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 
 	// . apply link spam settings
 	// . set the "spam bits" in the Links class
-	setLinkSpam ( *ip                ,
-		      u                  , // linker url
+	setLinkSpam (u                  , // linker url
 		      *sni               ,
 		      xml                ,
 		      &m_links           ,
@@ -6006,11 +5951,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	//     ,m_firstUrl.getUrl());
 	// if title rec is corrupted data uncompress will fail and this
 	// will return false!
-	if ( ! m_oldDoc->set2 ( m_oldTitleRec ,
-				m_oldTitleRecSize , // maxSize
-				cr->m_coll     ,
-				NULL       , // pbuf
-				m_niceness ) ) {
+	if (!m_oldDoc->set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, m_niceness)) {
 		log("build: failed to set old doc for %s",m_firstUrl.getUrl());
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		//int32_t saved = g_errno;
@@ -6286,11 +6227,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	mnew ( m_rootDoc , sizeof(XmlDoc),"xmldoc3");
 	// if we had the title rec, set from that
 	if ( *rtr ) {
-		if ( ! m_rootDoc->set2 ( m_rootTitleRec     ,
-					 m_rootTitleRecSize , // maxSize    ,
-					 cr->m_coll             ,
-					 NULL               , // pbuf
-					 m_niceness         ) ) {
+		if (!m_rootDoc->set2(m_rootTitleRec, m_rootTitleRecSize, cr->m_coll, m_niceness)) {
 			// it was corrupted... delete this
 			// possibly printed
 			// " uncompress uncompressed size=..." bad uncompress
@@ -6799,6 +6736,16 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	return &m_firstIp;
 }
 
+static void gotSiteNumInlinksWrapper(void *context, long count) {
+	XmlDoc *xmlDoc = reinterpret_cast<XmlDoc*>(context);
+	if (count != -1) {
+		xmlDoc->m_siteNumInlinks = count;
+		xmlDoc->m_siteNumInlinksValid = true;
+	}
+
+	xmlDoc->m_masterLoop(xmlDoc->m_masterState);
+}
+
 // this is the # of GOOD INLINKS to the site. so it is no more than
 // 1 per c block, and it has to pass link spam detection. this is the
 // highest-level count of inlinks to the site. use it a lot.
@@ -6834,6 +6781,17 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		}
 		m_siteNumInlinks = min;
 		return &m_siteNumInlinks;
+	}
+
+	int32_t *sh32 = getSiteHash32();
+	if (!sh32 || sh32 == (void *)-1) {
+		return (int32_t *)sh32;
+	}
+
+	// make sure we only call site num inlink server once
+	if (!m_calledServiceSiteNumInlinks && g_siteNumInlinks.getSiteNumInlinks(this, gotSiteNumInlinksWrapper, *sh32)) {
+		m_calledServiceSiteNumInlinks = true;
+		return (int32_t*)-1;
 	}
 
 	setStatus ( "getting site num inlinks");
@@ -7043,12 +7001,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 		return NULL;
 	}
 
-	// can we be cancelled?
-	bool canBeCancelled = true;
-	// not if pageparser though
-	if ( m_pbuf ) canBeCancelled = false;
-	// not if injecting
-	if ( ! m_sreqValid ) canBeCancelled = false;
 	// assume valid when it returns
 	m_siteLinkInfoValid = true;
 
@@ -7080,7 +7032,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				m_niceness          ,
 				cr->m_doLinkSpamCheck ,
 				cr->m_oneVotePerIpDom ,
-				canBeCancelled        ,
 				lastUpdateTime ,
 				onlyNeedGoodInlinks ,
 				0,
@@ -7863,14 +7814,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 
 		// do not redo it
 		m_calledMsg25 = true;
-		// shortcut
-		//Msg25 *m = &m_msg25;
-		// can we be cancelled?
-		bool canBeCancelled = true;
-		// not if pageparser though
-		if ( m_pbuf ) canBeCancelled = false;
-		// not if injecting
-		if ( ! m_sreqValid ) canBeCancelled = false;
 
 		// we do not want to waste time computing the page title
 		// of bad inlinks if we only want the good inlinks, because
@@ -7914,7 +7857,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					m_niceness          ,
 					doLinkSpamCheck ,
 					oneVotePerIpDom ,
-					canBeCancelled        ,
 					lastUpdateTime ,
 					onlyNeedGoodInlinks ,
 					0, // ourhosthash32 (special)
@@ -13547,7 +13489,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		g_process.shutdownAbort(true);
 	}
 
-	if(m_defaultSitePageTemperatureValid) {
+	if(!forDelete && m_defaultSitePageTemperatureValid) {
 		*m_p++ = RDB_SITEDEFAULTPAGETEMPERATURE;
 		uint64_t k = (m_docId<<1) | 0x01; //magic bit shuffling so msg4 can treat it as a normal rdb key with negative-bit etc.
 		memcpy(m_p, &k, 8);
@@ -14038,9 +13980,11 @@ skipNewAdd2:
 
 			// store data
 			if (ds) {
-				// store data size
-				*(int32_t *)nptr = ds;
-				nptr += 4;
+				// only store data size if it's not fixed sized
+				if (getDataSizeFromRdbId(rdbId) == -1) {
+					*(int32_t *) nptr = ds;
+					nptr += 4;
+				}
 
 				gbmemcpy (nptr, data, ds);
 				nptr += ds;
@@ -15437,7 +15381,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ! m_setTr ) {
 		// . this completely resets us
 		// . this returns false with g_errno set on error
-		bool status = set2( *otr, 0, cr->m_coll, NULL, m_niceness);
+		bool status = set2( *otr, 0, cr->m_coll, m_niceness);
 
 		// sanity check
 		if ( ! status && ! g_errno ) {
@@ -15560,18 +15504,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	bool getThatTitle = true;
 	if ( m_req->m_titleMaxLen <= 0 ) getThatTitle = false;
 	if ( m_reply.ptr_tbuf           ) getThatTitle = false;
-	// if steve's requesting the inlink summary we will want to get
-	// the title of each linker even if they are spammy!
-	// only get title here if NOT getting link text otherwise
-	// we only get it down below if not a spammy voter, because
-	// this sets the damn slow sections class
-	if ( m_req->m_getLinkText &&
-	     ! m_useSiteLinkBuf &&
-	     ! m_usePageLinkBuf &&
-	     // m_pbuf is used by pageparser.cpp now, not the other two things
-	     // above this.
-	     ! m_pbuf )
-		getThatTitle = false;
 
 	// if steve is getting the inlinks, bad and good, for displaying
 	// then get the title here now... otherwise, if we are just spidering
@@ -15904,9 +15836,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		m_reply.size_rssItem = rssItemLen + 1;
 	}
 
-	if ( ! m_req->m_doLinkSpamCheck )
-		m_reply.m_isLinkSpam = 0;
-
 	if ( m_req->m_doLinkSpamCheck ) {
 		// reset to NULL to avoid strlen segfault
 		const char *note = NULL;
@@ -15918,7 +15847,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 
 		// get it. does not block.
 		m_reply.m_isLinkSpam = ::isLinkSpam ( linker ,
-						     m_ip ,
 						     m_siteNumInlinks,
 						     &m_xml,
 						     links,
@@ -15938,12 +15866,15 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 			m_reply.size_note = strlen(note)+1;
 		}
 		// log the reason why it is a log page
-		if ( m_reply.m_isLinkSpam )
-			log(LOG_DEBUG,"build: linker %s: %s.",
-			    linker->getUrl(),note);
-		// sanity
-		if ( m_reply.m_isLinkSpam && ! note )
-			log("linkspam: missing note for d=%" PRId64"!",m_docId);
+		if (m_reply.m_isLinkSpam) {
+			log(LOG_DEBUG, "build: linker %s: %s.", linker->getUrl(), note);
+
+			if (!note) {
+				log(LOG_WARN, "linkspam: missing note for d=%" PRId64"!", m_docId);
+			}
+		}
+	} else {
+		m_reply.m_isLinkSpam = 0;
 	}
 
 	// sanity check
@@ -16721,7 +16652,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	// . doc length over 100,000 bytes consider it link spam
 	m_isLinkSpamValid = true;
 	m_isLinkSpam = ::isLinkSpam ( getFirstUrl(), // linker
-				      *ip ,
 				      *sni ,
 				      xml,
 				      links,
@@ -17441,23 +17371,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	printRainbowSections ( sb , NULL );
 
-	//
-	// PRINT LINKINFO
-	//
-
-	char *p    = m_pageLinkBuf.getBufStart();
-	int32_t  plen = m_pageLinkBuf.length();
-	sb->safeMemcpy ( p , plen );
-
-
-	//
-	// PRINT SITE LINKINFO
-	//
-	p    = m_siteLinkBuf.getBufStart();
-	plen = m_siteLinkBuf.length();
-	sb->safeMemcpy ( p , plen );
-
-
 	// note this
 	sb->safePrintf("<h2>NEW Meta List</h2>");
 
@@ -17659,8 +17572,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( page == 2 )
 		return printPageInlinks(sb,hr);
 
-	if ( page == 3 )
-		return printSiteInlinks(sb,hr);
+	// 3 used to be print site inlinks (nothing is printed)
 
 	if ( page == 4 )
 		return printRainbowSections(sb,hr);
@@ -17668,8 +17580,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( page == 5 )
 		return printTermList(sb,hr);
 
-	if ( page == 6 )
-		return printSpiderStats(sb,hr);
+	// 6 used to be print spider stats (coming soon page)
 
 	if ( page == 7 )
 		return printCachedPage(sb,hr);
@@ -18113,44 +18024,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-bool XmlDoc::printSiteInlinks ( SafeBuf *sb , HttpRequest *hr ) {
-
-	// use msg25 to hit linkdb and give us a link info class i guess
-	// but we need paging functionality so we can page through like
-	// 100 links at a time. clustered by c-class ip.
-
-	// do we need to mention how many from each ip c-class then? because
-	// then we'd have to read the whole termlist, might be several
-	// separate disk reads.
-
-	// we need to re-get both if either is NULL
-	LinkInfo *sinfo = getSiteLinkInfo();
-	// block or error?
-	if ( ! sinfo ) return true;
-	if ( sinfo == (LinkInfo *)-1) return false;
-
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
-
-	if ( isXml )
-		sb->safePrintf ("<?xml version=\"1.0\" "
-				"encoding=\"UTF-8\" ?>\n"
-				"<response>\n"
-				);
-
-
-	sb->safeMemcpy ( &m_siteLinkBuf );
-
-	if ( isXml )
-		sb->safePrintf ("</response>\n"	);
-
-	// just print that
-	//sinfo->print ( sb , cr->m_coll );
-
-	return true;
-}
-
 bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// we need to re-get both if either is NULL
@@ -18177,8 +18050,6 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// i guess we need this
 	if ( ! recompute ) // m_setFromTitleRec )
 		info1->print ( sb , cr->m_coll );
-	else
-		sb->safeMemcpy ( &m_pageLinkBuf );
 
 	if ( isXml )
 		sb->safePrintf ("</response>\n"	);
@@ -18671,17 +18542,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	//
 	// END PRINT HASHES TERMS
 	//
-
-	return true;
-}
-
-bool XmlDoc::printSpiderStats ( SafeBuf *sb , HttpRequest *hr ) {
-
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
-
-	sb->safePrintf("<b>Coming Soon</b>");
 
 	return true;
 }

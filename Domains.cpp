@@ -1921,6 +1921,11 @@ static bool isTLDForUrl(const char *tld, int32_t tldLen) {
 
 	// otherwise, if one period, check table to see if qualified
 
+	if( ! s_table.getNumSlots() ) {
+		log(LOG_ERROR,"%s:%d: Attempted to use uninitialized TLD table", __func__, __LINE__);
+		gbshutdownLogicError();
+	}
+
 	int64_t h = hash64Lower_a ( tld , tldLen ); // strlen(tld));
 	//return s_table.isInTable ( &h );//getScoreFromTermId ( h );
 	bool b = s_table.isInTable ( &h );//getScoreFromTermId ( h );
@@ -1929,6 +1934,10 @@ static bool isTLDForUrl(const char *tld, int32_t tldLen) {
 
 
 bool isTLD(const char *tld, int32_t tldLen) {
+	if( ! s_table.getNumSlots() ) {
+		log(LOG_ERROR,"%s:%d: Attempted to use uninitialized TLD table", __func__, __LINE__);
+		gbshutdownLogicError();
+	}
 	int64_t h = hash64Lower_a(tld, tldLen);
 	return s_table.isInTable(&h);
 }

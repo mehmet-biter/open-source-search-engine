@@ -16,8 +16,8 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_BLOCKLIST_H
-#define FX_BLOCKLIST_H
+#ifndef FX_MATCHLIST_H
+#define FX_MATCHLIST_H
 
 
 #include <memory>
@@ -25,14 +25,14 @@
 #include <string>
 #include <atomic>
 
-template <typename T> using blocklist_t = std::vector<T>;
-template <typename T> using blocklist_ptr_t = std::shared_ptr<std::vector<T>>;
-template <typename T> using blocklistconst_ptr_t = std::shared_ptr<const std::vector<T>>;
+template <typename T> using matchlist_t = std::vector<T>;
+template <typename T> using matchlist_ptr_t = std::shared_ptr<std::vector<T>>;
+template <typename T> using matchlistconst_ptr_t = std::shared_ptr<const std::vector<T>>;
 
-template<class T> class BlockList {
+template<class T> class MatchList {
 public:
-	explicit BlockList(const char *filename);
-	virtual ~BlockList() = default;
+	explicit MatchList(const char *filename);
+	virtual ~MatchList() = default;
 
 	virtual bool init();
 
@@ -42,18 +42,18 @@ public:
 protected:
 	bool load();
 
-	virtual void addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line);
-	blocklistconst_ptr_t<T> getBlockList();
+	virtual void addToMatchList(matchlist_ptr_t<T> &matchList, const std::string &line);
+	matchlistconst_ptr_t<T> getMatchList();
 
 	const char *m_filename;
 
 private:
-	void swapBlockList(blocklistconst_ptr_t<T> blockList);
+	void swapMatchList(matchlistconst_ptr_t<T> matchList);
 
 	std::atomic_bool m_loading;
-	blocklistconst_ptr_t<T> m_blockList;
+	matchlistconst_ptr_t<T> m_matchList;
 
 	time_t m_lastModifiedTime;
 };
 
-#endif //FX_BLOCKLIST_H
+#endif //FX_MATCHLIST_H

@@ -95,7 +95,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	if (!xmlDoc->m_contentValid && !xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
+	if (!xmlDoc->m_contentValid && !xmlDoc->set2(*oldTitleRec, -1, "main", MAX_NICENESS)) {
 		xmlDoc->m_indexCode = ECORRUPTDATA;
 		xmlDoc->m_indexCodeValid = true;
 

@@ -29,17 +29,10 @@ public:
 	int32_t       m_niceness;
 	XmlDoc     m_xd;
 	lang_t       m_langId;
-	//Msg8a      m_msg8a;
-	//SiteRec    m_sr;
-	//TagRec     m_tagRec;
 	TcpSocket *m_socket;
 	HttpRequest m_r;
 	char m_coll[MAX_COLL_LEN+2];
-	//CollectionRec *m_cr;
 	bool       m_isMasterAdmin;
-	//bool       m_seq;
-	bool       m_rtq;
-	//char       m_q[MAX_QUERY_LEN+1];
 	SafeBuf m_qsb;
 	char m_qtmpBuf[128];
 	int32_t       m_qlen;
@@ -51,7 +44,6 @@ public:
 	int32_t       m_strip;
 	bool	   m_cnsPage;      // Are we in the click 'n' scroll page?
 	bool	   m_printDisclaimer;
-	bool       m_netTestResults;
 	bool       m_isBanned;
 	bool       m_noArchive;
 	SafeBuf    m_sb;
@@ -65,7 +57,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	int32_t  collLen = 0;
 	const char *coll    = r->getString("c",&collLen);
 	if ( ! coll || ! coll[0] ) {
-		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( );
 		collLen = strlen(coll);
 	}
@@ -103,13 +94,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		return g_httpServer.sendErrorReply (s,500 ,mstrerror(g_errno));
 	}
 
-
-	// . should we do a sequential lookup?
-	// . we need to match summary here so we need to know this
-	//bool seq = r->getLong ( "seq" , false );
-	// restrict to root file?
-	bool rtq = r->getLong ( "rtq" , 0) ? true : false;
-
 	// . get the titleRec
 	// . TODO: redirect client to a better http server to save bandwidth
 	State2 *st ;
@@ -139,7 +123,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	}
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
 	// store query for query highlighting
-	st->m_netTestResults    = r->getLong ("rnettest", 0) ? true : false;
 	st->m_qsb.setBuf ( st->m_qtmpBuf,128,0,false );
 	st->m_qsb.setLabel ( "qsbpg" );
 
@@ -150,7 +133,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		st->m_qsb.safeStrcpy ( "" );
 	
 	st->m_qlen = qlen;
-	st->m_rtq      = rtq;
 	st->m_isBanned = false;
 	st->m_noArchive = false;
 	st->m_socket = s;
@@ -166,14 +148,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	if ( st->m_strip ) {
 		st->m_printDisclaimer = false;
 	}
-	
-	// should we cache it?
-	char useCache = r->getLong ( "usecache" ,  1 );
-	char rcache   = r->getLong ( "rcache"   ,  1 );
-	char wcache   = r->getLong ( "wcache"   ,  1 );
-	int32_t cacheAge = r->getLong ( "cacheAge" , 60*60 ); // default one hour
-	if ( useCache == 0 ) { cacheAge = 0; wcache = 0; }
-	if ( rcache   == 0 )   cacheAge = 0; 
+
 	// . fetch the TitleRec
 	// . a max cache age of 0 means not to read from the cache
 	XmlDoc *xd = &st->m_xd;
@@ -413,12 +388,11 @@ bool processLoop ( void *state ) {
 		// Moved over from PageResults.cpp
 		sb->safePrintf( "</span> - <a href=\""
 			      "/get?"
-			      "q=%s&amp;c=%s&amp;rtq=%" PRId32"&amp;"
+			      "q=%s&amp;c=%s&amp;"
 			      "d=%" PRId64"&amp;strip=1\""
 			      " style=\"%s\">"
 			      "[stripped]</a>", 
-			      q , st->m_coll , 
-			      (int32_t)st->m_rtq,
+			      q , st->m_coll ,
 			      st->m_docId, styleLink ); 
 
 		// a link to alexa

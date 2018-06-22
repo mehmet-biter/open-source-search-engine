@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2018 Privacore ApS - https://www.privacore.com
+// Copyright (C) 2017 Privacore ApS - https://www.privacore.com
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -16,21 +16,17 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_IPBLOCKLIST_H
-#define FX_IPBLOCKLIST_H
+#ifndef FX_CONTENTMATCHLIST_H
+#define FX_CONTENTMATCHLIST_H
 
 #include "MatchList.h"
 
-class IpBlockList : public MatchList<uint32_t> {
+class ContentMatchList : public MatchList<std::string> {
 public:
-	IpBlockList();
-	bool isIpBlocked(uint32_t ip);
-
-protected:
-	void addToMatchList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line);
-
+	ContentMatchList();
+	bool isContentMatched(const char *content, size_t contentLen);
 };
 
-extern IpBlockList g_ipBlockList;
+extern ContentMatchList g_contentRetryProxyList;
 
-#endif //FX_IPBLOCKLIST_H
+#endif // FX_CONTENTMATCHLIST_H

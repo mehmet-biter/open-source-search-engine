@@ -1,9 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/python2
+from __future__ import print_function
 import xml.etree.ElementTree
 import struct
 import argparse
 import sys
+import os
 
+#hack to make utf-8 values work
+import sys
+reload(sys)
+sys.setdefaultencoding("utf_8")
 
 part_of_speech_map={
 	"adjective":1,
@@ -81,104 +87,144 @@ word_form_attribute_map={
 }
 
 
-def do_convert(input_file_name, output_file):
+
+total_entry_count = None
+total_wordform_count = None
+
+warnings = {}
+skips = {}
+
+def emit_warning(id,what):
+	global warnings
+	warnings[id] = what
+def emit_skip(id,why):
+	global skips
+	skips[id] = why
+
+
+def process_lexcial_entry(lexicalentry,output_file):
+	global total_entry_count, total_wordform_count
+	
+	part_of_speech=None
+	id=None
+	morphological_unit_id=None
+	for feat in lexicalentry.findall("feat"):
+		att=feat.attrib["att"]
+		val=feat.attrib["val"]
+		#print("lexicalentry.feat: att=%s val=%s"%(att,val))
+		if att=="partOfSpeech":
+			if val in part_of_speech_map:
+				part_of_speech = part_of_speech_map[val]
+			else:
+				print("Unknown part_of_speech: ",val, file=sys.stderr)
+				sys.exit(2)
+		elif att=="id":
+			id=val
+		elif att=="morphologicalUnitId":
+			morphological_unit_id=val
+		#todo:decomposition
+	if part_of_speech==None:
+		emit_skip(id,"No partOfSpeech")
+		return
+	if morphological_unit_id==None:
+		emit_skip(id,"No morphologicalUnitId")
+		return
+	
+	raw_wordforms = b""
+	wordform_count = 0
+	
+	for wordform in lexicalentry.findall("WordForm"):
+		attributes=[]
+		for feat in wordform.findall("feat"):
+			att=feat.attrib["att"]
+			val=feat.attrib["val"]
+			#print("wordform.feat: att=%s val=%s"%(att,val))
+			s=att+"_"+val
+			if s in word_form_attribute_map:
+				attributes.append(word_form_attribute_map[s])
+			else:
+				print("Entry %s: Unknown wordform feat: %s"%(id,s),file=sys.stderr)
+				sys.exit(2)
+		if len(attributes)==0:
+			emit_warning(id,"No <feat> attributes")
+			#happens for a few entries such as "Chippendale". We convert it anyway because at least we know the part-of-speech
+		if len(attributes)>6:
+			emit_skip(id,"Too many <feat>")
+			return
+		while len(attributes)<6:
+			attributes.append(0)
+		for formrepresentation in wordform.findall("FormRepresentation"):
+			writtenform=None
+			for feat in formrepresentation.findall("feat"):
+				att=feat.attrib["att"]
+				val=feat.attrib["val"]
+				if att=="writtenForm":
+					writtenform=val
+			
+			raw_writtenform = writtenform.encode()
+			raw_wordform = struct.pack(">BBBBBB",attributes[0],attributes[1],attributes[2],attributes[3],attributes[4],attributes[5]) \
+					+ struct.pack(">B",len(raw_writtenform)) \
+					+ raw_writtenform
+			wordform_count += 1
+			raw_wordforms += raw_wordform
+	
+	raw_morphological_unit_id = morphological_unit_id.encode()
+	raw_entry = struct.pack(">BBBB",part_of_speech,1,len(raw_morphological_unit_id),wordform_count) + raw_morphological_unit_id + raw_wordforms
+	output_file.write(raw_entry)
+	
+	total_entry_count += 1
+	total_wordform_count += wordform_count
+
+
+def do_convert_lexicon_file(input_file_name, output_file):
 	print("Opening and parsing %s"%(input_file_name))
 	tree = xml.etree.ElementTree.parse(input_file_name)
 	root = tree.getroot()
 	lexicon=root.find("Lexicon")
+	global total_entry_count, total_wordform_count
 	total_entry_count=0
 	total_wordform_count=0
 	for lexicalentry in lexicon.findall("LexicalEntry"):
-		part_of_speech=None
-		id=None
-		morphological_unit_id=None
-		for feat in lexicalentry.findall("feat"):
-			att=feat.attrib["att"]
-			val=feat.attrib["val"]
-			#print("lexicalentry.feat: att=%s val=%s"%(att,val))
-			if att=="partOfSpeech":
-				if val in part_of_speech_map:
-					part_of_speech = part_of_speech_map[val]
-				else:
-					print("Unknown part_of_speech: ",val, file=sys.stderr)
-					sys.exit(2)
-			elif att=="id":
-				id=val
-			elif att=="morphologicalUnitId":
-				morphological_unit_id=val
-			#todo:decomposition
-		if part_of_speech==None:
-			print("Entry %s doesn't have partOfSpeech"%id, file=sys.stderr)
-		if morphological_unit_id==None:
-			print("Entry %s doesn't have morphologicalUnitId"%id, file=sys.stderr)
-			sys.exit(2)
-		
-		raw_wordforms = b""
-		wordform_count = 0
-		
-		for wordform in lexicalentry.findall("WordForm"):
-			attributes=[]
-			for feat in wordform.findall("feat"):
-				att=feat.attrib["att"]
-				val=feat.attrib["val"]
-				#print("wordform.feat: att=%s val=%s"%(att,val))
-				s=att+"_"+val
-				if s in word_form_attribute_map:
-					attributes.append(word_form_attribute_map[s])
-				else:
-					print("Entry %s: Unknown wordform feat: %s"%(id,s),file=sys.stderr)
-					sys.exit(2)
-			if len(attributes)==0:
-				print("Entry %s: No feat?"%(id),file=sys.stderr)
-				#happens for a few entries such as "Chippendale". We convert it anyway beucase at least we know the part-of-speech
-				#sys.exit(2)
-			if len(attributes)>6:
-				print("Entry %s: Too many feat (%d)"%(id,len(attributes)),file=sys.stderr)
-				sys.exit(2)
-			while len(attributes)<6:
-				attributes.append(0)
-			for formrepresentation in wordform.findall("FormRepresentation"):
-				writtenform=None
-				for feat in formrepresentation.findall("feat"):
-					att=feat.attrib["att"]
-					val=feat.attrib["val"]
-					if att=="writtenForm":
-						writtenform=val
-				
-				raw_writtenform = writtenform.encode()
-				raw_wordform = struct.pack(">BBBBBB",attributes[0],attributes[1],attributes[2],attributes[3],attributes[4],attributes[5]) \
-				             + struct.pack(">B",len(raw_writtenform)) \
-				             + raw_writtenform
-				wordform_count += 1
-				raw_wordforms += raw_wordform
-		
-		raw_morphological_unit_id = morphological_unit_id.encode()
-		raw_entry = struct.pack(">BBBB",part_of_speech,1,len(raw_morphological_unit_id),wordform_count) + raw_morphological_unit_id + raw_wordforms
-		output_file.write(raw_entry)
-		
-		total_entry_count += 1
-		total_wordform_count += wordform_count
+		process_lexcial_entry(lexicalentry,output_file)
 	
 	print("Done")
 	print("\tlexical entries: %d"%total_entry_count)
 	print("\twordforms: %d"%total_wordform_count)
 
 
-
+def do_convert_lexcialentry_file(input_file_name,output_file):
+	print("%s:"%input_file_name);
+	tree = xml.etree.ElementTree.parse(input_file_name)
+	root = tree.getroot()
+	process_lexcial_entry(root,output_file)
+	
+def do_convert_tree(input_tree_name, output_file):
+	global total_entry_count, total_wordform_count
+	total_entry_count=0
+	total_wordform_count=0
+	for (dirpath,dirnames,filenames) in os.walk(input_tree_name):
+		for filename in filenames:
+			if filename[-4:]==".xml":
+				full_file_name = dirpath+"/"+filename
+				do_convert_lexcialentry_file(full_file_name,output_file)
+	print("Done")
+	print("\tlexical entries: %d"%total_entry_count)
+	print("\twordforms: %d"%total_wordform_count)
 
 
 parser = argparse.ArgumentParser(description="STO converter")
-parser.add_argument("-i","--input_file",type=str)
+parser.add_argument("-i","--input_file",type=str,default=None)
+parser.add_argument("-I","--input_tree",type=str,default=None)
 parser.add_argument("-o","--output_file",type=str,required=True)
 parser.add_argument("command",type=str,default="convert",nargs='?',choices=["convert","signature"])
 
 args=parser.parse_args()
 
-if args.command=="signature" and args.input_file:
-	print("input_file cannot be specified when generating signature", file=sys.stderr)
+if args.command=="signature" and (args.input_file!=None or args.input_tree!=None):
+	print("input_file/input_tree cannot be specified when generating signature", file=sys.stderr)
 	sys.exit(1)
-if args.command=="convert" and (not args.input_file):
-	print("input_file and output_file must be specified when generating converting", file=sys.stderr)
+if args.command=="convert" and args.input_file==None and args.input_tree==None:
+	print("input_file/input_tree and output_file must be specified when generating converting", file=sys.stderr)
 	sys.exit(1)
 
 
@@ -188,10 +234,23 @@ if args.command=="signature":
 	version_1_signature = ("parsed-sto-v2\n"+'\0'*80)[0:80]
 	output_file.write(version_1_signature.encode())
 elif args.command=="convert":
-	do_convert(args.input_file,output_file)
+	if args.input_file:
+		do_convert_lexicon_file(args.input_file,output_file)
+	else:
+		do_convert_tree(args.input_tree,output_file)
 else:
 	print("argh...", file=sys.stderr)
 	sys.exit(99)
 
 output_file.close()
+
+if len(warnings)>0:
+	print("===Warnings:", file=sys.stderr)
+	for (k,v) in warnings.iteritems():
+		print("%s: %s"%(k,v), file=sys.stderr)
+if len(skips)>0:
+	print("===Skips:", file=sys.stderr)
+	for (k,v) in skips.iteritems():
+		print("%s: %s"%(k,v), file=sys.stderr)
+
 sys.exit(0)

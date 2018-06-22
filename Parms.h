@@ -54,7 +54,7 @@ enum parameter_type_t {
 // bit flags for Parm::m_flags
 #define PF_COOKIE                   0x00000001  // store in cookie?
 #define PF_REBUILDQUERYLANGSETTINGS 0x00000002
-//#define PF_UNUSED                 0x00000004
+#define PF_REBUILDSITENUMINLINKSSETTINGS   0x00000004
 #define PF_REBUILDSPIDERSETTINGS    0x00000008
 #define PF_API                      0x00000010
 #define PF_REBUILDURLFILTERS        0x00000020
@@ -78,7 +78,7 @@ enum parameter_type_t {
 
 #define PF_REBUILDRANKINGSETTINGS   0x00200000 // ranking setting. Reinitialize any derived values
 #define PF_TABLESPLIT               0x00400000 // split into separate table
-
+#define PF_REBUILDSITEMEDIANPAGETEMPSETTINGS    0x00800000
 
 class Parm {
  public:

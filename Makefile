@@ -19,7 +19,7 @@ OBJS_O0 =  \
 	File.o \
 	FxTermCheckList.o FxCheckAdult.o FxCheckSpam.o \
 	GbMutex.o \
-	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o SiteDefaultPageTemperatureRemoteRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o Log.o \
@@ -59,8 +59,8 @@ OBJS_O2 = \
 
 
 OBJS_O3 = \
-	BlockList.o \
-	ContentTypeBlockList.o \
+	MatchList.o \
+	ContentMatchList.o ContentTypeBlockList.o \
 	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
 	IPAddressChecks.o IpBlockList.o \
 	LanguageResultOverride.o Linkdb.o \
@@ -94,7 +94,10 @@ OBJS_O3 = \
 	EGStack.o \
 	QueryLanguage.o \
 	FxClient.o \
+	SiteNumInlinks.o \
+	SiteMedianPageTemperature.o \
 	Lemma.o \
+
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 

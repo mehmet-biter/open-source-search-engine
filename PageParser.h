@@ -4,6 +4,4 @@
 class TcpSocket;
 class HttpRequest;
 
-bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
-
 #endif // GB_PAGEPARSER_H

@@ -6,6 +6,9 @@
 
 namespace {
 
+enum noun_or_verb_t { noun, verb, whatever };
+
+
 class WordVariationGenerator_danish : public STOWordVariationGenerator {
 public:
 	WordVariationGenerator_danish()
@@ -41,9 +44,39 @@ public:
 					    const std::vector<std::string> &source_words,
 					    const std::vector<std::string> &lower_source_words,
 					    float weight);
+	void handle_adjective_grammatical_gender_simplification(std::vector<WordVariationGenerator::Variation> &variations,
+					                        const std::vector<std::string> &source_words,
+					                        const std::vector<std::string> &lower_source_words,
+					                        float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
+
+
+//class for handling unknown compound words
+class LogicalMatches {
+	std::vector<const sto::LexicalEntry *> actual_matches;
+	std::string prefix; //prefix if a compound word
+	std::string suffix; //suffix of compound word, or whole word if non-compound
+
+public:
+	LogicalMatches(const sto::Lexicon &lexicon, const std::string &source_word, noun_or_verb_t noun_or_verb);
+	
+	bool empty() const { return actual_matches.empty(); }
+	size_t size() const { return actual_matches.size(); }
+	const sto::LexicalEntry * operator[](size_t i) const { return actual_matches[i]; }
+	std::vector<const sto::LexicalEntry *>::const_iterator begin() const { return actual_matches.begin(); }
+	std::vector<const sto::LexicalEntry *>::const_iterator end() const { return actual_matches.end(); }
+	
+	const std::string query_matched_word() const { return suffix; }
+	std::string query_logical_written_form(const sto::WordForm *wf) const {
+		return prefix + std::string(wf->written_form,wf->written_form_length);
+	}
+
+private:
+	std::string find_compound_word_longest_known_suffix(const sto::Lexicon &lexicon, const std::string &source_word, noun_or_verb_t noun_or_verb);
+};
+
 
 } //anonymous namespace
 
@@ -51,6 +84,64 @@ static WordVariationGenerator_danish s_WordVariationGenerator_danish;
 
 bool initializeWordVariationGenerator_Danish() {
 	return s_WordVariationGenerator_danish.load_lexicon("lexicon_da.sto");
+}
+
+
+
+LogicalMatches::LogicalMatches(const sto::Lexicon &lexicon, const std::string &source_word, noun_or_verb_t noun_or_verb)
+  : actual_matches(lexicon.query_matches(source_word)),
+    prefix(""),
+    suffix(source_word)
+{
+	if(actual_matches.empty()) {
+		//unknown word
+		std::string tmp = find_compound_word_longest_known_suffix(lexicon,source_word,noun_or_verb);
+		if(tmp.length()>0) {
+			//found a suffix match
+			prefix = source_word.substr(0,source_word.length()-tmp.length());
+			suffix = tmp;
+			actual_matches = lexicon.query_matches(suffix);
+		}
+	}
+}
+
+
+//Find the longest suffix that has a match in STO.
+//This is useful for identifying the (linguistic-)head in unknown compound words which in Danish usually is the last stem in the word
+//Eg sneglemassakre, hvidvaske, købepizza
+std::string LogicalMatches::find_compound_word_longest_known_suffix(const sto::Lexicon &lexicon, const std::string &source_word, noun_or_verb_t noun_or_verb) {
+	//we insist on at least 4 letters, although that would make us not find "udu"
+	if(source_word.length()<4)
+		return "";
+	//we only do it on on normal words without punctuation, special characters etc.
+	//properly checking codepoint-is-alphabetic would require linking in libunicode etc. adding to the linking complexicity so just hack it here.
+	for(size_t i=0; i<source_word.length(); i++) {
+		char c = source_word[i];
+		if(c<(char)128) {
+			if((c>='A' && c<='Z') || (c>='a' && c<='z'))
+				;
+			else
+				return "";
+		}
+	}
+	//(todo) extend minimum suffix length if the word ends with a common suffix that isn't an indepedent word, eg -skab, -inde, -isme. Complication is that the suffixes are also inflicted/declined, eg. -skabernes
+	size_t source_length = source_word.length();
+	for(size_t suffix_length = source_length-1; suffix_length>=2; suffix_length--) {
+		std::string candidate_suffix(source_word, source_length-suffix_length);
+		auto matches(lexicon.query_matches(candidate_suffix));
+		if(!matches.empty()) {
+			for(auto match : matches) {
+				if(noun_or_verb==whatever)
+					return candidate_suffix;
+				if(noun_or_verb==noun && match->part_of_speech==sto::part_of_speech_t::commonNoun)
+					return candidate_suffix;
+				if(noun_or_verb==verb && (match->part_of_speech==sto::part_of_speech_t::deponentVerb || match->part_of_speech==sto::part_of_speech_t::mainVerb))
+					return candidate_suffix;
+			}
+			return "";
+		}
+	}
+	return "";
 }
 
 
@@ -91,6 +182,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		find_simple_attribute_match_wordforms(variations,lower_source_words,weights.simple_spelling_variants);
 	}
 	
+	if(weights.adjective_grammatical_gender_simplification >= threshold) {
+		handle_adjective_grammatical_gender_simplification(variations,source_words,lower_source_words, weights.simple_spelling_variants);
+	}
+	
 	//currently inactive because Query.cpp/PosdbTable.cpp cannot handle wordvariations spanning more than one word
 	//make_proper_noun_part_genetive(variations,source_words,lower_source_words,1.2);
 	
@@ -121,7 +216,7 @@ static uint64_t wordformattrs2bitmask(const sto::WordForm &wf) {
 
 static bool same_wordform_as_source(const sto::WordForm &wf, const std::string source_word) {
 	return wf.written_form_length==source_word.length() &&
-	memcmp(wf.written_form,source_word.data(),source_word.length())==0;
+	       memcmp(wf.written_form,source_word.data(),source_word.length())==0;
 }
 
 
@@ -132,11 +227,11 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 {
 	for(unsigned i=0; i<source_words.size(); i++) {
 		auto source_word(source_words[i]);
-		auto matches(lexicon.query_matches(source_word));
+		LogicalMatches matches(lexicon,source_word,noun);
 		for(auto match : matches) {
 			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
-				if(same_wordform_as_source(*wordform,source_word) &&
+				if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
 					wordform->has_attribute(from_attr))
 				{
 					uint64_t source_word_bitmask = wordformattrs2bitmask(*wordform);
@@ -148,7 +243,7 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 							//found the other form of the word.
 							//this may match multiple alternative spellings of the wordform, but the STO database cannot distinguish
 							Variation v;
-							v.word.assign(definite_wordform->written_form,definite_wordform->written_form_length);
+							v.word = matches.query_logical_written_form(definite_wordform);
 							v.weight = weight;
 							v.source_word_start = i;
 							v.source_word_end = i+1;
@@ -174,11 +269,11 @@ void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::v
 {
 	for(unsigned i=0; i<source_words.size(); i++) {
 		auto source_word(source_words[i]);
-		auto matches(lexicon.query_matches(source_word));
+		LogicalMatches matches(lexicon,source_word,whatever);
 		for(auto match : matches) {
 			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
-				if(same_wordform_as_source(*wordform,source_word)) {
+				if(same_wordform_as_source(*wordform,matches.query_matched_word())) {
 					//found the word form match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings.
 					//so first find all lexical entries with the same morphological unit id, and check all wordforms of those, looking for an attribute match
 					auto same_morph_entries = lexicon.query_lexical_entries_with_same_morphological_unit_id(match);
@@ -188,7 +283,7 @@ void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::v
 							if(wordform2!=wordform && has_same_attributes(wordform,wordform2)) {
 								//found an alternative spelling of the word
 								Variation v;
-								v.word.assign(wordform2->written_form,wordform2->written_form_length);
+								v.word = matches.query_logical_written_form(wordform2);
 								v.weight = weight;
 								v.source_word_start = i;
 								v.source_word_end = i+1;
@@ -332,11 +427,11 @@ void WordVariationGenerator_danish::transliterate_verb_acute_accent(std::vector<
 		if(source_word.length()>4 && source_word.substr(source_word.length()-2)=="er") {
 			//possibly a verb in imperative
 			bool is_imperative = false;
-			auto matches(lexicon.query_matches(source_word));
+			LogicalMatches matches(lexicon,source_word,verb);
 			for(auto match : matches) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
-					if(same_wordform_as_source(*wordform,source_word) &&
+					if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
 						wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_imperative))
 					{
 						is_imperative = true;
@@ -379,7 +474,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 		auto source_word(lower_source_words[i]);
 		if(source_word==" ")
 			continue;
-		auto matches(lexicon.query_matches(source_word));
+		LogicalMatches matches(lexicon,source_word,verb);
 		if(prev_was_er || prev_was_var || prev_was_har || prev_was_havde) {
 			//check if this word is the past participle
 			const sto::WordForm *wordform_past_participle = NULL;
@@ -387,7 +482,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 			for(auto match : matches) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
-					if(same_wordform_as_source(*wordform,source_word) &&
+					if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_participle))
 					{
@@ -405,7 +500,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 					//generate preterite
 					if(wordform_preterite) {
 						WordVariationGenerator::Variation v0;
-						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.word = matches.query_logical_written_form(wordform_preterite);
 						v0.weight = weight;
 						v0.source_word_start = prev_word_idx;
 						v0.source_word_end = i+1;
@@ -423,7 +518,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 					//generate preterite
 					if(wordform_preterite) {
 						WordVariationGenerator::Variation v0;
-						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.word = matches.query_logical_written_form(wordform_preterite);
 						v0.weight = weight;
 						v0.source_word_start = prev_word_idx;
 						v0.source_word_end = i+1;
@@ -441,7 +536,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 					//generate preterite
 					if(wordform_preterite) {
 						WordVariationGenerator::Variation v0;
-						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.word = matches.query_logical_written_form(wordform_preterite);
 						v0.weight = weight;
 						v0.source_word_start = prev_word_idx;
 						v0.source_word_end = i+1;
@@ -459,7 +554,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 					//generate preterite
 					if(wordform_preterite) {
 						WordVariationGenerator::Variation v0;
-						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.word = matches.query_logical_written_form(wordform_preterite);
 						v0.weight = weight;
 						v0.source_word_start = prev_word_idx;
 						v0.source_word_end = i+1;
@@ -481,7 +576,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 			for(auto match : matches) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
-					if(same_wordform_as_source(*wordform,source_word) &&
+					if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_indicative) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::voice_activeVoice)) //we'll ignore this complication for now
@@ -504,26 +599,26 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 				//generate perfect
 				if(source_word!="var") {
 					WordVariationGenerator::Variation v0_0;
-					v0_0.word = "har "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_0.word = "har "+matches.query_logical_written_form(wordform_past_participle);
 					v0_0.weight = weight;
 					v0_0.source_word_start = i;
 					v0_0.source_word_end = i+1;
 					variations.push_back(v0_0);
 					WordVariationGenerator::Variation v0_1;
-					v0_1.word = "er "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_1.word = "er "+matches.query_logical_written_form(wordform_past_participle);
 					v0_1.weight = weight;
 					v0_1.source_word_start = i;
 					v0_1.source_word_end = i+1;
 					variations.push_back(v0_1);
 					//generate pluperfect
 					WordVariationGenerator::Variation v1_0;
-					v1_0.word = "havde "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_0.word = "havde "+matches.query_logical_written_form(wordform_past_participle);
 					v1_0.weight = weight;
 					v1_0.source_word_start = i;
 					v1_0.source_word_end = i+1;
 					variations.push_back(v1_0);
 					WordVariationGenerator::Variation v1_1;
-					v1_1.word = "var "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_1.word = "var "+matches.query_logical_written_form(wordform_past_participle);
 					v1_1.weight = weight;
 					v1_1.source_word_start = i;
 					v1_1.source_word_end = i+1;
@@ -531,13 +626,13 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 				} else {
 					//"at være" takes the auxilliary verb "have"
 					WordVariationGenerator::Variation v0_0;
-					v0_0.word = "har "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_0.word = "har "+matches.query_logical_written_form(wordform_past_participle);
 					v0_0.weight = weight;
 					v0_0.source_word_start = i;
 					v0_0.source_word_end = i+1;
 					variations.push_back(v0_0);
 					WordVariationGenerator::Variation v1_0;
-					v1_0.word = "havde "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_0.word = "havde "+matches.query_logical_written_form(wordform_past_participle);
 					v1_0.weight = weight;
 					v1_0.source_word_start = i;
 					v1_0.source_word_end = i+1;
@@ -577,13 +672,13 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 			continue;
 		
 		//find noun
-		auto matches(lexicon.query_matches(source_word0));
+		LogicalMatches matches(lexicon,source_word0,noun);
 		const sto::WordForm *wordform_noun = NULL;
 		for(auto match : matches) {
 			if(match->part_of_speech==sto::part_of_speech_t::commonNoun) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
-					if(same_wordform_as_source(*wordform,source_word0) &&
+					if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
 						wordform->has_attribute(sto::word_form_attribute_t::case_unspecified))
 					{
 						wordform_noun = wordform;
@@ -614,10 +709,10 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 		auto source_word4_capitalized(capitalize_word(source_word4));
 		
 		//find proper-noun
-		matches = lexicon.query_matches(source_word4_capitalized);
+		auto matches2 = lexicon.query_matches(source_word4_capitalized);
 		const sto::WordForm *wordform_proper_noun = NULL;
 		const sto::WordForm *wordform_proper_noun_genitive = NULL;
-		for(auto match : matches) {
+		for(auto match : matches2) {
 			if(match->part_of_speech==sto::part_of_speech_t::properNoun) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
@@ -640,10 +735,63 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 		//transform that into propernoun-genetive noun
 		
 		WordVariationGenerator::Variation v0_0;
-		v0_0.word = std::string(wordform_proper_noun_genitive->written_form,wordform_proper_noun_genitive->written_form_length) + " " + std::string(wordform_noun->written_form,wordform_noun->written_form_length);
+		v0_0.word = std::string(wordform_proper_noun_genitive->written_form,wordform_proper_noun_genitive->written_form_length) + " " + matches.query_logical_written_form(wordform_noun);
 		v0_0.weight = weight;
 		v0_0.source_word_start = i;
 		v0_0.source_word_end = i+5;
+		variations.push_back(v0_0);
+	}
+}
+
+
+void WordVariationGenerator_danish::handle_adjective_grammatical_gender_simplification(std::vector<WordVariationGenerator::Variation> &variations,
+					                                               const std::vector<std::string> &source_words,
+					                                               const std::vector<std::string> &lower_source_words,
+					                                               float weight)
+{
+	//In Danish there are officially two grammatical genders: common and neuter. Adjectives have to agree when in singular indefinite.
+	//However, Western Jutland generally doesn't distinguish. And for objects of abstract nature or non-obvious grammatical gender people don't always follow the rule.
+	//So a document may have "Et internationalt marked" but the user searches for "international marked".
+	//The opposite can also happen but it is less common.
+	
+	//So locate adjectives with gender=common number=singular definitenes=indefinite, find the corresponding wordform for gender=neuter and generate that
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word0(lower_source_words[i]);
+		if(source_word0==" ")
+			continue;
+		
+		//find adjective
+		bool is_common_singular_indefinite = false;
+		const sto::WordForm *wordform_neuter_singular_indefinite = NULL;
+		LogicalMatches matches(lexicon,source_word0,whatever);
+		for(auto match : matches) {
+			if(match->part_of_speech==sto::part_of_speech_t::adjective) {
+				auto wordforms(match->query_all_explicit_word_forms());
+				for(auto wordform : wordforms) {
+					if(wordform->has_attribute(sto::word_form_attribute_t::grammaticalGender_neuter) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalNumber_singular) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::definiteness_indefinite))
+					{
+						wordform_neuter_singular_indefinite = wordform;
+					}
+					if(same_wordform_as_source(*wordform,matches.query_matched_word()) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalGender_commonGender) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::grammaticalNumber_singular) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::definiteness_indefinite))
+					{
+						is_common_singular_indefinite = wordform;
+					}
+				}
+			}
+		}
+		if(!is_common_singular_indefinite || !wordform_neuter_singular_indefinite)
+			continue;
+		
+		WordVariationGenerator::Variation v0_0;
+		v0_0.word = matches.query_logical_written_form(wordform_neuter_singular_indefinite);
+		v0_0.weight = weight;
+		v0_0.source_word_start = i;
+		v0_0.source_word_end = i+1;
 		variations.push_back(v0_0);
 	}
 }

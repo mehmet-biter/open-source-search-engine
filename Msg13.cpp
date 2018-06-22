@@ -18,6 +18,8 @@
 #include "Pages.h"
 #include "Statistics.h"
 #include "Sanity.h"
+#include "UrlMatchList.h"
+#include "ContentMatchList.h"
 #include <string.h>
 
 
@@ -644,23 +646,28 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 
 	bool useProxies = false;
 
-	// for diffbot turn ON if use robots is off
-	if ( r->m_forceUseFloaters ) useProxies = true;
-
-	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-
-	// if you turned on automatically use proxies in spider controls...
-	if ( ! useProxies && 
-	     cr &&
-	     r->m_urlIp != 0 &&
-	     r->m_urlIp != -1 &&
-	     cr->m_automaticallyUseProxies &&
-	     isIpInTwitchyTable( cr, r->m_urlIp ) )
-		useProxies = true;
-
 	// we gotta have some proxy ips that we can use
-	if ( ! g_conf.m_proxyIps.hasDigits() ) useProxies = false;
+	if (g_conf.m_proxyIps.hasDigits()) {
+		// for diffbot turn ON if use robots is off
+		if (r->m_forceUseFloaters) {
+			useProxies = true;
+		}
 
+		CollectionRec *cr = g_collectiondb.getRec(r->m_collnum);
+
+		// if you turned on automatically use proxies in spider controls...
+		if (!useProxies &&
+		    cr && cr->m_automaticallyUseProxies &&
+		    r->m_urlIp != 0 && r->m_urlIp != -1 && isIpInTwitchyTable(cr, r->m_urlIp)) {
+			useProxies = true;
+		}
+
+		Url url;
+		url.set(r->ptr_url, r->size_url);
+		if (g_urlProxyList.isUrlMatched(url)) {
+			useProxies = true;
+		}
+	}
 
 	// we did not need a spider proxy ip so send this reuest to a host
 	// to download the url
@@ -1036,6 +1043,67 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	return false;
 }
 
+static void appendRetryProxy(const char *url, int urlLen, const char *location = nullptr, int locationLen = 0) {
+	char filename[1024];
+	sprintf(filename,"%s/retryproxy.txt", g_hostdb.m_myHost->m_dir);
+	FILE *fp = fopen(filename,"a");
+	if (fp) {
+		fprintf(fp, "%.*s|%.*s\n", urlLen, url, locationLen, location);
+		fclose(fp);
+	}
+}
+
+static bool retryProxy(TcpSocket *ts, const char **msg, Msg13Request *r) {
+	if (!ts) {
+		return false;
+	}
+
+	//we only do proxy checks if there weren't any other error
+	if (g_errno != 0) {
+		return false;
+	}
+
+	// don't check for retries if it's already done
+	if (r->m_proxyTries > 0) {
+		return false;
+	}
+
+	Url url;
+	url.set(r->ptr_url, r->size_url);
+
+	HttpMime mime;
+	mime.set(ts->m_readBuf, ts->m_readOffset, &url);
+
+	int32_t httpStatus = mime.getHttpStatus();
+	if (httpStatus == 301 || httpStatus == 302 || httpStatus == 307 || httpStatus == 308) {
+		// we only retry when list matches redirected url & does not match original url
+		if (g_urlRetryProxyList.isUrlMatched(url)) {
+			return false;
+		}
+
+		const Url *location = mime.getLocationUrl();
+
+		if (g_urlRetryProxyList.isUrlMatched(*location)) {
+			*msg = "redir url proxy match list";
+			appendRetryProxy(url.getUrl(), url.getUrlLen(), location->getUrl(), location->getUrlLen());
+			return true;
+		}
+
+		return false;
+	}
+
+	size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
+	size_t haystack_size = ts->m_readOffset - pre_size;
+	const char *haystack = ts->m_readBuf + pre_size;
+
+	if (g_contentRetryProxyList.isContentMatched(haystack, haystack_size)) {
+		*msg = "content proxy match list";
+		appendRetryProxy(url.getUrl(), url.getUrlLen());
+		return true;
+	}
+
+	return false;
+}
 
 static void appendCrawlBan(const char *group, const char *url, int urlLen) {
 	char filename[1024];
@@ -1332,6 +1400,13 @@ void gotHttpReply2 ( void *state ,
 		    );
 	}
 
+	bool retry_proxy = false;
+	if (retryProxy(ts, &banMsg, r)) {
+		retry_proxy = true;
+		char ipbuf[16];
+		log("msg13: retry using proxy for url %s due to %s, for ip %s", r->ptr_url, banMsg, iptoa(r->m_urlIp, ipbuf));
+	}
+
 	if(crawlWasBanned(ts,&banMsg,r)) {
 		char ipbuf[16];
 		log("msg13: url %.*s detected as banned2 (%s), for ip %s"
@@ -1369,8 +1444,7 @@ void gotHttpReply2 ( void *state ,
 	if ( banned && 
 	     // retry iff we haven't already, but if we did stop the inf loop
 	     ! r->m_wasInTableBeforeStarting &&
-	     cr &&
-	     ( cr->m_automaticallyBackOff || cr->m_automaticallyUseProxies ) &&
+	     cr && ( cr->m_automaticallyBackOff || cr->m_automaticallyUseProxies ) &&
 	     // but this is not for proxies... only native crawlbot backoff
 	     ! r->m_proxyIp ) {
 		// note this as well
@@ -1385,6 +1459,19 @@ void gotHttpReply2 ( void *state ,
 		// twitchy table.
 		downloadTheDocForReals2 ( r );
 		// that's it. if it had an error it will send back a reply.
+		return;
+	}
+
+	if (retry_proxy) {
+		// note this as well
+		log("msg13: retrying spidered page with proxy for %s", r->ptr_url);
+
+		// reset error
+		g_errno = 0;
+
+		r->m_forceUseFloaters = 1;
+
+		downloadTheDocForReals2(r);
 		return;
 	}
 

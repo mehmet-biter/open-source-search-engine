@@ -60,7 +60,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   int32_t       niceness            ,
 		   bool       doLinkSpamCheck     ,
 		   bool       oneVotePerIpDom     ,
-		   bool       canBeCancelled      ,
 		   int32_t       lastUpdateTime      ,
 		   bool       onlyNeedGoodInlinks  ,
 		   // if an inlinking document has an outlink
@@ -262,10 +261,7 @@ class Xml;
 class Inlink;
 
 class LinkInfo {
-
- public:
-
-	int32_t   getStoredSize  ( ) const { return m_lisize; }
+public:
 	int32_t   getSize        ( ) const { return m_lisize; }
 	time_t getLastUpdated ( ) const { return (time_t)m_lastUpdated; }
 
@@ -276,8 +272,6 @@ class LinkInfo {
 	const Inlink *getNextInlink(const Inlink *k) const {
 		return const_cast<LinkInfo*>(this)->getNextInlink(const_cast<Inlink*>(k));
 	}
-
-	bool getItemXml ( Xml *xml ) ;
 
 	bool hasLinkText() const;
 

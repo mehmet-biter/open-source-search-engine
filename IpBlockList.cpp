@@ -26,11 +26,11 @@ IpBlockList g_ipBlockList;
 static const char s_ip_filename[] = "ipblocklist.txt";
 
 IpBlockList::IpBlockList()
-	: BlockList(s_ip_filename) {
+	: MatchList(s_ip_filename) {
 }
 
 bool IpBlockList::isIpBlocked(uint32_t ip) {
-	auto ipBlockList = getBlockList();
+	auto ipBlockList = getMatchList();
 
 	for (auto const &ipBlock : *ipBlockList) {
 		if (ipBlock == ip) {
@@ -42,7 +42,7 @@ bool IpBlockList::isIpBlocked(uint32_t ip) {
 	return false;
 }
 
-void IpBlockList::addToBlockList(blocklist_ptr_t<uint32_t> &blockList, const std::string &line) {
+void IpBlockList::addToMatchList(matchlist_ptr_t<uint32_t> &blockList, const std::string &line) {
 	in_addr addr;
 
 	if (inet_pton(AF_INET, line.c_str(), &addr) != 1) {

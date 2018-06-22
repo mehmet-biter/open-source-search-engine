@@ -1178,9 +1178,9 @@ bool Repair::injectTitleRec ( ) {
 		m_stage = STAGE_TITLEDB_0; // 0
 		return true;
 	}
-        mnew ( xd , sizeof(XmlDoc),"xmldocpr");    
+        mnew ( xd , sizeof(XmlDoc),"xmldocpr");
 
-	if ( ! xd->set2 ( titleRec,-1,m_cr->m_coll , NULL , MAX_NICENESS ) ) {
+	if (!xd->set2(titleRec, -1, m_cr->m_coll, MAX_NICENESS)) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
 		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
@@ -1290,6 +1290,9 @@ bool Repair::injectTitleRec ( ) {
 	xd->m_blockedDocValid = true;
 	xd->m_blockedDoc = false;
 
+	// don't check site median page temperature
+	xd->m_calledServiceSiteMedianPageTemperature = true;
+
 	// . get the meta list to add
 	// . sets m_usePosdb, m_useTitledb, etc.
 	logTrace(g_conf.m_logTraceRepairs,"Calling indexDoc");
@@ -1323,7 +1326,7 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	
 	//decompress+decode xmldoc
 	XmlDoc xd;
-	if(!xd.set2(titleRec,titleRecSize, m_cr->m_coll, NULL, MAX_NICENESS))  {
+	if (!xd.set2(titleRec, titleRecSize, m_cr->m_coll, MAX_NICENESS)) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0;
 		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");

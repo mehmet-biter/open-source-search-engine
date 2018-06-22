@@ -1,5 +1,6 @@
 #include "Docid2Siteflags.h"
 #include "Log.h"
+#include "Conf.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -112,11 +113,13 @@ bool Docid2FlagsAndSiteMap::lookupSiteHash(uint64_t docid, uint32_t *sitehash32)
 	if(pos!=e.end()) {
 		if(pos->docid == docid) {
 			*sitehash32 = pos->sitehash32;
+			logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record sitehash32=%u for docid=%lu", *sitehash32, docid);
 			return true;
-		} else
-			return false;
-	} else
-		return false;
+		}
+	}
+
+	logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Record not found for docid=%lu", docid);
+	return false;
 }
 
 
@@ -129,9 +132,11 @@ bool Docid2FlagsAndSiteMap::lookupFlags(uint64_t docid, unsigned *flags) {
 	if(pos!=e.end()) {
 		if(pos->docid == docid) {
 			*flags = pos->flags;
+			logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record flags=%u for docid=%lu", *flags, docid);
 			return true;
-		} else
-			return false;
-	} else
-		return false;
+		}
+	}
+
+	logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Record not found for docid=%lu", docid);
+	return false;
 }

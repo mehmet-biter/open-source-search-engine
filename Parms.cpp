@@ -38,6 +38,8 @@
 #include "GbDns.h"
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "QueryLanguage.h"
+#include "SiteNumInlinks.h"
+#include "SiteMedianPageTemperature.h"
 #include <set>
 #include <fstream>
 
@@ -1550,11 +1552,11 @@ bool Parms::printParm( SafeBuf* sb,
 	// . make at least as big as a int64_t
 	if ( j >= jend ) s = "\0\0\0\0\0\0\0\0";
 	// delimit each cgi var if we need to
-	if ( m->m_cgi && strlen(m->m_cgi) > 45 ) {
+	char cgi[128];
+	if ( m->m_cgi && strlen(m->m_cgi)+10 >= sizeof(cgi) ) { //10 digits
 		log(LOG_LOGIC,"admin: Cgi variable is TOO big.");
 		g_process.shutdownAbort(true);
 	}
-	char cgi[64];
 	if ( m->m_cgi ) {
 		if ( j > 0 ) sprintf ( cgi , "%s%" PRId32 , m->m_cgi , j );
 		else         sprintf ( cgi , "%s"    , m->m_cgi     );
@@ -3679,6 +3681,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "adjective neuter<->common variants";
+	m->m_desc  = "Extend to both grammatical genders";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_cgi  = "lwv_adjective_grammatical_gender_simplification";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
@@ -5496,7 +5507,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_queryLanguageServerName);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "localhost";
-	m->m_size  = sizeof(Conf::m_urlClassificationServerName);
+	m->m_size  = sizeof(Conf::m_queryLanguageServerName);
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
@@ -5539,6 +5550,108 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_REBUILDQUERYLANGSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature server name";
+	m->m_desc  = "";
+	m->m_cgi   = "smpt_server_name";
+	m->m_off   = offsetof(Conf,m_siteMedianPageTemperatureServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_siteNumInlinksServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature server port";
+	m->m_desc  = "(0=disable; 8076=default server port)";
+	m->m_cgi   = "smpt_server_port";
+	simple_m_set(Conf,m_siteMedianPageTemperatureServerPort);
+	m->m_def   = "0";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "smpt_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingSiteMedianPageTemperature);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site median page temperature timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "smpt_timeout";
+	simple_m_set(Conf,m_siteMedianPageTemperatureTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITEMEDIANPAGETEMPSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks server name";
+	m->m_desc  = "";
+	m->m_cgi   = "sni_server_name";
+	m->m_off   = offsetof(Conf,m_siteNumInlinksServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_siteNumInlinksServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks server port";
+	m->m_desc  = "(0=disable; 8077=default server port)";
+	m->m_cgi   = "sni_server_port";
+	simple_m_set(Conf,m_siteNumInlinksServerPort);
+	m->m_def   = "0";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "sni_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingSiteNumInlinks);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
+	m++;
+
+	m->m_title = "Site num inlinks timeout";
+	m->m_desc  = "Per-request timeout.";
+	m->m_cgi   = "sni_timeout";
+	simple_m_set(Conf,m_siteNumInlinksTimeout);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_REBUILDSITENUMINLINKSSETTINGS;
 	m++;
 
 
@@ -7464,6 +7577,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;
 
+	m->m_title = "adjective neuter<->common variants";
+	m->m_desc  = "Extend to both grammatical genders";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.adjective_grammatical_gender_simplification);
+	m->m_cgi  = "lwv_adjective_grammatical_gender_simplification";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
 
 
 	///////////////////////////////////////////
@@ -9086,9 +9208,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for BlockList";
+	m->m_title = "log trace info for MatchList";
 	m->m_cgi   = "ltrc_bl";
-	simple_m_set(Conf,m_logTraceBlockList);
+	simple_m_set(Conf,m_logTraceMatchList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9096,6 +9218,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for ContentTypeBlockList";
 	m->m_cgi   = "ltrc_ctbl";
 	simple_m_set(Conf,m_logTraceContentTypeBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Docid2FlagsAndSiteMap";
+	m->m_cgi   = "ltrc_dtofsm";
+	simple_m_set(Conf,m_logTraceDocid2FlagsAndSiteMap);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9321,6 +9450,20 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for RobotsCheckList";
 	m->m_cgi   = "ltrc_robotscl";
 	simple_m_set(Conf,m_logTraceRobotsCheckList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for SiteMedianPageTemperature";
+	m->m_cgi   = "ltrc_smpt";
+	simple_m_set(Conf,m_logTraceSiteMedianPageTemperature);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for SiteNumInlinks";
+	m->m_cgi   = "ltrc_sni";
+	simple_m_set(Conf,m_logTraceSiteNumInlinks);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -10783,6 +10926,8 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildDnsSettings = false;
 	bool rebuildSpiderSettings = false;
 	bool rebuildQueryLanguageSettings = false;
+	bool rebuildSiteNumInlinksSettings = false;
+	bool rebuildSiteMedianPageTemperatureSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10883,6 +11028,14 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			if (parm->m_flags & PF_REBUILDQUERYLANGSETTINGS) {
 				rebuildQueryLanguageSettings = true;
 			}
+
+			if (parm->m_flags & PF_REBUILDSITENUMINLINKSSETTINGS) {
+				rebuildSiteNumInlinksSettings = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDSITEMEDIANPAGETEMPSETTINGS) {
+				rebuildSiteMedianPageTemperatureSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10946,8 +11099,18 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	}
 
 	if (rebuildQueryLanguageSettings) {
-		log("parms: rebuild fxclient settings");
+		log("parms: rebuild querylanguage settings");
 		g_queryLanguage.reinitializeSettings();
+	}
+
+	if (rebuildSiteNumInlinksSettings) {
+		log("parms: rebuild sitenuminlinks settings");
+		g_siteNumInlinks.reinitializeSettings();
+	}
+
+	if (rebuildSiteMedianPageTemperatureSettings) {
+		log("parms: rebuild sitemedianpagetemperature settings");
+		g_siteMedianPageTemperature.reinitializeSettings();
 	}
 
 	// note it

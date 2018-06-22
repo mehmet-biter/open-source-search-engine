@@ -16,17 +16,28 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_DNSBLOCKLIST_H
-#define FX_DNSBLOCKLIST_H
+#ifndef FX_SITENUMINLINKS_H
+#define FX_SITENUMINLINKS_H
 
-#include "MatchList.h"
+#include "FxClient.h"
 
-class DnsBlockList : public MatchList<std::string> {
+typedef void (*site_inlinks_count_callback_t)(void *context, long count);
+
+class SiteNumInlinks : public FxClient {
 public:
-	DnsBlockList();
-	bool isDnsBlocked(const char *dns);
+	bool initialize();
+	void reinitializeSettings();
+
+	using FxClient::finalize;
+
+	void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, fxclient_request_ptr_t base_request) override;
+	void processResponse(fxclient_request_ptr_t base_request, char *response) override;
+	void errorCallback(fxclient_request_ptr_t base_request) override;
+
+	bool getSiteNumInlinks(void *context, site_inlinks_count_callback_t callback, unsigned sitehash);
 };
 
-extern DnsBlockList g_dnsBlockList;
+extern SiteNumInlinks g_siteNumInlinks;
 
-#endif //FX_DNSBLOCKLIST_H
+
+#endif //FX_SITENUMINLINKS_H

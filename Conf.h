@@ -105,6 +105,16 @@ class Conf {
 	unsigned m_maxOutstandingQueryLanguage;
 	unsigned m_queryLanguageTimeout;
 
+	char m_siteMedianPageTemperatureServerName[64];
+	int32_t m_siteMedianPageTemperatureServerPort;
+	unsigned m_maxOutstandingSiteMedianPageTemperature;
+	unsigned m_siteMedianPageTemperatureTimeout;
+
+	char m_siteNumInlinksServerName[64];
+	int32_t m_siteNumInlinksServerPort;
+	unsigned m_maxOutstandingSiteNumInlinks;
+	unsigned m_siteNumInlinksTimeout;
+
 	char m_urlClassificationServerName[64];
 	int32_t m_urlClassificationServerPort;
 	unsigned m_maxOutstandingUrlClassifications;
@@ -381,8 +391,9 @@ class Conf {
 	bool  m_logDebugVagus;
 
 	bool m_logTraceBigFile;
-	bool m_logTraceBlockList;
+	bool m_logTraceMatchList;
 	bool m_logTraceContentTypeBlockList;
+	bool m_logTraceDocid2FlagsAndSiteMap;
 	bool m_logTraceDocProcess;
 	bool m_logTraceDns;
 	bool m_logTraceDnsBlockList;
@@ -416,6 +427,8 @@ class Conf {
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceRobotsCheckList;
+	bool m_logTraceSiteMedianPageTemperature;
+	bool m_logTraceSiteNumInlinks;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
 	bool m_logTraceReindex;

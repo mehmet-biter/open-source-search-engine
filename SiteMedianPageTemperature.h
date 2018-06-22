@@ -16,17 +16,28 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_DNSBLOCKLIST_H
-#define FX_DNSBLOCKLIST_H
+#ifndef FX_SITEMEDIANPAGETEMPERATURE_H
+#define FX_SITEMEDIANPAGETEMPERATURE_H
 
-#include "MatchList.h"
+#include "FxClient.h"
 
-class DnsBlockList : public MatchList<std::string> {
+typedef void (*site_median_page_temperature_callback_t)(void *context, long count);
+
+class SiteMedianPageTemperature : public FxClient {
 public:
-	DnsBlockList();
-	bool isDnsBlocked(const char *dns);
+	bool initialize();
+	void reinitializeSettings();
+
+	using FxClient::finalize;
+
+	void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, fxclient_request_ptr_t base_request) override;
+	void processResponse(fxclient_request_ptr_t base_request, char *response) override;
+	void errorCallback(fxclient_request_ptr_t base_request) override;
+
+	bool getSiteMedianPageTemperature(void *context, site_median_page_temperature_callback_t callback, unsigned sitehash);
 };
 
-extern DnsBlockList g_dnsBlockList;
+extern SiteMedianPageTemperature g_siteMedianPageTemperature;
 
-#endif //FX_DNSBLOCKLIST_H
+
+#endif //FX_SITEMEDIANPAGETEMPERATURE_H

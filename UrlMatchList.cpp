@@ -15,6 +15,8 @@
 
 UrlMatchList g_urlBlackList("urlblacklist*.txt");
 UrlMatchList g_urlWhiteList("urlwhitelist.txt");
+UrlMatchList g_urlProxyList("urlproxylist.txt");
+UrlMatchList g_urlRetryProxyList("urlretryproxylist.txt");
 
 typedef std::vector<UrlMatch> urlmatchlist_t;
 typedef spp::sparse_hash_map<std::string, urlmatchlist_t> urlmatchlist_map_t;
@@ -245,6 +247,8 @@ bool UrlMatchList::load() {
 					if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
 						if (!parseDomain(&tmpUrlMatchList, col2, col3, col4)) {
 							logError("Invalid line found. Ignoring line='%s'", line.c_str());
+							// catch domain parsing errors here
+							gbshutdownLogicError();
 							continue;
 						}
 					} else {
