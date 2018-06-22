@@ -261,7 +261,7 @@ class Posdb {
 		//return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
 		//posdb sometimes have crap in it, so protect intersection from dealing with undefined hash groups
 		unsigned char tmp = ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
-		return tmp<=10 ? tmp : 10;
+		return tmp<HASHGROUP_END ? tmp : HASHGROUP_END-1;
 
 	}
 
