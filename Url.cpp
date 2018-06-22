@@ -2622,6 +2622,34 @@ bool Url::getPunycodeDecodedHost(SafeBuf *sb) const {
 }
 
 
+bool Url::getPunycodeDecodedMidDomain(SafeBuf *sb) const {
+	const char *s = m_domain;
+	const char *end = m_host+m_mdlen;
+	const char *d = end;
+	if(!d)
+		d = end;
+	if(d-s<4 || memcmp(s,"xn--",4)!=0) {
+		sb->safeMemcpy(s,d-s);
+	} else {
+		uint32_t decoded[256]; //64 should be enough according to DNS spec, but let's be a bit safer
+		size_t decoded_count = 256;
+		punycode_status status = punycode_decode(d-s-4, s+4, &decoded_count, decoded, NULL);
+		if(status!=punycode_success) {
+			log(LOG_WARN, "build: Could not decode punycode '%.*s' component in middomain '%.*s'", (int)(d-s),s, m_hlen, m_host);
+			return false;
+		}
+		char utf8buf[256*4];
+		size_t utf8len = 0;
+		for(size_t i=0; i<decoded_count; i++)
+			utf8len += utf8Encode(decoded[i],utf8buf+utf8len);
+		sb->safeMemcpy(utf8buf,utf8len);
+	}
+	if(d<end)
+		sb->safeMemcpy(".",1);
+	return true;
+}
+
+
 
 char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
 	const char *urlEnd = url + strlen(url);

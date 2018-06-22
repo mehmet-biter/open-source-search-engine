@@ -1186,11 +1186,33 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		if (strncmp(path, "/index", plen) != 0) {
 			// hash the path
 			// BR 20160114: Exclude numbers in paths (usually dates)
+			hi.m_hashGroup = HASHGROUP_INURL;
 			hi.m_hashNumbers = false;
 			if (!hashString(path, plen, &hi)) return false;
 		}
 	}
 
+	//actually index the middle domain. The above indexing of filtered-host and singleterm-domain was in the original code so it was always misleading
+	{
+		setStatus("hashing url mid domain");
+		hi.m_prefix = NULL;
+		hi.m_desc = "middle domain(2)";
+		hi.m_hashGroup = HASHGROUP_MIDDOMAIN;
+		hi.m_filterUrlIndexableWords = false;
+		const char *mdom = fu->getMidDomain();
+		int32_t mdomlen = fu->getMidDomainLen();
+		if (!hashString(mdom, mdomlen, &hi)) {
+			return false;
+		}
+		if(fu->isPunycodeSafeTld() && fu->hasPunycode()) {
+			SafeBuf sb_punyDecodedMidDomain;
+			if(fu->getPunycodeDecodedMidDomain(&sb_punyDecodedMidDomain)) {
+				if (!hashString(sb_punyDecodedMidDomain.getBufStart(), sb_punyDecodedMidDomain.length(), &hi))
+					return false;
+			}
+		}
+	}
+	
 	return true;
 }
 

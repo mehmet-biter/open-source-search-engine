@@ -168,6 +168,7 @@ void PosdbTable::reset() {
 // . we now support multiple plus signs before the query term
 // . lists[] and termFreqs[] must be 1-1 with q->m_qterms[]
 void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r) {
+r->m_baseScoringParameters.traceToLog("posdbtable");
 	// sanity check -- watch out for double calls
 	if ( m_initialized )
 		gbshutdownAbort(true);
