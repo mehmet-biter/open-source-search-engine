@@ -2068,6 +2068,8 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					      k))
 					return false;
 			}
+			if(token.is_alfanum)
+				candidate_lemma_words.emplace(token.token_start,token.token_len);
 		} else {
 			logTrace(g_conf.m_logTraceTokenIndexing,"not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
 		}
