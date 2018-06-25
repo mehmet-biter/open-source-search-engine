@@ -2180,6 +2180,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	if(m_langId==langDanish) {
 		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		//we only have a lexicon for Danish so far for this test
+		std::unordered_set<std::string> lemma_words;
 		for(const auto &e : candidate_lemma_words) {
 			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
 			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
@@ -2193,10 +2194,14 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 				continue; //no base form
 			if(wf->written_form_length==e.size() && memcmp(wf->written_form,e.data(),e.size())==0)
 				continue; //already in base for
-			logTrace(g_conf.m_logTraceTokenIndexing,"baseform is different: '%.*s'", (int)wf->written_form_length, wf->written_form);
-			
+			logTrace(g_conf.m_logTraceTokenIndexing,"baseform is different than source: '%.*s'", (int)wf->written_form_length, wf->written_form);
+			lemma_words.emplace(wf->written_form,wf->written_form_length);
+		}
+		logTrace(g_conf.m_logTraceTokenIndexing,"lemma_words.size()=%zu", lemma_words.size());
+		for(const auto &e : lemma_words) {
 			key144_t k;
-			uint64_t h = hash64Lower_utf8(wf->written_form,wf->written_form_length);
+			uint64_t h = hash64Lower_utf8(e.data(),e.length());
+			logTrace(g_conf.m_logTraceTokenIndexing,"Indexing lemma '%s', h=%ld, termid=%lld", e.c_str(), h, h&TERMID_MASK);
 			Posdb::makeKey(&k,
 					h,
 					0LL,//docid
@@ -2218,7 +2223,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 
 			// add to wts for PageParser.cpp display
 			if(wts) {
-				if(!storeTerm(wf->written_form,wf->written_form_length,
+				if(!storeTerm(e.data(),e.length(),
 					      h, hi,
 					      0, //word index. We could keep track of the first word that generated this base form. But we don't.
 					      m_dist, // wordPos
