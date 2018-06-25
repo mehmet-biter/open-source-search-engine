@@ -2624,7 +2624,7 @@ bool Url::getPunycodeDecodedHost(SafeBuf *sb) const {
 
 bool Url::getPunycodeDecodedMidDomain(SafeBuf *sb) const {
 	const char *s = m_domain;
-	const char *end = m_host+m_mdlen;
+	const char *end = m_domain+m_mdlen;
 	const char *d = end;
 	if(!d)
 		d = end;
