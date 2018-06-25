@@ -51,6 +51,7 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Json.h"
 #include "Posdb.h"
+#include <unordered_set>
 
 
 // forward declaration
@@ -523,6 +524,7 @@ public:
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
+	bool hashLemmas(class HashTableX *table);
 	void sortTokenizerResult(TokenizerResult *tr);
 	void getLanguageAndCountry(lang_t *lang, const char **country_code);
 
@@ -1090,6 +1092,9 @@ public:
 	class HashTableX *m_wts;
 	HashTableX m_wtsTable;
 	SafeBuf m_wbuf;
+
+	//During hasning various sources (title, tags, body, ...) we put unique lemmas into this set
+	std::unordered_set<std::string> lemma_words;
 
 	// which set() function was called above to set us?
 	bool          m_setFromTitleRec;

@@ -298,6 +298,8 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 	
+	lemma_words.clear();
+
 	// BR 20160127: Never index JSON and XML content
 	if (*ct == CT_JSON || *ct == CT_XML) {
 		// For XML (JSON should not get here as it should be filtered out during spidering)
@@ -510,6 +512,12 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguageString failed");
 		return NULL;
 	}
+
+	if(!hashLemmas(table)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLemmas failed");
+		return NULL;
+	}
+	lemma_words.clear(); //release memory early
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, OK");
 	return (char *)1;
@@ -1623,6 +1631,54 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	return true;
 }
 
+
+bool XmlDoc::hashLemmas(HashTableX *table) {
+	setStatus("hashing lemmas"); //Not llamas
+	logTrace(g_conf.m_logTraceTokenIndexing,"lemma_words.size()=%zu", lemma_words.size());
+	HashInfo hi; //storeTerm wants a HashInfo instance.
+
+	for(const auto &e : lemma_words) {
+		uint64_t h = hash64Lower_utf8(e.data(),e.length());
+		logTrace(g_conf.m_logTraceTokenIndexing,"Indexing lemma '%s', h=%ld, termid=%lld", e.c_str(), h, h&TERMID_MASK);
+		key144_t k;
+		Posdb::makeKey(&k,
+			       h,
+			       0LL,//docid
+			       m_dist,
+			       0,// densityRank , // 0-15
+			       0, //diversityrank
+			       0, //wordspamrank
+			       0, // siterank
+			       HASHGROUP_LEMMA,
+			       m_langId, // we set to docLang final hash loop
+			       0, // multiplier
+			       false, // syn?
+			       false, // delkey?
+			       false); //shardByTermId
+		table->addTerm144(&k);
+
+		if(m_wts) {
+			// add to wts for PageParser.cpp display
+			if(!storeTerm(e.data(),e.length(),
+				      h, &hi,
+				      0, //word index. We could keep track of the first word that generated this base form. But we don't.
+				      m_dist, // wordPos
+				      0,// densityRank , // 0-15
+				      0, //diversityrank
+				      0, //wordspamrank
+				      HASHGROUP_LEMMA,
+				      &m_wbuf,
+				      m_wts,
+				      SOURCE_NONE, // synsrc
+				      m_langId,
+				      k))
+				return false;
+		}
+	}
+	return true;
+}
+
+
 void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
 	std::sort(tr->tokens.begin(), tr->tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
 		return tr0.start_pos < tr1.start_pos ||
@@ -1825,7 +1881,6 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 
 	HashTableX *dt = hi->m_tt;
 	std::unordered_set<std::string> candidate_lemma_words;
-	int32_t original_dist = m_dist;
 
 	// . sanity checks
 	// . posdb just uses the full keys with docid
@@ -2180,7 +2235,6 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	if(m_langId==langDanish) {
 		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		//we only have a lexicon for Danish so far for this test
-		std::unordered_set<std::string> lemma_words;
 		for(const auto &e : candidate_lemma_words) {
 			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
 			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
@@ -2193,51 +2247,9 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 			if(!wf)
 				continue; //no base form
 			if(wf->written_form_length==e.size() && memcmp(wf->written_form,e.data(),e.size())==0)
-				continue; //already in base for
+				continue; //already in base form
 			logTrace(g_conf.m_logTraceTokenIndexing,"baseform is different than source: '%.*s'", (int)wf->written_form_length, wf->written_form);
 			lemma_words.emplace(wf->written_form,wf->written_form_length);
-		}
-		logTrace(g_conf.m_logTraceTokenIndexing,"lemma_words.size()=%zu", lemma_words.size());
-		for(const auto &e : lemma_words) {
-			key144_t k;
-			uint64_t h = hash64Lower_utf8(e.data(),e.length());
-			logTrace(g_conf.m_logTraceTokenIndexing,"Indexing lemma '%s', h=%ld, termid=%lld", e.c_str(), h, h&TERMID_MASK);
-			Posdb::makeKey(&k,
-					h,
-					0LL,//docid
-					original_dist, // dist,
-					0,// densityRank , // 0-15
-					0, //diversityrank
-					0, //wordspamrank
-					0, // siterank
-					HASHGROUP_LEMMA,
-					m_langId, // we set to docLang final hash loop
-					0, // multiplier
-					false, // syn?
-					false, // delkey?
-					hi->m_shardByTermId);
-
-			// key should NEVER collide since we are always incrementing
-			// the distance cursor, m_dist
-			dt->addTerm144(&k);
-
-			// add to wts for PageParser.cpp display
-			if(wts) {
-				if(!storeTerm(e.data(),e.length(),
-					      h, hi,
-					      0, //word index. We could keep track of the first word that generated this base form. But we don't.
-					      m_dist, // wordPos
-					      0,// densityRank , // 0-15
-					      0, //diversityrank
-					      0, //wordspamrank
-					      HASHGROUP_LEMMA,
-					      wbuf,
-					      wts,
-					      SOURCE_NONE, // synsrc
-					      m_langId,
-					      k))
-					return false;
-			}
 		}
 	}
 	
