@@ -1060,15 +1060,16 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		}
 
 		// punish if a http:// title thingy
-		const char *s = (*tr)[a].token_start;
-		int32_t size = (*tr)[b].end_pos-(*tr)[a].start_pos;
-		if(size<0) size=0;
-		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
-			ncb *= .10;
+		if(b-a >= 2) {
+			const auto &t1 = (*tr)[a];
+			const auto &t2 = (*tr)[a+1];
+			if(((t1.token_len==4 && memcmp(t1.token_start,"http",4)==0) || (t1.token_len==5 && memcmp(t1.token_start,"https",5)==0)) &&
+			   t2.token_len==3 && memcmp(t2.token_start,"://",3)==0)
+			{
+				ncb *= .10;
+			}
 		}
-		if ( size > 10 && memcmp("https://", s, 8) == 0 ) {
-			ncb *= .10;
-		}
+
 
 		// set these guys
 		scores[i] *= ncb;
