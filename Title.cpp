@@ -1066,6 +1066,9 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
 			ncb *= .10;
 		}
+		if ( size > 10 && memcmp("https://", s, 8) == 0 ) {
+			ncb *= .10;
+		}
 
 		// set these guys
 		scores[i] *= ncb;
