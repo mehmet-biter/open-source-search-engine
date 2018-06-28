@@ -146,8 +146,8 @@ static bool isAlpha(const TokenRange &token) {
 	if(!token.is_alfanum)
 		return false;
 	if(is_ascii_digit_string(token.token_start,token.token_end()))
-		return true;
-	return false;
+		return false;
+	return true;
 }
 
 
@@ -939,37 +939,44 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 					bs[n-2] = k;
 					bs[n-1] = k;
 				}
-				// . ok, we got two more candidates
-				// . well, only one more if this is not the 1st time
-				if ( ! prev ) {
+				
+				if(lasta < b && k <= b && lasta <= k) {
+					// . ok, we got two more candidates
+					// . well, only one more if this is not the 1st time
+					if ( ! prev ) {
+						cptrs   [n] = cptrs   [i];
+						scores  [n] = scores  [i];
+						types   [n] = types   [i];
+						as      [n] = lasta;
+						bs      [n] = k;
+						parent  [n] = i;
+						n++;
+						added++;
+					}
+				}
+				if(e+1 < b) {
+					// the 2nd one
 					cptrs   [n] = cptrs   [i];
 					scores  [n] = scores  [i];
 					types   [n] = types   [i];
-					as      [n] = lasta;
-					bs      [n] = k;
+					as      [n] = e + 1;
+					bs      [n] = bs      [i];
 					parent  [n] = i;
 					n++;
 					added++;
 				}
-				// the 2nd one
-				cptrs   [n] = cptrs   [i];
-				scores  [n] = scores  [i];
-				types   [n] = types   [i];
-				as      [n] = e + 1;
-				bs      [n] = bs      [i];
-				parent  [n] = i;
-				n++;
-				added++;
 
-				// now add in the last pair as a whole token
-				cptrs   [n] = cptrs   [i];
-				scores  [n] = scores  [i];
-				types   [n] = types   [i];
-				as      [n] = lasta;
-				bs      [n] = bs      [i];
-				parent  [n] = i;
-				n++;
-				added++;
+				if(lasta < b) {
+					// now add in the last pair as a whole token
+					cptrs   [n] = cptrs   [i];
+					scores  [n] = scores  [i];
+					types   [n] = types   [i];
+					as      [n] = lasta;
+					bs      [n] = bs      [i];
+					parent  [n] = i;
+					n++;
+					added++;
+				}
 
 				// nuke the current candidate then since it got
 				// split up to not contain the root title...
