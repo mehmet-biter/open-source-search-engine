@@ -1637,6 +1637,11 @@ bool XmlDoc::hashLemmas(HashTableX *table) {
 	logTrace(g_conf.m_logTraceTokenIndexing,"lemma_words.size()=%zu", lemma_words.size());
 	HashInfo hi; //storeTerm wants a HashInfo instance.
 
+	if(m_dist > MAXWORDPOS) {
+		log(LOG_INFO,"hashLemmas(): wordpos limit hit in document %.*s", m_firstUrl.getUrlLen(), m_firstUrl.getUrl());
+		return true;
+	}
+
 	for(const auto &e : lemma_words) {
 		uint64_t h = hash64Lower_utf8(e.data(),e.length());
 		logTrace(g_conf.m_logTraceTokenIndexing,"Indexing lemma '%s', h=%ld, termid=%lld", e.c_str(), h, h&TERMID_MASK);
@@ -1977,6 +1982,10 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
+
+	if(end_token>begin_token && wposvec[end_token-1]>MAXWORDPOS) {
+		log(LOG_INFO,"hashWords3(): wordpos limit will be hit in document %.*s", m_firstUrl.getUrlLen(), m_firstUrl.getUrl());
+	}
 
 	bool seen_slash = false;
 	for(unsigned i = begin_token; i < end_token; i++) {
