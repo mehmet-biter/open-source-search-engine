@@ -146,8 +146,8 @@ static bool isAlpha(const TokenRange &token) {
 	if(!token.is_alfanum)
 		return false;
 	if(is_ascii_digit_string(token.token_start,token.token_end()))
-		return true;
-	return false;
+		return false;
+	return true;
 }
 
 
@@ -939,37 +939,44 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 					bs[n-2] = k;
 					bs[n-1] = k;
 				}
-				// . ok, we got two more candidates
-				// . well, only one more if this is not the 1st time
-				if ( ! prev ) {
+				
+				if(lasta < b && k <= b && lasta <= k) {
+					// . ok, we got two more candidates
+					// . well, only one more if this is not the 1st time
+					if ( ! prev ) {
+						cptrs   [n] = cptrs   [i];
+						scores  [n] = scores  [i];
+						types   [n] = types   [i];
+						as      [n] = lasta;
+						bs      [n] = k;
+						parent  [n] = i;
+						n++;
+						added++;
+					}
+				}
+				if(e+1 < b) {
+					// the 2nd one
 					cptrs   [n] = cptrs   [i];
 					scores  [n] = scores  [i];
 					types   [n] = types   [i];
-					as      [n] = lasta;
-					bs      [n] = k;
+					as      [n] = e + 1;
+					bs      [n] = bs      [i];
 					parent  [n] = i;
 					n++;
 					added++;
 				}
-				// the 2nd one
-				cptrs   [n] = cptrs   [i];
-				scores  [n] = scores  [i];
-				types   [n] = types   [i];
-				as      [n] = e + 1;
-				bs      [n] = bs      [i];
-				parent  [n] = i;
-				n++;
-				added++;
 
-				// now add in the last pair as a whole token
-				cptrs   [n] = cptrs   [i];
-				scores  [n] = scores  [i];
-				types   [n] = types   [i];
-				as      [n] = lasta;
-				bs      [n] = bs      [i];
-				parent  [n] = i;
-				n++;
-				added++;
+				if(lasta < b) {
+					// now add in the last pair as a whole token
+					cptrs   [n] = cptrs   [i];
+					scores  [n] = scores  [i];
+					types   [n] = types   [i];
+					as      [n] = lasta;
+					bs      [n] = bs      [i];
+					parent  [n] = i;
+					n++;
+					added++;
+				}
 
 				// nuke the current candidate then since it got
 				// split up to not contain the root title...
@@ -1060,15 +1067,16 @@ bool Title::setTitle ( Xml *xml, const TokenizerResult *tr, int32_t maxTitleLen,
 		}
 
 		// punish if a http:// title thingy
-		const char *s = (*tr)[a].token_start;
-		int32_t size = (*tr)[b].end_pos-(*tr)[a].start_pos;
-		if(size<0) size=0;
-		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
-			ncb *= .10;
+		if(b-a >= 2) {
+			const auto &t1 = (*tr)[a];
+			const auto &t2 = (*tr)[a+1];
+			if(((t1.token_len==4 && memcmp(t1.token_start,"http",4)==0) || (t1.token_len==5 && memcmp(t1.token_start,"https",5)==0)) &&
+			   t2.token_len==3 && memcmp(t2.token_start,"://",3)==0)
+			{
+				ncb *= .10;
+			}
 		}
-		if ( size > 14 && memcmp("h\0t\0t\0p\0:\0/\0/", s, 14) == 0 ) {
-			ncb *= .10;
-		}
+
 
 		// set these guys
 		scores[i] *= ncb;
