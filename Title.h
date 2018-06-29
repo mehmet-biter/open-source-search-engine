@@ -15,6 +15,7 @@ class Words;
 class Query;
 class LinkInfo;
 class Url;
+class TokenizerResult;
 
 class Title {
 public:
