@@ -510,7 +510,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
 		char *crec = (char *)&clusterRecs[i];
 		uint32_t siteHash26 = Clusterdb::getSiteHash26(crec);
-		logf(LOG_DEBUG,"query: msg51: hit #%" PRId32") sitehash26=%" PRIu32" "
+		logf(LOG_DEBUG,"query: msg51: hit #%2d) sitehash26=0x%x "
 		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
 		     (int32_t)i,
 		     (int32_t)siteHash26,
