@@ -390,7 +390,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	    "rec.n1=%08x,%016" PRIx64" sitehash26=0x%x",
 	    (int64_t)docId, ci,
 	    rec->n1,rec->n0,
-	    Clusterdb::getSiteHash26((char *)rec));
+	    Clusterdb::getSiteHash26(rec));
 
 	// check for docid mismatch
 	int64_t docId2 = Clusterdb::getDocId ( rec );
@@ -457,7 +457,6 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	u_int64_t startTime = gettimeofdayInMilliseconds();
 
 	for(int32_t i=0; i<numRecs; i++) {
-		char *crec = (char *)&clusterRecs[i];
 		// . set this cluster level
 		// . right now will be CR_ERROR_CLUSTERDB or CR_OK...
 		char *level = &clusterLevels[i];
@@ -465,7 +464,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// sanity check
 		if ( *level == CR_UNINIT ) gbshutdownLogicError();
 		// and the adult bit, for cleaning the results
-		if ( familyFilter && Clusterdb::hasAdultContent ( crec ) ) {
+		if ( familyFilter && Clusterdb::hasAdultContent ( &clusterRecs[i] ) ) {
 			*level = CR_DIRTY;
 			continue;
 		}
@@ -483,7 +482,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		if(fakeIt)
 			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
-			h = Clusterdb::getSiteHash26 ( crec );
+			h = Clusterdb::getSiteHash26 ( &clusterRecs[i] );
 
 		// inc this count!
 		if ( fakeIt ) {
@@ -508,8 +507,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 
 	// debug
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
-		char *crec = (char *)&clusterRecs[i];
-		uint32_t siteHash26 = Clusterdb::getSiteHash26(crec);
+		uint32_t siteHash26 = Clusterdb::getSiteHash26(&clusterRecs[i]);
 		logf(LOG_DEBUG,"query: msg51: hit #%2d) sitehash26=0x%x "
 		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
 		     (int32_t)i,

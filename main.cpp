@@ -4465,7 +4465,7 @@ static void dumpClusterdb(const char *coll,
 			const char *dd = "";
 			if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 			// get the language string
-			languageToString ( Clusterdb::getLanguage((char*)&k),
+			languageToString ( Clusterdb::getLanguage(&k),
 					   strLanguage );
 			//uint32_t gid = getGroupId ( RDB_CLUSTERDB , &k );
 			uint32_t shardNum = getShardNum( RDB_CLUSTERDB , &k );
@@ -4478,11 +4478,11 @@ static void dumpClusterdb(const char *coll,
 			       "groupNum=%" PRIu32" "
 			       "shardNum=%" PRIu32"\n",
 			       k.n1, k.n0,
-			       Clusterdb::getDocId((char*)&k) ,
-			       Clusterdb::hasAdultContent((char*)&k) ,
-			       (int32_t)Clusterdb::getLanguage((char*)&k),
+			       Clusterdb::getDocId(&k) ,
+			       Clusterdb::hasAdultContent(&k) ,
+			       (int32_t)Clusterdb::getLanguage(&k),
 			       strLanguage,
-			       Clusterdb::getSiteHash26((char*)&k)    ,
+			       Clusterdb::getSiteHash26(&k)    ,
 			       dd ,
 			       (uint32_t)hh->m_hostId ,
 			       shardNum);

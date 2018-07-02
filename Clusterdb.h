@@ -66,26 +66,26 @@ public:
 	// NOTE: THESE NOW USE THE REAL CLUSTERDB REC
 	// docId occupies the most significant bytes of the key
 	// now docId occupies the bits after the first 23
-	static int64_t getDocId ( const void *k ) {
-		int64_t docId = (((const key96_t *)k)->n0) >> 35;
-		docId |= ( ((uint64_t)(((const key96_t *)k)->n1)) << 29 );
+	static int64_t getDocId ( const key96_t *k ) {
+		int64_t docId = (k->n0) >> 35;
+		docId |= ( ((uint64_t)(k->n1)) << 29 );
 		return docId;
 	}
 
-	static uint32_t getSiteHash26 ( const char *r ) {
-		return ((uint32_t)(((const key96_t*)r)->n0 >> 2) & 0x03FFFFFF);
+	static uint32_t getSiteHash26 ( const key96_t *r ) {
+		return (((uint64_t)r->n0) >> 2) & 0x03FFFFFF;
 	}
 
-	static uint32_t hasAdultContent ( const char *r ) {
-		return ((uint32_t)(((const key96_t*)r)->n0 >> 34) & 0x00000001);
+	static uint32_t hasAdultContent ( const key96_t *r ) {
+		return (((uint64_t)r->n0) >> 34) & 0x00000001;
 	}
 
-	static unsigned char getLanguage ( const char *r ) {
-		return ((unsigned char)(((const key96_t*)r)->n0 >> 28) & 0x0000003F);
+	static unsigned char getLanguage ( const key96_t *r ) {
+		return (((uint64_t)r->n0) >> 28) & 0x0000003F;
 	}
 
-	static char getFamilyFilter ( const char *r ) {
-		if ( (*(const int64_t *)r) & 0x0000000400000000LL ) return 1;
+	static char getFamilyFilter ( const key96_t *r ) {
+		if (((uint64_t)r->n0) & 0x0000000400000000LL ) return 1;
 		return 0;
 	}
 
