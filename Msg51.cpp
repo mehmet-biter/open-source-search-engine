@@ -385,7 +385,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	*rec = *(key96_t *)(list->getList());
 	// debug note
 	log(LOG_DEBUG,
-	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
+	    "query: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
 	    "rec.n1=%" PRIx32",%016" PRIx64" sitehash26=0x%" PRIx32".", (int64_t)docId, (int32_t)ci,
 	    rec->n1,rec->n0,
 	    Clusterdb::getSiteHash26((char *)rec));
@@ -524,7 +524,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	// show time
 	uint64_t took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 3 )
-		log(LOG_INFO,"build: Took %" PRId64" ms to do clustering.",took);
+		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering.",took);
 
 	// we are all done
 	return true;
