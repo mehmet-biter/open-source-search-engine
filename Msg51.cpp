@@ -352,19 +352,20 @@ void Msg51::gotClusterRec(Slot *slot) {
 
 	RdbList *list = &slot->m_list;
 
+	// this doubles as a ptr to a cluster rec
+	int32_t    ci = slot->m_ci;
+	int64_t docId = m_docIds[ci];
+	
 	// update m_errno if we had an error
 	if ( ! m_errno ) m_errno = g_errno;
 
 	if ( g_errno ) 
 		// print error
 		log(LOG_DEBUG,
-		    "query: Had error getting cluster info got docId=d: "
-		    "%s.",mstrerror(g_errno));
+		    "query: Had error getting cluster info for docId %ld: %s",
+		    docId,
+		    mstrerror(g_errno));
 
-	// this doubles as a ptr to a cluster rec
-	int32_t    ci = slot->m_ci;
-	// get docid
-	int64_t docId = m_docIds[ci];
 	// assume error!
 	m_clusterLevels[ci] = CR_ERROR_CLUSTERDB;
 
@@ -385,15 +386,16 @@ void Msg51::gotClusterRec(Slot *slot) {
 	*rec = *(key96_t *)(list->getList());
 	// debug note
 	log(LOG_DEBUG,
-	    "query: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
-	    "rec.n1=%" PRIx32",%016" PRIx64" sitehash26=0x%" PRIx32".", (int64_t)docId, (int32_t)ci,
+	    "query: had clusterdb SUCCESS for docid=%12" PRId64" ci=%3d "
+	    "rec.n1=%08x,%016" PRIx64" sitehash26=0x%x",
+	    (int64_t)docId, ci,
 	    rec->n1,rec->n0,
 	    Clusterdb::getSiteHash26((char *)rec));
 
 	// check for docid mismatch
 	int64_t docId2 = Clusterdb::getDocId ( rec );
 	if ( docId != docId2 ) {
-		logf(LOG_DEBUG,"query: docid mismatch in clusterdb.");
+		logf(LOG_DEBUG,"query: docid mismatch in clusterdb (%ld!=%ld)", docId, docId2);
 		return;
 	}
 
