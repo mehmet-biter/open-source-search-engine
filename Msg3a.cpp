@@ -838,8 +838,8 @@ bool Msg3a::mergeLists() {
 		     // if the clusterLevel was set to CR_*errorCode* then this key
 		     // will be 0, so in that case, it might have been a not found
 		     // or whatever, so let it through regardless
-		     ksPtr[maxj]->n0 != 0LL &&
-		     ksPtr[maxj]->n1 != 0  ) {
+		   (ksPtr[maxj]->n0 != 0LL || ksPtr[maxj]->n1 != 0))
+		{
 			// if family filter on and is adult...
 			if(m_msg39req.m_familyFilter &&
 			     Clusterdb::hasAdultContent(ksPtr[maxj]) )
