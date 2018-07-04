@@ -303,8 +303,6 @@ class Msg25 {
 	char         m_request[MSG25_MAX_REQUEST_SIZE];
 	int32_t      m_requestSize;
 
-	HashTableX   m_adBanTable;
-
 	// for setting <absScore2> or determining if a search results
 	// inlinkers also have the query terms. buzz.
 	char        *m_qbuf;

@@ -720,9 +720,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 
 	m_nextKey.setMin();
 
-	m_adBanTable.reset();
-	m_adBanTable.set(4,0,0,NULL,0,false,"adbans");
-
 	m_table.set (4,sizeof(NoteEntry *),0, NULL,0,false,"msg25tab");
 
 	m_url = url;
