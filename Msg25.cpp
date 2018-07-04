@@ -3491,66 +3491,47 @@ bool Links::set(bool useRelNoFollow,
 		// rel attribute
 		int32_t slen = 0;
 		const char *s = xml->getString ( i , "rel", &slen ) ;
+		if (useRelNoFollow && slen == 8 && strncasecmp(s, "nofollow", 8) == 0) {
+			// if this flag is set then::hasSpamLinks() will always
+			// return false. the site owner is taking the necessary
+			// precautions to prevent log spam.
+			m_hasRelNoFollow = true;
 
-		switch (slen) {
-			case 4:
-				if (strncasecmp(s, "icon", 4) == 0) {
-					continue;
-				}
-				break;
-			case 6:
-				if (strncasecmp(s, "search", 6) == 0) {
-					continue;
-				}
-				break;
-			case 7:
-				if (strncasecmp(s, "preload", 7) == 0 ||
-				    strncasecmp(s, "sidebar", 7) == 0) {
-					continue;
-				}
-				break;
-			case 8:
-				if (strncasecmp(s, "manifest", 8) == 0 ||
-				    strncasecmp(s, "pingback", 8) == 0 ||
-				    strncasecmp(s, "prefetch", 8) == 0) {
-					continue;
-				}
+			// . do not ignore it now, just flag it
+			// . fandango has its ContactUs with a nofollow!
+			flags |= LF_NOFOLLOW;
+		}
 
-				if (useRelNoFollow && strncasecmp(s, "nofollow", 8) == 0) {
-					// if this flag is set then::hasSpamLinks() will always
-					// return false. the site owner is taking the necessary
-					// precautions to prevent log spam.
-					m_hasRelNoFollow = true;
+		// only allow specific link rel (whitelist)
+		// http://microformats.org/wiki/existing-rel-values#HTML5_link_type_extensions
+		if (id == TAG_LINK) {
+			bool allowed = false;
 
-					// . do not ignore it now, just flag it
-					// . fandango has its ContactUs with a nofollow!
-					flags |= LF_NOFOLLOW;
-				}
-				break;
-			case 9:
-				if (strncasecmp(s, "prerender", 9) == 0 ||
-				    strncasecmp(s, "shortlink", 9) == 0) {
-					continue;
-				}
-				break;
-			case 10:
-				if (strncasecmp(s, "preconnect", 10) == 0 ||
-				    strncasecmp(s, "stylesheet", 10) == 0) {
-					continue;
-				}
-				break;
-			case 12:
-				if (strncasecmp(s, "dns-prefetch", 12) == 0) {
-					continue;
-				}
-				break;
-			case 13:
-				if (strncasecmp(s, "modulepreload", 13) == 0) {
-					continue;
-				}
-				break;
-			default:
-				break;
+			switch (slen) {
+				case 4:
+					if (strncasecmp(s, "feed", 4) == 0 ||
+						strncasecmp(s, "home", 4) == 0) {
+						allowed = true;
+					}
+					break;
+				case 7:
+					if (strncasecmp(s, "sitemap", 7) == 0) {
+						allowed = true;
+					}
+					break;
+				case 9:
+					if (strncasecmp(s, "alternate", 9) == 0 ||
+						strncasecmp(s, "canonical", 9) == 0) {
+						allowed = true;
+					}
+					break;
+				default:
+					break;
+			}
+
+			if (!allowed) {
+				continue;
+			}
 		}
 
 		// get the href field of this anchor tag
