@@ -4420,17 +4420,14 @@ int32_t Links::getLinkText2(int32_t i,
 	}
 
 	// what delimeter are we using? this only applies to rss/atom feeds.
-	//char *del = NULL;
 	char del[16];
 	int32_t dlen = 0;
 	int32_t rss = m_xml->isRSSFeed();
 	if ( rss == 1 ) {
-		//del = "item";
 		gbmemcpy(del, "item\0", 5);
 		dlen = 4;
 	}
 	else if ( rss == 2 ) {
-		//del = "entry";
 		gbmemcpy(del, "entry\0", 6);
 		dlen = 5;
 	}
