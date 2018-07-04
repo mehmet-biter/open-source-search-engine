@@ -3466,9 +3466,6 @@ bool Links::set(bool useRelNoFollow,
 		// . atom feeds have a <link href=""> field in them
 		int32_t id = xml->getNodeId ( i );
 
-		int32_t  slen;
-		char *s ;
-
 		// reset
 		linkflags_t flags = 0;
 
@@ -3494,21 +3491,69 @@ bool Links::set(bool useRelNoFollow,
 			continue;
 		}
 
-		// . if it has rel=nofollow then ignore it
-		// . for old titleRecs we should skip this part so that the
-		//   link: terms are indexed/hashed the same way in XmlDoc.cpp
-		if ( useRelNoFollow ) {
-			s = xml->getString ( i , "rel", &slen ) ;
+		// rel attribute
+		int32_t slen = 0;
+		const char *s = xml->getString ( i , "rel", &slen ) ;
 
-			if ( slen == 8 && strncasecmp ( s,"nofollow", 8 ) == 0 ) {
-				// if this flag is set then::hasSpamLinks() will always
-				// return false. the site owner is taking the necessary
-				// precautions to prevent log spam.
-				m_hasRelNoFollow = true;
-				// . do not ignore it now, just flag it
-				// . fandango has its ContactUs with a nofollow!
-				flags |= LF_NOFOLLOW;
-			}
+		switch (slen) {
+			case 4:
+				if (strncasecmp(s, "icon", 4) == 0) {
+					continue;
+				}
+				break;
+			case 6:
+				if (strncasecmp(s, "search", 6) == 0) {
+					continue;
+				}
+				break;
+			case 7:
+				if (strncasecmp(s, "preload", 7) == 0 ||
+				    strncasecmp(s, "sidebar", 7) == 0) {
+					continue;
+				}
+				break;
+			case 8:
+				if (strncasecmp(s, "manifest", 8) == 0 ||
+				    strncasecmp(s, "pingback", 8) == 0 ||
+				    strncasecmp(s, "prefetch", 8) == 0) {
+					continue;
+				}
+
+				if (useRelNoFollow && strncasecmp(s, "nofollow", 8) == 0) {
+					// if this flag is set then::hasSpamLinks() will always
+					// return false. the site owner is taking the necessary
+					// precautions to prevent log spam.
+					m_hasRelNoFollow = true;
+
+					// . do not ignore it now, just flag it
+					// . fandango has its ContactUs with a nofollow!
+					flags |= LF_NOFOLLOW;
+				}
+				break;
+			case 9:
+				if (strncasecmp(s, "prerender", 9) == 0 ||
+				    strncasecmp(s, "shortlink", 9) == 0) {
+					continue;
+				}
+				break;
+			case 10:
+				if (strncasecmp(s, "preconnect", 10) == 0 ||
+				    strncasecmp(s, "stylesheet", 10) == 0) {
+					continue;
+				}
+				break;
+			case 12:
+				if (strncasecmp(s, "dns-prefetch", 12) == 0) {
+					continue;
+				}
+				break;
+			case 13:
+				if (strncasecmp(s, "modulepreload", 13) == 0) {
+					continue;
+				}
+				break;
+			default:
+				break;
 		}
 
 		// get the href field of this anchor tag
