@@ -7618,6 +7618,17 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "clusterdb quick cache size";
+	m->m_desc  = "The size of the 'quick' clustredbb cache";
+	m->m_cgi   = "dpcscq";
+	simple_m_set(Conf,m_clusterdbQuickCacheMem);
+	m->m_def   = "200000";
+	m->m_units = "bytes";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "clusterdb max tree mem";
 	m->m_desc  = "Clusterdb caches small records for site clustering and deduping.";
 	m->m_cgi   = "mcmt";

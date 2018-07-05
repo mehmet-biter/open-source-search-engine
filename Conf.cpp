@@ -56,6 +56,7 @@ Conf::Conf ( ) {
 	m_dnsCacheMaxAge = 0;
 	m_dnsCacheSize = 0;
 	m_dnsMaxCacheMem = 0;
+	m_clusterdbQuickCacheMem = 0;
 	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(m_rnsIps, 0, sizeof(m_rnsIps));

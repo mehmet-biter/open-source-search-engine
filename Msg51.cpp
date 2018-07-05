@@ -15,6 +15,7 @@
 #include "Titledb.h"
 #include "Collectiondb.h"
 #include "UdpServer.h"
+#include "Conf.h"
 
 
 // how many Msg0 requests can we launch at the same time?
@@ -405,9 +406,9 @@ void Msg51::gotClusterRec(Slot *slot) {
 	RdbCacheLock rcl(s_clusterdbQuickCache);
 	// . init the quick cache
 	if(!s_cacheInit &&
-		s_clusterdbQuickCache.init(200*1024,         // maxMem
+		s_clusterdbQuickCache.init(g_conf.m_clusterdbQuickCacheMem,
 					   sizeof(key96_t),  // fixedDataSize (clusterdb rec)
-					   10000,            // max recs
+					   g_conf.m_clusterdbQuickCacheMem/sizeof(key96_t),
 					   "clusterdbQuickCache" ,
 					   false,            // load from disk?
 					   sizeof(key96_t),  // cache key size
