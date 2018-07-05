@@ -408,7 +408,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	if(!s_cacheInit &&
 		s_clusterdbQuickCache.init(g_conf.m_clusterdbQuickCacheMem,
 					   sizeof(key96_t),  // fixedDataSize (clusterdb rec)
-					   g_conf.m_clusterdbQuickCacheMem/sizeof(key96_t),
+					   g_conf.m_clusterdbQuickCacheMem/sizeof(key96_t)/2,
 					   "clusterdbQuickCache" ,
 					   false,            // load from disk?
 					   sizeof(key96_t),  // cache key size
