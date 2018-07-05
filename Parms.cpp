@@ -7619,7 +7619,9 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "clusterdb quick cache size";
-	m->m_desc  = "The size of the 'quick' clustredbb cache";
+	m->m_desc  = "The size of the 'quick' clusterdbb cache. This cache is primarly meant to avoid repetetive lookups "
+	             "when going to the next tier in Msg3a and re-requesting cluster "
+	             "recs for the same docids we did a second ago";
 	m->m_cgi   = "dpcscq";
 	simple_m_set(Conf,m_clusterdbQuickCacheMem);
 	m->m_def   = "200000";
