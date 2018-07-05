@@ -201,30 +201,26 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
 	// . this cache is primarly meant to avoid repetetive lookups
 	//   when going to the next tier in Msg3a and re-requesting cluster
 	//   recs for the same docids we did a second ago
-	RdbCache *c = &s_clusterdbQuickCache;
-	if ( ! s_cacheInit ) c = NULL;
-	int32_t      crecSize;
-	char     *crecPtr = NULL;
-	key96_t     ckey = (key96_t)m_docIds[m_nexti];
-	if ( c ) {
-		RdbCacheLock rcl(*c);
-		bool found = c->getRecord ( m_collnum    ,
-				       ckey      , // cache key
-				       &crecPtr  , // pointer to it
-				       &crecSize ,
-				       false     , // do copy?
-				       3600      , // max age in secs
-				       true      , // inc counts?
-				       NULL      );// cachedTime
+	if(s_cacheInit) {
+		int32_t   crecSize;
+		char     *crecPtr = NULL;
+		key96_t   ckey = (key96_t)m_docIds[m_nexti];
+		
+		RdbCacheLock rcl(s_clusterdbQuickCache);
+		bool found = s_clusterdbQuickCache.getRecord(m_collnum,
+							     ckey      , // cache key
+							     &crecPtr  , // pointer to it
+							     &crecSize,
+							     false     , // do copy?
+							     3600      , // max age in secs
+							     true      , // inc counts?
+							     NULL      );// cachedTime
 		if ( found ) {
-			// sanity check
 			if ( crecSize != sizeof(key96_t) ) gbshutdownLogicError();
 			m_clusterRecs[m_nexti] = *(key96_t *)crecPtr;
 			// it is no longer CR_UNINIT, we got the rec now
 			m_clusterLevels[m_nexti] = CR_GOT_REC;
-			// debug msg
-			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
-			//     ckey.n0,m_clusterRecs[m_nexti].n0);
+			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64, ckey.n0,m_clusterRecs[m_nexti].n0);
 			m_nexti++;
 			goto sendLoop;
 		}
