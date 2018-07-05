@@ -4,6 +4,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Log.h"
+#include "fctypes.h"
 #include <inttypes.h>
 #include <unordered_map>
 #include <deque>
