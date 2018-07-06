@@ -378,7 +378,7 @@ bool Query::setQTerms() {
 			int64_t phraseTermId = m_qwords[i].m_bigramId&TERMID_MASK;
 			int64_t wordTermId = m_qwords[i].m_wordId&TERMID_MASK;
 			logTrace(g_conf.m_logTraceQuery, "    m_bigramId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_bigramLen=%d", m_qwords[i].m_bigramId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_bigramLen);
-			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d, fieldCode=%s, m_prefixHash=0x%lx", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd, m_qwords[i].m_fieldCode?getFieldCodeName(m_qwords[i].m_fieldCode):"",m_qwords[i].m_prefixHash);
 
 		}
 	}
@@ -1697,22 +1697,25 @@ bool Query::setQWords ( char boolFlag ,
 			int32_t tlen = 0;
 			for ( int32_t k = j ; k <= i ; k++ )
 				tlen += m_tr[k].token_len;
-			// set field name to the compound name if it is
-			field     = m_tr[j].token_start;
-			fieldLen  = tlen;
-			if(j == i)
-				fieldSign = wordSign;
-			else
-				fieldSign = m_qwords[j].m_wordSign;
-			//FIXME: TokenizerResult does not promise that tokens that are adjacent in the source string also are adjacent in memory
-			// (but since Query only does phase-1 tokenization and the tokenizer currently only does tricky things in phase 2 it currently holds)
+			
+			//is it recognized field name,like "title" or "url"?
+			fieldCode = getFieldCode (m_tr[j].token_start, tlen);
+			if(fieldCode) {
+				//Previously this was done in all cases to support searching for sub-sub-sub...fields in json/xml
+				//The downside was that copy-paste of colon-separated words or artist names like "L:Ron:Harald" didn't work.
+				
+				// set field name to the compound name if it is
+				field     = m_tr[j].token_start;
+				fieldLen  = tlen;
+				if(j == i)
+					fieldSign = wordSign;
+				else
+					fieldSign = m_qwords[j].m_wordSign;
+				//FIXME: TokenizerResult does not promise that tokens that are adjacent in the source string also are adjacent in memory
+				// (but since Query only does phase-1 tokenization and the tokenizer currently only does tricky things in phase 2 it currently holds)
 
-			// . is it recognized field name,like "title" or "url"?
-			fieldCode = getFieldCode (field, fieldLen);
-
-			// if so, it does NOT get its own QueryWord,
-			// but its sign can be inherited by its members
-			if ( fieldCode ) {
+				// if so, it does NOT get its own QueryWord,
+				// but its sign can be inherited by its members
 				for ( int32_t k = j ; k <= i ; k++ )
 					m_qwords[k].m_ignoreWord = IGNORE_FIELDNAME;
 				continue;
