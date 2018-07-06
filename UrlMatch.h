@@ -16,8 +16,7 @@ enum urlmatchtype_t {
 	url_match_pathparam,
 	url_match_pathpartial,
 	url_match_queryparam,
-	url_match_regex,
-	url_match_tld
+	url_match_regex
 };
 
 struct urlmatchstr_t {
@@ -58,35 +57,28 @@ struct urlmatchparam_t {
 };
 
 struct urlmatchregex_t {
-	urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain = "");
+	urlmatchregex_t(const std::string &regexStr, const GbRegex &regex);
 
 	GbRegex m_regex;
 	std::string m_regexStr;
-	std::string m_domain;
-};
-
-struct urlmatchtld_t {
-	urlmatchtld_t(const std::string &tlds);
-
-	std::string m_tldsStr;
-	std::vector<std::string> m_tlds;
 };
 
 class Url;
 
 class UrlMatch {
 public:
-	UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr);
-	UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain);
-	UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost);
-	UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam);
-	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex);
-	UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld);
+	UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex, bool m_invert);
 
 	bool match(const Url &url, const UrlParser &urlParser) const;
 	void logMatch(const Url &url) const;
 
 private:
+	bool m_invert;
+
 	urlmatchtype_t m_type;
 
 	std::shared_ptr<urlmatchstr_t> m_str;
@@ -95,7 +87,6 @@ private:
 	std::shared_ptr<urlmatchhost_t> m_host;
 	std::shared_ptr<urlmatchparam_t> m_param;
 	std::shared_ptr<urlmatchregex_t> m_regex;
-	std::shared_ptr<urlmatchtld_t> m_tld;
 };
 
 #endif //GB_URLMATCH_H_

@@ -18,13 +18,23 @@ UrlMatchList g_urlWhiteList("urlwhitelist.txt");
 UrlMatchList g_urlProxyList("urlproxylist.txt");
 UrlMatchList g_urlRetryProxyList("urlretryproxylist.txt");
 
-typedef std::vector<UrlMatch> urlmatchlist_t;
-typedef spp::sparse_hash_map<std::string, urlmatchlist_t> urlmatchlist_map_t;
+typedef std::vector<UrlMatch> urlmatches_t;
+typedef std::vector<urlmatches_t> urlmatcheslist_t;
+typedef spp::sparse_hash_map<std::string, urlmatcheslist_t> urlmatchlist_map_t;
+
+struct UrlMatchCriterias {
+	bool m_hasDomain;
+	std::string m_domain;
+
+	urlmatcheslist_t m_urlMatches;
+};
 
 struct UrlMatchListItem {
 	spp::sparse_hash_set<std::string> m_domainMatches;
-	urlmatchlist_map_t m_listMatches;
-	urlmatchlist_t m_urlMatches;
+	spp::sparse_hash_set<std::string> m_tldMatches;
+
+	urlmatchlist_map_t m_domainUrlMatchesList;
+	urlmatcheslist_t m_urlMatchesList;
 };
 
 UrlMatchList::UrlMatchList(const char *filename)
@@ -76,77 +86,156 @@ void UrlMatchList::reload(void *state) {
 	urlMatchList->m_loading = false;
 }
 
-static bool parseDomain(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3, const std::string &col4) {
-	// verify that col2 is actually a domain
-	Url url;
-	url.set(col2.c_str());
-
-	if (static_cast<size_t>(url.getDomainLen()) != col2.length()) {
+static bool parseMatchParam(urlmatches_t *urlMatches, urlmatchtype_t type, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() < 2 || tokens.size() > 3) {
 		return false;
 	}
 
-	if (col3.empty() && col4.empty()) {
-		(*urlMatchList)->m_domainMatches.insert(col2);
+	const std::string &name = tokens[1];
+	std::string value;
+	if (tokens.size() == 3) {
+		value = tokens[2];
+	}
+
+	urlMatches->emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(type, name, value)), invert);
+	return true;
+}
+
+
+static bool parseMatchStr(urlmatches_t *urlMatches, urlmatchtype_t type, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() != 2) {
+		return false;
+	}
+
+	const std::string &str = tokens[1];
+	urlMatches->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(type, str)), invert);
+	return true;
+}
+
+static bool parseDomain(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() < 2 || tokens.size() > 4) {
+		return false;
+	}
+
+	const std::string &domain = tokens[1];
+
+	// verify that col2 is actually a domain
+	Url url;
+	url.set(domain.c_str());
+
+	if (static_cast<size_t>(url.getDomainLen()) != domain.length()) {
+		return false;
+	}
+
+	// only domain is configured
+	if (tokens.size() == 2) {
+//		(*urlMatchList)->m_domainMatches.insert(domain);
 		return true;
 	}
 
 	std::string allowStr;
-	if (!col3.empty()) {
-		if (starts_with(col3.c_str(), "allow=")) {
-			allowStr.append(col3, 6, std::string::npos);
-		}
-	}
-
 	urlmatchdomain_t::pathcriteria_t pathcriteria = urlmatchdomain_t::pathcriteria_allow_all;
-	if (!col4.empty()) {
-		if (col4.compare("allowindexpage") == 0) {
-			pathcriteria = urlmatchdomain_t::pathcriteria_allow_index_only;
-		} else if (col4.compare("allowrootpages") == 0) {
-			pathcriteria = urlmatchdomain_t::pathcriteria_allow_rootpages_only;
+	for (unsigned i = 2; i < tokens.size(); ++i) {
+		const std::string &token = tokens[i];
+		if (starts_with(token.c_str(), "allow=")) {
+			allowStr.append(token, 6, std::string::npos);
+			continue;
 		}
+
+		if (token.compare("allowindexpage") == 0) {
+			pathcriteria = urlmatchdomain_t::pathcriteria_allow_index_only;
+			continue;
+		} else if (token.compare("allowrootpages") == 0) {
+			pathcriteria = urlmatchdomain_t::pathcriteria_allow_rootpages_only;
+			continue;
+		}
+
+		// unknown token
+		return false;
 	}
 
-	auto matcher = std::shared_ptr<urlmatchdomain_t>(new urlmatchdomain_t(col2, allowStr, pathcriteria));
-	auto &list = (*urlMatchList)->m_listMatches[matcher->m_domain];
-	list.emplace_back(matcher);
+	auto matcher = std::shared_ptr<urlmatchdomain_t>(new urlmatchdomain_t(domain, allowStr, pathcriteria));
+//	auto &list = (*urlMatchList)->m_domainUrlMatchesList[matcher->m_domain];
+//	list.emplace_back(matcher, invert);
+
+	urlMatches->emplace_back(matcher, invert);
 
 	return true;
 }
 
-static void parseHost(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3) {
-	auto matcher = std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3));
+static bool parseHost(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() < 2 || tokens.size() > 3) {
+		return false;
+	}
+
+	const std::string &host = tokens[1];
+	std::string path;
+	if (tokens.size() == 3) {
+		path = tokens[2];
+	}
+
+	auto matcher = std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(host, path));
 
 	Url url;
 	url.set(matcher->m_host.c_str());
 
-	auto &list = (*urlMatchList)->m_listMatches[std::string(url.getDomain(), url.getDomainLen())];
-	list.emplace_back(matcher);
+//	auto &list = (*urlMatchList)->m_domainUrlMatchesList[std::string(url.getDomain(), url.getDomainLen())];
+//	list.emplace_back(matcher, invert);
+
+	urlMatches->emplace_back(matcher, invert);
+
+	return true;
 }
 
-static void parseRegex(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3) {
-	// check for wildcard domain
-	std::string domain(col2);
-	if (domain.length() == 1 && domain[0] == '*') {
-		domain.clear();
+static bool parseHostSuffix(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() != 2) {
+		return false;
 	}
 
-	auto matcher = std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), domain));
-	if (domain.empty()) {
-		(*urlMatchList)->m_urlMatches.emplace_back(matcher);
-	} else {
-		auto &list = (*urlMatchList)->m_listMatches[matcher->m_domain];
-		list.emplace_back(matcher);
-	}
-}
-
-static void parseHostSuffix(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2) {
-	auto matcher = std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_hostsuffix, col2));
+	const std::string &host = tokens[1];
+	auto matcher = std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_hostsuffix, host));
 
 	Url url;
 	url.set(matcher->m_str.c_str());
 
-	auto &list = (*urlMatchList)->m_listMatches[std::string(url.getDomain(), url.getDomainLen())];
-	list.emplace_back(matcher);
+//	auto &list = (*urlMatchList)->m_domainUrlMatchesList[std::string(url.getDomain(), url.getDomainLen())];
+//	list.emplace_back(matcher, invert);
+
+	urlMatches->emplace_back(matcher, invert);
+
+	return true;
+}
+
+static bool parseRegex(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() != 2) {
+		return false;
+	}
+
+	const std::string &regex = tokens[1];
+	auto matcher = std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(regex, GbRegex(regex.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE)));
+	urlMatches->emplace_back(matcher, invert);
+
+	return true;
+}
+
+static bool parseTLD(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
+	// validate
+	if (tokens.size() != 2) {
+		return false;
+	}
+
+	auto tlds = split(tokens[1], ',');
+	for (const auto &tld : tlds) {
+//		(*urlMatchList)->m_tldMatches.insert(tld);
+	}
+
+	return true;
 }
 
 bool UrlMatchList::load() {
@@ -204,6 +293,7 @@ bool UrlMatchList::load() {
 	for (const auto &filePath : filePaths) {
 		log(LOG_INFO, "Loading '%s' for UrlMatchList", filePath.c_str());
 
+		bool foundInvalid = false;
 		int count = 0;
 		std::ifstream file(filePath.c_str());
 		std::string line;
@@ -213,123 +303,150 @@ bool UrlMatchList::load() {
 				continue;
 			}
 
-			// look for first space or tab
-			auto firstColEnd = line.find_first_of(" \t");
-			size_t secondCol = line.find_first_not_of(" \t", firstColEnd);
+			std::replace(line.begin(), line.end(), '\t', ' ');
 
-			if (firstColEnd == std::string::npos || secondCol == std::string::npos) {
-				// invalid format
-				continue;
-			}
+			auto criterias = split(line, " AND ");
 
-			size_t secondColEnd = line.find_first_of(" \t", secondCol);
+			urlmatches_t urlMatches;
+			for (auto criteria : criterias) {
+				auto tokens = split(criteria, ' ');
+				tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const std::string &s) { return s.empty(); }), tokens.end());
 
-			size_t thirdCol = line.find_first_not_of(" \t", secondColEnd);
-			size_t thirdColEnd = line.find_first_of(" \t", thirdCol);
+				bool invert = false;
+				if (tokens[0] == "NOT") {
+					invert = true;
+					tokens.erase(tokens.begin());
+				}
 
-			size_t fourthCol = line.find_first_not_of(" \t", thirdColEnd);
-			size_t fourthColEnd = line.find_first_of(" \t", fourthCol);
+				const std::string &type = tokens[0];
 
-			std::string col2(line, secondCol, secondColEnd - secondCol);
-			std::string col3;
-			if (thirdCol != std::string::npos) {
-				col3 = std::string(line, thirdCol, thirdColEnd - thirdCol);
-			}
-
-			std::string col4;
-			if (fourthCol != std::string::npos) {
-				col4 = std::string(line, fourthCol, fourthColEnd - fourthCol);
-			}
-
-			switch (line[0]) {
-				case 'd':
-					// domain
-					if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
-						if (!parseDomain(&tmpUrlMatchList, col2, col3, col4)) {
-							logError("Invalid line found. Ignoring line='%s'", line.c_str());
-							// catch domain parsing errors here
-							gbshutdownLogicError();
+				switch (type[0]) {
+					case 'd':
+						// domain
+						if (type.compare("domain") == 0) {
+							if (!parseDomain(&urlMatches, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
 							continue;
 						}
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						break;
+					case 'f':
+						// file
+						if (type.compare("file") == 0) {
+							if (!parseMatchStr(&urlMatches, url_match_file, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
+							continue;
+						}
+						break;
+					case 'h':
+						// host
+						if (type.compare("host") == 0) {
+							if (!parseHost(&urlMatches, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else if (type.compare("hostsuffix") == 0) {
+							if (!parseHostSuffix(&urlMatches, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
+							continue;
+						}
+						break;
+					case 'p':
+						if (type.compare("param") == 0) {
+							// query param
+							if (!parseMatchParam(&urlMatches, url_match_queryparam, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else if (type.compare("path") == 0) {
+							// path
+							if (!parseMatchStr(&urlMatches, url_match_path, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else if (type.compare("pathparam") == 0) {
+							// path param
+							if (!parseMatchParam(&urlMatches, url_match_pathparam, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else if (type.compare("pathpartial") == 0) {
+							// pathpartial
+							if (!parseMatchStr(&urlMatches, url_match_pathpartial, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
+							continue;
+						}
+						break;
+					case 'r':
+						// regex
+						if (type.compare("regex") == 0) {
+							if (!parseRegex(&urlMatches, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
+							continue;
+						}
+						break;
+					case 't':
+						// tld
+						if (type.compare("tld") == 0) {
+							if (!parseTLD(&urlMatches, tokens, invert)) {
+								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
+								foundInvalid = true;
+								continue;
+							}
+						} else {
+							logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+							foundInvalid = true;
+							continue;
+						}
+						break;
+					default:
+						logError("Invalid type '%s' found. Ignoring line='%s'", type.c_str(), line.c_str());
+						foundInvalid = true;
 						continue;
-					}
-					break;
-				case 'f':
-					// file
-					if (firstColEnd == 4 && memcmp(line.data(), "file", 4) == 0) {
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				case 'h':
-					// host
-					if (firstColEnd == 4 && memcmp(line.data(), "host", 4) == 0) {
-						parseHost(&tmpUrlMatchList, col2, col3);
-					} else if (firstColEnd == 10 && memcmp(line.data(), "hostsuffix", 10) == 0) {
-						parseHostSuffix(&tmpUrlMatchList, col2);
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				case 'p':
-					if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
-						// query param
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_queryparam, col2, col3)));
-					} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
-						// path
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
-					} else if (firstColEnd == 9 && memcmp(line.data(), "pathparam", 9) == 0) {
-						// path param
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_pathparam, col2, col3)));
-					} else if (firstColEnd == 11 && memcmp(line.data(), "pathpartial", 11) == 0) {
-						// path
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_pathpartial, col2)));
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				case 'q':
-					if (firstColEnd == 10 && memcmp(line.data(), "queryparam", 10) == 0) {
-						// query param
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(url_match_queryparam, col2, col3)));
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				case 'r':
-					// regex
-					if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) == 0 && !col3.empty()) {
-						parseRegex(&tmpUrlMatchList, col2, col3);
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				case 't':
-					// tld
-					if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) == 0) {
-						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
-					} else {
-						logError("Invalid line found. Ignoring line='%s'", line.c_str());
-						continue;
-					}
-					break;
-				default:
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-			}
+				}
 
-			logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
-			++count;
+				logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
+				++count;
+			}
 		}
 
+		if (foundInvalid) {
+			/// @todo ALC log to eventlog
+
+		}
 		loadedFile = true;
 		log(LOG_INFO, "Loaded '%s' with %d entries for UrlMatchList", filePath.c_str(), count);
 
@@ -344,14 +461,31 @@ bool UrlMatchList::load() {
 	return loadedFile;
 }
 
+static bool matchUrlMatches(const urlmatches_t &urlMatches, const Url &url, const UrlParser &urlParser) {
+	bool matchAll = true;
+	for (auto const &urlMatch : urlMatches) {
+		if (!urlMatch.match(url, urlParser)) {
+			matchAll = false;
+			break;
+		}
+
+		if (g_conf.m_logTraceUrlMatchList) {
+			urlMatch.logMatch(url);
+		}
+	}
+
+	if (matchAll) {
+		return true;
+	}
+
+	return false;
+}
+
 static bool matchList(const urlmatchlist_map_t &matcher, const std::string &key, const Url &url, const UrlParser &urlParser) {
 	auto it = matcher.find(key);
 	if (it != matcher.end()) {
-		for (auto urlMatch : it->second) {
-			if (urlMatch.match(url, urlParser)) {
-				if (g_conf.m_logTraceUrlMatchList) {
-					urlMatch.logMatch(url);
-				}
+		for (auto urlMatches : it->second) {
+			if (matchUrlMatches(urlMatches, url, urlParser)) {
 				return true;
 			}
 		}
@@ -369,19 +503,27 @@ bool UrlMatchList::isUrlMatched(const Url &url) {
 
 	// simple domain match
 	if (urlMatchList->m_domainMatches.count(domain) > 0) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Url match criteria domain='%s' matched url '%s'", domain.c_str(), url.getUrl());
 		return true;
+	}
+
+	// simple tld match
+	auto pos = domain.find_last_of('.');
+	if (pos != std::string::npos) {
+		std::string tld = domain.substr(pos + 1);
+		if (urlMatchList->m_tldMatches.count(tld) > 0) {
+			logTrace(g_conf.m_logTraceUrlMatchList, "Url match criteria tld='%s' matched url '%s'", tld.c_str(), url.getUrl());
+			return true;
+		}
 	}
 
 	// check urlmatches using domain as key
-	if (matchList(urlMatchList->m_listMatches, domain, url, urlParser)) {
+	if (matchList(urlMatchList->m_domainUrlMatchesList, domain, url, urlParser)) {
 		return true;
 	}
 
-	for (auto const &urlMatch : urlMatchList->m_urlMatches) {
-		if (urlMatch.match(url, urlParser)) {
-			if (g_conf.m_logTraceUrlMatchList) {
-				urlMatch.logMatch(url);
-			}
+	for (auto const &urlMatches : urlMatchList->m_urlMatchesList) {
+		if (matchUrlMatches(urlMatches, url, urlParser)) {
 			return true;
 		}
 	}

@@ -35,45 +35,39 @@ urlmatchparam_t::urlmatchparam_t(urlmatchtype_t type, const std::string &name, c
 	, m_value(value) {
 }
 
-urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
+urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &regex)
 	: m_regex(regex)
-	, m_regexStr(regexStr)
-	, m_domain(domain) {
+	, m_regexStr(regexStr) {
 }
 
-urlmatchtld_t::urlmatchtld_t(const std::string &tlds)
-	: m_tldsStr(tlds)
-	, m_tlds(split(tlds, ',')) {
-}
-
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr)
-	: m_type(urlmatchstr->m_type)
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr, bool invert)
+	: m_invert(invert)
+	, m_type(urlmatchstr->m_type)
 	, m_str(urlmatchstr){
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
-	: m_type(url_match_domain)
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain, bool invert)
+	: m_invert(invert)
+	, m_type(url_match_domain)
 	, m_domain(urlmatchdomain) {
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
-	: m_type(url_match_host)
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost, bool invert)
+	: m_invert(invert)
+	, m_type(url_match_host)
 	, m_host(urlmatchhost) {
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam)
-	: m_type(urlmatchparam->m_type)
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam, bool invert)
+	: m_invert(invert)
+	, m_type(urlmatchparam->m_type)
 	, m_param(urlmatchparam) {
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex)
-	: m_type(url_match_regex)
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex, bool invert)
+	: m_invert(invert)
+	, m_type(url_match_regex)
 	, m_regex(urlmatchregex) {
-}
-
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld)
-	: m_type(url_match_tld)
-	, m_tld(urlmatchtld) {
 }
 
 static bool matchString(const std::string &needle, const char *haystack, int32_t haystackLen) {
@@ -176,23 +170,7 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 		case url_match_pathpartial:
 			return (strncasestr(url.getPath(), m_str->m_str.c_str(), url.getPathLen()) != nullptr);
 		case url_match_regex:
-			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() && matchString(m_regex->m_domain, url.getDomain(), url.getDomainLen()))) {
-				return m_regex->m_regex.match(url.getUrl());
-			}
-			break;
-		case url_match_tld:
-			if (!m_tld->m_tlds.empty()) {
-				const char *tld = url.getTLD();
-				size_t tldLen = static_cast<size_t>(url.getTLDLen());
-				const char *dotPos = static_cast<const char *>(memchr(tld, '.', tldLen));
-				if (dotPos) {
-					tldLen -= (dotPos - tld + 1);
-					tld = dotPos + 1;
-				}
-
-				return (std::find(m_tld->m_tlds.cbegin(), m_tld->m_tlds.cend(), std::string(tld, tldLen)) != m_tld->m_tlds.cend());
-			}
-			break;
+			return m_regex->m_regex.match(url.getUrl());
 	}
 
 	return false;
@@ -239,9 +217,6 @@ void UrlMatch::logMatch(const Url &url) const {
 			type = "regex";
 			value = m_regex->m_regexStr.c_str();
 			break;
-		case url_match_tld:
-			type = "tld";
-			value = m_tld->m_tldsStr.c_str();
 	}
 
 	logTrace(g_conf.m_logTraceUrlMatchList, "Url match criteria %s='%s' matched url '%s'", type, value, url.getUrl());
