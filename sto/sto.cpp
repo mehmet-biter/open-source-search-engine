@@ -52,7 +52,8 @@ const sto::WordForm *sto::LexicalEntry::find_base_wordform() const {
 					return e;
 				break;
 			}
-			case part_of_speech_t::commonNoun: {
+			case part_of_speech_t::commonNoun:
+			case part_of_speech_t::properNoun: {
 				if((e->has_attribute(word_form_attribute_t::definiteness_indefinite) || e->has_attribute(word_form_attribute_t::definiteness_unspecified)) &&
 				   (e->has_attribute(word_form_attribute_t::grammaticalNumber_singular) || e->has_attribute(word_form_attribute_t::grammaticalNumber_unspecified)) &&
 				   (e->has_attribute(word_form_attribute_t::case_unspecified) || e->has_attribute(word_form_attribute_t::case_nominativeCase)))
