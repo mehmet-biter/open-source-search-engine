@@ -2242,12 +2242,23 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	if ( nw > 0 ) m_dist = wposvec[nw-1] + 100;
 
 	if(m_langId==langDanish) {
-		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		//we only have a lexicon for Danish so far for this test
+		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		for(const auto &e : candidate_lemma_words) {
 			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
 			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
 			auto le = lemma_lexicon.lookup(e);
+			if(!le) {
+				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
+				char lowercase_word[128];
+				if(e.size()<sizeof(lowercase_word)) {
+					size_t sz = to_lower_utf8(lowercase_word,lowercase_word+sizeof(lowercase_word), e.data(), e.data()+e.size());
+					lowercase_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),lowercase_word,e.size())!=0) {
+						le = lemma_lexicon.lookup(lowercase_word);
+					}
+				}
+			}
 			if(!le)
 				continue; //unknown word
 			logTrace(g_conf.m_logTraceTokenIndexing,"lexicalentry found for for lemma: %s", e.c_str());
