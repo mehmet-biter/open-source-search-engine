@@ -2,7 +2,6 @@
 #include "hash.h"
 #include "XmlDoc.h"
 #include "Conf.h"
-#include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
 #include "Collectiondb.h"
 #include "iana_charset.h"
