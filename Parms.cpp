@@ -7655,6 +7655,19 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "clusterdb quick cache size";
+	m->m_desc  = "The size of the 'quick' clusterdbb cache. This cache is primarly meant to avoid repetetive lookups "
+	             "when going to the next tier in Msg3a and re-requesting cluster "
+	             "recs for the same docids we did a second ago";
+	m->m_cgi   = "dpcscq";
+	simple_m_set(Conf,m_clusterdbQuickCacheMem);
+	m->m_def   = "200000";
+	m->m_units = "bytes";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "clusterdb max tree mem";
 	m->m_desc  = "Clusterdb caches small records for site clustering and deduping.";
 	m->m_cgi   = "mcmt";

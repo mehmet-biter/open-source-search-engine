@@ -1554,7 +1554,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 
 		case RDB_CLUSTERDB:
 		case RDB2_CLUSTERDB2: {
-			uint64_t d = Clusterdb::getDocId ( k );
+			uint64_t d = Clusterdb::getDocId ( (const key96_t *)k );
 			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 		}
 

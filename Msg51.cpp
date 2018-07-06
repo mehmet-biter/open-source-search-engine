@@ -15,6 +15,7 @@
 #include "Titledb.h"
 #include "Collectiondb.h"
 #include "UdpServer.h"
+#include "Conf.h"
 
 
 // how many Msg0 requests can we launch at the same time?
@@ -200,30 +201,26 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
 	// . this cache is primarly meant to avoid repetetive lookups
 	//   when going to the next tier in Msg3a and re-requesting cluster
 	//   recs for the same docids we did a second ago
-	RdbCache *c = &s_clusterdbQuickCache;
-	if ( ! s_cacheInit ) c = NULL;
-	int32_t      crecSize;
-	char     *crecPtr = NULL;
-	key96_t     ckey = (key96_t)m_docIds[m_nexti];
-	if ( c ) {
-		RdbCacheLock rcl(*c);
-		bool found = c->getRecord ( m_collnum    ,
-				       ckey      , // cache key
-				       &crecPtr  , // pointer to it
-				       &crecSize ,
-				       false     , // do copy?
-				       3600      , // max age in secs
-				       true      , // inc counts?
-				       NULL      );// cachedTime
+	if(s_cacheInit) {
+		int32_t   crecSize;
+		char     *crecPtr = NULL;
+		key96_t   ckey = (key96_t)m_docIds[m_nexti];
+		
+		RdbCacheLock rcl(s_clusterdbQuickCache);
+		bool found = s_clusterdbQuickCache.getRecord(m_collnum,
+							     ckey      , // cache key
+							     &crecPtr  , // pointer to it
+							     &crecSize,
+							     false     , // do copy?
+							     3600      , // max age in secs
+							     true      , // inc counts?
+							     NULL      );// cachedTime
 		if ( found ) {
-			// sanity check
 			if ( crecSize != sizeof(key96_t) ) gbshutdownLogicError();
 			m_clusterRecs[m_nexti] = *(key96_t *)crecPtr;
 			// it is no longer CR_UNINIT, we got the rec now
 			m_clusterLevels[m_nexti] = CR_GOT_REC;
-			// debug msg
-			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
-			//     ckey.n0,m_clusterRecs[m_nexti].n0);
+			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64, ckey.n0,m_clusterRecs[m_nexti].n0);
 			m_nexti++;
 			goto sendLoop;
 		}
@@ -352,19 +349,20 @@ void Msg51::gotClusterRec(Slot *slot) {
 
 	RdbList *list = &slot->m_list;
 
+	// this doubles as a ptr to a cluster rec
+	int32_t    ci = slot->m_ci;
+	int64_t docId = m_docIds[ci];
+	
 	// update m_errno if we had an error
 	if ( ! m_errno ) m_errno = g_errno;
 
 	if ( g_errno ) 
 		// print error
 		log(LOG_DEBUG,
-		    "query: Had error getting cluster info got docId=d: "
-		    "%s.",mstrerror(g_errno));
+		    "query: Had error getting cluster info for docId %ld: %s",
+		    docId,
+		    mstrerror(g_errno));
 
-	// this doubles as a ptr to a cluster rec
-	int32_t    ci = slot->m_ci;
-	// get docid
-	int64_t docId = m_docIds[ci];
 	// assume error!
 	m_clusterLevels[ci] = CR_ERROR_CLUSTERDB;
 
@@ -385,15 +383,16 @@ void Msg51::gotClusterRec(Slot *slot) {
 	*rec = *(key96_t *)(list->getList());
 	// debug note
 	log(LOG_DEBUG,
-	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
-	    "rec.n1=%" PRIx32",%016" PRIx64" sitehash26=0x%" PRIx32".", (int64_t)docId, (int32_t)ci,
+	    "query: had clusterdb SUCCESS for docid=%12" PRId64" ci=%3d "
+	    "rec.n1=%08x,%016" PRIx64" sitehash26=0x%x",
+	    (int64_t)docId, ci,
 	    rec->n1,rec->n0,
-	    Clusterdb::getSiteHash26((char *)rec));
+	    Clusterdb::getSiteHash26(rec));
 
 	// check for docid mismatch
 	int64_t docId2 = Clusterdb::getDocId ( rec );
 	if ( docId != docId2 ) {
-		logf(LOG_DEBUG,"query: docid mismatch in clusterdb.");
+		logf(LOG_DEBUG,"query: docid mismatch in clusterdb (%ld!=%ld)", docId, docId2);
 		return;
 	}
 
@@ -403,9 +402,9 @@ void Msg51::gotClusterRec(Slot *slot) {
 	RdbCacheLock rcl(s_clusterdbQuickCache);
 	// . init the quick cache
 	if(!s_cacheInit &&
-		s_clusterdbQuickCache.init(200*1024,         // maxMem
+		s_clusterdbQuickCache.init(g_conf.m_clusterdbQuickCacheMem,
 					   sizeof(key96_t),  // fixedDataSize (clusterdb rec)
-					   10000,            // max recs
+					   g_conf.m_clusterdbQuickCacheMem/sizeof(key96_t)/2,
 					   "clusterdbQuickCache" ,
 					   false,            // load from disk?
 					   sizeof(key96_t),  // cache key size
@@ -455,7 +454,6 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	u_int64_t startTime = gettimeofdayInMilliseconds();
 
 	for(int32_t i=0; i<numRecs; i++) {
-		char *crec = (char *)&clusterRecs[i];
 		// . set this cluster level
 		// . right now will be CR_ERROR_CLUSTERDB or CR_OK...
 		char *level = &clusterLevels[i];
@@ -463,7 +461,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// sanity check
 		if ( *level == CR_UNINIT ) gbshutdownLogicError();
 		// and the adult bit, for cleaning the results
-		if ( familyFilter && Clusterdb::hasAdultContent ( crec ) ) {
+		if ( familyFilter && Clusterdb::hasAdultContent ( &clusterRecs[i] ) ) {
 			*level = CR_DIRTY;
 			continue;
 		}
@@ -481,7 +479,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		if(fakeIt)
 			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
-			h = Clusterdb::getSiteHash26 ( crec );
+			h = Clusterdb::getSiteHash26 ( &clusterRecs[i] );
 
 		// inc this count!
 		if ( fakeIt ) {
@@ -506,9 +504,8 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 
 	// debug
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
-		char *crec = (char *)&clusterRecs[i];
-		uint32_t siteHash26 = Clusterdb::getSiteHash26(crec);
-		logf(LOG_DEBUG,"query: msg51: hit #%" PRId32") sitehash26=%" PRIu32" "
+		uint32_t siteHash26 = Clusterdb::getSiteHash26(&clusterRecs[i]);
+		logf(LOG_DEBUG,"query: msg51: hit #%2d) sitehash26=0x%x "
 		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
 		     (int32_t)i,
 		     (int32_t)siteHash26,
@@ -524,7 +521,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	// show time
 	uint64_t took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 3 )
-		log(LOG_INFO,"build: Took %" PRId64" ms to do clustering.",took);
+		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering.",took);
 
 	// we are all done
 	return true;

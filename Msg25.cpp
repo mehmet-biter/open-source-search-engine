@@ -720,9 +720,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 
 	m_nextKey.setMin();
 
-	m_adBanTable.reset();
-	m_adBanTable.set(4,0,0,NULL,0,false,"adbans");
-
 	m_table.set (4,sizeof(NoteEntry *),0, NULL,0,false,"msg25tab");
 
 	m_url = url;
@@ -3461,14 +3458,10 @@ bool Links::set(bool useRelNoFollow,
 	if ( baseUrl ) m_baseUrl = baseUrl;
 
 	// visit each node in the xml tree. a node can be a tag or a non-tag.
-	const char *urlattr = NULL;
 	for ( int32_t i=0; i < m_numNodes ; i++ ) {
 		// . continue if this tag ain't an <a href> tag
 		// . atom feeds have a <link href=""> field in them
 		int32_t id = xml->getNodeId ( i );
-
-		int32_t  slen;
-		char *s ;
 
 		// reset
 		linkflags_t flags = 0;
@@ -3483,10 +3476,11 @@ bool Links::set(bool useRelNoFollow,
 		     id != TAG_FBORIGLINK )
 			continue;
 
-		//gotOne:
+		const char *urlattr = "href";
+		if (id == TAG_WEBLOG) {
+			urlattr ="url";
+		}
 
-		urlattr = "href";
-		if ( id == TAG_WEBLOG     ) urlattr ="url";
 		if ( id == TAG_FBORIGLINK ) m_isFeedBurner = true;
 
 		// if it's a back tag continue
@@ -3494,31 +3488,56 @@ bool Links::set(bool useRelNoFollow,
 			continue;
 		}
 
-		// . if it has rel=nofollow then ignore it
-		// . for old titleRecs we should skip this part so that the
-		//   link: terms are indexed/hashed the same way in XmlDoc.cpp
-		if ( useRelNoFollow ) {
-			s = xml->getString ( i , "rel", &slen ) ;
+		// rel attribute
+		int32_t slen = 0;
+		const char *s = xml->getString ( i , "rel", &slen ) ;
+		if (useRelNoFollow && slen == 8 && strncasecmp(s, "nofollow", 8) == 0) {
+			// if this flag is set then::hasSpamLinks() will always
+			// return false. the site owner is taking the necessary
+			// precautions to prevent log spam.
+			m_hasRelNoFollow = true;
 
-			if ( slen == 8 && strncasecmp ( s,"nofollow", 8 ) == 0 ) {
-				// if this flag is set then::hasSpamLinks() will always
-				// return false. the site owner is taking the necessary
-				// precautions to prevent log spam.
-				m_hasRelNoFollow = true;
-				// . do not ignore it now, just flag it
-				// . fandango has its ContactUs with a nofollow!
-				flags |= LF_NOFOLLOW;
+			// . do not ignore it now, just flag it
+			// . fandango has its ContactUs with a nofollow!
+			flags |= LF_NOFOLLOW;
+		}
+
+		// only allow specific link rel (whitelist)
+		// http://microformats.org/wiki/existing-rel-values#HTML5_link_type_extensions
+		if (id == TAG_LINK) {
+			bool allowed = false;
+
+			switch (slen) {
+				case 4:
+					if (strncasecmp(s, "feed", 4) == 0 ||
+						strncasecmp(s, "home", 4) == 0) {
+						allowed = true;
+					}
+					break;
+				case 7:
+					if (strncasecmp(s, "sitemap", 7) == 0) {
+						allowed = true;
+					}
+					break;
+				case 9:
+					if (strncasecmp(s, "alternate", 9) == 0 ||
+						strncasecmp(s, "canonical", 9) == 0) {
+						allowed = true;
+					}
+					break;
+				default:
+					break;
+			}
+
+			if (!allowed) {
+				continue;
 			}
 		}
 
 		// get the href field of this anchor tag
 		int32_t linkLen;
-		char *link = (char *) xml->getString ( i, urlattr, &linkLen );
+		const char *link = xml->getString ( i, urlattr, &linkLen );
 
-		// does it have the link after the tag?
-		//int32_t tagId = xml->getNodeId(i);
-		// skip the block below if we got one in the tag itself
-		//if ( linkLen ) tagId = 0;
 		// if no href, but we are a <link> tag then the url may
 		// follow, like in an rss feed.
 		if ( linkLen==0 && 
@@ -3527,7 +3546,7 @@ bool Links::set(bool useRelNoFollow,
 		      id == TAG_URLFROM ||
 		      id == TAG_FBORIGLINK) ) {
 			// the the <link> node
-			char *node    = xml->getNode(i);
+			const char *node    = xml->getNode(i);
 			int32_t  nodeLen = xml->getNodeLen(i);
 			// but must NOT end in "/>" then
 			if ( node[nodeLen-2] == '/' )  continue;
@@ -3562,12 +3581,12 @@ bool Links::set(bool useRelNoFollow,
 			// well... a lot of times the provided function has
 			// the url as an arg to a popup window
 			int32_t oclen = 0;
-			char *oc = xml->getString(i,"onclick",&oclen);
+			const char *oc = xml->getString(i,"onclick",&oclen);
 			// if none, bail
 			if ( ! oc ) continue;
 			// set end
-			char *ocend = oc + oclen - 2;
-			char *ocurl = NULL;
+			const char *ocend = oc + oclen - 2;
+			const char *ocurl = nullptr;
 			// scan for "'/" which should indicate the url
 			for ( ; oc < ocend ; oc++ ) {
 				if ( *oc   !='\'' ) continue;
@@ -3580,7 +3599,7 @@ bool Links::set(bool useRelNoFollow,
 			// if none, bail
 			if ( ! ocurl ) continue;
 			// now find the end of the url
-			char *ocurlend = ocurl + 1;
+			const char *ocurlend = ocurl + 1;
 			for ( ; ocurlend < ocend ; ocurlend++ ) 
 				if ( *ocurlend == '\'' ) break;
 			// assign it now
@@ -3602,10 +3621,10 @@ bool Links::set(bool useRelNoFollow,
 		// if we have a sequence of alnum chars (or hpyhens) followed 
 		// by a ':' then that is a protocol. we only support http and 
 		// https protocols right now. let "p" point to the ':'.
-		char *p = link;
+		const char *p = link;
 		int32_t  pmaxLen = linkLen;
 		if ( pmaxLen > 20 ) pmaxLen = 20;
-		char *pend = link + pmaxLen;
+		const char *pend = link + pmaxLen;
 		while ( p < pend && (is_alnum_a(*p) || *p=='-') ) p++;
 
 		// is the protocol, if it exists, a valid one like http or
@@ -3635,9 +3654,9 @@ bool Links::set(bool useRelNoFollow,
 		if ( linkLen > MAX_URL_LEN ) {
 			// only log this once just so people know, don't spam
 			// the log with it.
-			static bool s_flag = 1;
-			if ( s_flag ) {
-				s_flag = 0;
+			static bool s_flag = true;
+			if (s_flag) {
+				s_flag = false;
 				log(LOG_INFO, "build: Link len %" PRId32" is longer "
 					      "than max of %" PRId32". Link will not "
 					      "be added to spider queue or "
@@ -3649,44 +3668,43 @@ bool Links::set(bool useRelNoFollow,
 
 		// see if the <link> tag has a "type" file
 		bool isRSS = false;
+
 		int32_t typeLen;
-		char *type =(char *)xml->getString(i, "type", &typeLen );
+		const char *type = xml->getString(i, "type", &typeLen );
 		// . MDW: imported from Xml.cpp:
 		// . check for valid type:
 		//   type="application/atom+xml" (atom)
 		//   type="application/rss+xml"  (RSS 1.0/2.0)
 		//   type="application/rdf+xml"  (RDF)
 		//   type="text/xml"             (RSS .92) support?
-		// compare
-		if ( type ) {
-			if (strncasecmp(type,"application/atom+xml",20)==0)
-				isRSS=true;
-			if (strncasecmp(type,"application/rss+xml" ,19)==0)
-				isRSS=true;
-			// doesn't seem like good rss
-			//if (strncasecmp(type,"application/rdf+xml" ,19)==0)
-			//	isRSS=true;
-			if (strncasecmp(type,"text/xml",8)==0)
-				isRSS=true;
+		if (type) {
+			if (strncasecmp(type, "application/atom+xml", 20) == 0 ||
+			    strncasecmp(type, "application/rss+xml", 19) == 0 ||
+			    strncasecmp(type, "text/xml", 8) == 0) {
+				isRSS = true;
+			}
 		}
-		int32_t relLen = 0;
-		char *rel = NULL;
+
+
 		// make sure we got rel='alternate' or rel="alternate", etc.
-		if ( isRSS ) rel = xml->getString(i,"rel",&relLen);
-		// compare
-		if ( rel && strncasecmp(rel,"alternate",9) != 0 ) 
-			isRSS = false;
-		// skip if a reply! rss feeds have these links to comments
-		// and just ignore them for now
-		if ( rel && strncasecmp(rel,"replies",7)==0 )
-			continue;
-		// http://dancleary.blogspot.com/feeds/posts/default uses edit:
-		if ( rel && strncasecmp(rel,"edit",4)==0 )
-			continue;
-		// . if type exists but is not rss/xml, skip it. probably
-		//   javascript, css, etc.
-		// . NO! i've seen this to be type="text/html"!
-		//if ( ! isRSS && type ) continue;
+		if (isRSS) {
+			int32_t relLen = 0;
+			const char *rel = xml->getString(i, "rel", &relLen);
+
+			if (rel) {
+				if (strncasecmp(rel, "alternate", 9) != 0) {
+					isRSS = false;
+				}
+
+				// skip if a reply! rss feeds have these links to comments and just ignore them for now
+				// http://dancleary.blogspot.com/feeds/posts/default uses edit:
+				if ((relLen == 7 && strncasecmp(rel, "replies", 7) == 0) ||
+					(relLen == 4 && strncasecmp(rel, "edit", 4) == 0)) {
+					continue;
+				}
+			}
+		}
+
 		// store it
 		if ( isRSS ) m_hasRSS = true;
 
@@ -3705,14 +3723,9 @@ bool Links::set(bool useRelNoFollow,
 		// use tmp buf
 		link = tmp;
 
-		if (!addLink ( link , linkLen , i , setLinkHash , 
-			       version , isRSS , id , flags ))
+		if (!addLink(link, linkLen, i, setLinkHash, version, isRSS, id, flags)) {
 			return false;
-		// get the xml node
-		//XmlNode *node = m_xml->getNodePtr(i);
-		// set this special member
-		//node->m_linkNum = m_numLinks - 1;
-		// set the flag if it is an RSS link
+		}
 	}
 
 	// . flag the links we have that are old (spidered last time)
@@ -4407,17 +4420,14 @@ int32_t Links::getLinkText2(int32_t i,
 	}
 
 	// what delimeter are we using? this only applies to rss/atom feeds.
-	//char *del = NULL;
 	char del[16];
 	int32_t dlen = 0;
 	int32_t rss = m_xml->isRSSFeed();
 	if ( rss == 1 ) {
-		//del = "item";
 		gbmemcpy(del, "item\0", 5);
 		dlen = 4;
 	}
 	else if ( rss == 2 ) {
-		//del = "entry";
 		gbmemcpy(del, "entry\0", 6);
 		dlen = 5;
 	}

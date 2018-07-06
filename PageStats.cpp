@@ -309,7 +309,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	} cacheStatistics[max_caches];
 	//fill out the cache statistics
 	int32_t numCaches = 0;
-	for(auto rdbcache : {Msg13::getHttpCacheRobots(),Msg13::getHttpCacheOthers(),g_dns.getCache(),g_dns.getCacheLocal()}) {
+	for(auto rdbcache : {Msg13::getHttpCacheRobots(),Msg13::getHttpCacheOthers(),g_dns.getCache(),g_dns.getCacheLocal(), &s_clusterdbQuickCache}) {
 		cacheStatistics[numCaches].hits = rdbcache->getNumHits();
 		cacheStatistics[numCaches].misses = rdbcache->getNumMisses();
 		cacheStatistics[numCaches].inserts = rdbcache->getNumAdds();

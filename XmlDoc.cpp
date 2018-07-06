@@ -12249,12 +12249,11 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		}
 		else if ( rdbId == RDB_CLUSTERDB ) {
-			key128_t *k2 = (key128_t *)k;
-			char *r = (char *)k2;
-			int32_t siteHash26 = Clusterdb::getSiteHash26   ( r );
-			char lang       = Clusterdb::getLanguage     ( r );
-			int64_t docId = Clusterdb::getDocId        ( r );
-			char ff         = Clusterdb::getFamilyFilter ( r );
+			const key96_t *k2 = (const key96_t *)k;
+			int32_t siteHash26 = Clusterdb::getSiteHash26  ( k2 );
+			char lang          = Clusterdb::getLanguage    ( k2 );
+			int64_t docId      = Clusterdb::getDocId       ( k2 );
+			char ff            = Clusterdb::getFamilyFilter( k2 );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"

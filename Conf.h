@@ -91,6 +91,8 @@ class Conf {
 	int64_t m_dnsCacheMaxAge;
 
 	int32_t  m_dnsMaxCacheMem;
+	
+	int32_t m_clusterdbQuickCacheMem;
 
 	SafeBuf m_proxyIps;
 	SafeBuf m_proxyAuth;
