@@ -437,10 +437,13 @@ bool UrlMatchList::load() {
 						foundInvalid = true;
 						continue;
 				}
-
-				logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
-				++count;
 			}
+
+			logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
+			++count;
+
+			/// @todo Cater for domain shortcut
+			tmpUrlMatchList->m_urlMatchesList.emplace_back(urlMatches);
 		}
 
 		if (foundInvalid) {
