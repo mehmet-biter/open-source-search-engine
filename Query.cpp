@@ -1059,6 +1059,17 @@ bool Query::setQTerms() {
 			std::string w(m_tr[i].token_start,m_tr[i].token_len);
 			logTrace(g_conf.m_logTraceQuery, "@@ Checking lemma for '%s'", w.c_str());
 			auto le = lemma_lexicon.lookup(w);
+			if(!le) {
+				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
+				char lowercase_word[128];
+				if(w.size()<sizeof(lowercase_word)) {
+					size_t sz = to_lower_utf8(lowercase_word,lowercase_word+sizeof(lowercase_word), w.data(), w.data()+w.size());
+					lowercase_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),lowercase_word,w.size())!=0) {
+						le = lemma_lexicon.lookup(lowercase_word);
+					}
+				}
+			}
 			if(!le)
 				continue; //unknown word
 			auto wf = le->find_base_wordform();
