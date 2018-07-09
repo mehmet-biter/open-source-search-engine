@@ -1196,5 +1196,19 @@ void Summary::maybeRemoveHtmlFormatting() {
 			} else
 				break;
 		}
+		
+		//also remove any double-encoded / unnecessarily-encoded html entities.
+		if(memchr(m_summary,'&',m_summaryLen)!=0) {
+			StackBuf<1024> tmpBuf;
+			if(tmpBuf.reserve(m_summaryLen + m_summaryLen/2 + 4)) {
+				int32_t tmpLen = htmlDecode(tmpBuf.getBufStart(), m_summary,m_summaryLen, false);
+				//in some really stupid and artificial cases the result may be longer.
+				if(tmpLen<(int)sizeof(m_summary)) {
+					memcpy(m_summary, tmpBuf.getBufStart(), tmpLen);
+					m_summaryLen = tmpLen;
+					m_summary[m_summaryLen] = '\0';
+				}
+			}
+		}
 	}
 }
