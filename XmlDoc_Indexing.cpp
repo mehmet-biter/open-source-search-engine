@@ -2260,6 +2260,30 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					}
 				}
 			}
+			if(!le) {
+				//Not found as-is in lexicon. Try capitalized in case it is a lowercase or uppercase word
+				char capitalized_word[128];
+				if(e.size()<sizeof(capitalized_word)) {
+					size_t sz = to_capitalized_utf8(capitalized_word,capitalized_word+sizeof(capitalized_word), e.data(), e.data()+e.size());
+					capitalized_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),capitalized_word,e.size())!=0) {
+						e = capitalized_word;
+						le = lemma_lexicon.lookup(e);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try uppercasing it
+				char uppercase_word[128];
+				if(e.size()<sizeof(uppercase_word)) {
+					size_t sz = to_upper_utf8(uppercase_word,uppercase_word+sizeof(uppercase_word), e.data(), e.data()+e.size());
+					uppercase_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),uppercase_word,e.size())!=0) {
+						e = uppercase_word;
+						le = lemma_lexicon.lookup(e);
+					}
+				}
+			}
 			if(!le)
 				continue; //unknown word
 			logTrace(g_conf.m_logTraceTokenIndexing,"lexicalentry found for for lemma: %s", e.c_str());

@@ -371,6 +371,7 @@ int32_t to_lower_utf8(char *dst, char * /*dstEnd*/, const char *src ) {
 	return dst - dstart;
 }
 
+
 int32_t to_upper_utf8(char *dst, const char *src) {
 	if(is_ascii3(*src)) {
 		*dst = to_upper_a(*src);
@@ -388,3 +389,29 @@ int32_t to_upper_utf8(char *dst, const char *src) {
 	}
 	return bytes_encoded;
 }
+
+
+int32_t to_upper_utf8(char *dst, char * /*dstEnd*/, const char *src, const char *srcEnd) {
+	char *dstart = dst;
+	for ( ; src < srcEnd ; src += getUtf8CharSize((uint8_t *)src) )
+		dst += to_upper_utf8 ( dst , src );
+	// return bytes written
+	return dst - dstart;
+}
+
+
+
+int32_t to_capitalized_utf8(char *dst, char * /*dstEnd*/, const char *src, const char *srcEnd) {
+	char *dstart = dst;
+	bool first = true;
+	for( ; src < srcEnd; src += getUtf8CharSize(src) ) {
+		if(first) {
+			dst += to_upper_utf8(dst, src);
+			first = false;
+		} else
+			dst += to_lower_utf8(dst, src);
+	}
+	// return bytes written
+	return dst - dstart;
+}
+
