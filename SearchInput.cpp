@@ -263,10 +263,17 @@ bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t primaryQueryLangua
 
 	if(!language_weights.empty()) {
 		//external language detection server had results
-		for(int i=0; i<64; i++)
-			m_baseScoringParameters.m_languageWeights[i] = 0.01; //server returns weights in the range [0..1]
-		for(const auto &e : language_weights)
-			m_baseScoringParameters.m_languageWeights[e.first] = e.second;
+		//weights cannot be negaitive, so we use -1 as a temporary flag for not-yet-set.
+		//the query language server may return fewer or more languages than what we support. And for some language/dialect groups
+		//it may return distinct weights that map to the same gb-lanaguage. eg. no=4.5, nn=3.2, no-bk=8.4, in which case we have
+		//to take the maximum weight.
+		for(int i=0; i<64; i++) //set all to not-yet-set
+			m_baseScoringParameters.m_languageWeights[i] = -1;
+		for(const auto &e : language_weights) //process the result
+			m_baseScoringParameters.m_languageWeights[e.first] = std::max((float)e.second, m_baseScoringParameters.m_languageWeights[e.first]);
+		for(int i=0; i<64; i++) //set any unset to some sensible default
+			if(m_baseScoringParameters.m_languageWeights[i]<0)
+				m_baseScoringParameters.m_languageWeights[i] = 0.01; //server returns weights in the range [0..1]
 	} else {
 		if(m_baseScoringParameters.allLanguageWeightsAreTheSame()) {
 			//query language server is unavailable.
