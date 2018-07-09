@@ -1113,10 +1113,10 @@ static bool printSearchResultsHeader(State0 *st) {
 		//if the weigths are not all identical then print the top 5
 		if(langweights[0].weight!=langweights[MAX_LANGUAGES-1].weight) {
 			sb->safePrintf("\t\"languageWeights\": [ ");
-			for(int i=0; i<5; i++) {
+			for(int i=0; i<7; i++) {
 				const char *l = getLanguageAbbr(langweights[i].lang);
 				sb->safePrintf("{\"lang\":\"%s\", \"weight\":%.3f}", l, langweights[i].weight);
-				if(i+1<5)
+				if(i+1<7)
 					sb->safePrintf(", ");
 			}
 			sb->safePrintf(" ],\n");
