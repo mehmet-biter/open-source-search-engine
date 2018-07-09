@@ -1070,6 +1070,30 @@ bool Query::setQTerms() {
 					}
 				}
 			}
+			if(!le) {
+				//Not found as-is in lexicon. Try capitalized in case it is a lowercase or uppercase word
+				char capitalized_word[128];
+				if(w.size()<sizeof(capitalized_word)) {
+					size_t sz = to_capitalized_utf8(capitalized_word,capitalized_word+sizeof(capitalized_word), w.data(), w.data()+w.size());
+					capitalized_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),capitalized_word,w.size())!=0) {
+						w = capitalized_word;
+						le = lemma_lexicon.lookup(w);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try uppercasing it
+				char uppercase_word[128];
+				if(w.size()<sizeof(uppercase_word)) {
+					size_t sz = to_upper_utf8(uppercase_word,uppercase_word+sizeof(uppercase_word), w.data(), w.data()+w.size());
+					uppercase_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),uppercase_word,w.size())!=0) {
+						w = uppercase_word;
+						le = lemma_lexicon.lookup(w);
+					}
+				}
+			}
 			if(!le)
 				continue; //unknown word
 			auto wf = le->find_base_wordform();
