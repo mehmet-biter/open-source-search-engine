@@ -192,7 +192,7 @@ std::vector<std::string> split(const std::string &str, const std::string &delimi
 	size_t pos = 0;
 	do {
 		pos = str.find(delimiter, start);
-		elements.push_back(str.substr(start, pos));
+		elements.push_back(str.substr(start, pos - start));
 		start = pos + delimiter.length();
 	} while (pos != std::string::npos);
 
