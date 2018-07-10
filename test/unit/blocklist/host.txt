@@ -1,0 +1,6 @@
+host    specific.host.com
+
+host    port.host.com	AND		port	3001
+host    ssl.host.com	AND		port	443
+
+host    www.somesite.com	AND		path	/badpath/

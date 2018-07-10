@@ -17,29 +17,100 @@ public:
 	using UrlMatchList::load;
 };
 
-TEST(UrlMatchListTest, Domain) {
-	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+TEST(UrlMatchListTest, Regex) {
+	TestUrlMatchList urlMatchList("blocklist/regex.txt");
 	urlMatchList.load();
 
-	//regex   badsite.com https?://www\.badsite\.com/
+	//regex https?://www\.badsite\.com/
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.badsite.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.badsite.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("httpp://www.badsite.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.badsite.com/page.html"));
 
-	//regex   httponly.com    http://www\.httponly\.com/
+	//regex http://www\.httponly\.com/
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/page.html"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.httponly.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://subdomain.httponly.com/"));
 
-	//regex   httpsonly.com   https://www\.httpsonly\.com/
+	//regex https://www\.httpsonly\.com/
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/page.html"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.httpsonly.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://subdomain.httpsonly.com/"));
 
-	//domain  allsubdomain.com
+	//regex http://www\.onlyroot\.com/$
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.onlyroot.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.onlyroot.com/page.html"));
+
+	//regex ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://itsybitsy.com/spider/waterspout.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/waterspout.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://nursery.itsybitsy.com/spider/waterspout.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://rhyme.itsybitsy.com/spider/waterspout.html"));
+
+	//regex https?://[^/]+/file1.html
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com/file1.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/file1.html"));
+}
+
+TEST(UrlMatchListTest, DomainSchemeSubdomain) {
+	TestUrlMatchList urlMatchList("blocklist/scheme.txt");
+	urlMatchList.load();
+
+	//domain httponly.com AND scheme http AND subdomain www
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/page.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.httponly.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://subdomain.httponly.com/"));
+
+	//domain httpsonly.com AND scheme https AND subdomain www
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/page.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.httpsonly.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://subdomain.httpsonly.com/"));
+}
+
+TEST(UrlMatchListTest, DomainRegex) {
+	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+	urlMatchList.load();
+
+	//domain badsite.com AND regex https?://www\.badsite\.com/
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.badsite.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.badsite.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("httpp://www.badsite.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.badsite.com/page.html"));
+
+	//domain httponly.com AND regex http://www\.httponly\.com/
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.httponly.com/page.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.httponly.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://subdomain.httponly.com/"));
+
+	//domain httpsonly.com AND regex https://www\.httpsonly\.com/
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.httpsonly.com/page.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.httpsonly.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://subdomain.httpsonly.com/"));
+
+	//domain onlyroot.com AND regex http://www\.onlyroot\.com/$
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.onlyroot.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.onlyroot.com/page.html"));
+
+	//domain itsybitsy.com AND regex ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://itsybitsy.com/spider/waterspout.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/waterspout.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://nursery.itsybitsy.com/spider/waterspout.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://rhyme.itsybitsy.com/spider/waterspout.html"));
+}
+
+TEST(UrlMatchListTest, DomainDomain) {
+	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+	urlMatchList.load();
+
+	//domain allsubdomain.com
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allsubdomain.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.allsubdomain.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub2.allsubdomain.com/"));
@@ -49,56 +120,15 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://something.com/www.allsubdomain.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://sub1.diffdomain.com/"));
 
-	//regex   onlyroot.com    http://www\.onlyroot\.com/$
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.onlyroot.com/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.onlyroot.com/page.html"));
-
-	//domain  example.com allow=,www
+	//domain example.com AND NOT subdomain ,www
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub2.example.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.example.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.sub1.example.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://example.com/"));
 
-	//host    specific.host.com
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com:3001/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.com/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.host.com/"));
-
-	//tld     my,dk
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.dk/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.my/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com.my/"));
-
-	//host    www.somesite.com    /badpath/
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.somesite.com/badpath/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.somesite.com/badpath/me.html"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.somesite.com/path/me.html"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://sub.somesite.com/badpath/"));
-
-	//host    port.host.com:3001
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/example/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://port.host.com:3001/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com:3002/example/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("https://port.host.com"));
-
-	//host    ssl.host.com:443
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://ssl.host.com/example/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://ssl.host.com:443/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://ssl.host.com:3001/"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("https://ssl.host.com:3001/"));
-
-	//regex   itsybitsy.com ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://itsybitsy.com/spider/waterspout.html"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/waterspout.html"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("http://nursery.itsybitsy.com/spider/waterspout.html"));
-	EXPECT_FALSE(urlMatchList.isUrlMatched("http://rhyme.itsybitsy.com/spider/waterspout.html"));
-
-	//domain  allowrootdomainrootpages.com allow=, allowrootpages
+	//domain allowrootdomainrootpages.com AND NOT subdomain ,
+	//domain allowrootdomainrootpages.com AND NOT pathcriteria rootpages
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://allowrootdomainrootpages.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowrootdomainrootpages.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://allowrootdomainrootpages.com/abc.html"));
@@ -109,7 +139,8 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://allowrootdomainrootpages.com/d1/d2/xyz.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowrootdomainrootpages.com/d1/d2/jkl.html"));
 
-	//domain  allowdomainrootpages.com allow=,www allowrootpages
+	//domain allowdomainrootpages.com AND NOT subdomain ,www
+	//domain allowdomainrootpages.com AND NOT pathcriteria rootpages
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://allowdomainrootpages.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.allowdomainrootpages.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.allowdomainrootpages.com"));
@@ -122,7 +153,8 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://allowdomainrootpages.com/d1/d2/xyz.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowdomainrootpages.com/d1/d2/jkl.html"));
 
-	//domain  allowrootdomainindexpage.com allow=, allowindexpage
+	//domain allowrootdomainindexpage.com AND NOT subdomain ,
+	//domain allowrootdomainindexpage.com AND NOT pathcriteria indexpage
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://allowrootdomainindexpage.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowrootdomainindexpage.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.allowrootdomainindexpage.com"));
@@ -134,7 +166,8 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://allowrootdomainindexpage.com/d1/d2/xyz.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowrootdomainindexpage.com/d1/d2/jkl.html"));
 
-	//domain  allowdomainindexpage.com allow=,www allowindexpage
+	//domain allowdomainindexpage.com AND NOT subdomain ,www
+	//domain allowdomainindexpage.com AND NOT pathcriteria indexpage
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://allowdomainindexpage.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.allowdomainindexpage.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.allowdomainindexpage.com"));
@@ -146,6 +179,62 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowdomainindexpage.com/d1/def.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://allowdomainindexpage.com/d1/d2/xyz.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowdomainindexpage.com/d1/d2/jkl.html"));
+}
+
+TEST(UrlMatchListTest, Host) {
+	TestUrlMatchList urlMatchList("blocklist/host.txt");
+	urlMatchList.load();
+
+	//host    specific.host.com
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com:3001/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.host.com/"));
+}
+
+TEST(UrlMatchListTest, HostPath) {
+	TestUrlMatchList urlMatchList("blocklist/host.txt");
+	urlMatchList.load();
+
+	//host www.somesite.com AND path /badpath/
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.somesite.com/badpath/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.somesite.com/badpath/me.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.somesite.com/path/me.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://sub.somesite.com/badpath/"));
+}
+
+TEST(UrlMatchListTest, HostPort) {
+	TestUrlMatchList urlMatchList("blocklist/host.txt");
+	urlMatchList.load();
+
+	//host port.host.com AND port 3001
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/example/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://port.host.com:3001/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com:3002/example/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://port.host.com"));
+
+	//host ssl.host.com AND port 443
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://ssl.host.com/example/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://ssl.host.com:443/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://ssl.host.com:3001/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://ssl.host.com:3001/"));
+}
+
+TEST(UrlMatchListTest, DomainTld) {
+	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+	urlMatchList.load();
+
+	//tld     my,dk
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.dk/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.my/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com.my/"));
+}
+
+TEST(UrlMatchListTest, DomainHostSuffix) {
+	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+	urlMatchList.load();
 
 	//hostsuffix  hostsuffix01.com
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix01.com"));
@@ -190,7 +279,7 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix06.a.se"));
 }
 
-TEST(UrlMatchListTest, Path) {
+TEST(UrlMatchListTest, PathPath) {
 	TestUrlMatchList urlMatchList("blocklist/path.txt");
 	urlMatchList.load();
 
@@ -198,6 +287,11 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/example/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/tag/wp-admin/"));
+}
+
+TEST(UrlMatchListTest, PathFile) {
+	TestUrlMatchList urlMatchList("blocklist/path.txt");
+	urlMatchList.load();
 
 	//file  wp-login.php
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php"));
@@ -205,10 +299,11 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/awp-login.php"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/wp-login.php5"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php?param=value&param2=value2"));
+}
 
-	//regex   *   https?://[^/]+/file1.html
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com/file1.html"));
-	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/file1.html"));
+TEST(UrlMatchListTest, PathQueryParam) {
+	TestUrlMatchList urlMatchList("blocklist/path.txt");
+	urlMatchList.load();
 
 	//queryparam url
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?URL=abc"));
@@ -235,6 +330,11 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/nindex=add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=addp/product/1883/form_key/6VKG76zkMo8FmYXE/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index=dadd/product/1883/form_key/6VKG76zkMo8FmYXE/"));
+}
+
+TEST(UrlMatchListTest, PathPathPartial) {
+	TestUrlMatchList urlMatchList("blocklist/path.txt");
+	urlMatchList.load();
 
 	//pathpartial /wishlist/index/add
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/wishlist/index/add/product/1883/form_key/6VKG76zkMo8FmYXE/"));
