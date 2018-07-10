@@ -1689,7 +1689,7 @@ bool Query::setQWords ( char boolFlag ,
 			}
 
 			// advance j to a non-punct word
-			while (!m_tr[i].is_alfanum)
+			while (!m_tr[j].is_alfanum)
 				j++;
 
 			// ignore all of these words then, 
