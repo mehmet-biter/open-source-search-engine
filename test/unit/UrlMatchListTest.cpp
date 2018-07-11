@@ -288,6 +288,23 @@ TEST(UrlMatchListTest, Middomain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.dk/abc.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://sub.example.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.examples.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.aexample.com/"));
+}
+
+TEST(UrlMatchListTest, Subdomain) {
+	TestUrlMatchList urlMatchList("blocklist/subdomain.txt");
+	urlMatchList.load();
+
+	//subdomain da,en
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://da.example.com"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://da.example.dk/abc.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://en.example.com"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://en.example.dk/abc.html"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://dan.example.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://eng.example.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://sub.example.com/"));
 }
 
 TEST(UrlMatchListTest, PathPath) {
