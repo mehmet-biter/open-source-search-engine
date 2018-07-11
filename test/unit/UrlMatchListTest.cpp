@@ -279,6 +279,17 @@ TEST(UrlMatchListTest, DomainHostSuffix) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix06.a.se"));
 }
 
+TEST(UrlMatchListTest, Middomain) {
+	TestUrlMatchList urlMatchList("blocklist/middomain.txt");
+	urlMatchList.load();
+
+	//middomain example
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.co.uk"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.dk/abc.html"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://sub.example.com/"));
+}
+
 TEST(UrlMatchListTest, PathPath) {
 	TestUrlMatchList urlMatchList("blocklist/path.txt");
 	urlMatchList.load();
