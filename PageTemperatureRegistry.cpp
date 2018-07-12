@@ -9,6 +9,12 @@
 #include <math.h>
 #include <float.h>      // FLT_EPSILON, DBL_EPSILON
 
+
+//Note on why we use a hand-rolled hashtable:
+//  Time to load a 53MB .dat file:
+//  this: 			2.592 seconds
+//  std::unordered_set<>:	4.116 seconds
+
 PageTemperatureRegistry g_pageTemperatureRegistry;
 static GbMutex load_lock;
 
@@ -40,7 +46,7 @@ bool PageTemperatureRegistry::load() {
 	
 	size_t new_entries = st.st_size/8;
 	
-	unsigned new_hash_table_size = (unsigned)(new_entries * 1.125);
+	unsigned new_hash_table_size = (unsigned)(new_entries * 1.625);
 	uint64_t *new_slot = new uint64_t[new_hash_table_size];
 	memset(new_slot, 0, sizeof(uint64_t)*new_hash_table_size);
 	
