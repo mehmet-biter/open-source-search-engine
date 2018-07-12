@@ -1,5 +1,5 @@
 path    /wp-admin/
-pathpartial	/wishlist/index/add/
+path	/wishlist/index/add/	matchpartial
 file	wp-login.php
 param	url
 param	action	buy_now

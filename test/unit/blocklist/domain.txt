@@ -21,9 +21,3 @@ domain  allowrootdomainindexpage.com 	AND NOT		pathcriteria	indexpage
 domain  allowdomainindexpage.com 		AND NOT 	subdomain	,www
 domain  allowdomainindexpage.com 		AND NOT		pathcriteria	indexpage
 
-hostsuffix  hostsuffix01.com
-hostsuffix  .hostsuffix02.com
-hostsuffix  hostsuffix03.co.uk
-hostsuffix  .hostsuffix04.co.uk
-hostsuffix  hostsuffix05.a.se
-hostsuffix  .hostsuffix06.a.se

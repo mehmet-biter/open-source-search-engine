@@ -13,7 +13,6 @@ enum urlmatchtype_t {
 	url_match_domain,
 	url_match_file,
 	url_match_host,
-	url_match_hostsuffix,
 	url_match_middomain,
 	url_match_path,
 	url_match_pathcriteria,
@@ -28,10 +27,19 @@ enum urlmatchtype_t {
 };
 
 struct urlmatchstr_t {
-	urlmatchstr_t(urlmatchtype_t type, const std::string &str);
+	enum matchcriteria_t {
+		matchcriteria_exact,
+		matchcriteria_prefix,
+		matchcriteria_suffix,
+		matchcriteria_partial
+	};
+
+	urlmatchstr_t(urlmatchtype_t type, const std::string &str, const std::string &match_criteria);
+	urlmatchstr_t(urlmatchtype_t type, const std::string &str, matchcriteria_t matchcriteria);
 
 	urlmatchtype_t m_type;
 	std::string m_str;
+	matchcriteria_t m_matchcriteria;
 };
 
 struct urlmatchset_t {

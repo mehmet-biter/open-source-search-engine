@@ -7,9 +7,23 @@
 #include "UrlParser.h"
 #include <algorithm>
 
-urlmatchstr_t::urlmatchstr_t(urlmatchtype_t type, const std::string &str)
+urlmatchstr_t::urlmatchstr_t(urlmatchtype_t type, const std::string &str, const std::string &match_criteria)
 	: m_type(type)
-	, m_str(str) {
+	, m_str(str)
+	, m_matchcriteria(matchcriteria_exact) {
+	if (match_criteria.compare("matchprefix") == 0) {
+		m_matchcriteria = matchcriteria_prefix;
+	} else if (match_criteria.compare("matchsuffix") == 0) {
+		m_matchcriteria = matchcriteria_suffix;
+	} else if (match_criteria.compare("matchpartial") == 0) {
+		m_matchcriteria = matchcriteria_partial;
+	}
+}
+
+urlmatchstr_t::urlmatchstr_t(urlmatchtype_t type, const std::string &str, matchcriteria_t matchcriteria)
+	: m_type(type)
+	  , m_str(str)
+	  , m_matchcriteria(matchcriteria) {
 }
 
 urlmatchset_t::urlmatchset_t(urlmatchtype_t type, const std::string &str)
@@ -30,9 +44,9 @@ urlmatchpathcriteria_t::urlmatchpathcriteria_t(const std::string &str)
 	: m_str(str)
 	, m_pathcriteria(pathcriteria_all) {
 	if (str.compare("indexpage") == 0) {
-		m_pathcriteria = urlmatchpathcriteria_t::pathcriteria_index_only;
+		m_pathcriteria = pathcriteria_index_only;
 	} else if (str.compare("rootpages") == 0) {
-		m_pathcriteria = urlmatchpathcriteria_t::pathcriteria_rootpages_only;
+		m_pathcriteria = pathcriteria_rootpages_only;
 	}
 }
 
@@ -76,21 +90,25 @@ urlmatchtype_t UrlMatch::getType() const {
 }
 
 std::string UrlMatch::getDomain() const {
-	switch (m_type) {
-		case url_match_domain:
-			return m_str->m_str;
-		case url_match_host:
-		case url_match_hostsuffix: {
-			Url url;
-			url.set(m_str->m_str.c_str());
-			return std::string(url.getDomain(), url.getDomainLen());
+	if (m_str->m_matchcriteria == urlmatchstr_t::matchcriteria_exact || m_str->m_matchcriteria == urlmatchstr_t::matchcriteria_suffix) {
+		switch (m_type) {
+			case url_match_domain:
+				return m_str->m_str;
+			case url_match_host: {
+				Url url;
+				url.set(m_str->m_str.c_str());
+				return std::string(url.getDomain(), url.getDomainLen());
+			}
+			default:
+				// do nothing
+				break;
 		}
-		default:
-			return "";
 	}
+
+	return "";
 }
 
-static bool matchString(const std::string &needle, const char *haystack, int32_t haystackLen) {
+static bool matchStringExact(const std::string &needle, const char *haystack, int32_t haystackLen) {
 	return ((needle.length() == static_cast<size_t>(haystackLen)) && memcmp(needle.c_str(), haystack, needle.length()) == 0);
 }
 
@@ -98,8 +116,42 @@ static bool matchStringPrefix(const std::string &needle, const char *haystack, i
 	return ((needle.length() <= static_cast<size_t>(haystackLen)) && memcmp(needle.c_str(), haystack, needle.length()) == 0);
 }
 
-static bool matchStringSuffix(const std::string &needle, const char *haystack, int32_t haystackLen) {
-	return ((needle.length() <= static_cast<size_t>(haystackLen)) && memcmp(needle.c_str(), haystack + haystackLen - needle.length(), needle.length()) == 0);
+static bool matchStringSuffix(const std::string &needle, const char *haystack, int32_t haystackLen, char segmentSeparator) {
+	if ((needle.length() <= static_cast<size_t>(haystackLen)) && memcmp(needle.c_str(), haystack + haystackLen - needle.length(), needle.length()) == 0) {
+		if (segmentSeparator == '\0') {
+			return true;
+		} else {
+			// we need full segment match
+			if ((needle.length() == static_cast<size_t>(haystackLen)) ||
+			    // haystack starts segment separator
+			    (needle[0] == segmentSeparator) ||
+			    // haystack doesn't start with a dot, but we always want a full segment match
+			    (haystack[haystackLen - needle.length() - 1] == segmentSeparator)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static bool matchStringPartial(const std::string &needle, const char *haystack, int32_t haystackLen) {
+	return (strncasestr(haystack, needle.c_str(), haystackLen) != nullptr);
+}
+
+static bool matchString(std::shared_ptr<urlmatchstr_t> matchstr, const char *haystack, int32_t haystackLen, char segmentSeparator = '\0') {
+	switch (matchstr->m_matchcriteria) {
+		case urlmatchstr_t::matchcriteria_exact:
+			return matchStringExact(matchstr->m_str, haystack, haystackLen);
+		case urlmatchstr_t::matchcriteria_prefix:
+			return matchStringPrefix(matchstr->m_str, haystack, haystackLen);
+		case urlmatchstr_t::matchcriteria_suffix:
+			return matchStringSuffix(matchstr->m_str, haystack, haystackLen, segmentSeparator);
+		case urlmatchstr_t::matchcriteria_partial:
+			return matchStringPartial(matchstr->m_str, haystack, haystackLen);
+	}
+
+	return false;
 }
 
 bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
@@ -107,27 +159,15 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 
 	switch (m_type) {
 		case url_match_domain:
-			return m_invert ^ matchString(m_str->m_str, url.getDomain(), url.getDomainLen());
+			return m_invert ^ matchString(m_str, url.getDomain(), url.getDomainLen(), '.');
 		case url_match_extension:
-			return m_invert ^ matchString(m_str->m_str, url.getExtension(), url.getExtensionLen());
+			return m_invert ^ matchString(m_str, url.getExtension(), url.getExtensionLen());
 		case url_match_file:
-			return m_invert ^ matchString(m_str->m_str, url.getFilename(), url.getFilenameLen());
+			return m_invert ^ matchString(m_str, url.getFilename(), url.getFilenameLen());
 		case url_match_host:
-			return m_invert ^ matchString(m_str->m_str, url.getHost(), url.getHostLen());
-		case url_match_hostsuffix:
-			if (matchStringSuffix(m_str->m_str, url.getHost(), url.getHostLen())) {
-				// full match
-				if ((m_str->m_str.length() == static_cast<size_t>(url.getHostLen())) ||
-					// hostsuffix starts with a dot
-					(m_str->m_str[0] == '.') ||
-					// hostsuffix doesn't start with a dot, but we always want a full segment match
-					(url.getHost()[url.getHostLen() - m_str->m_str.length() - 1] == '.')) {
-					return m_invert ^ true;
-				}
-			}
-			return false;
+			return m_invert ^ matchString(m_str, url.getHost(), url.getHostLen(), '.');
 		case url_match_middomain:
-			return m_invert ^ matchString(m_str->m_str, url.getMidDomain(), url.getMidDomainLen());
+			return m_invert ^ matchString(m_str, url.getMidDomain(), url.getMidDomainLen(), '.');
 		case url_match_queryparam:
 			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != nullptr) {
 				// not the most efficient, but there is already parsing logic for query parameter in UrlParser
@@ -137,14 +177,14 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 				}
 
 				for (auto &queryMatch : queryMatches) {
-					if (matchString(m_param->m_value, queryMatch->getValue(), queryMatch->getValueLen())) {
+					if (matchStringExact(m_param->m_value, queryMatch->getValue(), queryMatch->getValueLen())) {
 						return m_invert ^ true;
 					}
 				}
 			}
 			break;
 		case url_match_path:
-			return m_invert ^ matchStringPrefix(m_str->m_str, url.getPath(), url.getPathLenWithCgi());
+			return m_invert ^ matchString(m_str, url.getPath(), url.getPathLenWithCgi(), '/');
 		case url_match_pathcriteria:
 			// check for pathcriteria
 			switch (m_pathcriteria->m_pathcriteria) {
@@ -165,22 +205,22 @@ bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 				}
 
 				for (auto &pathParamMatch : pathParamMatches) {
-					if (matchString(m_param->m_value, pathParamMatch->getValue(), pathParamMatch->getValueLen())) {
+					if (matchStringExact(m_param->m_value, pathParamMatch->getValue(), pathParamMatch->getValueLen())) {
 						return m_invert ^ true;
 					}
 				}
 			}
 			break;
 		case url_match_pathpartial:
-			return m_invert ^ (strncasestr(url.getPath(), m_str->m_str.c_str(), url.getPathLen()) != nullptr);
+			return m_invert ^ matchStringPartial(m_str->m_str, url.getPath(), url.getPathLen());
 		case url_match_port: {
 			std::string port = std::to_string(url.getPort());
-			return m_invert ^ matchString(m_str->m_str, port.c_str(), port.length());
+			return m_invert ^ matchStringExact(m_str->m_str, port.c_str(), port.length());
 		}
 		case url_match_regex:
 			return m_invert ^ m_regex->m_regex.match(url.getUrl());
 		case url_match_scheme:
-			return m_invert ^ matchString(m_str->m_str, url.getScheme(), url.getSchemeLen());
+			return m_invert ^ matchStringExact(m_str->m_str, url.getScheme(), url.getSchemeLen());
 		case url_match_subdomain: {
 			auto subDomainLen = (url.getDomain() == url.getHost()) ? 0 : url.getDomain() - url.getHost() - 1;
 			std::string subDomain(url.getHost(), subDomainLen);
@@ -215,10 +255,6 @@ void UrlMatch::log(const Url &url, const char **type, const char **value) const 
 			break;
 		case url_match_host:
 			*type = "host";
-			*value = m_str->m_str.c_str();
-			break;
-		case url_match_hostsuffix:
-			*type = "hostsuffix";
 			*value = m_str->m_str.c_str();
 			break;
 		case url_match_middomain:

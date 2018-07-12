@@ -232,46 +232,46 @@ TEST(UrlMatchListTest, DomainTld) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com.my/"));
 }
 
-TEST(UrlMatchListTest, DomainHostSuffix) {
-	TestUrlMatchList urlMatchList("blocklist/domain.txt");
+TEST(UrlMatchListTest, HostHostSuffix) {
+	TestUrlMatchList urlMatchList("blocklist/host.txt");
 	urlMatchList.load();
 
-	//hostsuffix  hostsuffix01.com
+	//host hostsuffix01.com matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix01.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix01.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix01.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix01.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix01.com"));
 
-	//hostsuffix  .hostsuffix02.com
+	//host .hostsuffix02.com matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix02.com"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix02.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix02.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix02.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix02.com"));
 
-	//hostsuffix  hostsuffix03.co.uk
+	//host hostsuffix03.co.uk matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix03.co.uk"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix03.co.uk"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix03.co.uk"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix03.co.uk"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix03.co.uk"));
 
-	//hostsuffix  .hostsuffix04.co.uk
+	//host .hostsuffix04.co.uk matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix04.co.uk"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix04.co.uk"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix04.co.uk"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix04.co.uk"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix04.co.uk"));
 
-	//hostsuffix  hostsuffix05.a.se
+	//host hostsuffix05.a.se matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix05.a.se"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix05.a.se"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix05.a.se"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix05.a.se"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix05.a.se"));
 
-	//hostsuffix  .hostsuffix06.a.se
+	//host .hostsuffix06.a.se matchsuffix
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix06.a.se"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix06.a.se"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix06.a.se"));
@@ -329,11 +329,11 @@ TEST(UrlMatchListTest, PathFile) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php?param=value&param2=value2"));
 }
 
-TEST(UrlMatchListTest, PathQueryParam) {
+TEST(UrlMatchListTest, PathParam) {
 	TestUrlMatchList urlMatchList("blocklist/path.txt");
 	urlMatchList.load();
 
-	//queryparam url
+	//param url
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?URL=abc"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?url=abcde"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?uRl=abcde"));
@@ -341,7 +341,7 @@ TEST(UrlMatchListTest, PathQueryParam) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?urlz=http://www.example.com"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?zurl=http://www.example.com"));
 
-	//queryparam action  buy_now
+	//param action  buy_now
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_now&product_id=123"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?ACTION=buy_now&product_id=123"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?product_id=123&action=buy_now"));

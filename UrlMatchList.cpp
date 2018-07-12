@@ -115,6 +115,25 @@ static bool parseMatchSet(urlmatches_t *urlMatches, urlmatchtype_t type, const s
 	return true;
 }
 
+static bool parseMatchStrWithCriteria(urlmatches_t *urlMatches, urlmatchtype_t type, const std::vector<std::string> &tokens,
+                                      bool invert, urlmatchstr_t::matchcriteria_t default_matchcriteria = urlmatchstr_t::matchcriteria_exact) {
+	// validate
+	if (tokens.size() < 2 || tokens.size() > 3) {
+		return false;
+	}
+
+	const std::string &str = tokens[1];
+
+	if (tokens.size() == 2) {
+		urlMatches->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(type, str, default_matchcriteria)), invert);
+	} else {
+		const std::string &match_criteria = tokens[2];
+		urlMatches->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(type, str, match_criteria)), invert);
+	}
+
+	return true;
+}
+
 static bool parseMatchStr(urlmatches_t *urlMatches, urlmatchtype_t type, const std::vector<std::string> &tokens, bool invert) {
 	// validate
 	if (tokens.size() != 2) {
@@ -122,21 +141,8 @@ static bool parseMatchStr(urlmatches_t *urlMatches, urlmatchtype_t type, const s
 	}
 
 	const std::string &str = tokens[1];
-	urlMatches->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(type, str)), invert);
-	return true;
-}
 
-static bool parseHostSuffix(urlmatches_t *urlMatches, const std::vector<std::string> &tokens, bool invert) {
-	// validate
-	if (tokens.size() != 2) {
-		return false;
-	}
-
-	const std::string &host = tokens[1];
-
-	auto matcher = std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_hostsuffix, host));
-	urlMatches->emplace_back(matcher, invert);
-
+	urlMatches->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(type, str, "")), invert);
 	return true;
 }
 
@@ -253,7 +259,7 @@ bool UrlMatchList::load() {
 					case 'd':
 						// domain
 						if (type.compare("domain") == 0) {
-							if (!parseMatchStr(&urlMatches, url_match_domain, tokens, invert)) {
+							if (!parseMatchStrWithCriteria(&urlMatches, url_match_domain, tokens, invert)) {
 								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
 								foundInvalid = true;
 								continue;
@@ -295,13 +301,7 @@ bool UrlMatchList::load() {
 					case 'h':
 						// host
 						if (type.compare("host") == 0) {
-							if (!parseMatchStr(&urlMatches, url_match_host, tokens, invert)) {
-								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
-								foundInvalid = true;
-								continue;
-							}
-						} else if (type.compare("hostsuffix") == 0) {
-							if (!parseHostSuffix(&urlMatches, tokens, invert)) {
+							if (!parseMatchStrWithCriteria(&urlMatches, url_match_host, tokens, invert)) {
 								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
 								foundInvalid = true;
 								continue;
@@ -336,7 +336,7 @@ bool UrlMatchList::load() {
 							}
 						} else if (type.compare("path") == 0) {
 							// path
-							if (!parseMatchStr(&urlMatches, url_match_path, tokens, invert)) {
+							if (!parseMatchStrWithCriteria(&urlMatches, url_match_path, tokens, invert, urlmatchstr_t::matchcriteria_prefix)) {
 								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
 								foundInvalid = true;
 								continue;
@@ -350,13 +350,6 @@ bool UrlMatchList::load() {
 						} else if (type.compare("pathparam") == 0) {
 							// path param
 							if (!parseMatchParam(&urlMatches, url_match_pathparam, tokens, invert)) {
-								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
-								foundInvalid = true;
-								continue;
-							}
-						} else if (type.compare("pathpartial") == 0) {
-							// pathpartial
-							if (!parseMatchStr(&urlMatches, url_match_pathpartial, tokens, invert)) {
 								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
 								foundInvalid = true;
 								continue;
@@ -453,15 +446,17 @@ bool UrlMatchList::load() {
 
 			auto func = [](const UrlMatch &match) {
 				return match.getType() == url_match_domain ||
-				       match.getType() == url_match_host ||
-				       match.getType() == url_match_hostsuffix;
+				       match.getType() == url_match_host;
 			};
 
 			auto it = std::find_if(urlMatches.begin(), urlMatches.end(), func);
 			if (it != urlMatches.end()) {
-				auto &list = tmpUrlMatchList->m_domainUrlMatchesList[it->getDomain()];
-				list.emplace_back(urlMatches);
-				continue;
+				std::string domain = it->getDomain();
+				if (!domain.empty()) {
+					auto &list = tmpUrlMatchList->m_domainUrlMatchesList[domain];
+					list.emplace_back(urlMatches);
+					continue;
+				}
 			}
 
 			tmpUrlMatchList->m_urlMatchesList.emplace_back(urlMatches);
