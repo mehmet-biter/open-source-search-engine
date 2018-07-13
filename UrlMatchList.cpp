@@ -301,7 +301,7 @@ bool UrlMatchList::load() {
 					case 'h':
 						// host
 						if (type.compare("host") == 0) {
-							if (!parseMatchStrWithCriteria(&urlMatches, url_match_host, tokens, invert)) {
+							if (!parseMatchStrWithCriteria(&urlMatches, url_match_host, tokens, invert, urlmatchstr_t::matchcriteria_suffix)) {
 								logError("Invalid '%s' line found. Ignoring line='%s'", type.c_str(), line.c_str());
 								foundInvalid = true;
 								continue;
