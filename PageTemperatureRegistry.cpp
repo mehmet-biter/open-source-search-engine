@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <math.h>
 #include <float.h>      // FLT_EPSILON, DBL_EPSILON
+#include <algorithm>
+
 
 PageTemperatureRegistry g_pageTemperatureRegistry;
 static GbMutex load_lock;
@@ -19,64 +21,50 @@ bool PageTemperatureRegistry::load() {
 	ScopedLock sl(load_lock);
 	log(LOG_DEBUG, "Loading %s", filename);
 
-	FILE *fp = fopen(filename, "r");
-	if(!fp) {
-		log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
-		return false;
-	}
-	
 	struct stat st;
-	if(fstat(fileno(fp),&st)!=0) {
+	if(stat(filename,&st)!=0) {
 		log(LOG_WARN,"fstat(%s) failed with errno=%d (%s)", filename, errno, strerror(errno));
-		fclose(fp);
 		return false;
 	}
 	
-	if(st.st_size%8) {
-		log(LOG_WARN,"%s is size %lu which is not a multiple of 8. Damaged file?", filename, (unsigned long)st.st_size);
-		fclose(fp);
+	unsigned new_active_index = 1-active_index;
+	if(!mmf[new_active_index].open(filename)) {
+		if(errno==ENOENT)
+			log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
+		else
+			log(LOG_WARN,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
 		return false;
 	}
 	
-	size_t new_entries = st.st_size/8;
-	
-	unsigned new_hash_table_size = (unsigned)(new_entries * 1.125);
-	uint64_t *new_slot = new uint64_t[new_hash_table_size];
-	memset(new_slot, 0, sizeof(uint64_t)*new_hash_table_size);
-	
-	unsigned new_min_temperature = 0x3ffffff;
-	unsigned new_max_temperature = 0;
-	uint64_t tmp_slot;
-	while(fread(&tmp_slot,8,1,fp)==1) {
-		uint64_t docid = tmp_slot>>26;
-		unsigned temperature = tmp_slot&0x3ffffff;
-		unsigned start_idx = ((uint32_t)docid) % new_hash_table_size;
-		while(new_slot[start_idx])
-			start_idx = (start_idx+1)%new_hash_table_size;
-		new_slot[start_idx] = tmp_slot;
-		if(temperature<new_min_temperature) new_min_temperature=temperature;
-		if(temperature>new_max_temperature) new_max_temperature=temperature;
-		
+	if(mmf[new_active_index].size()%sizeof(uint64_t)) {
+		log(LOG_WARN,"%s size is not a multiple of %zu", filename, sizeof(uint64_t));
+		return false;
 	}
 	
-	fclose(fp);
 	
-	delete[] slot;
-	slot = new_slot;
-	entries = new_entries;
-	hash_table_size = new_hash_table_size;
-	
-	min_temperature = new_min_temperature;
-	max_temperature = new_max_temperature;
+	//ok, is the file sorted as we expect it to be?
+	if(mmf[new_active_index].size() >= sizeof(uint64_t)*5) {
+		//just probe 5 elements
+		size_t c = mmf[new_active_index].size() / sizeof(uint64_t);
+		auto e = reinterpret_cast<const uint64_t*>(mmf[new_active_index].start());
+		if(e[c/5*0]<e[c/5*1] &&
+		   e[c/5*1]<e[c/5*2] &&
+		   e[c/5*2]<e[c/5*3] &&
+		   e[c/5*3]<e[c-1  ])
+			; //excellent
+		else {
+			log(LOG_WARN,"%s is not sorted. Regenerate or sort it", filename);
+			return false;
+		}
+	}
 
 	//Default temperature for unregistered pages is a bit tricky.
 	//Initially an unregistered page is likely just freshly crawled but an old one. So the average
 	//temperature is a good guess. On the other hand when we have crawled most of the internet
 	//then an unregistered page indicates a new page and it like has low temperature.
 	//There is no obvious correct value.
-	default_temperature = (min_temperature+max_temperature)/2;
 
-	//we have calculated min/max above. But if there is a .meta file then use the values from that
+	//If there is a .meta file then use the values from that
 	bool using_meta = false;
 	char meta_filename[1024];
 	sprintf(meta_filename,"%s.meta",filename);
@@ -99,6 +87,23 @@ bool PageTemperatureRegistry::load() {
 		}
 		fclose(fp_meta);
 	}
+	
+	if(!using_meta) {
+		//otherwise calculate min/max/avg
+		unsigned new_min_temperature = 0x3ffffff;
+		unsigned new_max_temperature = 0;
+		auto *begin = reinterpret_cast<const uint64_t*>(mmf[new_active_index].start());
+		auto end = begin + mmf[new_active_index].size()/sizeof(uint64_t);
+		for(auto *e = begin; e<end; e++) {
+			//uint64_t docid = *e>>26;
+			unsigned temperature = *e&0x3ffffff;
+			if(temperature<new_min_temperature) new_min_temperature=temperature;
+			if(temperature>new_max_temperature) new_max_temperature=temperature;
+		}
+		min_temperature = new_min_temperature;
+		max_temperature = new_max_temperature;
+		default_temperature = (min_temperature+max_temperature)/2;
+	}
 
 	temperature_range_for_scaling = max_temperature-min_temperature;
 	
@@ -114,18 +119,22 @@ bool PageTemperatureRegistry::load() {
 	log(LOG_DEBUG, "pagetemp: max_temperature=%u",max_temperature);
 	log(LOG_DEBUG, "pagetemp: default_temperature=%u",default_temperature);
 
-	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
+	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)mmf[new_active_index].size()/sizeof(uint64_t));
 	
+	//swap in and done.
+	
+	active_index.store(new_active_index,std::memory_order_release);
+
 	stat_ino = st.st_ino;
 	stat_mtime = st.st_mtime;
+	
 	return true;
 }
 
 
 void PageTemperatureRegistry::unload() {
-	delete[] slot;
-	slot = 0;
-	entries = 0;
+	mmf[0].close();
+	mmf[1].close();
 	//min/max temperatures are kept as-is
 }
 
@@ -145,11 +154,14 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 
 
 unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid, unsigned raw_default) const {
-	unsigned idx = ((uint32_t)docid) % hash_table_size;
-	while(slot[idx]) {
-		if(slot[idx]>>26 == docid)
-			return slot[idx]&0x3ffffff;
-		idx = (idx+1)%hash_table_size;
+	auto ai = active_index.load(std::memory_order_consume);
+	auto start = reinterpret_cast<const uint64_t *>(mmf[ai].start());
+	auto count = mmf[ai].size()/sizeof(uint64_t);
+	auto end = start+count;
+	
+	auto pos = std::lower_bound(start, end, docid<<26);
+	if(pos!=end && *pos>>26 == docid) {
+		return *pos&0x3ffffff;
 	}
 	return raw_default;
 }
@@ -157,15 +169,15 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 
 
 bool PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, double *temperature) const {
-	if(hash_table_size==0)
-		return false;
-	unsigned idx = ((uint32_t)docid) % hash_table_size;
-	while(slot[idx]) {
-		if(slot[idx]>>26 == docid) {
-			*temperature = scale_temperature(range_min,range_max,slot[idx]&0x3ffffff);
-			return slot[idx]&0x3ffffff;
-		}
-		idx = (idx+1)%hash_table_size;
+	auto ai = active_index.load(std::memory_order_consume);
+	auto start = reinterpret_cast<const uint64_t *>(mmf[ai].start());
+	auto count = mmf[ai].size()/sizeof(uint64_t);
+	auto end = start+count;
+	
+	auto pos = std::lower_bound(start, end, docid<<26);
+	if(pos!=end && *pos>>26 == docid) {
+		*temperature = scale_temperature(range_min,range_max,*pos&0x3ffffff);
+		return *pos&0x3ffffff;
 	}
 	return false;
 }

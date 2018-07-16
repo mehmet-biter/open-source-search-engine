@@ -20,6 +20,14 @@
 //
 // Important: the flags+docid fields are 64 bit in total. docid is in the high bits. this makes sorting+binary search easy.
 
+struct Docid2FlagsAndSiteMapEntry {
+	uint64_t flags      : 26;
+	uint64_t docid      : 38;
+	uint32_t sitehash32 : 32;
+} __attribute__((packed, aligned(4)));
+
+
+
 
 Docid2FlagsAndSiteMap g_d2fasm;
 
@@ -39,52 +47,51 @@ bool Docid2FlagsAndSiteMap::load()
 {
 	log(LOG_DEBUG, "Loading %s", filename);
 	
-	int fd = open(filename, O_RDONLY);
-	if(fd<0) {
-		log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
+	struct stat st;
+	if(stat(filename,&st)!=0) {
+		log(LOG_WARN,"stat(%s) failed with errno=%d (%s)", filename, errno, strerror(errno));
+		return false;
+	}
+
+	unsigned new_active_index = 1-active_index;
+	if(!mmf[new_active_index].open(filename)) {
+		if(errno==ENOENT)
+			log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
+		else
+			log(LOG_WARN,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
 		return false;
 	}
 	
 	//load the entries in one go
 	
-	struct stat st;
-	if(fstat(fd,&st)!=0) {
-		log(LOG_WARN,"fstat(%s) failed with errno=%d (%s)", filename, errno, strerror(errno));
-		close(fd);
-		return false;
-	}
-	
-	if(st.st_size%sizeof(Docid2FlagsAndSiteMapEntry)) {
+	if(mmf[new_active_index].size()%sizeof(Docid2FlagsAndSiteMapEntry)) {
 		log(LOG_WARN,"%s size is not a multiple of %zu", filename, sizeof(Docid2FlagsAndSiteMapEntry));
-		close(fd);
-		return false;
-	}
-	size_t entry_count = st.st_size/sizeof(Docid2FlagsAndSiteMapEntry);
-	
-	std::vector<Docid2FlagsAndSiteMapEntry> new_entries;
-	new_entries.resize(entry_count);
-	
-	ssize_t bytes_read = read(fd, &(new_entries[0]), st.st_size);
-	if(bytes_read!=st.st_size) {
-		log(LOG_WARN,"read(%s) returned short count", filename);
-		close(fd);
 		return false;
 	}
 	
-	close(fd);
-	
-	
-	std::sort(new_entries.begin(), new_entries.end(), cmp);
+	//ok, is the file sorted as we expect it to be?
+	if(mmf[new_active_index].size() >= sizeof(Docid2FlagsAndSiteMapEntry)*5) {
+		//just probe 5 elements
+		size_t c = mmf[new_active_index].size() / sizeof(Docid2FlagsAndSiteMapEntry);
+		auto e = reinterpret_cast<const Docid2FlagsAndSiteMapEntry*>(mmf[new_active_index].start());
+		if(e[c/5*0].docid<e[c/5*1].docid &&
+		   e[c/5*1].docid<e[c/5*2].docid &&
+		   e[c/5*2].docid<e[c/5*3].docid &&
+		   e[c/5*3].docid<e[c-1  ].docid)
+			; //excellent
+		else {
+			log(LOG_WARN,"%s is not sorted. Either regenerate it or use 'sort_docid2flagsandsitemap'", filename);
+			return false;
+		}
+	}
 	
 	//swap in and done.
 	
-	unsigned new_active_index = 1-active_index;
-	std::swap(entries[new_active_index],new_entries);
 	active_index.store(new_active_index,std::memory_order_release);
 
 	timestamp = st.st_mtime;
 
-	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)entries [new_active_index].size());
+	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)mmf[new_active_index].size()/sizeof(Docid2FlagsAndSiteMapEntry));
 	return true;
 }
 
@@ -99,8 +106,8 @@ void Docid2FlagsAndSiteMap::reload_if_needed() {
 
 
 void Docid2FlagsAndSiteMap::unload() {
-	entries[0].clear();
-	entries[1].clear();
+	mmf[0].close();
+	mmf[1].close();
 }
 
 
@@ -108,14 +115,16 @@ bool Docid2FlagsAndSiteMap::lookupSiteHash(uint64_t docid, uint32_t *sitehash32)
 	Docid2FlagsAndSiteMapEntry tmp;
 	tmp.docid = docid;
 	tmp.flags = 0;
-	auto const &e = entries[active_index.load(std::memory_order_consume)];
-	auto pos = std::lower_bound(e.begin(), e.end(), tmp, cmp);
-	if(pos!=e.end()) {
-		if(pos->docid == docid) {
-			*sitehash32 = pos->sitehash32;
-			logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record sitehash32=%u for docid=%lu", *sitehash32, docid);
-			return true;
-		}
+	auto ai = active_index.load(std::memory_order_consume);
+	auto start = reinterpret_cast<const Docid2FlagsAndSiteMapEntry *>(mmf[ai].start());
+	auto count = mmf[ai].size()/sizeof(Docid2FlagsAndSiteMapEntry);
+	auto end = start+count;
+	
+	auto pos = std::lower_bound(start, end, tmp, cmp);
+	if(pos!=end && pos->docid == docid) {
+		*sitehash32 = pos->sitehash32;
+		logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record sitehash32=%u for docid=%lu", *sitehash32, docid);
+		return true;
 	}
 
 	logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Record not found for docid=%lu", docid);
@@ -127,14 +136,16 @@ bool Docid2FlagsAndSiteMap::lookupFlags(uint64_t docid, unsigned *flags) {
 	Docid2FlagsAndSiteMapEntry tmp;
 	tmp.docid = docid;
 	tmp.flags = 0;
-	auto const &e = entries[active_index.load(std::memory_order_consume)];
-	auto pos = std::lower_bound(e.begin(), e.end(), tmp, cmp);
-	if(pos!=e.end()) {
-		if(pos->docid == docid) {
-			*flags = pos->flags;
-			logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record flags=%u for docid=%lu", *flags, docid);
-			return true;
-		}
+	auto ai = active_index.load(std::memory_order_consume);
+	auto start = reinterpret_cast<const Docid2FlagsAndSiteMapEntry *>(mmf[ai].start());
+	auto count = mmf[ai].size()/sizeof(Docid2FlagsAndSiteMapEntry);
+	auto end = start+count;
+	
+	auto pos = std::lower_bound(start, end, tmp, cmp);
+	if(pos!=end && pos->docid == docid) {
+		*flags = pos->flags;
+		logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Found record flags=%u for docid=%lu", *flags, docid);
+		return true;
 	}
 
 	logTrace(g_conf.m_logTraceDocid2FlagsAndSiteMap, "Record not found for docid=%lu", docid);

@@ -96,6 +96,7 @@ OBJS_O3 = \
 	FxClient.o \
 	SiteNumInlinks.o \
 	SiteMedianPageTemperature.o \
+	MemoryMappedFile.o \
 	Lemma.o \
 
 
