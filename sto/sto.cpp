@@ -52,7 +52,8 @@ const sto::WordForm *sto::LexicalEntry::find_base_wordform() const {
 					return e;
 				break;
 			}
-			case part_of_speech_t::commonNoun: {
+			case part_of_speech_t::commonNoun:
+			case part_of_speech_t::properNoun: {
 				if((e->has_attribute(word_form_attribute_t::definiteness_indefinite) || e->has_attribute(word_form_attribute_t::definiteness_unspecified)) &&
 				   (e->has_attribute(word_form_attribute_t::grammaticalNumber_singular) || e->has_attribute(word_form_attribute_t::grammaticalNumber_unspecified)) &&
 				   (e->has_attribute(word_form_attribute_t::case_unspecified) || e->has_attribute(word_form_attribute_t::case_nominativeCase)))
@@ -164,7 +165,7 @@ void sto::Lexicon::unload() {
 const sto::LexicalEntry *sto::Lexicon::lookup(const std::string &word) const {
 	MapEntry me_word(word.data(),word.length(),0);
 	auto iter = std::lower_bound(entries.begin(),entries.end(),me_word,MapEntry::compare);
-	if(iter!=entries.end())
+	if(iter!=entries.end() && iter->length==word.length() && memcmp(iter->str,word.data(),iter->length)==0)
 		return iter->entry;
 	else
 		return 0;

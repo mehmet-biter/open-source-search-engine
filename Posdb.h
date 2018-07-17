@@ -86,7 +86,8 @@
 #define HASHGROUP_INMENU               10 // body implied
 #define HASHGROUP_EXPLICIT_KEYWORDS    11
 #define HASHGROUP_MIDDOMAIN            12
-#define HASHGROUP_END                  13
+#define HASHGROUP_LEMMA                13
+#define HASHGROUP_END                  14
 
 #define POSDB_DELETEDOC_TERMID    0
 

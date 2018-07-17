@@ -23,6 +23,7 @@
 #include "Collectiondb.h"
 #include "GbUtil.h"
 #include <set>
+#include "Lemma.h"
 
 
 #include "GbMutex.h"
@@ -497,6 +498,8 @@ bool Query::setQTerms() {
 			logTrace(g_conf.m_logTraceQuery, "  variation #%u: %s weight=%f src=[%d..%d)", i, m_wordVariations[i].word.c_str(), m_wordVariations[i].weight, m_wordVariations[i].source_word_start, m_wordVariations[i].source_word_end);
 	}
 
+	if(m_word_variations_config.m_lemmaWordVariations)
+		numCandidateSynonyms += 10;
 
 	m_numTermsUntruncated = numCandidatePhrases+numCandidateSingles+numCandidateSynonyms;
 	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d (%d phrases, %d singles, %d synonyms)", m_numTermsUntruncated, numCandidatePhrases, numCandidateSingles, numCandidateSynonyms);
@@ -1047,6 +1050,136 @@ bool Query::setQTerms() {
 			n++;
 		}
 	}
+	
+	if(m_word_variations_config.m_lemmaWordVariations && m_langId==langDanish) {
+		logTrace(g_conf.m_logTraceQuery, "Lexicon-based lemma synonyms");
+		for(int32_t i = 0; i<m_numWords && n<numQueryTerms; i++) {
+			if(!m_tr[i].is_alfanum)
+				continue;
+			std::string w(m_tr[i].token_start,m_tr[i].token_len);
+			logTrace(g_conf.m_logTraceQuery, "@@ Checking lemma for '%s'", w.c_str());
+			auto le = lemma_lexicon->lookup(w);
+			if(!le) {
+				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
+				char lowercase_word[128];
+				if(w.size()<sizeof(lowercase_word)) {
+					size_t sz = to_lower_utf8(lowercase_word,lowercase_word+sizeof(lowercase_word), w.data(), w.data()+w.size());
+					lowercase_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),lowercase_word,w.size())!=0) {
+						le = lemma_lexicon->lookup(lowercase_word);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try capitalized in case it is a lowercase or uppercase word
+				char capitalized_word[128];
+				if(w.size()<sizeof(capitalized_word)) {
+					size_t sz = to_capitalized_utf8(capitalized_word,capitalized_word+sizeof(capitalized_word), w.data(), w.data()+w.size());
+					capitalized_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),capitalized_word,w.size())!=0) {
+						w = capitalized_word;
+						le = lemma_lexicon->lookup(w);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try uppercasing it
+				char uppercase_word[128];
+				if(w.size()<sizeof(uppercase_word)) {
+					size_t sz = to_upper_utf8(uppercase_word,uppercase_word+sizeof(uppercase_word), w.data(), w.data()+w.size());
+					uppercase_word[sz] = '\0';
+					if(sz!=w.size() || memcmp(w.data(),uppercase_word,w.size())!=0) {
+						w = uppercase_word;
+						le = lemma_lexicon->lookup(w);
+					}
+				}
+			}
+			if(!le)
+				continue; //unknown word
+			auto wf = le->find_base_wordform();
+			if(!wf)
+				continue;
+			if(wf->written_form_length==w.size() && memcmp(wf->written_form,w.data(),w.size())==0)
+				continue; //already base form)
+			logTrace(g_conf.m_logTraceQuery, "@@ Generating synonym from lemma: %s -> %.*s", w.c_str(), wf->written_form_length,wf->written_form);
+			
+			QueryWord *qw  = &m_qwords[i];
+			QueryTerm *origTerm = qw->m_queryWordTerm;
+////QQQQQQQQQQQQQ
+
+			// add that query term
+			QueryTerm *qt   = &m_qterms[n];
+			qt->m_qword     = qw; // NULL;
+			qt->m_piped     = qw->m_piped;
+			qt->m_isPhrase  = false;
+			qt->m_langIdBits = 0;
+			// synonym of this term...
+			qt->m_synonymOf = origTerm;
+			// nuke this crap since it was done above and we
+			// missed out!
+			qt->m_rightPhraseTermNum = -1;
+			qt->m_leftPhraseTermNum  = -1;
+			qt->m_rightPhraseTerm    = NULL;
+			qt->m_leftPhraseTerm     = NULL;
+			// need this for displaying language of syn in
+			// the json/xml feed in PageResults.cpp
+			qt->m_langIdBitsValid = true;
+			//int langId = syn.m_langIds[j];  //syn-todo?
+			//uint64_t langBit = (uint64_t)1 << langId;  //syn-todo?
+			//if(langId >= 64) langBit = 0; //syn-todo?
+			//qt->m_langIdBits |= langBit; //syn-todo?
+			// need this for Matches.cpp
+			qt->m_synWids0 = 0;
+			qt->m_synWids1 = 0;
+			qt->m_numAlnumWordsInSynonym = 0;
+
+			// ignore some synonym terms if tf is too low
+			qt->m_ignored = qw->m_ignoreWord;
+			// stop word? no, we're a phrase term
+			qt->m_isQueryStopWord = qw->m_isQueryStopWord;
+			// change in both places
+			//int64_t wid = syn.m_aids[j];
+			int64_t wid = hash64Lower_utf8_nospaces(wf->written_form,wf->written_form_length);
+			// might be in a title: field or something
+			if(qw->m_prefixHash) {
+				int64_t ph = qw->m_prefixHash;
+				wid= hash64h(wid,ph);
+			}
+			qt->m_termId    = wid & TERMID_MASK;
+			//qt->m_rawTermId = syn.m_aids[j]; //syn-todo?
+			// boolean queries are not allowed term signs
+			if(m_isBoolean) {
+				qt->m_termSign = '\0';
+				// boolean fix for "health OR +sports" because
+				// the + there means exact word match, no syns
+				if(qw->m_wordSign == '+') {
+					qt->m_termSign  = qw->m_wordSign;
+				}
+			}
+			// if not bool, ensure to change signs in both places
+			else {
+				qt->m_termSign  = qw->m_wordSign;
+			}
+			// IndexTable.cpp uses this one
+			qt->m_inQuotes  = qw->m_inQuotes;
+			// point to the string itself that is the word
+			qt->m_term     = wf->written_form;
+			qt->m_termLen  = wf->written_form_length;
+			// assign score weight
+			qt->m_termWeight = m_synonymWeight;
+			qt->m_userWeight = qw->m_userWeightForSynonym;
+			qt->m_fieldCode  = qw->m_fieldCode  ;
+			// stuff before a pipe always has a weight of 1
+			if(qt->m_piped) {
+				qt->m_userWeight = 1;
+			}
+			// otherwise, add it
+			n++;
+
+////QQQQQQQQQQQQQQ
+		}
+	}
+	
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }

@@ -15,6 +15,9 @@
 #include "Domains.h"
 #include "FxExplicitKeywords.h"
 #include <algorithm>
+#include "Lemma.h"
+#include <unordered_set>
+#include <string>
 
 
 #ifdef _VALGRIND_
@@ -295,6 +298,8 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 	
+	lemma_words.clear();
+
 	// BR 20160127: Never index JSON and XML content
 	if (*ct == CT_JSON || *ct == CT_XML) {
 		// For XML (JSON should not get here as it should be filtered out during spidering)
@@ -507,6 +512,12 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguageString failed");
 		return NULL;
 	}
+
+	if(!hashLemmas(table)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLemmas failed");
+		return NULL;
+	}
+	lemma_words.clear(); //release memory early
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, OK");
 	return (char *)1;
@@ -1620,6 +1631,59 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	return true;
 }
 
+
+bool XmlDoc::hashLemmas(HashTableX *table) {
+	setStatus("hashing lemmas"); //Not llamas
+	logTrace(g_conf.m_logTraceTokenIndexing,"lemma_words.size()=%zu", lemma_words.size());
+	HashInfo hi; //storeTerm wants a HashInfo instance.
+
+	if(m_dist > MAXWORDPOS) {
+		log(LOG_INFO,"hashLemmas(): wordpos limit hit in document %.*s", m_firstUrl.getUrlLen(), m_firstUrl.getUrl());
+		return true;
+	}
+
+	for(const auto &e : lemma_words) {
+		uint64_t h = hash64Lower_utf8(e.data(),e.length());
+		logTrace(g_conf.m_logTraceTokenIndexing,"Indexing lemma '%s', h=%ld, termid=%lld", e.c_str(), h, h&TERMID_MASK);
+		key144_t k;
+		Posdb::makeKey(&k,
+			       h,
+			       0LL,//docid
+			       m_dist,
+			       0,// densityRank , // 0-15
+			       0, //diversityrank
+			       0, //wordspamrank
+			       0, // siterank
+			       HASHGROUP_LEMMA,
+			       m_langId, // we set to docLang final hash loop
+			       0, // multiplier
+			       false, // syn?
+			       false, // delkey?
+			       false); //shardByTermId
+		table->addTerm144(&k);
+
+		if(m_wts) {
+			// add to wts for PageParser.cpp display
+			if(!storeTerm(e.data(),e.length(),
+				      h, &hi,
+				      0, //word index. We could keep track of the first word that generated this base form. But we don't.
+				      m_dist, // wordPos
+				      0,// densityRank , // 0-15
+				      0, //diversityrank
+				      0, //wordspamrank
+				      HASHGROUP_LEMMA,
+				      &m_wbuf,
+				      m_wts,
+				      SOURCE_NONE, // synsrc
+				      m_langId,
+				      k))
+				return false;
+		}
+	}
+	return true;
+}
+
+
 void XmlDoc::sortTokenizerResult(TokenizerResult *tr) {
 	std::sort(tr->tokens.begin(), tr->tokens.end(), [](const TokenRange&tr0, const TokenRange &tr1) {
 		return tr0.start_pos < tr1.start_pos ||
@@ -1821,6 +1885,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	if ( ! hi->m_useSections ) sections = NULL;
 
 	HashTableX *dt = hi->m_tt;
+	std::unordered_set<std::string> candidate_lemma_words;
 
 	// . sanity checks
 	// . posdb just uses the full keys with docid
@@ -1917,6 +1982,10 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
+
+	if(end_token>begin_token && wposvec[end_token-1]>MAXWORDPOS) {
+		log(LOG_INFO,"hashWords3(): wordpos limit will be hit in document %.*s", m_firstUrl.getUrlLen(), m_firstUrl.getUrl());
+	}
 
 	bool seen_slash = false;
 	for(unsigned i = begin_token; i < end_token; i++) {
@@ -2063,6 +2132,8 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					      k))
 					return false;
 			}
+			if(token.is_alfanum)
+				candidate_lemma_words.emplace(token.token_start,token.token_len);
 		} else {
 			logTrace(g_conf.m_logTraceTokenIndexing,"not indexing '%.*s', h=%ld", (int)token.token_len, token.token_start, h);
 		}
@@ -2170,5 +2241,62 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	// between calls? i.e. hashTitle() and hashBody()
 	if ( nw > 0 ) m_dist = wposvec[nw-1] + 100;
 
+	if(m_langId==langDanish) {
+		//we only have a lexicon for Danish so far for this test
+		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
+		for(auto e : candidate_lemma_words) {
+			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
+			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
+			auto le = lemma_lexicon->lookup(e);
+			if(!le) {
+				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
+				char lowercase_word[128];
+				if(e.size()<sizeof(lowercase_word)) {
+					size_t sz = to_lower_utf8(lowercase_word,lowercase_word+sizeof(lowercase_word), e.data(), e.data()+e.size());
+					lowercase_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),lowercase_word,e.size())!=0) {
+						e = lowercase_word;
+						le = lemma_lexicon->lookup(e);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try capitalized in case it is a lowercase or uppercase word
+				char capitalized_word[128];
+				if(e.size()<sizeof(capitalized_word)) {
+					size_t sz = to_capitalized_utf8(capitalized_word,capitalized_word+sizeof(capitalized_word), e.data(), e.data()+e.size());
+					capitalized_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),capitalized_word,e.size())!=0) {
+						e = capitalized_word;
+						le = lemma_lexicon->lookup(e);
+					}
+				}
+			}
+			if(!le) {
+				//Not found as-is in lexicon. Try uppercasing it
+				char uppercase_word[128];
+				if(e.size()<sizeof(uppercase_word)) {
+					size_t sz = to_upper_utf8(uppercase_word,uppercase_word+sizeof(uppercase_word), e.data(), e.data()+e.size());
+					uppercase_word[sz] = '\0';
+					if(sz!=e.size() || memcmp(e.data(),uppercase_word,e.size())!=0) {
+						e = uppercase_word;
+						le = lemma_lexicon->lookup(e);
+					}
+				}
+			}
+			if(!le)
+				continue; //unknown word
+			logTrace(g_conf.m_logTraceTokenIndexing,"lexicalentry found for for lemma: %s", e.c_str());
+			
+			auto wf = le->find_base_wordform();
+			if(!wf)
+				continue; //no base form
+			if(wf->written_form_length==e.size() && memcmp(wf->written_form,e.data(),e.size())==0)
+				continue; //already in base form
+			logTrace(g_conf.m_logTraceTokenIndexing,"baseform is different than source: '%.*s'", (int)wf->written_form_length, wf->written_form);
+			lemma_words.emplace(wf->written_form,wf->written_form_length);
+		}
+	}
+	
 	return true;
 }

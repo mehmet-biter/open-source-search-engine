@@ -128,6 +128,8 @@ std::string LogicalMatches::find_compound_word_longest_known_suffix(const sto::L
 	size_t source_length = source_word.length();
 	for(size_t suffix_length = source_length-1; suffix_length>=2; suffix_length--) {
 		std::string candidate_suffix(source_word, source_length-suffix_length);
+		if(suffix_length==2 && (candidate_suffix=="æ" || candidate_suffix=="ø" || candidate_suffix=="å"))
+			continue; //skip danish letters when treated as letters (as in "bogstavet Ø"). Avoids the 'Ø' entry (2 bytes in utf8) matching the suffix in eg. "fejø" and generating weird variations like "fejøet".
 		auto matches(lexicon.query_matches(candidate_suffix));
 		if(!matches.empty()) {
 			for(auto match : matches) {
@@ -227,7 +229,7 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 {
 	for(unsigned i=0; i<source_words.size(); i++) {
 		auto source_word(source_words[i]);
-		LogicalMatches matches(lexicon,source_word,noun);
+		LogicalMatches matches(*lexicon,source_word,noun);
 		for(auto match : matches) {
 			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
@@ -269,14 +271,14 @@ void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::v
 {
 	for(unsigned i=0; i<source_words.size(); i++) {
 		auto source_word(source_words[i]);
-		LogicalMatches matches(lexicon,source_word,whatever);
+		LogicalMatches matches(*lexicon,source_word,whatever);
 		for(auto match : matches) {
 			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
 				if(same_wordform_as_source(*wordform,matches.query_matched_word())) {
 					//found the word form match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings.
 					//so first find all lexical entries with the same morphological unit id, and check all wordforms of those, looking for an attribute match
-					auto same_morph_entries = lexicon.query_lexical_entries_with_same_morphological_unit_id(match);
+					auto same_morph_entries = lexicon->query_lexical_entries_with_same_morphological_unit_id(match);
 					for(auto same_morph_entry : same_morph_entries) {
 						auto wordforms2(same_morph_entry->query_all_explicit_word_forms());
 						for(auto wordform2 : wordforms2) {
@@ -427,7 +429,7 @@ void WordVariationGenerator_danish::transliterate_verb_acute_accent(std::vector<
 		if(source_word.length()>4 && source_word.substr(source_word.length()-2)=="er") {
 			//possibly a verb in imperative
 			bool is_imperative = false;
-			LogicalMatches matches(lexicon,source_word,verb);
+			LogicalMatches matches(*lexicon,source_word,verb);
 			for(auto match : matches) {
 				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
@@ -474,7 +476,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 		auto source_word(lower_source_words[i]);
 		if(source_word==" ")
 			continue;
-		LogicalMatches matches(lexicon,source_word,verb);
+		LogicalMatches matches(*lexicon,source_word,verb);
 		if(prev_was_er || prev_was_var || prev_was_har || prev_was_havde) {
 			//check if this word is the past participle
 			const sto::WordForm *wordform_past_participle = NULL;
@@ -672,7 +674,7 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 			continue;
 		
 		//find noun
-		LogicalMatches matches(lexicon,source_word0,noun);
+		LogicalMatches matches(*lexicon,source_word0,noun);
 		const sto::WordForm *wordform_noun = NULL;
 		for(auto match : matches) {
 			if(match->part_of_speech==sto::part_of_speech_t::commonNoun) {
@@ -709,7 +711,7 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 		auto source_word4_capitalized(capitalize_word(source_word4));
 		
 		//find proper-noun
-		auto matches2 = lexicon.query_matches(source_word4_capitalized);
+		auto matches2 = lexicon->query_matches(source_word4_capitalized);
 		const sto::WordForm *wordform_proper_noun = NULL;
 		const sto::WordForm *wordform_proper_noun_genitive = NULL;
 		for(auto match : matches2) {
@@ -763,7 +765,7 @@ void WordVariationGenerator_danish::handle_adjective_grammatical_gender_simplifi
 		//find adjective
 		bool is_common_singular_indefinite = false;
 		const sto::WordForm *wordform_neuter_singular_indefinite = NULL;
-		LogicalMatches matches(lexicon,source_word0,whatever);
+		LogicalMatches matches(*lexicon,source_word0,whatever);
 		for(auto match : matches) {
 			if(match->part_of_speech==sto::part_of_speech_t::adjective) {
 				auto wordforms(match->query_all_explicit_word_forms());

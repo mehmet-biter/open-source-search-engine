@@ -24,6 +24,7 @@ void BaseScoringParameters::clear() {
 	m_hashGroupWeightInMenu = 0.0;
 	m_hashGroupWeightExplicitKeywords = 0.0;
 	m_hashGroupWeightMidDomain = 0.0;
+	m_hashGroupWeightLemma = 0.0;
 	m_synonymWeight = 0.0;
 	m_bigramWeight = 0.0;
 	m_pageTemperatureWeightMin = 0.0;
@@ -63,6 +64,7 @@ void BaseScoringParameters::traceToLog(const char *prefix) {
 	log(LOG_TRACE,"%s:  m_hashGroupWeightInMenu=%.3f",prefix,m_hashGroupWeightInMenu);
 	log(LOG_TRACE,"%s:  m_hashGroupWeightExplicitKeywords=%.3f",prefix,m_hashGroupWeightExplicitKeywords);
 	log(LOG_TRACE,"%s:  m_hashGroupWeightMidDomain=%.3f",prefix,m_hashGroupWeightMidDomain);
+	log(LOG_TRACE,"%s:  m_hashGroupWeightLemma=%.3f",prefix,m_hashGroupWeightLemma);
 	log(LOG_TRACE,"%s:  m_synonymWeight=%.3f",prefix,m_synonymWeight);
 	log(LOG_TRACE,"%s:  m_bigramWeight=%.3f",prefix,m_bigramWeight);
 	log(LOG_TRACE,"%s:  m_pageTemperatureWeightMin=%.3f",prefix,m_pageTemperatureWeightMin);

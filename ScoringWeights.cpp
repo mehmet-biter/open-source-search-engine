@@ -17,7 +17,8 @@ void DerivedScoringWeights::init(float diversityWeightMin, float diversityWeight
 			         float hashGroupWeightInUrl,
 			         float hashGroupWeightInMenu,
 			         float hashGroupWeightExplicitKeywords,
-			         float hashGroupWeightMidDomain)
+			         float hashGroupWeightMidDomain,
+	                         float hashGroupWeightLemma)
 {
 	for(int i = 0; i <= MAXDIVERSITYRANK; i++)
 		m_diversityWeights[i] = scale_quadratic(i, 0, MAXDIVERSITYRANK, diversityWeightMin, diversityWeightMax);
@@ -55,6 +56,7 @@ void DerivedScoringWeights::init(float diversityWeightMin, float diversityWeight
 	m_hashGroupWeights[HASHGROUP_INMENU            ] = hashGroupWeightInMenu;
 	m_hashGroupWeights[HASHGROUP_EXPLICIT_KEYWORDS ] = hashGroupWeightExplicitKeywords;
 	m_hashGroupWeights[HASHGROUP_MIDDOMAIN         ] = hashGroupWeightMidDomain;
+	m_hashGroupWeights[HASHGROUP_LEMMA             ] = hashGroupWeightLemma;
 }
 
 void DerivedScoringWeights::init(const BaseScoringParameters& bsp) {
@@ -72,5 +74,6 @@ void DerivedScoringWeights::init(const BaseScoringParameters& bsp) {
 	     bsp.m_hashGroupWeightInUrl,
 	     bsp.m_hashGroupWeightInMenu,
 	     bsp.m_hashGroupWeightExplicitKeywords,
-	     bsp.m_hashGroupWeightMidDomain);
+	     bsp.m_hashGroupWeightMidDomain,
+	     bsp.m_hashGroupWeightLemma);
 }

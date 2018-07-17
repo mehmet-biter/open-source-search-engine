@@ -29,7 +29,8 @@ public:
 	          float hashGroupWeightInUrl,
 	          float hashGroupWeightInMenu,
 	          float hashGroupWeightExplicitKeywords,
-	          float hashGroupWeightMidDomain);
+	          float hashGroupWeightMidDomain,
+	          float hashGroupWeightLemma);
 	void init(const BaseScoringParameters& bsp);
 };
 

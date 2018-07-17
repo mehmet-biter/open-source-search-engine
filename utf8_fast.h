@@ -14,7 +14,11 @@ bool has_alpha_utf8(const char *s, const char *send);
 int32_t to_lower_utf8(char *dst, const char *src);
 int32_t to_lower_utf8(char *dst, char *dstEnd, const char *src);
 int32_t to_lower_utf8(char *dst, char *dstEnd, const char *src, const char *srcEnd);
+
 int32_t to_upper_utf8(char *dst, const char *src);                                          //one codepoint only
+int32_t to_upper_utf8(char *dst, char *dstEnd, const char *src, const char *srcEnd);
+
+int32_t to_capitalized_utf8(char *dst, char *dstEnd, const char *src, const char *srcEnd);
 
 
 extern const unsigned char g_map_to_lower[256];

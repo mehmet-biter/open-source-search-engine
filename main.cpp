@@ -108,6 +108,7 @@
 #include "SiteNumInlinks.h"
 #include "ContentMatchList.h"
 #include "SiteMedianPageTemperature.h"
+#include "Lemma.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1106,6 +1107,11 @@ int main2 ( int argc , char *argv[] ) {
 		countdomains( coll, numRecs, outpt );
 		g_log.m_disabled = true;
 		return 0;
+	}
+	
+	if(!load_lemma_lexicon()) {
+		log(LOG_WARN,"db: could not load lemma lexicon");
+		//but not fatal
 	}
 
 	// file creation test, make sure we have dir control
