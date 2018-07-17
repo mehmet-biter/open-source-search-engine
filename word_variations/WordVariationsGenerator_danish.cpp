@@ -128,6 +128,8 @@ std::string LogicalMatches::find_compound_word_longest_known_suffix(const sto::L
 	size_t source_length = source_word.length();
 	for(size_t suffix_length = source_length-1; suffix_length>=2; suffix_length--) {
 		std::string candidate_suffix(source_word, source_length-suffix_length);
+		if(suffix_length==2 && (candidate_suffix=="æ" || candidate_suffix=="ø" || candidate_suffix=="å"))
+			continue; //skip danish letters when treated as letters (as in "bogstavet Ø"). Avoids the 'Ø' entry (2 bytes in utf8) matching the suffix in eg. "fejø" and generating weird variations like "fejøet".
 		auto matches(lexicon.query_matches(candidate_suffix));
 		if(!matches.empty()) {
 			for(auto match : matches) {
