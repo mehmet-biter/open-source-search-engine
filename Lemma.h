@@ -3,7 +3,7 @@
 
 #include "sto/sto.h"
 
-extern sto::Lexicon lemma_lexicon;
+extern sto::Lexicon *lemma_lexicon;
 bool load_lemma_lexicon();
 
 #endif

@@ -2247,7 +2247,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 		for(auto e : candidate_lemma_words) {
 			//find the word in the lexicon. find the lemma. If the word is unknown or already in its base form then don't generate a lemma entry
 			logTrace(g_conf.m_logTraceTokenIndexing,"candidate  word for lemma: %s", e.c_str());
-			auto le = lemma_lexicon.lookup(e);
+			auto le = lemma_lexicon->lookup(e);
 			if(!le) {
 				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
 				char lowercase_word[128];
@@ -2256,7 +2256,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					lowercase_word[sz] = '\0';
 					if(sz!=e.size() || memcmp(e.data(),lowercase_word,e.size())!=0) {
 						e = lowercase_word;
-						le = lemma_lexicon.lookup(e);
+						le = lemma_lexicon->lookup(e);
 					}
 				}
 			}
@@ -2268,7 +2268,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					capitalized_word[sz] = '\0';
 					if(sz!=e.size() || memcmp(e.data(),capitalized_word,e.size())!=0) {
 						e = capitalized_word;
-						le = lemma_lexicon.lookup(e);
+						le = lemma_lexicon->lookup(e);
 					}
 				}
 			}
@@ -2280,7 +2280,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 					uppercase_word[sz] = '\0';
 					if(sz!=e.size() || memcmp(e.data(),uppercase_word,e.size())!=0) {
 						e = uppercase_word;
-						le = lemma_lexicon.lookup(e);
+						le = lemma_lexicon->lookup(e);
 					}
 				}
 			}

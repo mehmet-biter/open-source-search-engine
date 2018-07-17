@@ -1058,7 +1058,7 @@ bool Query::setQTerms() {
 				continue;
 			std::string w(m_tr[i].token_start,m_tr[i].token_len);
 			logTrace(g_conf.m_logTraceQuery, "@@ Checking lemma for '%s'", w.c_str());
-			auto le = lemma_lexicon.lookup(w);
+			auto le = lemma_lexicon->lookup(w);
 			if(!le) {
 				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
 				char lowercase_word[128];
@@ -1066,7 +1066,7 @@ bool Query::setQTerms() {
 					size_t sz = to_lower_utf8(lowercase_word,lowercase_word+sizeof(lowercase_word), w.data(), w.data()+w.size());
 					lowercase_word[sz] = '\0';
 					if(sz!=w.size() || memcmp(w.data(),lowercase_word,w.size())!=0) {
-						le = lemma_lexicon.lookup(lowercase_word);
+						le = lemma_lexicon->lookup(lowercase_word);
 					}
 				}
 			}
@@ -1078,7 +1078,7 @@ bool Query::setQTerms() {
 					capitalized_word[sz] = '\0';
 					if(sz!=w.size() || memcmp(w.data(),capitalized_word,w.size())!=0) {
 						w = capitalized_word;
-						le = lemma_lexicon.lookup(w);
+						le = lemma_lexicon->lookup(w);
 					}
 				}
 			}
@@ -1090,7 +1090,7 @@ bool Query::setQTerms() {
 					uppercase_word[sz] = '\0';
 					if(sz!=w.size() || memcmp(w.data(),uppercase_word,w.size())!=0) {
 						w = uppercase_word;
-						le = lemma_lexicon.lookup(w);
+						le = lemma_lexicon->lookup(w);
 					}
 				}
 			}

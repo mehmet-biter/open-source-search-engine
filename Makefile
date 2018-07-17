@@ -97,6 +97,7 @@ OBJS_O3 = \
 	SiteNumInlinks.o \
 	SiteMedianPageTemperature.o \
 	MemoryMappedFile.o \
+	Lexicons.o \
 	Lemma.o \
 
 
