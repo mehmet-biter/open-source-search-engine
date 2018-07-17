@@ -1110,8 +1110,8 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	
 	if(!load_lemma_lexicon()) {
-		log(LOG_ERROR,"db: could not load lemma lexicon");
-		return 1;
+		log(LOG_WARN,"db: could not load lemma lexicon");
+		//but not fatal
 	}
 
 	// file creation test, make sure we have dir control
