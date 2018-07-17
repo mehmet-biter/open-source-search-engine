@@ -12,9 +12,9 @@
 #  1:	TLDs and ccTLDs: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
 #	File: tlds-alpha-by-domain.txt
 #  2:	Official or semi-official 2nd-level domains: wikipedia, with manual plausability checks. Mozilla's list (https://wiki.mozilla.org/TLD_List) with manual checks.
-#	File: official_2nd_level_domains.txt
+#	File: tlds-official-2nd-level-domains.txt
 #  3:	Unofficial or defacto 2nd-level domains: Manual checks (with help from domain-crunching scripts)
-#	File: additional_2nd_level_domains.txt (optional)
+#	File: tlds-additional-2nd-level-domains.txt (optional)
 #
 #This is not perfect. Eg. .va is a ccTLD but it isn't exactly independent entities underneath that domain. 
 
@@ -25,21 +25,25 @@ die() {
 
 [ $# -ne 1 ] && die "Usage: `basename $0` <dstfile>"
 
-if [ ! -r tlds-alpha-by-domain.txt ]; then
-	die "File 'tlds-alpha-by-domain.txt' is missing/unreadable"
+TLDS_ICANN_FILENAME=tlds-alpha-by-domain.txt
+TLDS_OFFICIAL_SLD_FILENAME=tlds-official-2nd-level-domains.txt
+TLDS_ADDITIONAL_SLD_FILENAME=tlds-additional-2nd-level-domains.txt
+
+if [ ! -r ${TLDS_ICANN_FILENAME} ]; then
+	die "File '${TLDS_ICANN_FILENAME}' is missing/unreadable"
 fi
 
-if [ ! -r official_2nd_level_domains.txt ]; then
-	die "File 'official_2nd_level_domains.txt' is missing/unreadable"
+if [ ! -r ${TLDS_OFFICIAL_SLD_FILENAME} ]; then
+	die "File '${TLDS_OFFICIAL_SLD_FILENAME}' is missing/unreadable"
 fi
 
 
 
 TMPFILE1=/tmp/$$.file1
-cat tlds-alpha-by-domain.txt > $TMPFILE1 || die
-cat official_2nd_level_domains.txt >> $TMPFILE1 || die
-if [ -r additional_2nd_level_domains.txt ]; then
-	cat additional_2nd_level_domains.txt >> $TMPFILE1 || die
+cat ${TLDS_ICANN_FILENAME} > $TMPFILE1 || die
+cat ${TLDS_OFFICIAL_SLD_FILENAME} >> $TMPFILE1 || die
+if [ -r ${TLDS_ADDITIONAL_SLD_FILENAME} ]; then
+	cat ${TLDS_ADDITIONAL_SLD_FILENAME} >> $TMPFILE1 || die
 fi
 
 
