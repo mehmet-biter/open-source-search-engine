@@ -20,7 +20,7 @@ sto::Lexicon *getLexicon(const std::string &filename) {
 		delete l;
 		return nullptr;
 	}
-	map.emplace(filename,l);
+	map.emplace(filename,std::unique_ptr<sto::Lexicon>(l));
 	return l;
 	
 }
