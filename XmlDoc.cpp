@@ -56,6 +56,7 @@
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "SiteNumInlinks.h"
 #include "SiteMedianPageTemperature.h"
+#include "ip.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>

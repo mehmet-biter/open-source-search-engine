@@ -16,6 +16,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "SiteGetter.h"
+#include "ip.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

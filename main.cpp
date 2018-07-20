@@ -109,6 +109,7 @@
 #include "ContentMatchList.h"
 #include "SiteMedianPageTemperature.h"
 #include "Lemma.h"
+#include "ip.h"
 
 
 #include <sys/stat.h> //umask()

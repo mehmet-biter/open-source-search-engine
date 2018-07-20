@@ -3,8 +3,7 @@
 #ifndef GB_LINKSPAM_H
 #define GB_LINKSPAM_H
 
-#include "gb-include.h"
-#include "ip.h"
+#include <inttypes.h>
 
 class Url;
 

@@ -5,6 +5,7 @@
 #include "Collectiondb.h"
 #include "Rebalance.h"
 #include "Process.h"
+#include "ip.h"
 
 Linkdb g_linkdb;
 Linkdb g_linkdb2;
