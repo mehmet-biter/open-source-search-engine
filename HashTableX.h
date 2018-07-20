@@ -5,8 +5,12 @@
 #ifndef GB_HASHTABLEX_H
 #define GB_HASHTABLEX_H
 
-#include "SafeBuf.h"
 #include "Sanity.h"
+#include <inttypes.h>
+#include "types.h"
+#include <stddef.h>
+#include "hash.h"
+#include "Log.h"
 
 
 class HashTableX {

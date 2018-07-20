@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HashTableX.h"
 #include "SafeBuf.h"
 #include "JobScheduler.h"
