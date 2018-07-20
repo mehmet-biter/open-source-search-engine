@@ -7,8 +7,9 @@
 #define JT_ARRAY 5
 #define JT_OBJECT 6
 
-#include "gb-include.h"
 #include "SafeBuf.h"
+#include <inttypes.h>
+
 
 #define MAXJSONPARENTS 64
 
