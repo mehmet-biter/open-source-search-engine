@@ -15517,9 +15517,9 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( getThatTitle ) {
 		Title *ti = getTitle();
 		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
-		char *tit = ti->getTitle();
+		const char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		m_reply.ptr_tbuf = tit;
+		m_reply.ptr_tbuf = const_cast<char*>(tit); //won't modify it - promise!
 		m_reply.size_tbuf = titLen + 1; // include \0
 		// sanity
 		if ( tit && tit[titLen] != '\0' ) { g_process.shutdownAbort(true); }
@@ -15994,9 +15994,9 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	     getThatTitle ) {
 		Title *ti = getTitle();
 		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
-		char *tit = ti->getTitle();
+		const char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		m_reply. ptr_tbuf = tit;
+		m_reply. ptr_tbuf = const_cast<char*>(tit); //won't modify it - promise!
 		m_reply.size_tbuf = titLen + 1; // include \0
 		if ( ! tit || titLen <= 0 ) {
 			m_reply.ptr_tbuf = NULL;
