@@ -12318,8 +12318,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 	}
 	sb->safePrintf("</table>\n");
 
-	if ( sb == &tmp )
-		sb->print();
+	if ( sb == &tmp ) {
+		if ( write(1,sb->getBufStart(),sb->length()) != sb->length() )
+			gbshutdownAbort(true);
+	}
 }
 
 
