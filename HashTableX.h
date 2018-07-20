@@ -115,7 +115,7 @@ class HashTableX {
 		while ( count++ < m_numSlots ) {
 			// this is set to 0x01 if non-empty
 			if ( m_flags [ n ] == 0 ) {
-				gbmemcpy( &((key144_t *)m_keys)[n] ,kp,18);
+				memcpy( &((key144_t *)m_keys)[n] ,kp,18);
 				m_vals[n*m_ds] = score;
 				m_flags[n] = 1;
 				m_numSlotsUsed++;
@@ -248,7 +248,7 @@ class HashTableX {
 	void setValue ( int32_t n , const void *val ) { 
 		if      (m_ds == 4) ((int32_t *)m_vals)[n] = *(const int32_t *)val;
 		else if (m_ds == 8) ((int64_t *)m_vals)[n] = *(const int64_t *)val;
-		else                gbmemcpy(m_vals+n*m_ds,val,m_ds);
+		else                memcpy(m_vals+n*m_ds,val,m_ds);
 	}
 
 	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; }
