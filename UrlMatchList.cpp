@@ -465,7 +465,8 @@ bool UrlMatchList::load() {
 		if (foundInvalid && g_hostdb.getMyHostId() == 0) {
 			std::ofstream file("eventlog", (std::ios::out | std::ios::app));
 			char timebuf[32];
-			file << formatTime(time(nullptr), timebuf) << "|invalid urlmatchlist|"
+			file << formatTime(time(nullptr), timebuf) << "|" << g_hostdb.getMyHostId()
+			     << "|invalid urlmatchlist|"
 			     << filePath << std::endl;
 		}
 
