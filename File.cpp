@@ -89,12 +89,12 @@ File::File ( ) {
 
 	pthread_mutex_init(&m_mtxFdManipulation,NULL);
 	
-	logDebug( g_conf.m_logDebugDisk, "disk: constructor fd %i this=0x%" PTRFMT, m_fd, (PTRTYPE)this );
+	logDebug( g_conf.m_logDebugDisk, "disk: constructor fd %i this=%p", m_fd, this );
 }
 
 
 File::~File ( ) {
-	logDebug( g_conf.m_logDebugDisk, "disk: destructor fd %i this=0x%" PTRFMT, m_fd, (PTRTYPE)this );
+	logDebug( g_conf.m_logDebugDisk, "disk: destructor fd %i this=%p", m_fd, this );
 
 	close ();
 
@@ -475,8 +475,8 @@ void File::close2_unlocked() {
 
 	//s_closeCounts [ fd ]++;
 
-	logDebug( g_conf.m_logDebugDisk, "disk: close2 fd %i for %s #openfiles=%i this=0x%" PTRFMT,
-	          fd,getFilename(), s_numOpenFiles, (PTRTYPE)this );
+	logDebug( g_conf.m_logDebugDisk, "disk: close2 fd %i for %s #openfiles=%i this=%p",
+	          fd,getFilename(), s_numOpenFiles, this );
 
 	if ( g_conf.m_logDebugDisk ) sanityCheck();
 }
@@ -570,8 +570,8 @@ int File::getfd () {
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!
 	if ( m_fd >= 0 && m_closeCount != s_closeCounts[m_fd] ) {
 		log(LOG_DEBUG,"disk: invalidating existing fd %i "
-		    "for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
-		    (int)m_fd,getFilename(),(PTRTYPE)this,
+		    "for %s this=%p ccSaved=%i ccNow=%i",
+		    (int)m_fd,getFilename(),this,
 		    (int)m_closeCount,
 		    (int)s_closeCounts[m_fd]);
 		m_fd = -1;
@@ -579,8 +579,8 @@ int File::getfd () {
 
 	// return true if it's already opened
 	if ( m_fd >=  0 ) {
-		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
-		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
+		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=%p ccSaved=%i ccNow=%i",
+		          m_fd,getFilename(),this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
 		// but update the timestamp to reduce chance it closes on us
 		s_timestamps [ m_fd ] = gettimeofdayInMilliseconds();
@@ -637,8 +637,8 @@ int File::getfd () {
 	// and it will not update s_numOpenFiles in that case.
 	if ( s_open [ fd ] ) {
 		File *f = s_filePtrs [ fd ];
-		logDebug( g_conf.m_logDebugDisk, "disk: swiping fd %i from %s before his close thread returned this=0x%" PTRFMT,
-			  fd, f->getFilename(), (PTRTYPE)f );
+		logDebug( g_conf.m_logDebugDisk, "disk: swiping fd %i from %s before his close thread returned this=%p",
+			  fd, f->getFilename(), f );
 
 		// he only incs/decs his counters if he owns it so in
 		// close2() so dec this global counter here
@@ -690,8 +690,8 @@ int File::getfd () {
 	s_numOpenFiles++;
 
 	// debug log
-	logDebug( g_conf.m_logDebugDisk, "disk: opened1 fd %i for %s #openfiles=%i this=0x%" PTRFMT,
-	          fd, getFilename(), s_numOpenFiles, (PTRTYPE)this );
+	logDebug( g_conf.m_logDebugDisk, "disk: opened1 fd %i for %s #openfiles=%i this=%p",
+	          fd, getFilename(), s_numOpenFiles, this );
 
 	// set this file descriptor, the other stuff remains the same
 	m_fd = fd;
@@ -797,10 +797,10 @@ bool File::closeLeastUsed () {
 			const char *fname = "";
 			if ( f ) fname = f->getFilename();
 			logf(LOG_DEBUG,"disk: force closed fd %i for"
-			     " %s. age=%" PRId64" #openfiles=%i this=0x%" PTRFMT,
+			     " %s. age=%" PRId64" #openfiles=%i this=%p",
 			     fd,fname,now-s_timestamps[mini],
 			     (int)s_numOpenFiles,
-			     (PTRTYPE)this);
+			     this);
 		}
 
 		// no longer the owner

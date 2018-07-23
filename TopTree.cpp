@@ -298,7 +298,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// the node we add ourselves to
 	int32_t n;
 	// delete this node
-	SPTRTYPE deleteMe = -1;
+	intptr_t deleteMe = -1;
 
 	ScopedLock sl(m_t2.getLock());
 	// do not even try to add if ridiculous count for this domain
@@ -322,7 +322,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get his "node number" in the top tree, "nn" so we can
 		// delete him from the top tree as well as m_t2. it is 
 		// "hidden" in the dataPtr
-		deleteMe = (SPTRTYPE)m_t2.getData_unlocked(min);
+		deleteMe = (intptr_t)m_t2.getData_unlocked(min);
 		// delete him from the top tree now as well
 		//deleteNode_unlocked ( nn , domHash );
 		// then delete him from the m_t2 tree
@@ -344,7 +344,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		if ( n < 0 || n > m_t2.getNumNodes_unlocked() ) {
 			gbshutdownLogicError();
 		}
-		m_t2.setData_unlocked(n, (char *)(PTRTYPE)tnn);
+		m_t2.setData_unlocked(n, (char *)(intptr_t)tnn);
 	}
 
 	//

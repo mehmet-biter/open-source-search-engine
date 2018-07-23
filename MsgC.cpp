@@ -191,9 +191,9 @@ void gotReplyWrapper ( void *state , void *state2 ) {
 	if ( g_conf.m_logDebugDns ) {
 		char ipbuf[16];
 		logf(LOG_DEBUG,"dns: msgc: got reply of %s for %s. "
-		     "state=0x%" PTRFMT" mcast=0x%" PTRFMT"",
-		     iptoa(*THIS->m_ipPtr,ipbuf), THIS->m_u.getUrl(), (PTRTYPE)state2,
-		     (PTRTYPE)&THIS->m_mcast);
+		     "state=%p mcast=%p",
+		     iptoa(*THIS->m_ipPtr,ipbuf), THIS->m_u.getUrl(), state2,
+		     &THIS->m_mcast);
 	}
 	THIS->m_callback(state2,ip);
 }
@@ -208,8 +208,8 @@ int32_t MsgC::gotReply(){
 	// sanity check
 	if (replySize != 12 || !reply ){
 		g_errno = EBADREPLYSIZE;
-		log( "dns: msgc: Bad reply size of %" PTRFMT"",
-		     (PTRTYPE)reply );
+		log( "dns: msgc: Bad reply size of %p",
+		     reply );
 	}
         else {
 		*m_ipPtr = *(int32_t *)reply;
@@ -273,7 +273,7 @@ void handleRequest(UdpSlot *slot, int32_t /*niceness*/) {
 
 	int32_t ip=0;
 
-	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%" PTRFMT, hostname,(PTRTYPE)slot);
+	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%p", hostname,slot);
 
 	// check dns cache for the hostname. This should also send to
 	// the dnsServer. If it is not in the cache, getIp puts it in.
@@ -288,7 +288,7 @@ void handleRequest(UdpSlot *slot, int32_t /*niceness*/) {
 void gotMsgCIpWrapper( void *state, int32_t ip){
 	UdpSlot *slot=(UdpSlot *) state;
 
-	log(LOG_DEBUG,"dns: msgc sending reply for state=%" PTRFMT".",(PTRTYPE)state);
+	log(LOG_DEBUG,"dns: msgc sending reply for state=%p.",state);
 
 	//to fit the ip address
 	//char reply[12];

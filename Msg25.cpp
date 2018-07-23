@@ -482,8 +482,8 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 		head->m_next = req;
 		// note it for debugging
 		log("build: msg25 request waiting in line for %s "
-		    "udpslot=0x%" PTRFMT"",
-		    req->ptr_url,(PTRTYPE)slot);
+		    "udpslot=%p",
+		    req->ptr_url,slot);
 		// we will send a reply back for this guy when done
 		// getting the reply for the head msg25request
 		return;
@@ -1848,8 +1848,8 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		// count it
 		m_round++;
 
-		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
-		         m_round, m_mode == MODE_SITELINKINFO ? "site" : "page", m_site, (PTRTYPE)m_req25, m_numReplyPtrs);
+		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s req=%p numlinkerreplies=%" PRId32,
+		         m_round, m_mode == MODE_SITELINKINFO ? "site" : "page", m_site, m_req25, m_numReplyPtrs);
 
 		// and re-call. returns true if did not block.
 		// returns true with g_errno set on error.

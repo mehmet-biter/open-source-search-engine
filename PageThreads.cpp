@@ -127,7 +127,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	for(const auto &jd : job_digests) {
 		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
 		p.safePrintf("    <td>%s</td>", thread_type_name(jd.thread_type));
-		p.safePrintf("    <td>%s</td>", g_profiler.getFnName((PTRTYPE)jd.start_routine));
+		p.safePrintf("    <td>%s</td>", g_profiler.getFnName((void*)jd.start_routine));
 		p.safePrintf("    <td>%" PRIu64"</td>", now-jd.queue_enter_time);
 		if(jd.job_state==JobDigest::job_state_running || jd.job_state==JobDigest::job_state_stopped)
 			p.safePrintf("    <td>%" PRIu64"</td>", now-jd.start_time);

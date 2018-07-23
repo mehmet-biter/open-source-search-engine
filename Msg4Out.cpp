@@ -584,7 +584,7 @@ static bool sendBuffer(int32_t hostId) {
 	//   to hostids that are dead now
 	// timeout was 60 seconds, but if we saved the addsinprogress at the wrong time we might miss
 	// it when its between having timed out and having been resent by us!
-	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
+	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(intptr_t)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;
@@ -640,7 +640,7 @@ static void returnMulticast(Multicast *mcast) {
 
 // just free the request
 static void gotReplyWrapper4(void *state , void *state2) {
-	int32_t allocSize = (int32_t) (PTRTYPE) state;
+	int32_t allocSize = (int32_t)(intptr_t)state;
 	Multicast *mcast = (Multicast *) state2;
 
 	// get the request we sent
@@ -691,7 +691,7 @@ void Msg4::storeLineWaiters ( ) {
 
 		// log this now i guess. seems to happen a lot if not using threads
 		if (g_jobScheduler.are_new_jobs_allowed()) {
-			logf(LOG_DEBUG, "msg4: calling callback for msg4=0x%" PTRFMT"", (PTRTYPE) msg4);
+			logf(LOG_DEBUG, "msg4: calling callback for msg4=%p", msg4);
 		}
 
 		// release it

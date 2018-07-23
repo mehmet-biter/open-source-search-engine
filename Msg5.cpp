@@ -581,12 +581,12 @@ bool Msg5::needsRecall() {
 		if ( logIt ) {
 			log(LOG_WARN,"db: Reading %" PRId32" again from %s (need %" PRId32" total "
 			     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
-			     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
+			     "cn=%" PRId32" this=%p round=%" PRId32".", 
 			     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
 			     m_list->getListSize(),
 			     m_totalSize,
 			     KEYSTR(m_startKey,m_ks),
-			     (int32_t)m_collnum,(PTRTYPE)this, m_round );
+			     (int32_t)m_collnum,this, m_round );
 		}
 
 		m_round++;

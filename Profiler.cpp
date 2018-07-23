@@ -58,7 +58,7 @@ bool Profiler::init() {
 	return true;
 }
 
-char* Profiler::getFnName( PTRTYPE address,int32_t *nameLen){
+char* Profiler::getFnName( void * address,int32_t *nameLen){
 	FnInfo *fnInfo;
 	int32_t slot=m_fn.getSlot(&address);
 	if(slot!=-1)
@@ -114,13 +114,13 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 }
 
 FrameTrace *
-FrameTrace::set(const uint32_t addr) {
+FrameTrace::set(const intptr_t addr) {
 	address = addr;
 	return this;
 }
 
 FrameTrace *
-FrameTrace::add(const uint32_t addr) {
+FrameTrace::add(const intptr_t addr) {
 	//log("add %x", addr);
 	// We should be finding children most of the time not adding them.
 	int32_t left = 0;
@@ -163,7 +163,7 @@ FrameTrace::dump(	SafeBuf *out,
 			const uint32_t level,
 			uint32_t printStart) const {
 	if(level) {
-		char *name = g_profiler.getFnName(address);
+		char *name = g_profiler.getFnName((void*)address);
 		out->pad(' ', level);
 		uint32_t l;
 		if(name && (l = strlen(name))) {
@@ -182,7 +182,7 @@ FrameTrace::dump(	SafeBuf *out,
 			out->pad(' ', printStart - level - l - 2);
 			out->safePrintf("|           |");
 		}
-		out->safePrintf(" %#.8x |", address);
+		out->safePrintf(" %p |", (void*)address);
 		out->safePrintf("\n");
 	} else {
 		out->safePrintf("|Stack Trace");
@@ -200,7 +200,7 @@ uint32_t
 FrameTrace::getPrintLen(const uint32_t level) const {
 	uint32_t ret = level;
 	if(level) {
-		char *name = g_profiler.getFnName(address);
+		char *name = g_profiler.getFnName((void*)address);
 		uint32_t l;
 		if(!(name && (l = strlen(name)))) {
 			l = sizeof("Unknown");
@@ -236,7 +236,7 @@ Profiler::getStackFrame() {
 	// . skip ahead 2 to avoid the sigalrm function handler
 	for ( int32_t i = 2 ; i < numFrames  ; i++ ) {
 		// even if we are 32-bit, make this 64-bit for ease
-		uint64_t addr = (uint64_t)(PTRTYPE)trace[i];
+		uint64_t addr = (uint64_t)(intptr_t)trace[i];
 
 		// the call stack path for profiling the worst paths
 		g_profiler.m_ipBuf.pushLongLong(addr);
@@ -523,7 +523,7 @@ Profiler::cleanup() {
 }
 
 FrameTrace *
-Profiler::getNewFrameTrace(const uint32_t addr) {
+Profiler::getNewFrameTrace(const intptr_t addr) {
 	if(m_numUsedFrameTraces >= MAX_FRAME_TRACES) {
 		log("profiler: Real time profiler ran out of static memory");
 		return NULL;

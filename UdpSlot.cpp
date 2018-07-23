@@ -376,14 +376,14 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// debug msg
 	if ( g_conf.m_logDebugUdp || (g_conf.m_logDebugDns && !m_proto->useAcks()) ) {
 		char ipbuf[16];
-		logf(LOG_DEBUG, "udp: resending slot all=%" PRId32" tid=%" PRId32" dst=%s:%hu count=%" PRId32" host=0x%" PTRFMT
+		logf(LOG_DEBUG, "udp: resending slot all=%" PRId32" tid=%" PRId32" dst=%s:%hu count=%" PRId32" host=%p"
 		     " cleared=%" PRId32,
 		     (int32_t) resendAll,
 		     m_transId,
 		     iptoa(m_ip,ipbuf),
 		     (uint16_t) m_port,
 		     (int32_t) m_resendCount,
-		     (PTRTYPE) m_host,
+		     m_host,
 		     (int32_t) cleared);
 	}
 
@@ -1006,15 +1006,15 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		char ipbuf[16];
 		log(LOG_DEBUG,
 		     "udp: Read cancel ack hdrlen=%" PRId32" tid=%" PRId32" "
-		     "src=%s:%hu msgType=0x%02x weInitiated=%" PTRFMT" "
+		     "src=%s:%hu msgType=0x%02x weInitiated=%p "
 		    "sent=%" PRId32" "
-		    "sendbufalloc=%" PTRFMT" sendbufsize=%" PRIu32,
+		    "sendbufalloc=%p sendbufsize=%" PRIu32,
 		     readSize , m_proto->getTransId ( readBuffer,readSize ),
 		     iptoa(m_ip,ipbuf), m_port,
 		     m_proto->getMsgType(readBuffer,readSize),
-		    (PTRTYPE)m_callback,
+		    m_callback,
 		    m_sentBitsOn,
-		    (PTRTYPE)m_sendBufAlloc,
+		    m_sendBufAlloc,
 		    (uint32_t)m_sendBufSize);
 		// stat count
 		g_cancelAcksRead++;

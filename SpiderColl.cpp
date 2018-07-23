@@ -1709,10 +1709,10 @@ bool SpiderColl::evalIpLoop ( ) {
 	
 			char ipbuf[16];
 			logDebug( g_conf.m_logDebugSpider, "spider: GOT %zu bytes of SpiderRequests "
-				"from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
+				"from winnerlistcache for ip %s ptr=%p crc=%" PRIu32,
 				doleBufSize,
 				iptoa(m_scanningIp,ipbuf),
-				(PTRTYPE)doleBuf,
+				doleBuf,
 				crc);
 	
 			//copy doleuf out from cache so we can release the lock
@@ -3101,8 +3101,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		if ( newJump >= doleBuf->length() ) gbshutdownCorrupted();
 		if ( newJump < 4 ) gbshutdownCorrupted();
 		logDebug(g_conf.m_logDebugSpider, "spider: rdbcache: updating %" PRId32" bytes of SpiderRequests "
-			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
-		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, (PTRTYPE)x);
+			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=%p",
+		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, x);
 		//validateDoleBuf ( doleBuf );
 		// inherit timestamp. if 0, RdbCache will set to current time
 		// don't re-add just use the same modified buffer so we
@@ -3283,13 +3283,13 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
 	if ( sc->m_isLoading ) {
-		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
+		log(LOG_INFO, "spider: deleting sc=%p for collnum=%" PRId32" "
 			    "waiting3",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
+		    sc,(int32_t)sc->m_collnum);
 		return true;
 	}
 	// if ( sc->m_gettingWaitingTreeList ) {
-	// 	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
+	// 	log(LOG_INFO, "spider: deleting sc=%p for collnum=%" PRId32"
 	//"waiting6",
 	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
 	// 	return true;
@@ -3297,8 +3297,8 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// there's still a core of someone trying to write to someting
 	// in "sc" so we have to try to fix that. somewhere in xmldoc.cpp
 	// or spider.cpp. everyone should get sc from cr everytime i'd think
-	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" (msg=%s)",
-	    (PTRTYPE)sc,(int32_t)sc->m_collnum,msg);
+	log(LOG_INFO, "spider: deleting sc=%p for collnum=%" PRId32" (msg=%s)",
+	    sc,(int32_t)sc->m_collnum,msg);
 	// . make sure nobody has it
 	// . cr might be NULL because Collectiondb.cpp::deleteRec2() might
 	//   have nuked it

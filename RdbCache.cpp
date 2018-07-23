@@ -753,10 +753,10 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// . if we are already in there, preserve the 
 	addKey ( collnum , cacheKey , start ); // , crc ); // debug test
 	// debug msg time
-	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" ms this=0x%" PTRFMT" key.n1=%" PRIu32" n0=%" PRIu64,
+	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" ms this=%p key.n1=%" PRIu32" n0=%" PRIu64,
 	    m_dbname, (int32_t)(p - start) ,
 	    gettimeofdayInMilliseconds()-t,
-	    (PTRTYPE)this,
+	    this,
 	    ((key96_t *)(&cacheKey))->n1 ,
 	    ((key96_t *)(&cacheKey))->n0 );
 
@@ -802,8 +802,8 @@ bool RdbCache::deleteRec ( ) {
 			       //|| !g_collectiondb.m_recs[collnum]
 	     ) {
 		log (LOG_WARN,"db: cache: deleteRec: possible "
-		     "corruption, start=%" PTRFMT" collNum=%" PRId32" "
-		     "maxCollNum=%" PRId32" dbname=%s", (PTRTYPE)start,
+		     "corruption, start=%p collNum=%" PRId32" "
+		     "maxCollNum=%" PRId32" dbname=%s", start,
 		     (int32_t)collnum, g_collectiondb.getNumRecsUsed(),
 		     m_dbname);
 		gbshutdownLogicError();

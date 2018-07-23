@@ -581,8 +581,8 @@ bool Dns::getIp ( const char *hostname,
 
 	// debug msg
 	log(LOG_DEBUG,"dns: Adding key %" PRIu64" from table. "
-	    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
-	    finalKey,parentKey,(PTRTYPE)callback,(PTRTYPE)state);
+	    "parentKey=%" PRIu64" callback=%p state=%p.",
+	    finalKey,parentKey,callback,state);
 	// ensure "bogus" key not already present in table, otherwise,
 	// addKey will just overwrite the value!!
 	while ( ptr && s_dnstable.getValuePointer ( finalKey ) ) {
@@ -650,9 +650,9 @@ bool Dns::getIp ( const char *hostname,
 			log("dns: Failed to allocate mem for ip lookup.");
 			// debug msg
 			log(LOG_DEBUG,"dns: Removing2 key %" PRIu64" from table. "
-			    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
+			    "parentKey=%" PRIu64" callback=%p state=%p.",
 			    hostKey64,parentKey,
-				(PTRTYPE)callback,(PTRTYPE)state);
+				callback,state);
 			s_dnstable.removeKey ( finalKey );
 			return true;
 		}
@@ -759,9 +759,9 @@ bool Dns::getIp ( const char *hostname,
 
 	// debug msg
 	log(LOG_DEBUG,"dns: Removing3 key %" PRIu64" from table. "
-	    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
+	    "parentKey=%" PRIu64" callback=%p state=%p.",
 	    hostKey64,parentKey,
-		(PTRTYPE)callback,(PTRTYPE)state);
+		callback,state);
 	// if we made it here, remove from table
 	s_dnstable.removeKey ( finalKey ) ;
 	// should we free it
@@ -1509,13 +1509,13 @@ void Dns::returnIp(DnsState *ds, int32_t ip) {
 		int64_t nextKey = ce->m_nextKey;
 		// debug msg
 		log(LOG_DEBUG,"dns: Removing key %" PRIu64" from table. "
-		    "parentKey=%" PRIu64" nextKey=%" PRIu64" callback=%" PTRFMT" "
-		    "state=0x%" PTRFMT".",
+		    "parentKey=%" PRIu64" nextKey=%" PRIu64" callback=%p "
+		    "state=%p.",
 		    key,
 		    parentKey,
 		    nextKey,
-		    (PTRTYPE)ce->m_callback,
-		    (PTRTYPE)ce->m_state);
+		    ce->m_callback,
+		    ce->m_state);
 		// get stuff
 		void (* callback ) ( void *state , int32_t ip );
 		callback    = ce->m_callback;

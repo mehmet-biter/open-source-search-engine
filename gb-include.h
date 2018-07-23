@@ -7,18 +7,6 @@
 #include <inttypes.h>
 #include <bits/wordsize.h>
 
-#if __WORDSIZE == 64
-#define PTRTYPE  uint64_t
-#define SPTRTYPE int64_t
-#define PTRFMT  "lx"
-#endif
-
-#if __WORDSIZE == 32
-#define PTRTYPE  unsigned long //uint32_t
-#define SPTRTYPE int32_t
-#define PTRFMT  "lx"
-#endif
-
 #include <ctype.h>	// Log.h
 #include <errno.h>	// Errno.h
 #include <stdarg.h>	// Log.h

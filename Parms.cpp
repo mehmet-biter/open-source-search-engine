@@ -10720,7 +10720,7 @@ void Parms::gotParmReplyWrapper(void *state, UdpSlot *slot) {
 	slot->m_sendBufAlloc = NULL;
 
 	// in case host table is dynamically modified, go by #
-	Host *h = g_hostdb.getHost((int32_t)(PTRTYPE)state);
+	Host *h = g_hostdb.getHost((int32_t)(intptr_t)state);
 
 	int32_t parmId = h->m_currentParmIdInProgress;
 
@@ -10923,7 +10923,7 @@ bool Parms::doParmSendingLoop ( ) {
 		// count it
 		pn->m_numRequests++;
 		// ok, he's available
-		if (!g_udpServer.sendRequest(pn->m_parmList.getBufStart(), pn->m_parmList.length(), msg_type_3f, h->m_ip, h->m_port, h->m_hostId, NULL, (void *)(PTRTYPE)h->m_hostId, gotParmReplyWrapper, 30000, 0)) {
+		if (!g_udpServer.sendRequest(pn->m_parmList.getBufStart(), pn->m_parmList.length(), msg_type_3f, h->m_ip, h->m_port, h->m_hostId, NULL, (void *)(intptr_t)h->m_hostId, gotParmReplyWrapper, 30000, 0)) {
 			log("parms: faild to send: %s",mstrerror(g_errno));
 			continue;
 		}

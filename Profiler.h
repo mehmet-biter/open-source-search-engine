@@ -13,20 +13,20 @@ struct FnInfo {
 struct HitEntry {
 	char *file;
 	uint32_t line;
-	uint32_t address;
+	intptr_t address;
 };
 
 class FrameTrace {
 	public:
 		FrameTrace();
 		~FrameTrace();
-		FrameTrace *set(const uint32_t addr);
-		FrameTrace *add(const uint32_t baseAddr);
+		FrameTrace *set(const intptr_t addr);
+		FrameTrace *add(const intptr_t baseAddr);
 		void dump(	SafeBuf *out,
 				const uint32_t level = 0,
 				uint32_t printStart = 0) const;
 		uint32_t getPrintLen(const uint32_t level = 0) const;
-		uint32_t address;
+		intptr_t address;
 		static const uint16_t MAX_CHILDREN = 64;
 		FrameTrace *m_children[MAX_CHILDREN];
 		uint32_t m_numChildren;
@@ -43,7 +43,7 @@ class Profiler {
 
 	bool printRealTimeInfo(SafeBuf *sb, const char *coll);
 
-	char *getFnName(PTRTYPE address,int32_t *nameLen=NULL);
+	char *getFnName(void * address,int32_t *nameLen=NULL);
 
 	void getStackFrame();
 
@@ -53,7 +53,7 @@ class Profiler {
 
 	void cleanup();
 	
-	FrameTrace *getNewFrameTrace(const uint32_t addr);
+	FrameTrace *getNewFrameTrace(const intptr_t addr);
 
 	bool m_realTimeProfilerRunning;
 

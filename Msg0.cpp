@@ -264,10 +264,10 @@ skip:
 	if ( g_conf.m_logDebugQuery )
 		log(LOG_DEBUG,"net: msg0: Sending request for data to "
 		    "shard=%" PRIu32" "
-		    "listPtr=%" PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
+		    "listPtr=%p minRecSizes=%" PRId32" termId=%" PRIu64" "
 		    "startKey.n1=%" PRIx64",n0=%" PRIx64" (niceness=%" PRId32")",
 		    m_shardNum,
-		    (PTRTYPE)m_list,
+		    m_list,
 		    m_minRecSizes, Posdb::getTermId(m_startKey) ,
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);

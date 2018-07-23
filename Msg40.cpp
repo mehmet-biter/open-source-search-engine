@@ -249,9 +249,9 @@ bool Msg40::prepareToGetDocIds ( ) {
 	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) {
 		int64_t now  = gettimeofdayInMilliseconds();
 		int64_t took = now - m_startTime;
-		logf(LOG_TIMING,"query: [%" PTRFMT"] Not found in cache. Lookup took %" PRId64" ms.",(PTRTYPE)this,took);
+		logf(LOG_TIMING,"query: [%p] Not found in cache. Lookup took %" PRId64" ms.",this,took);
 		m_startTime = now;
-		logf(LOG_TIMING,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" (docToGet=%" PRId32") docids", (PTRTYPE)this,
+		logf(LOG_TIMING,"query: msg40: [%p] Getting up to %" PRId32" (docToGet=%" PRId32") docids", this,
 		     m_docsToGetVisible,  m_docsToGet);
 	}
 
@@ -490,10 +490,10 @@ bool Msg40::gotDocIds ( ) {
 
 	if ( g_conf.m_logTimingQuery || m_si->m_debug||g_conf.m_logDebugQuery){
 		int64_t took = now - m_startTime;
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" docids in %" PRId64" ms",
-		     (PTRTYPE)this,m_msg3a.getNumDocIds(),took);
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" summaries",
-		     (PTRTYPE)this,m_docsToGetVisible);
+		logf(LOG_DEBUG,"query: msg40: [%p] Got %" PRId32" docids in %" PRId64" ms",
+		     this,m_msg3a.getNumDocIds(),took);
+		logf(LOG_DEBUG,"query: msg40: [%p] Getting up to %" PRId32" summaries",
+		     this,m_docsToGetVisible);
 	}
 
 	// save any covered up error
@@ -528,8 +528,8 @@ bool Msg40::gotDocIds ( ) {
 
 	// debug msg
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: [%" PTRFMT"] Getting reference pages and dir pages.",
-		     (PTRTYPE)this);
+		logf(LOG_DEBUG,"query: [%p] Getting reference pages and dir pages.",
+		     this);
 
 	return launchMsg20s ( false );
 }
@@ -912,8 +912,8 @@ bool Msg40::launchMsg20s(bool recalled) {
 		g_errno = 0;
 		// debug msg
 		if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting summary #%" PRId32" for docId=%" PRId64,
-			     (PTRTYPE)this,i,m_msg3a.m_docIds[i]);
+			logf(LOG_DEBUG,"query: msg40: [%p] Getting summary #%" PRId32" for docId=%" PRId64,
+			     this,i,m_msg3a.m_docIds[i]);
 		// launch it
 		m_numRequests++;
 
@@ -1113,8 +1113,8 @@ static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 bool Msg40::gotSummary ( ) {
 	// now m_linkInfo[i] (for some i, i dunno which) is filled
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got summary. Total got=#%" PRId32".",
-		     (PTRTYPE)this,m_numReplies);
+		logf(LOG_DEBUG,"query: msg40: [%p] Got summary. Total got=#%" PRId32".",
+		     this,m_numReplies);
 
 	// did we have a problem getting this summary?
 	if ( g_errno ) {
@@ -1612,8 +1612,8 @@ bool Msg40::gotEnoughSummaries() {
 
 	// timestamp log
 	if ( g_conf.m_logTimingQuery || m_si->m_debug )
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" summaries in %" PRId64" ms",
-		     (PTRTYPE)this ,
+		logf(LOG_DEBUG,"query: msg40: [%p] Got %" PRId32" summaries in %" PRId64" ms",
+		     this ,
 		     visible, // m_visibleContiguous,
 		     now - m_startTime );
 
