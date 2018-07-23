@@ -387,17 +387,9 @@ bool Query::setQTerms() {
 	// . use one bit position for each phraseId and wordId
 
 	// count phrases first for allocating
-	int numCandidatePhrases = 0;
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		const QueryWord *qw  = &m_qwords[i];
-		// skip if ignored... mdw...
-		if ( ! qw->m_bigramId ) continue;
-		if (   qw->m_ignorePhrase ) continue; // could be a repeat
-		// none if weight is absolute zero
-		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
-			continue;
-		numCandidatePhrases++;
-	}
+	//Removed: elaborate counting of possible bigrams. Done instead: this:
+	int numCandidatePhrases = m_numWords;
+	
 	// count single terms
 	int numCandidateSingles = 0;
 	for ( int32_t i = 0 ; i < m_numWords; i++ ) {
@@ -1229,6 +1221,31 @@ bool Query::setQTerms() {
 	}
 
 
+	//If there are two highfreqterms in a row then PosdbTable will ignore the bigram of them because it can't tie the bigram to any required term.
+	//Example: "key west mystery writers fest" where "key" and "west" are highfreqterms, and therefore postdbtable will ignore the bigram "key+west".
+	//Options:
+	//  1: do nothing
+	//  2: mark the bigram as ignored
+	//  3: mark the bigram as required
+	//  4: rewrite Query and the queryterminfo handling in posdbtable so the bigram can be optional.
+	//We do (3) because it will likely filter out more bad results than good results. This is a hack because marking a bigram as required normally
+	//requires us to to be sure those two words are connected, but for "key west" we are guessing.
+	//TODO: reqwrite query+postdbtable so qword/qterm can be optional, etc.
+	//The structure of qwords+qterms make sthis code unnecessarily clumsy
+	for(int i=0; i+2<m_numWords; i++) {
+		if(m_qwords[i  ].m_ignoreWord==IGNORE_HIGHFREMTERM &&
+		   m_qwords[i+2].m_ignoreWord==IGNORE_HIGHFREMTERM)
+		{
+			if(m_qwords[i].m_queryPhraseTerm && m_qwords[i].m_queryPhraseTerm->m_isPhrase) {
+				logTrace(g_conf.m_logTraceQuery, "query-words #%d (%.*s) and #%d (%.*s) are both high-freq-terms. Marking bigram as required",
+					 i,   m_qwords[i].m_wordLen,   m_qwords[i].m_word,
+				         i+2, m_qwords[i+2].m_wordLen, m_qwords[i+2].m_word);
+				m_qwords[i].m_queryPhraseTerm->m_isRequired = true;
+			}
+		}
+	}
+	
+	
 	//workaround/hack for double-highfreqterm searchs, such as "of a" or "the the" or "the who"
 	if(m_numWords==3 &&
 	   m_qwords[0].m_ignoreWord==IGNORE_HIGHFREMTERM &&
