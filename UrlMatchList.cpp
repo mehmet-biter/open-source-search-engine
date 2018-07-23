@@ -462,10 +462,13 @@ bool UrlMatchList::load() {
 			tmpUrlMatchList->m_urlMatchesList.emplace_back(urlMatches);
 		}
 
-		if (foundInvalid) {
-			/// @todo ALC log to eventlog
-
+		if (foundInvalid && g_hostdb.getMyHostId() == 0) {
+			std::ofstream file("eventlog", (std::ios::out | std::ios::app));
+			char timebuf[32];
+			file << formatTime(time(nullptr), timebuf) << "|invalid urlmatchlist|"
+			     << filePath << std::endl;
 		}
+
 		loadedFile = true;
 		log(LOG_INFO, "Loaded '%s' with %d entries for UrlMatchList", filePath.c_str(), count);
 
