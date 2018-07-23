@@ -388,7 +388,7 @@ bool Query::setQTerms() {
 
 	// count phrases first for allocating
 	//Removed: elaborate counting of possible bigrams. Done instead: this:
-	int numCandidatePhrases = m_numWords;
+	int numCandidatePhrases = m_numWords-1;
 	
 	// count single terms
 	int numCandidateSingles = 0;
