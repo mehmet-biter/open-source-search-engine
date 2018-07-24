@@ -1,9 +1,11 @@
 #ifndef GB_SITEGETTER_H
 #define GB_SITEGETTER_H
 
-#include "gb-include.h"
+#include "RdbList.h"
 #include "Msg0.h"
-#include "Tagdb.h"
+#include "collnum_t.h"
+#include <inttypes.h>
+
 
 #define MAX_SITE_LEN 	256
 #define MAX_SCHEME_LEN 	16

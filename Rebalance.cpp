@@ -7,8 +7,6 @@
 
 #include "Rebalance.h"
 
-#include "gb-include.h"
-
 #include "Rdb.h"
 #include "Spider.h"
 #include "Collectiondb.h"

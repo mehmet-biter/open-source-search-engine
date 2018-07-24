@@ -305,7 +305,7 @@ bool HttpServer::getDoc ( char   *url      ,
 		return true;
 	}
 	// increment usage
-	PTRTYPE n = 0;
+	unsigned n = 0;
 	while ( states[n] ) {
 		n++;
 		// should not happen...
@@ -322,15 +322,15 @@ bool HttpServer::getDoc ( char   *url      ,
 	s_numOutgoingSockets++;
 	// debug
 	char ipbuf[16];
-	log(LOG_DEBUG,"http: Getting doc with ip=%s state=%" PTRFMT" url=%s.",
-	    iptoa(ip,ipbuf),(PTRTYPE)state,url);
+	log(LOG_DEBUG,"http: Getting doc with ip=%s state=%p url=%s.",
+	    iptoa(ip,ipbuf),state,url);
 
 	// . send it away
 	// . callback will be called on completion of transaction
 	// . be sure to free "req/reqSize" in callback() somewhere
 	// . if using an http proxy, then ip should be valid here...
 	if ( ip ) {
-		if ( !tcp->sendMsg( host, hostLen, ip, port, req, reqSize, reqSize, reqSize, (void *)n, gotDocWrapper,
+		if ( !tcp->sendMsg( host, hostLen, ip, port, req, reqSize, reqSize, reqSize, (void *)(intptr_t)n, gotDocWrapper,
 							timeout, maxTextDocLen, maxOtherDocLen, useHttpTunnel ) ) {
 			return false;
 		}
@@ -343,7 +343,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	// otherwise pass the hostname
-	if ( !tcp->sendMsg( host, hostLen, port, req, reqSize, reqSize, reqSize, (void *)n, gotDocWrapper,
+	if ( !tcp->sendMsg( host, hostLen, port, req, reqSize, reqSize, reqSize, (void *)(intptr_t)n, gotDocWrapper,
 	                    timeout, maxTextDocLen, maxOtherDocLen ) ) {
 		return false;
 	}
@@ -356,13 +356,13 @@ bool HttpServer::getDoc ( char   *url      ,
 }
 
 static void gotDocWrapper(void *state, TcpSocket *s) {
-	g_httpServer.gotDoc ( (int32_t)(PTRTYPE)state, s );
+	g_httpServer.gotDoc ( (int32_t)(intptr_t)state, s );
 }
 
 bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 	void *state = states[n];
 	void (*callback)(void *state, TcpSocket *s) = callbacks[n];
-	log(LOG_DEBUG,"http: Got doc with state=%" PTRFMT".",(PTRTYPE)state);
+	log(LOG_DEBUG,"http: Got doc with state=%p.",state);
 	states[n]    = NULL;
 	callbacks[n] = NULL;
 	s_numOutgoingSockets--;
@@ -856,12 +856,12 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	mnew ( f, sizeof(File), "HttpServer");
 	// note that 
 	if ( g_conf.m_logDebugTcp )
-		log("tcp: new filestate=0x%" PTRFMT"",(PTRTYPE)f);
+		log("tcp: new filestate=%p",f);
 	// don't honor HUGE requests
 	if ( pathLen > 100 ) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%" PTRFMT" [1]",
-			    (PTRTYPE)f);
+			log("tcp: deleting filestate=%p [1]",
+			    f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		g_errno = EBADREQUEST;
@@ -883,8 +883,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		// use default page if does not exist under host-specific path
 		if (pathLen == 11 && strncmp ( path , "/index.html" ,11 ) ==0){
 			if ( g_conf.m_logDebugTcp )
-				log("tcp: deleting filestate=0x%" PTRFMT" [2]",
-				    (PTRTYPE)f);
+				log("tcp: deleting filestate=%p [2]",
+				    f);
 			mdelete ( f, sizeof(File), "HttpServer");
 			delete (f);
 			return g_pages.sendDynamicReply ( s , r , PAGE_ROOT );
@@ -903,8 +903,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			return sendPageDefaultCss(s,r);
 
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%" PTRFMT" [3]",
-			    (PTRTYPE)f);
+			log("tcp: deleting filestate=%p [3]",
+			    f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		
@@ -932,8 +932,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . set g_errno on error
 	if ( bytesToSend > 0  &&  ! f->open(O_RDONLY)) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%" PTRFMT" [4]",
-			    (PTRTYPE)f);
+			log("tcp: deleting filestate=%p [4]",
+			    f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		logError("call sendErrorReply. Not found");
@@ -980,8 +980,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			log("http: got ZET request and am not proxy");
 		// bail
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%" PTRFMT" [5]",
-			    (PTRTYPE)f);
+			log("tcp: deleting filestate=%p [5]",
+			    f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		g_errno = EBADREQUEST;
@@ -997,8 +997,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	char *sendBuf    = (char *) mmalloc ( sendBufSize ,"HttpServer" );
 	if ( ! sendBuf ) { 
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%" PTRFMT" [6]",
-			    (PTRTYPE)f);
+			log("tcp: deleting filestate=%p [6]",
+			    f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		logError("call sendErrorReply. 500 Could not alloc sendBuf (%" PRId32")", sendBufSize);
@@ -1049,10 +1049,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . AND we need to do this ourselves here
 	// . do it SILENTLY so not message is logged if fd not registered
 	if (tcp->m_useSSL)
-		g_loop.unregisterReadCallback ( fd,(void *)(PTRTYPE)(sd),
+		g_loop.unregisterReadCallback ( fd,(void *)(intptr_t)(sd),
 						getSSLMsgPieceWrapper);
 	else
-		g_loop.unregisterReadCallback ( fd,(void *)(PTRTYPE)(sd),
+		g_loop.unregisterReadCallback ( fd,(void *)(intptr_t)(sd),
 						getMsgPieceWrapper);
 
 	// TcpServer will free sendBuf on s's recycling/destruction
@@ -1213,15 +1213,15 @@ static void cleanUp(void *state, TcpSocket *s) {
 		// do it SILENTLY so not message is logged if fd not registered
 		if (tcp->m_useSSL)
 			g_loop.unregisterReadCallback ( fd,//f->getfd(),
-						    (void *)(PTRTYPE)(socketDescriptor),
+						    (void *)(intptr_t)(socketDescriptor),
 							getSSLMsgPieceWrapper);
 		else
 			g_loop.unregisterReadCallback ( fd,//f->getfd(),
-						    (void *)(PTRTYPE)(socketDescriptor),
+						    (void *)(intptr_t)(socketDescriptor),
 							getMsgPieceWrapper);
 	}
 
-	logDebug(g_conf.m_logDebugTcp, "tcp: deleting filestate=0x%" PTRFMT" fd=%" PRId32" [7] s=0x%" PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
+	logDebug(g_conf.m_logDebugTcp, "tcp: deleting filestate=%p fd=%" PRId32" [7] s=%p", f,fd,s);
 
 	// . i guess this is the file state!?!?!
 	// . it seems the socket sometimes is not destroyed when we return
@@ -1472,7 +1472,7 @@ static void getMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
-	int32_t sd = (int32_t)(PTRTYPE) state;
+	int32_t sd = (int32_t)(intptr_t)state;
 
 	for(;;) {
 		// ensure Socket has not been destroyed by callCallbacks()
@@ -1504,7 +1504,7 @@ static void getSSLMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
-	int32_t sd = (int32_t)(PTRTYPE) state;
+	int32_t sd = (int32_t)(intptr_t)state;
 
 	for(;;) {
 		// ensure Socket has not been destroyed by callCallbacks()
@@ -1595,12 +1595,12 @@ static int32_t getMsgPiece ( TcpSocket *s ) {
 	// . this means we block, and cleanUp should be called to unregister it
 	// . this also makes f non-blocking
 	if (tcp->m_useSSL) {
-		if (g_loop.registerReadCallback(f->getfd(), (void *)(PTRTYPE)(s->m_sd), getSSLMsgPieceWrapper,
+		if (g_loop.registerReadCallback(f->getfd(), (void *)(intptr_t)(s->m_sd), getSSLMsgPieceWrapper,
 		                                "HttpServer::getSSLMsgPieceWrapper", s->m_niceness))
 			return n;
 	}
 	else {
-		if (g_loop.registerReadCallback(f->getfd(), (void *)(PTRTYPE)(s->m_sd), getMsgPieceWrapper,
+		if (g_loop.registerReadCallback(f->getfd(), (void *)(intptr_t)(s->m_sd), getMsgPieceWrapper,
 		                                "HttpServer::getMsgPieceWrapper", s->m_niceness))
 			return n;
 	}

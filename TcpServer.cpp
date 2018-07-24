@@ -1653,7 +1653,7 @@ void writeSocketWrapper ( int sd , void *state ) {
 	// set to false, so don't destroy socket just yet...
 	if ( wasStreaming ) {
 		log("tcp: not destroying sock in streaming mode after callback"
-		    ". s=0x%" PTRFMT,   (PTRTYPE)s);
+		    ". s=%p", s);
 		    return;
 	}
 
@@ -1900,8 +1900,8 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 
 	if ( s->m_streamingMode ) {
 		log("tcp: not destroying sock in streaming mode after "
-		    "writing data. s=0x%" PTRFMT,
-		    (PTRTYPE)s);
+		    "writing data. s=%p",
+		    s);
 		return 1;
 	}
 
@@ -2152,8 +2152,8 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	s->m_streamingMode = false;
 
 	if ( cret != 0 ) { // == -1 ) 
-		log("tcp: s=%" PTRFMT" close(%" PRId32") = %" PRId32" = %s",
-		    (PTRTYPE)s,(int32_t)sd,cret,mstrerror(errno));
+		log("tcp: s=%p close(%" PRId32") = %" PRId32" = %s",
+		    s,(int32_t)sd,cret,mstrerror(errno));
 		if ( sd < 0 )
 			log("tcp: caught double close/callback while "
 			    "streaming bug");
@@ -2357,12 +2357,12 @@ void TcpServer::readTimeoutPoll ( ) {
 		}
 
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: timeloop: timing out sd=%i s=0x%" PTRFMT ,
-			    s->m_sd,(PTRTYPE)s);
+			log("tcp: timeloop: timing out sd=%i s=%p",
+			    s->m_sd,s);
 
 		else if ( m_useSSL )
-			log("tcp: timeloop: timing out ssl sd=%i s=0x%" PTRFMT ,
-			    s->m_sd,(PTRTYPE)s);
+			log("tcp: timeloop: timing out ssl sd=%i s=%p",
+			    s->m_sd,s);
 
 		//log("tcp: timeout=%" PRId32" fd=%" PRId32,sockTimeout,s->m_sd);
 
@@ -2583,7 +2583,7 @@ void TcpServer::makeCallback ( TcpSocket * s ) {
 	if ( ! s->m_callback ) {
 		// note it
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: null callback for s=0x%" PTRFMT"",(PTRTYPE)s);
+			log("tcp: null callback for s=%p", s);
 		return;
 	}
 

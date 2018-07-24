@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HashTableX.h"
 #include "SafeBuf.h"
 #include "JobScheduler.h"
@@ -380,8 +378,8 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 
 		int64_t now = gettimeofdayInMilliseconds();
 		logf(LOG_DEBUG,"table: grewtable %s from %" PRId32" to %" PRId32" slots "
-		     "in %" PRId64" ms (this=0x%" PTRFMT") (used=%" PRId32")",
-		     name,old,m_numSlots ,now - startTime,(PTRTYPE)this,oldUsed);
+		     "in %" PRId64" ms (this=%p) (used=%" PRId32")",
+		     name,old,m_numSlots ,now - startTime,this,oldUsed);
 	}
 
 	// free the old guys

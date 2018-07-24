@@ -32,7 +32,6 @@ public:
 
 	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType);
 
-	char       *getTitle()       { return m_title; }
 	const char *getTitle() const { return m_title; }
 
 	// does NOT include \0

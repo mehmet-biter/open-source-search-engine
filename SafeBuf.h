@@ -62,9 +62,6 @@ public:
 	int32_t getCapacity() const { return m_capacity; }
 	int32_t getAvail() const { return m_capacity - m_length; }
 	int32_t length() const { return m_length; }
-	void print() const {
-		if ( write(1,m_buf,m_length) != m_length) { gbshutdownAbort(true); }
-	}
 
 	// . returns bytes written to file, 0 is acceptable if m_length == 0
 	// . returns -1 on error and sets g_errno

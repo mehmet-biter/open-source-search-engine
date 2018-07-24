@@ -3,12 +3,12 @@
 #ifndef GB_REBALANCE_H
 #define GB_REBALANCE_H
 
-#include "gb-include.h"
-#include "types.h"
+#include "collnum_t.h"
 #include "RdbList.h"
 #include "Msg4Out.h"
 #include "Msg5.h"
 #include "SafeBuf.h"
+#include <inttypes.h>
 
 class Rebalance {
 

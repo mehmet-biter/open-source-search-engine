@@ -15,6 +15,7 @@
 #define MAX_PHRASE_POP 16800
 
 #include "HashTableX.h"
+#include "SafeBuf.h"
 
 class Speller {
 

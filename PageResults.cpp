@@ -1389,9 +1389,9 @@ static bool printSearchResultsHeader(State0 *st) {
 	// debug
 	if ( si->m_debug )
 		logf(LOG_DEBUG,"query: Printing up to %" PRId32" results. "
-		     "bufStart=0x%" PTRFMT"",
+		     "bufStart=%p",
 		     numResults,
-		     (PTRTYPE)sb->getBufPtr());
+		     sb->getBufPtr());
 
 	return true;
 }

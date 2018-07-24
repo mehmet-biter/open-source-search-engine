@@ -56,6 +56,7 @@
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "SiteNumInlinks.h"
 #include "SiteMedianPageTemperature.h"
+#include "ip.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -1245,10 +1246,10 @@ void XmlDoc::setStatus ( const char *s ) {
 		if ( m_lastTimeStart == 0LL ) m_lastTimeStart = now;
 		int32_t took = now - m_lastTimeStart;
 		//if ( took > 100 )
-			log("xmldoc: %s (xd=0x%" PTRFMT" "
+			log("xmldoc: %s (xd=%p "
 			    "u=%s) took %" PRId32"ms",
 			    m_statusMsg,
-			    (PTRTYPE)this,
+			    this,
 			    m_firstUrl.getUrl(),
 			    took);
 		m_lastTimeStart = now;
@@ -1261,12 +1262,12 @@ void XmlDoc::setStatus ( const char *s ) {
 	if ( ! logIt ) return;
 
 	if ( m_firstUrlValid )
-		logf(LOG_DEBUG,"build: status = %s for %s (this=0x%" PTRFMT")",
-		     s,m_firstUrl.getUrl(),(PTRTYPE)this);
+		logf(LOG_DEBUG,"build: status = %s for %s (this=%p)",
+		     s,m_firstUrl.getUrl(),this);
 	else
 		logf(LOG_DEBUG,"build: status = %s for docId %" PRId64" "
-		     "(this=0x%" PTRFMT")",
-		     s,m_docId, (PTRTYPE)this);
+		     "(this=%p)",
+		     s,m_docId, this);
 }
 
 // caller must now call XmlDoc::setCallback()
@@ -5945,8 +5946,8 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	}
 	mnew ( m_oldDoc , sizeof(XmlDoc),"xmldoc1");
 	// debug the mem leak
-	// log("xmldoc: xmldoc1=%" PTRFMT" u=%s"
-	//     ,(PTRTYPE)m_oldDoc
+	// log("xmldoc: xmldoc1=%p u=%s"
+	//     ,m_oldDoc
 	//     ,m_firstUrl.getUrl());
 	// if title rec is corrupted data uncompress will fail and this
 	// will return false!
@@ -5959,7 +5960,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 		delete ( m_oldDoc );
 
 		//m_oldDocExistedButHadError = true;
-		//log("xmldoc: nuke xmldoc1=%" PTRFMT"",(PTRTYPE)m_oldDoc);
+		//log("xmldoc: nuke xmldoc1=%p",m_oldDoc);
 		m_oldDoc = NULL;
 		// g_errno = saved;
 		// MDW: i removed this on 2/8/2016 again so the code below
@@ -6883,15 +6884,15 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		log("xmldoc: valid=%" PRId32" "
 		    "age=%" PRId32" ns=%" PRId32" sni=%" PRId32" "
 		    "maxage=%" PRId32" "
-		    "tag=%" PTRFMT" "
-		    // "tag2=%" PTRFMT" "
-		    // "tag3=%" PTRFMT" "
+		    "tag=%p "
+		    // "tag2=%p "
+		    // "tag3=%p "
 		    "url=%s",
 		    (int32_t)valid,age,ns,sni,
 		    maxAge,
-		    (PTRTYPE)tag,
-		    // (PTRTYPE)tag2,
-		    // (PTRTYPE)tag3,
+		    tag,
+		    // tag2,
+		    // tag3,
 		    m_firstUrl.getUrl());
 
 	LinkInfo *sinfo = NULL;
@@ -12317,8 +12318,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 	}
 	sb->safePrintf("</table>\n");
 
-	if ( sb == &tmp )
-		sb->print();
+	if ( sb == &tmp ) {
+		if ( write(1,sb->getBufStart(),sb->length()) != sb->length() )
+			gbshutdownAbort(true);
+	}
 }
 
 
@@ -15517,9 +15520,9 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( getThatTitle ) {
 		Title *ti = getTitle();
 		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
-		char *tit = ti->getTitle();
+		const char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		m_reply.ptr_tbuf = tit;
+		m_reply.ptr_tbuf = const_cast<char*>(tit); //won't modify it - promise!
 		m_reply.size_tbuf = titLen + 1; // include \0
 		// sanity
 		if ( tit && tit[titLen] != '\0' ) { g_process.shutdownAbort(true); }
@@ -15994,9 +15997,9 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	     getThatTitle ) {
 		Title *ti = getTitle();
 		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
-		char *tit = ti->getTitle();
+		const char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		m_reply. ptr_tbuf = tit;
+		m_reply. ptr_tbuf = const_cast<char*>(tit); //won't modify it - promise!
 		m_reply.size_tbuf = titLen + 1; // include \0
 		if ( ! tit || titLen <= 0 ) {
 			m_reply.ptr_tbuf = NULL;

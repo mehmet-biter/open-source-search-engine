@@ -212,9 +212,9 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 		 int32_t replyMaxSize , bool hadError ) {
 	// debug msg
 	if ( g_conf.m_logDebugQuery || (msg39&&msg39->m_debug) ) 
-		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
+		logf(LOG_DEBUG,"query: msg39: [%p] "
 		     "Sending reply len=%" PRId32".",
-		     (PTRTYPE)msg39,replyLen);
+		     msg39,replyLen);
 
 	// sanity
 	if ( hadError && ! g_errno ) gbshutdownLogicError();
@@ -380,8 +380,8 @@ void Msg39::getDocIds2() {
 
 	// debug
 	if ( m_debug )
-		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] Got request "
-		     "for q=%s", (PTRTYPE) this,m_query.originalQuery());
+		logf(LOG_DEBUG,"query: msg39: [%p] Got request "
+		     "for q=%s", this,m_query.originalQuery());
 
 	// reset this
 	m_toptree.reset();
@@ -619,7 +619,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			bool isSynonym = synterm!=NULL;
 			SafeBuf sb;
 			sb.safePrintf(
-			     "query: msg39: [%" PTRFMT"] "
+			     "query: msg39: [%p] "
 			     "query term #%" PRId32" \"%*.*s\" "
 			     "phr=%" PRId32" termId=%" PRIu64" rawTermId=%" PRIu64" "
 			     "tfweight=%.02f "
@@ -632,7 +632,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%s"
 			     "querylangid=%" PRId32" " ,
-			     (PTRTYPE)this ,
+			     this ,
 			     i          ,
 			     (int)qt->m_termLen, (int)qt->m_termLen, qt->m_term,
 			     (int32_t)m_query.isPhrase(i) ,
@@ -664,9 +664,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 	}
 	// timestamp log
 	if ( m_debug ) 
-		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
+		log(LOG_DEBUG,"query: msg39: [%p] "
 		    "Getting %" PRId32" index lists ",
-		     (PTRTYPE)this,m_query.getNumTerms());
+		     this,m_query.getNumTerms());
 	// . now get the index lists themselves
 	// . return if it blocked
 	// . not doing a merge (last parm) means that the lists we receive
@@ -726,9 +726,9 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	log(LOG_DEBUG, "query: msg39(this=%p)::intersectLists()",this);
 	// timestamp log
 	if ( m_debug ) {
-		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
+		log(LOG_DEBUG,"query: msg39: [%p] "
 		    "Got %" PRId32" lists in %" PRId64" ms"
-		    , (PTRTYPE)this,m_query.getNumTerms(),
+		    , this,m_query.getNumTerms(),
 		     gettimeofdayInMilliseconds() - m_startTime);
 		m_startTime = gettimeofdayInMilliseconds();
 	}
@@ -772,10 +772,10 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 
 	// timestamp log
 	if ( m_debug ) {
-		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
+		log(LOG_DEBUG,"query: msg39: [%p] "
 		    "Preparing to intersect "
 		     "took %" PRId64" ms",
-		     (PTRTYPE)this, 
+		     this, 
 		    gettimeofdayInMilliseconds() - m_startTime );
 		m_startTime = gettimeofdayInMilliseconds();
 	}
@@ -1068,9 +1068,9 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 		docCount++;
 
 		if(m_debug) {
-			logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
+			logf(LOG_DEBUG,"query: msg39: [%p] "
 			    "%03" PRId32") docId=%012" PRIu64" sum=%.02f",
-			    (PTRTYPE)this, docCount,
+			    this, docCount,
 			    t->m_docId,t->m_score);
 		}
 		//don't send more than the docs that are wanted
@@ -1083,12 +1083,12 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	// this is sensitive info
 	if(m_debug) {
 		log(LOG_DEBUG,
-		    "query: msg39: [%" PTRFMT"] "
+		    "query: msg39: [%p] "
 		    "Intersected lists took %" PRId64" (%" PRId64") "
 		    "ms "
 		    "docIdsToGet=%" PRId32" docIdsGot=%" PRId32" "
 		    "q=%s",
-		    (PTRTYPE)this                        ,
+		    this                        ,
 		    m_posdbTable.m_addListsTime       ,
 		    gettimeofdayInMilliseconds() - m_startTime ,
 		    m_msg39req->m_docsToGet                       ,

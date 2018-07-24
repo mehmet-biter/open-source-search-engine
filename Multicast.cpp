@@ -838,8 +838,8 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	m_replyLaunchTime = m_host[i].m_launchTime;
 
 	if ( m_sentToTwin ) {
-		logDebug(g_conf.m_logDebugMulticast, "multicast: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") reply: %s.",
-		    (int32_t) m_msgType, (PTRTYPE) this, mstrerror(g_errno));
+		logDebug(g_conf.m_logDebugMulticast, "multicast: Twin msgType=0x%" PRIx32" (this=%p) reply: %s.",
+		    (int32_t) m_msgType, this, mstrerror(g_errno));
 	}
 
 	sl.unlock();
@@ -909,8 +909,8 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		if ( timeRemaining <= 0 ) sendToTwin = false;
 		// send to the twin
 		if ( sendToTwin && sendToHostLoop(0,-1) ) {
-			log(LOG_INFO, "multicast: Trying to send request msgType=0x%" PRIx32" to a twin. (this=0x%" PTRFMT")",
-			    (int32_t)m_msgType,(PTRTYPE)this);
+			log(LOG_INFO, "multicast: Trying to send request msgType=0x%" PRIx32" to a twin. (this=%p)",
+			    (int32_t)m_msgType,this);
 			m_sentToTwin = true;
 			// . keep stats
 			// . this is error based rerouting

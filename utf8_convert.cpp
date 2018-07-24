@@ -1,5 +1,6 @@
 #include "utf8_convert.h"
 #include "HashTableX.h"
+#include "Errno.h"
 #include <iconv.h>
 
 

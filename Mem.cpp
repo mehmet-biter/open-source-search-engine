@@ -35,6 +35,9 @@ static const char MAGICCHAR = (char)0xda;
 class Mem g_mem;
 
 
+#define PTRTYPE  uint64_t
+#define SPTRTYPE int64_t
+#define PTRFMT  "lx"
 
 
 //hackish way to keep track of whether s_lock is safe to use or not. Things calls ::rmmem after s_lock has been destroyed

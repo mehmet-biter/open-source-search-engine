@@ -102,8 +102,8 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// store it
 	cr->m_spiderColl = sc;
 	// note it
-	logf(LOG_DEBUG,"spider: made spidercoll=%" PTRFMT" for cr=%" PTRFMT"",
-		(PTRTYPE)sc,(PTRTYPE)cr);
+	logf(LOG_DEBUG,"spider: made spidercoll=%p for cr=%p",
+		sc,cr);
 
 	// note it!
 	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);

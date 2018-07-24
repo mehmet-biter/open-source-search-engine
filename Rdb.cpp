@@ -91,9 +91,9 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
 	    "for rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" "
-	      "base=0x%" PTRFMT"",
+	      "base=%p",
 	    m_dbname,(int32_t)m_rdbId,cr->m_coll,(int32_t)collnum,
-	      (PTRTYPE)base);
+	      base);
 }
 
 bool Rdb::init(const char *dbname,
@@ -2041,9 +2041,9 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		// a dup? sanity check
 		if ( ht.isInTable ( &doff ) ) {
 			int32_t *vp = (int32_t *) ht.getValue ( &doff );
-			log("rdb: reclaim got dup oldi=0x%" PTRFMT" "
+			log("rdb: reclaim got dup oldi=%p "
 			    "newi=%" PRId32" dataoff=%" PRId32"."
-			    ,(PTRTYPE)vp,i,doff);
+			    ,vp,i,doff);
 			dups++;
 			continue;
 		}

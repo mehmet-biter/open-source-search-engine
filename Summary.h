@@ -20,7 +20,7 @@
 #ifndef GB_SUMMARY_H
 #define GB_SUMMARY_H
 
-#include "gb-include.h"
+#include <inttypes.h>
 #include <string>
 
 #define MAX_SUMMARY_LEN (1024*20)
@@ -93,4 +93,3 @@ private:
 };
 
 #endif
-

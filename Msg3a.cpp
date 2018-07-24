@@ -220,8 +220,8 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state, void (*callb
 		// show the query terms
 		printTerms ( );
 		m_startTime = gettimeofdayInMilliseconds();
-		logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] getting termFreqs.",
-		     (PTRTYPE)this);
+		logf(LOG_DEBUG,"query: msg3a: [%p] getting termFreqs.",
+		     this);
 	}
 
 	setTermFreqWeights(m_msg39req.m_collnum, m_q, m_msg39req.m_baseScoringParameters.m_termFreqWeightFreqMin, m_msg39req.m_baseScoringParameters.m_termFreqWeightFreqMax,
@@ -388,9 +388,9 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state, void (*callb
 
 		// debug log
 		if ( m_debug ) {
-			logf(LOG_DEBUG,"query: Msg3a[%" PTRFMT"]: forwarding request "
+			logf(LOG_DEBUG,"query: Msg3a[%p]: forwarding request "
 			     "of query=%s to shard %" PRIu32".",
-			     (PTRTYPE)this, m_q->getQuery(), shardNum);
+			     this, m_q->getQuery(), shardNum);
 		}
 
 		// send to this guy
@@ -469,8 +469,8 @@ void Msg3a::gotReply(Multicast *m) {
 	// timestamp log
 	if ( m_debug )
 	{
-		logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] got reply #%" PRId32" (of %" PRId32") in %" PRId64" ms. Hostid=%" PRId32". err=%s", 
-		     (PTRTYPE)this,
+		logf(LOG_DEBUG,"query: msg3a: [%p] got reply #%" PRId32" (of %" PRId32") in %" PRId64" ms. Hostid=%" PRId32". err=%s",
+		     this,
 		     m_numReplies,
 		     m_numRequests,
 		     endTime - m_startTime,
@@ -480,8 +480,8 @@ void Msg3a::gotReply(Multicast *m) {
 	else 
 	if ( g_errno )
 	{
-		logf(LOG_DEBUG,"msg3a: error reply. [%" PTRFMT"] got reply #%" PRId32". Hostid=%" PRId32". err=%s", 
-		     (PTRTYPE)this, m_numReplies,
+		logf(LOG_DEBUG,"msg3a: error reply. [%p] got reply #%" PRId32". Hostid=%" PRId32". err=%s",
+		     this, m_numReplies,
 		     h ? h->m_hostId : -1,
 		     mstrerror(g_errno) );
 	}
@@ -952,8 +952,8 @@ bool Msg3a::mergeLists() {
 
 	if(m_debug) {
 		// show how long it took
-		logf( LOG_DEBUG,"query: msg3a: [%" PTRFMT"] merged %" PRId32" docs from %d replies in %" PRIu64" ms. ",
-		      (PTRTYPE)this,
+		logf( LOG_DEBUG,"query: msg3a: [%p] merged %" PRId32" docs from %d replies in %" PRIu64" ms. ",
+		      this,
 		       m_numDocIds, m_numReplies,
 		       gettimeofdayInMilliseconds() - m_startTime
 		      );
