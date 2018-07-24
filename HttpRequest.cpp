@@ -213,9 +213,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	if ( hlen <= 0 || ! hptr ) { g_errno = EBADURL; return false; }
 	// sanity check. port is only 16 bits
 	if ( port > (int32_t)0xffff ) { g_errno = EBADURL; return false; }
-	// return false and set g_errno if url too big
-	//if ( url->getUrlLen() + 400 >= MAX_REQ_LEN ) { 
-	//	g_errno = EURLTOOBIG; return false;}
+
 	// assume request type is a GET
 	m_requestType = RT_GET;//0;
 	// get the host NULL terminated
@@ -258,18 +256,9 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	// . use one in conf file if caller did not provide
 	// . this is usually Gigabot/1.0
 	if ( ! userAgent ) userAgent = g_conf.m_spiderUserAgent;
+
 	// accept only these
 	const char *accept = "*/*";
-	/*
-		 "text/html, "
-		 "text/plain, "
-		 "text/xml, "
-		 "application/pdf, "
-		 "application/msword, "
-		 "application/vnd.ms-excel, "
-		 "application/mspowerpoint, "
-		 "application/postscript";
-	*/
 
 	const char *cmd = "GET";
 	if ( size == 0 ) cmd = "HEAD";
@@ -298,15 +287,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 // i am re-enabling now for testing...
 	 if(g_conf.m_gzipDownloads)
 	 	 acceptEncoding = "Accept-Encoding: gzip;q=1.0\r\n";
-	 // i thought this might stop wikipedia from forcing gzip on us
-	 // but it did not!
-	 // else
-	 //	 acceptEncoding = "Accept-Encoding:\r\n";
 
-	 // char *p = m_buf;
-	 // init the safebuf to point to this buffer in our class to avoid
-	 // a potential alloc
-	 // m_reqBuf.setBuf ( m_buf , MAX_REQ_LEN , 0 , false, csUTF8 );
 	 m_reqBuf.purge();
 	 // indicate this is good
 	 m_reqBufValid = true;
@@ -320,9 +301,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   "%s"
 			   "User-Agent: %s\r\n"
 			   "Connection: Close\r\n"
-			   //"Connection: Keep-Alive\r\n" 
 			   "Accept-Language: en\r\n"
-			   //"Accept: */*\r\n\r\n" ,
 			   "Accept: %s\r\n" 
 			   "%s"
 			   ,
@@ -338,9 +317,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   "%s"
 			   "User-Agent: %s\r\n"
 			   "Connection: Close\r\n"
-			   //"Connection: Keep-Alive\r\n"
 			   "Accept-Language: en\r\n"
-			   //"Accept: */*\r\n"
 			   "Accept: %s\r\n"
 			   "Range: bytes=%" PRId32"-%" PRId32"\r\n" 
 			   "%s"
@@ -363,9 +340,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   "%s"
 			   "User-Agent: %s\r\n"
 			   "Connection: Close\r\n"
-			   //"Connection: Keep-Alive\r\n"
 			   "Accept-Language: en\r\n"
-			   //"Accept: */*\r\n"
 			   "Accept: %s\r\n"
 			   "Range: bytes=%" PRId32"-\r\n" 
 			   "%s"
@@ -379,16 +354,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   accept ,
 			   offset ,
 				      up );
-	 // Wget's request:
-	 // GET / HTTP/1.0\r\nUser-Agent: Wget/1.10.2\r\nAccept: */*\r\nHost: 127.0.0.1:8000\r\nConnection: Keep-Alive\r\n\r\n
-	 // firefox's request:
-	 // GET /master?c=main HTTP/1.1\r\nHost: 10.5.1.203:8000\r\nUser-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.7) Gecko/20100715 Ubuntu/10.04 (lucid) Firefox/3.6.7\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-us,en;q=0.5\r\nAccept-Encoding: gzip,deflate\r\nAccept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r\nKeep-Alive: 115\r\nConnection: keep-alive\r\nReferer: http://10.5.0.2:8002/qpmdw.html\r\nCookie: __utma=267617550.1103353528.1269214594.1273256655.1276103782.12; __utmz=267617550.1269214594.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); _incvi=qCffL7N8chFyJLwWrBDMbNz2Q3EWmAnf4uA; s_lastvisit=1269900225815; s_pers=%20s_getnr%3D1276103782254-New%7C1339175782254%3B%20s_nrgvo%3DNew%7C1339175782258%3B\r\n\r\n
 	 else {
-		 // until we fix if-modified-since, take it out
-		 //ims="";
-		 //userAgent = "Wget/1.10.2";
-		 //userAgent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.7) Gecko/20100715 Ubuntu/10.04 (lucid) Firefox/3.6.7";
-		 //proto = "HTTP/1.0";
 		 m_reqBuf.safePrintf (
 			   "%s %s %s\r\n" 
 			   "User-Agent: %s\r\n"
@@ -396,13 +362,10 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   "Host: %s\r\n"
 			   "%s"
 			   "Connection: Close\r\n"
-			   //"Connection: Keep-Alive\r\n"
 			   //"Accept-Language: en\r\n"
 				"%s"
 			   "%s"
 			   ,
-			   //"Accept: %s\r\n\r\n" ,
-				//"\r\n",
 				cmd,
 			   path ,
 			   proto ,
@@ -411,7 +374,6 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   ims ,
 			   acceptEncoding,
 				      up );
-			   //accept );
 	 }
 
 	 if ( additionalHeader )
@@ -443,7 +405,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		 //log("captch: %s",m_buf);
 	 }
 
-	 if ( ! doPost ) { // ! postData ) {
+	 if ( ! doPost ) {
 		 m_reqBuf.safePrintf("\r\n");
 	 }
 
