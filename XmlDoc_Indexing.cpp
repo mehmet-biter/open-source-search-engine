@@ -2241,7 +2241,7 @@ bool XmlDoc::hashWords3(HashInfo *hi, const TokenizerResult *tr, size_t begin_to
 	// between calls? i.e. hashTitle() and hashBody()
 	if ( nw > 0 ) m_dist = wposvec[nw-1] + 100;
 
-	if(m_langId==langDanish) {
+	if(m_langId==langDanish && lemma_lexicon) {
 		//we only have a lexicon for Danish so far for this test
 		logTrace(g_conf.m_logTraceTokenIndexing,"candidate_lemma_words.size()=%zu", candidate_lemma_words.size());
 		for(auto e : candidate_lemma_words) {
