@@ -4,49 +4,50 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_set>
 #include "GbRegex.h"
 #include "UrlParser.h"
 
 enum urlmatchtype_t {
+	url_match_extension,
 	url_match_domain,
 	url_match_file,
 	url_match_host,
-	url_match_hostsuffix,
+	url_match_middomain,
 	url_match_path,
+	url_match_pathcriteria,
 	url_match_pathparam,
 	url_match_pathpartial,
+	url_match_port,
 	url_match_queryparam,
 	url_match_regex,
+	url_match_scheme,
+	url_match_subdomain,
 	url_match_tld
 };
 
 struct urlmatchstr_t {
-	urlmatchstr_t(urlmatchtype_t type, const std::string &str);
+	enum matchcriteria_t {
+		matchcriteria_exact,
+		matchcriteria_prefix,
+		matchcriteria_suffix,
+		matchcriteria_partial
+	};
+
+	urlmatchstr_t(urlmatchtype_t type, const std::string &str, const std::string &match_criteria);
+	urlmatchstr_t(urlmatchtype_t type, const std::string &str, matchcriteria_t matchcriteria);
 
 	urlmatchtype_t m_type;
 	std::string m_str;
+	matchcriteria_t m_matchcriteria;
 };
 
-struct urlmatchdomain_t {
-	enum pathcriteria_t {
-		pathcriteria_allow_all,
-		pathcriteria_allow_index_only,
-		pathcriteria_allow_rootpages_only
-	};
+struct urlmatchset_t {
+	urlmatchset_t(urlmatchtype_t type, const std::string &str);
 
-	urlmatchdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria);
-
-	std::string m_domain;
-	std::vector<std::string> m_allow;
-	pathcriteria_t m_pathcriteria;
-};
-
-struct urlmatchhost_t {
-	urlmatchhost_t(const std::string &host, const std::string &path);
-
-	std::string m_host;
-	std::string m_path;
-	int m_port;
+	urlmatchtype_t m_type;
+	std::string m_str;
+	std::unordered_set<std::string> m_set;
 };
 
 struct urlmatchparam_t {
@@ -57,45 +58,55 @@ struct urlmatchparam_t {
 	std::string m_value;
 };
 
+struct urlmatchpathcriteria_t {
+	enum pathcriteria_t {
+		pathcriteria_all,
+		pathcriteria_index_only,
+		pathcriteria_rootpages_only
+	};
+
+	urlmatchpathcriteria_t(const std::string &path_criteria);
+
+	std::string m_str;
+	pathcriteria_t m_pathcriteria;
+};
 struct urlmatchregex_t {
-	urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain = "");
+	urlmatchregex_t(const std::string &regexStr, const GbRegex &regex);
 
 	GbRegex m_regex;
 	std::string m_regexStr;
-	std::string m_domain;
-};
-
-struct urlmatchtld_t {
-	urlmatchtld_t(const std::string &tlds);
-
-	std::string m_tldsStr;
-	std::vector<std::string> m_tlds;
 };
 
 class Url;
 
 class UrlMatch {
 public:
-	UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr);
-	UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain);
-	UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost);
-	UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam);
-	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex);
-	UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld);
+	UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchset_t> &urlmatchset, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchpathcriteria_t> &urlmatchpathcriteria, bool m_invert);
+	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex, bool m_invert);
+
+	urlmatchtype_t getType() const;
+	std::string getDomain() const;
 
 	bool match(const Url &url, const UrlParser &urlParser) const;
 	void logMatch(const Url &url) const;
+	void logCriteria(const Url &url) const;
 
 private:
+	void log(const Url &url, const char **type, const char **value) const;
+
+	bool m_invert;
+
 	urlmatchtype_t m_type;
 
 	std::shared_ptr<urlmatchstr_t> m_str;
+	std::shared_ptr<urlmatchset_t> m_set;
 
-	std::shared_ptr<urlmatchdomain_t> m_domain;
-	std::shared_ptr<urlmatchhost_t> m_host;
 	std::shared_ptr<urlmatchparam_t> m_param;
+	std::shared_ptr<urlmatchpathcriteria_t> m_pathcriteria;
 	std::shared_ptr<urlmatchregex_t> m_regex;
-	std::shared_ptr<urlmatchtld_t> m_tld;
 };
 
 #endif //GB_URLMATCH_H_

@@ -1,23 +1,23 @@
 # block by domain
-regex   badsite.com https?://www\.badsite\.com/
-regex   httponly.com    http://www\.httponly\.com/
-regex   httpsonly.com   https://www\.httpsonly\.com/
 domain  allsubdomain.com
-regex   onlyroot.com    http://www\.onlyroot\.com/$
-domain  example.com allow=,www
-host    specific.host.com
-host    port.host.com:3001
-host    ssl.host.com:443
+
+domain	badsite.com 	AND		regex	https?://www\.badsite\.com/
+domain	httponly.com    AND		regex	http://www\.httponly\.com/
+domain	httpsonly.com   AND		regex	https://www\.httpsonly\.com/
+domain	onlyroot.com    AND		regex	http://www\.onlyroot\.com/$
+
+domain	itsybitsy.com 	AND		regex	^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
+
 tld	    my,dk
-host    www.somesite.com    /badpath/
-regex   itsybitsy.com ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
-domain  allowrootdomainrootpages.com allow=, allowrootpages
-domain  allowdomainrootpages.com allow=,www allowrootpages
-domain  allowrootdomainindexpage.com allow=, allowindexpage
-domain  allowdomainindexpage.com allow=,www allowindexpage
-hostsuffix  hostsuffix01.com
-hostsuffix  .hostsuffix02.com
-hostsuffix  hostsuffix03.co.uk
-hostsuffix  .hostsuffix04.co.uk
-hostsuffix  hostsuffix05.a.se
-hostsuffix  .hostsuffix06.a.se
+
+domain  example.com 	AND	NOT	subdomain	,www
+
+domain  allowrootdomainrootpages.com	AND NOT 	subdomain	,
+domain  allowrootdomainrootpages.com	AND NOT		pathcriteria	rootpages
+domain  allowdomainrootpages.com 		AND NOT 	subdomain	,www
+domain  allowdomainrootpages.com 		AND NOT		pathcriteria	rootpages
+domain  allowrootdomainindexpage.com 	AND NOT 	subdomain	,
+domain  allowrootdomainindexpage.com 	AND NOT		pathcriteria	indexpage
+domain  allowdomainindexpage.com 		AND NOT 	subdomain	,www
+domain  allowdomainindexpage.com 		AND NOT		pathcriteria	indexpage
+

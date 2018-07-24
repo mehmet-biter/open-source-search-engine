@@ -565,7 +565,7 @@ Pages.o: default_css.inc
 
 Domains.cpp: tlds.inc
 
-tlds.inc: generate_tld_list.sh tlds-alpha-by-domain.txt official_2nd_level_domains.txt
+tlds.inc: generate_tld_list.sh tlds-alpha-by-domain.txt tlds-official-2nd-level-domains.txt
 	./generate_tld_list.sh $@
 
 # different optimization level

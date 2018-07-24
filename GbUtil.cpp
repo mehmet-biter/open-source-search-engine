@@ -185,6 +185,20 @@ std::vector<std::string> split(const std::string &str, char delimiter) {
 	return elements;
 }
 
+std::vector<std::string> split(const std::string &str, const std::string &delimiter) {
+	std::vector<std::string> elements;
+
+	size_t start = 0;
+	size_t pos = 0;
+	do {
+		pos = str.find(delimiter, start);
+		elements.push_back(str.substr(start, pos - start));
+		start = pos + delimiter.length();
+	} while (pos != std::string::npos);
+
+	return elements;
+}
+
 bool starts_with(const char *haystack, const char *needle) {
 	size_t haystackLen = strlen(haystack);
 	size_t needleLen = strlen(needle);

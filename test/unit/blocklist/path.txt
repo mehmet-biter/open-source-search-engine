@@ -1,7 +1,6 @@
 path    /wp-admin/
-pathpartial	/wishlist/index/add/
+path	/wishlist/index/add/	matchpartial
 file	wp-login.php
-regex   *   https?://[^/]+/file1.html
-queryparam	url
-queryparam	action	buy_now
+param	url
+param	action	buy_now
 pathparam	index	add

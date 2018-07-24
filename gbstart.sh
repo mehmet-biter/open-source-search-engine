@@ -65,7 +65,7 @@ function send_core_alert() {
 }
 
 function append_eventlog() {
-	echo -n "$(get_datetime)"
+	echo -n "$(get_datetime)|${host_id}"
 
 	for var in "$@"; do
 		echo -n "|$var"
@@ -128,6 +128,8 @@ cd ${working_dir}
 
 # Don't allow startup if fatal_error file exists
 if [ -f fatal_error ]; then
+	GB_VERSION=$(get_gb_version)
+	append_eventlog "gb fatal error" "${GB_VERSION}"
     send_alert "FATAL ERROR. Cannot start."
     exit 1
 fi

@@ -1,0 +1,13 @@
+host    specific.host.com
+
+host    port.host.com	AND		port	3001
+host    ssl.host.com	AND		port	443
+
+host    www.somesite.com	AND		path	/badpath/
+
+host  hostsuffix01.com matchsuffix
+host  .hostsuffix02.com matchsuffix
+host  hostsuffix03.co.uk matchsuffix
+host  .hostsuffix04.co.uk matchsuffix
+host  hostsuffix05.a.se matchsuffix
+host  .hostsuffix06.a.se matchsuffix

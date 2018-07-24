@@ -1,0 +1,7 @@
+# block by regex
+regex	https?://www\.badsite\.com/
+regex	http://www\.httponly\.com/
+regex	https://www\.httpsonly\.com/
+regex	http://www\.onlyroot\.com/$
+regex	^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
+regex   https?://[^/]+/file1.html

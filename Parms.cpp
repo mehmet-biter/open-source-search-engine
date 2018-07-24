@@ -11728,7 +11728,8 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 	if (g_hostdb.getMyHostId() == 0) {
 		std::ofstream file("eventlog", (std::ios::out | std::ios::app));
 		char timebuf[32];
-		file << formatTime(time(nullptr), timebuf) << "|parms update|"
+		file << formatTime(time(nullptr), timebuf) << "|" << g_hostdb.getMyHostId()
+		     << "|parms update|"
 		     << parm->m_title << (parm->isArray() ? " #" + std::to_string(occNum) : "") << "|"
 		     << parm->m_cgi << (parm->isArray() ? std::to_string(occNum) : "") << "|"
 		     << val1.getBufStart() << "|" << val2.getBufStart() << std::endl;

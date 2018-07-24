@@ -1,0 +1,2 @@
+domain httponly.com AND scheme http AND subdomain www
+domain httpsonly.com AND scheme https AND subdomain www
