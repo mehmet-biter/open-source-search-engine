@@ -60,7 +60,7 @@ OBJS_O2 = \
 
 OBJS_O3 = \
 	MatchList.o \
-	ContentMatchList.o ContentTypeBlockList.o \
+	ContentMatchList.o ContentTypeBlockList.o CountryLanguage.o \
 	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
 	IPAddressChecks.o IpBlockList.o \
 	LanguageResultOverride.o Linkdb.o \
