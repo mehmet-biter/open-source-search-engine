@@ -9,6 +9,7 @@
 #include "Url.h"
 #include "TcpSocket.h"
 #include "Mem.h"
+#include "CountryLanguage.h"
 #include <stdlib.h>
 #include <float.h>
 
@@ -288,92 +289,94 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 if(g_conf.m_gzipDownloads)
 	 	 acceptEncoding = "Accept-Encoding: gzip;q=1.0\r\n";
 
+	 std::string acceptLanguages = CountryLanguage::getHttpAcceptLanguageStr(url);
+
 	 m_reqBuf.purge();
 	 // indicate this is good
 	 m_reqBufValid = true;
 
 	 if ( size == 0 ) {
 		 // 1 for HEAD requests
-		 m_requestType = RT_HEAD; 
-		 m_reqBuf.safePrintf (
-			   "%s %s %s\r\n" 
-			   "Host: %s\r\n"
-			   "%s"
-			   "User-Agent: %s\r\n"
-			   "Connection: Close\r\n"
-			   "Accept-Language: en\r\n"
-			   "Accept: %s\r\n" 
-			   "%s"
-			   ,
+		 m_requestType = RT_HEAD;
+		 m_reqBuf.safePrintf(
+				 "%s %s %s\r\n"
+				 "Host: %s\r\n"
+				 "%s"
+				 "User-Agent: %s\r\n"
+				 "Connection: Close\r\n"
+				 "Accept-Language: %s\r\n"
+				 "Accept: %s\r\n"
+				 "%s",
+				 cmd, path, proto,
+				 host,
+				 ims,
+				 userAgent,
+				 acceptLanguages.c_str(),
+				 accept,
+				 up);
+	 } else if ( size != -1 ) {
+		 m_reqBuf.safePrintf(
+				 "%s %s %s\r\n"
+				 "Host: %s\r\n"
+				 "%s"
+				 "User-Agent: %s\r\n"
+				 "Connection: Close\r\n"
+				 "Accept-Language: %s\r\n"
+				 "Accept: %s\r\n"
+				 "Range: bytes=%" PRId32"-%" PRId32"\r\n"
+				 "%s",
 				 cmd,
-			   path , proto, host , 
-			   ims , userAgent , accept , up );
-	 }
-	 else 
-	 if ( size != -1 ) 
-		 m_reqBuf.safePrintf (
-			   "%s %s %s\r\n" 
-			   "Host: %s\r\n"
-			   "%s"
-			   "User-Agent: %s\r\n"
-			   "Connection: Close\r\n"
-			   "Accept-Language: en\r\n"
-			   "Accept: %s\r\n"
-			   "Range: bytes=%" PRId32"-%" PRId32"\r\n" 
-			   "%s"
-			   ,
-				cmd,
-			   path ,
-			   proto ,
-			   host ,
-			   ims  ,
-			   userAgent ,
-			   accept ,
-			   offset ,
-			   offset + size ,
-				      up);
-	 else 
-	 if ( offset > 0 ) 	// size is -1
-		 m_reqBuf.safePrintf (
-			   "%s %s %s\r\n" 
-			   "Host: %s\r\n"
-			   "%s"
-			   "User-Agent: %s\r\n"
-			   "Connection: Close\r\n"
-			   "Accept-Language: en\r\n"
-			   "Accept: %s\r\n"
-			   "Range: bytes=%" PRId32"-\r\n" 
-			   "%s"
-			   ,
-				cmd,
-			   path ,
-			   proto ,
-			   host ,
-			   ims  ,
-			   userAgent ,
-			   accept ,
-			   offset ,
-				      up );
-	 else {
-		 m_reqBuf.safePrintf (
-			   "%s %s %s\r\n" 
-			   "User-Agent: %s\r\n"
-			   "Accept: */*\r\n" 
-			   "Host: %s\r\n"
-			   "%s"
-			   "Connection: Close\r\n"
-			   //"Accept-Language: en\r\n"
-				"%s"
-			   "%s"
-			   ,
-				cmd,
-			   path ,
-			   proto ,
-			   userAgent ,
-			   host ,
-			   ims ,
-			   acceptEncoding,
-				      up );
+				 path,
+				 proto,
+				 host,
+				 ims,
+				 userAgent,
+				 acceptLanguages.c_str(),
+				 accept,
+				 offset,
+				 offset + size,
+				 up);
+	 } else if ( offset > 0 ) {    // size is -1
+		 m_reqBuf.safePrintf(
+				 "%s %s %s\r\n"
+				 "Host: %s\r\n"
+				 "%s"
+				 "User-Agent: %s\r\n"
+				 "Connection: Close\r\n"
+				 "Accept-Language: %s\r\n"
+				 "Accept: %s\r\n"
+				 "Range: bytes=%" PRId32"-\r\n"
+				 "%s",
+				 cmd,
+				 path,
+				 proto,
+				 host,
+				 ims,
+				 userAgent,
+				 acceptLanguages.c_str(),
+				 accept,
+				 offset,
+				 up);
+	 } else {
+		 m_reqBuf.safePrintf(
+				 "%s %s %s\r\n"
+				 "User-Agent: %s\r\n"
+				 "Accept: */*\r\n"
+				 "Host: %s\r\n"
+				 "%s"
+				 "Connection: Close\r\n"
+				 "Accept-Language: %s\r\n"
+				 "%s"
+				 "%s",
+				 cmd,
+				 path,
+				 proto,
+				 userAgent,
+				 host,
+				 ims,
+				 acceptLanguages.c_str(),
+				 acceptEncoding,
+				 up);
 	 }
 
 	 if ( additionalHeader )

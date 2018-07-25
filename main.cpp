@@ -110,6 +110,7 @@
 #include "SiteMedianPageTemperature.h"
 #include "Lemma.h"
 #include "ip.h"
+#include "CountryLanguage.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1298,6 +1299,9 @@ int main2 ( int argc , char *argv[] ) {
 			}
 		}
 	}
+
+	// initialize country languages
+	CountryLanguage::init();
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();

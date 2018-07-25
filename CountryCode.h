@@ -23,7 +23,6 @@ class CountryCode {
 		int getIndexOfAbbr(const char *abbr);
 		bool loadHashTable(void);
 		void reset();
-		uint64_t getLanguagesWritten(int index);
 
 	private:
 		bool m_init;
