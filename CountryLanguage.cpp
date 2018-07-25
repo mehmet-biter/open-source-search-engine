@@ -28,7 +28,7 @@
 static std::map<uint8_t, std::string> s_country_accept_languages;
 
 static bool initCountryAcceptLanguages() {
-	static const char *s_filename = "country_accept_languages.conf";
+	static const char *s_filename = "countryacceptlanguages.txt";
 
 	struct stat st;
 	if (stat(s_filename, &st) != 0) {
