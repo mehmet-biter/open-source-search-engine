@@ -583,7 +583,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, 
 		SafeBuf sb;
 		sb.safePrintf("tcp: open newsd=%i sendbuf=",s->m_sd);
 		sb.safeTruncateEllipsis (sendBuf,sendBufSize,200);
-		log("%s",sb.getBufStart());
+		logf(LOG_DEBUG, "%s",sb.getBufStart());
 	}
 
 	// set up the new TcpSocket for connecting
@@ -2144,7 +2144,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 			sb.safeTruncateEllipsis(s->m_readBuf,
 						s->m_readOffset,
 						2000);
-		log("%s",sb.getBufStart());
+		logf(LOG_DEBUG, "%s",sb.getBufStart());
 	}
 
 	// force it out of streaming mode since we closed it. then we
@@ -2443,7 +2443,7 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 		SafeBuf sb;
 		sb.safePrintf("tcp: accept newsd=%i incoming req",newsd);
 		//sb.safeTruncateEllipsis (sendBuf,sendBufSize,200);
-		log("%s",sb.getBufStart());
+		logf(LOG_DEBUG, "%s",sb.getBufStart());
 	}
 
 
