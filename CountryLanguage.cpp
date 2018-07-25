@@ -60,8 +60,19 @@ static bool initCountryAcceptLanguages() {
 	return true;
 }
 
-std::string CountryLanguage::getHttpAcceptLanguageStr(const char *url) {
-	uint8_t country_id = guessCountryTLD(url);
+bool CountryLanguage::init() {
+	return initCountryAcceptLanguages();
+}
+
+std::string CountryLanguage::getHttpAcceptLanguageStr(const char *host, int32_t hostLen) {
+	uint8_t country_id = 0;
+
+	std::string hostStr(host, hostLen);
+	auto pos = hostStr.find_last_of('.');
+	if (pos != std::string::npos) {
+		std::string tld = hostStr.substr(pos + 1);
+		country_id = getCountryId(tld.c_str());
+	}
 
 	auto it = s_country_accept_languages.find(country_id);
 	if (it == s_country_accept_languages.end()) {
@@ -77,8 +88,4 @@ std::string CountryLanguage::getHttpAcceptLanguageStr(const char *url) {
 	}
 
 	return it->second;
-}
-
-bool CountryLanguage::init() {
-	return initCountryAcceptLanguages();
 }

@@ -289,7 +289,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 if(g_conf.m_gzipDownloads)
 	 	 acceptEncoding = "Accept-Encoding: gzip;q=1.0\r\n";
 
-	 std::string acceptLanguages = CountryLanguage::getHttpAcceptLanguageStr(url);
+	 std::string acceptLanguages = CountryLanguage::getHttpAcceptLanguageStr(hptr, hlen);
 
 	 m_reqBuf.purge();
 	 // indicate this is good

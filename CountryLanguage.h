@@ -26,7 +26,7 @@
 
 namespace CountryLanguage {
 	bool init();
-	std::string getHttpAcceptLanguageStr(const char *url);
+	std::string getHttpAcceptLanguageStr(const char *host, int32_t hostLen);
 };
 
 
