@@ -14,6 +14,7 @@
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
+#include "gbmemcpy.h"
 
 int32_t g_cancelAcksSent = 0;
 int32_t g_cancelAcksRead = 0;

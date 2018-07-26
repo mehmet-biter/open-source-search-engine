@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Sanity.h"
 #include <fcntl.h>
+#include "gbmemcpy.h"
 
 
 HashTableX::HashTableX () {

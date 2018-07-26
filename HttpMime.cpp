@@ -5,6 +5,7 @@
 #include "HashTableX.h"
 #include "Process.h"
 #include "Conf.h"
+#include "gbmemcpy.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

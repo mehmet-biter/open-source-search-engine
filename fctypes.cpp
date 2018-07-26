@@ -10,6 +10,7 @@
 #include "Hostdb.h"
 #include "Mem.h"
 #include <fcntl.h>
+#include "gbmemcpy.h"
 
 
 char *strncasestr( char *haystack, int32_t haylen, const char *needle){

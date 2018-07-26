@@ -18,6 +18,7 @@
 #include "Lemma.h"
 #include <unordered_set>
 #include <string>
+#include "gbmemcpy.h"
 
 
 #ifdef _VALGRIND_

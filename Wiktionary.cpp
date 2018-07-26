@@ -11,6 +11,7 @@
 #include "Mem.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include "gbmemcpy.h"
 
 // the global instance
 Wiktionary g_wiktionary;

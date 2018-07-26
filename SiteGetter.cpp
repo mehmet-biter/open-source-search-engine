@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "Collectiondb.h"
 #include "Process.h"
+#include "gbmemcpy.h"
 
 //
 // BASIC IDEA

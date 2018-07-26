@@ -60,6 +60,7 @@
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
+#include "gbmemcpy.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

@@ -6,6 +6,7 @@
 #include "Lang.h"
 #include "GbUtil.h"
 #include "Sanity.h"
+#include "gbmemcpy.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

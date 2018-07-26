@@ -19,6 +19,7 @@
 #include "Mem.h"
 #include "JobScheduler.h"
 #include "SpiderdbRdbSqliteBridge.h"
+#include "gbmemcpy.h"
 
 
 class State00;

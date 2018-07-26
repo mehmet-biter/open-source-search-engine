@@ -15,6 +15,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include <fcntl.h>
+#include "gbmemcpy.h"
 
 
 static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));	// 65536

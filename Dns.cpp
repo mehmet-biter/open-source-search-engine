@@ -7,6 +7,7 @@
 #include "Dns_internals.h"
 #include "ip.h"
 #include "Mem.h"
+#include "gbmemcpy.h"
 #include <fcntl.h>
 
 

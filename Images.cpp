@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include "gbmemcpy.h"
 
 
 // TODO: image is bad if repeated on same page, check for that

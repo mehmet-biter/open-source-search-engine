@@ -1,9 +1,6 @@
 #ifndef GB_INCLUDE_H
 #define GB_INCLUDE_H
 
-//The function below are legacy. Don't use them in new code
-#define gbmemcpy(xx,yy,zz) memmove(xx,yy,zz)
-
 #include <inttypes.h>
 #include <bits/wordsize.h>
 

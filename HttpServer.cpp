@@ -26,6 +26,7 @@
 #include "GbUtil.h"
 #include "Mem.h"
 #include "ContentTypeBlockList.h"
+#include "gbmemcpy.h"
 #include <fcntl.h>
 
 

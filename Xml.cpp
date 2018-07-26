@@ -8,6 +8,7 @@
 #include "Pos.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "gbmemcpy.h"
 
 
 Xml::Xml  () { 

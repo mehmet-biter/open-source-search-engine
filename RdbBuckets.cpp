@@ -11,6 +11,7 @@
 #include "ScopedLock.h"
 #include <fcntl.h>
 #include "Posdb.h"
+#include "gbmemcpy.h"
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096

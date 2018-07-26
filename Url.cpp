@@ -10,6 +10,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "GbUtil.h"
+#include "gbmemcpy.h"
 #include <vector>
 #include <algorithm>
 

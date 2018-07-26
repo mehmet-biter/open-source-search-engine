@@ -10,6 +10,7 @@
 #include "Mem.h"
 #include <set>
 #include <assert.h>
+#include "gbmemcpy.h"
 
 static const int signature_init = 0x07b39a1b;
 

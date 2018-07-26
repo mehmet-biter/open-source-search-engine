@@ -42,6 +42,7 @@
 #include "SiteMedianPageTemperature.h"
 #include <set>
 #include <fstream>
+#include "gbmemcpy.h"
 
 
 class WaitEntry {

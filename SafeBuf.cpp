@@ -5,6 +5,7 @@
 #include "Sanity.h"
 #include <sys/stat.h> //O_CREAT etc.
 #include <fcntl.h>    //open()
+#include "gbmemcpy.h"
 
 
 SafeBuf::SafeBuf(int32_t initSize, const char *label ) {

@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <sys/types.h>
+#include "gbmemcpy.h"
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;

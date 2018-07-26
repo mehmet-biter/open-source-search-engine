@@ -12,6 +12,7 @@
 #include "CountryLanguage.h"
 #include <stdlib.h>
 #include <float.h>
+#include "gbmemcpy.h"
 
 
 HttpRequest::HttpRequest () {
