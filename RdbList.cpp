@@ -521,15 +521,15 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 	// posdb?
 	if ( m_ks == 18 ) {
 		if ( rec[0]&0x04 ) {
-			memcpy ( key+12,m_listPtrHi,6);
-			memcpy ( key+6 ,m_listPtrLo,6);
+			memmove ( key+12,m_listPtrHi,6);
+			memmove ( key+6 ,m_listPtrLo,6);
 			memcpy ( key,rec,6);
 			// clear compressionbits (1+2+4+8)
 			key[0] &= 0xf9;
 			return;
 		}
 		if ( rec[0]&0x02 ) {
-			memcpy ( key+12 ,m_listPtrHi,6);
+			memmove ( key+12 ,m_listPtrHi,6);
 			memcpy ( key,rec,12);
 			// clear compressionbits (1+2+4+8)
 			key[0] &= 0xf9;
