@@ -252,7 +252,7 @@ class HashTableX {
 	void setValue ( int32_t n , const void *val ) { 
 		if      (m_ds == 4) ((int32_t *)m_vals)[n] = *(const int32_t *)val;
 		else if (m_ds == 8) ((int64_t *)m_vals)[n] = *(const int64_t *)val;
-		else                memcpy(m_vals+n*m_ds,val,m_ds);
+		else                memmove(m_vals+n*m_ds,val,m_ds);
 	}
 
 	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; }
