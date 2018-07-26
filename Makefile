@@ -210,10 +210,11 @@ CPPFLAGS += -MMD -MP
 # versions
 GCC_VERSION := $(shell $(CXX) -dumpversion)
 
-ifeq ($(GCC_VERSION), 7)
+ifeq ($(GCC_VERSION), $(filter $(GCC_VERSION), 7, 8))
 GCC_VERSION := $(shell $(CXX) -dumpfullversion)
 endif
 
+GCC_VER_MIN_81 := $(shell ./cmpversiongte $(GCC_VERSION) 8.1  && echo 1 || echo 0)
 GCC_VER_MIN_71 := $(shell ./cmpversiongte $(GCC_VERSION) 7.1  && echo 1 || echo 0)
 GCC_VER_MIN_61 := $(shell ./cmpversiongte $(GCC_VERSION) 6.1  && echo 1 || echo 0)
 GCC_VER_MIN_51 := $(shell ./cmpversiongte $(GCC_VERSION) 5.1  && echo 1 || echo 0)
@@ -226,6 +227,15 @@ CPPFLAGS += -Wall
 CPPFLAGS += -Wformat-security
 
 # version specific warnings
+ifeq ($(GCC_VER_MIN_81), 1)
+CPPFLAGS += -Wmultistatement-macros
+CPPFLAGS += -Warray-bounds
+CPPFLAGS += -Wrestrict
+
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
+CPPFLAGS += -Wno-class-memaccess
+endif
+
 ifeq ($(GCC_VER_MIN_71), 1)
 CPPFLAGS += -Wduplicated-branches
 endif

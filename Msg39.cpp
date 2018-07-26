@@ -199,7 +199,7 @@ void Msg39::handleRequest39(UdpSlot *slot, int32_t netnice) {
 		// . get the resulting docIds, usually blocks
 		// . sets g_errno on error
 		that->getDocIds ( slot ) ;
-	} catch(std::bad_alloc) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("msg39: new(%" PRId32"): %s", 
 		    (int32_t)sizeof(Msg39),mstrerror(g_errno));
@@ -683,7 +683,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 	int32_t nqt = m_query.getNumTerms();
 	try {
 		m_lists = new RdbList[nqt];
-	} catch(std::bad_alloc) {
+	} catch(std::bad_alloc&) {
 		log(LOG_ERROR,"new[%d] RdbList failed", nqt);
 		g_errno = ENOMEM;
 		return;
