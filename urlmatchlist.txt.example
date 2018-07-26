@@ -23,20 +23,22 @@ domain	example.com
 #   blocks: sub.example.com
 #   allows: example.com
 #   allows: www.example.com
-domain	example.com	allow=,www
+domain	example.com		AND		NOT	subdomain	,www
 
 # block all of example.com except empty subdomain & www root pages
 #   blocks: example.com/dir/file.html
 #   allows: example.com/file.html
 #   allows: www.example.com/index.html
-domain	example.com	allow=,www	allowrootpages
+domain	example.com		AND		NOT subdomain		,www
+domain	example.com		AND		NOT	pathcriteria	rootpages
 
 # block all of example.com except empty subdomain & www index page
 #   blocks: example.com/file.html
 #   blocks: example.com/index.html
 #   allows: example.com/?param=value
 #   allows: www.example.com/
-domain	example.com	allow=,www	allowindexpage
+domain	example.com		AND		NOT subdomain		,www
+domain	example.com		AND		NOT	pathcriteria	indexpage
 
 # file example
 # ============
@@ -58,21 +60,21 @@ host	www.example.com
 #   blocks: www.example.com:3001
 #   allows: www.example.com
 #   allows: www.example.com:3002
-host	www.example.com:3001
+host	www.example.com		AND	port	3001
 
 # block specific host with path (prefix)
 #   blocks: www.example.com/path/abc
 #   blocks: www.example.com/path/def
 #   allows: www.example.com/
 #   allows: www.example.com/some/
-host	www.example.com	/path/
+host	www.example.com		AND	path	/path/
 
 # block host with suffix
 #   blocks: sub2.sub1.example.com
 #   blocks: sub1.example.com
 #   allows: www.example.com
 #   allows: notsub1.example.com
-hostsuffix	sub1.example.com
+host	sub1.example.com	matchsuffix
 
 # param example
 # =============
@@ -96,21 +98,21 @@ param	bad	xyz
 #   blocks: www.example.com/wp-admin
 #   blocks: www.example.com/wp-admin/login
 #   allows: www.example.com/en/wp-admin
-path	/wp-admin
+path	/wp-admin	matchprefix
 
 # block partial path
 #   blocks: www.example.com/badpath 
 #   blocks: www.example.com/en/badpath 
 #   blocks: www.example.com/badpath/subpath
-pathpartial	/badpath
+path	/badpath	matchpartial
 
 # regex example
 # =============
 # blocks url by regex
-regex	*	https?://example\.com/(a|b)\.html
+regex	https?://example\.com/(a|b)\.html
 
 # blocks url by regex (specific domain)
-regex example.com https?://example\.com/(a|b)\.html
+domain	example.com		AND	regex https?://example\.com/(a|b)\.html
 
 # tld example
 # ===========
