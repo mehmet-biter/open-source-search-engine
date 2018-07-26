@@ -16,6 +16,7 @@
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#include "Errno.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

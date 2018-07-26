@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Pos.h"
 #include "tokenizer.h"
 #include "XmlNode.h"
@@ -7,6 +5,9 @@
 #include "TitleSummaryCodepointFilter.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "Log.h"
+#include "utf8_fast.h"
 
 
 Pos::Pos() {

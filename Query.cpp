@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Query.h"
 #include "Bits.h"
 #include "Phrases.h"
@@ -24,6 +22,7 @@
 #include "GbUtil.h"
 #include <set>
 #include "Lemma.h"
+#include "Errno.h"
 
 
 #include "GbMutex.h"

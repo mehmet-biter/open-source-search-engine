@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Bits.h"
 #include "StopWords.h"
 #include "fctypes.h"
@@ -10,6 +8,8 @@
 #include "Process.h"
 #include "tokenizer.h"
 #include "GbUtil.h"
+#include "Errno.h"
+#include "Log.h"
 
 Bits::Bits() {
 	m_bits = NULL;

@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Loop.h"
 #include "Entities.h"
 #include "SafeBuf.h"
@@ -9,6 +7,10 @@
 #include "Process.h"
 #include "Hostdb.h"
 #include "Mem.h"
+#include "utf8_fast.h"
+#include "fctypes.h"
+#include "Log.h"
+#include "Errno.h"
 #include <fcntl.h>
 #include "gbmemcpy.h"
 

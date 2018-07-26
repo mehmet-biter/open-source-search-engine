@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HttpServer.h"
 #include "Collectiondb.h"
 #include "Msg22.h"
@@ -14,6 +12,7 @@
 #include "Process.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 
 
 // TODO: meta redirect tag to host if hostId not ours

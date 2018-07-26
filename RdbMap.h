@@ -16,6 +16,7 @@
 #include "BigFile.h"
 #include "RdbList.h"
 #include "Sanity.h"
+#include "Log.h"
 
 
 // . this can be increased to provide greater disk coverage but it will 

@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "UdpServer.h"
 #include "UdpProtocol.h"
 #include "UdpSlot.h"
@@ -20,7 +18,10 @@
 #include <netinet/in.h>        // ntohl() ntohs()
 #include "ip.h"
 #include "Conf.h"
+#include "Errno.h"
 #include <assert.h>
+#include <unistd.h>
+
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks() reads from the slots to call

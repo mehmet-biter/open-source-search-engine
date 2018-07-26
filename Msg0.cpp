@@ -1,4 +1,3 @@
-#include "gb-include.h"
 
 #include "Msg0.h"
 #include "Conf.h"
@@ -19,6 +18,7 @@
 #include "Mem.h"
 #include "JobScheduler.h"
 #include "SpiderdbRdbSqliteBridge.h"
+#include "Errno.h"
 #include "gbmemcpy.h"
 
 

@@ -1,7 +1,9 @@
 #ifndef GB_SAFEBUF_H
 #define GB_SAFEBUF_H
 
-#include "gb-include.h"
+#include "utf8.h"
+#include <inttypes.h>
+#include <string.h>
 
 /**
  * Safe Char Buffer, or mutable Strings.

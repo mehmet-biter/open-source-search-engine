@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "SearchInput.h"
 #include "Parms.h"         // g_parms
 #include "Pages.h"         // g_msg
@@ -8,6 +6,7 @@
 #include "GbUtil.h"
 #include "Collectiondb.h"
 #include "Conf.h"
+#include "Errno.h"
 
 SearchInput::SearchInput()
   : m_word_variations_config()

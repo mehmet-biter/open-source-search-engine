@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HashTableX.h"
 #include "Domains.h"
 #include "Mem.h"

@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Pages.h"
 #include "HttpServer.h"
 #include "Collectiondb.h"
@@ -10,6 +8,7 @@
 #include "PageCrawlBot.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 
 static bool sendReply( void *state );
 

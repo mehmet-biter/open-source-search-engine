@@ -1,6 +1,5 @@
 // Matt Wells, copyright Jul 2001
 
-#include "gb-include.h"
 
 #include "HashTableX.h"
 #include "Process.h"

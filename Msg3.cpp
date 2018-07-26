@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Msg3.h"
 #include "Rdb.h"
 #include "Stats.h"     // for timing and graphing merge time
@@ -10,6 +8,7 @@
 #include "Sanity.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <new>
 
 static const int signature_init = 0x1f2b3a4c;

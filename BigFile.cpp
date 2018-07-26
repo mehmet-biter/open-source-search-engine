@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "BigFile.h"
 #include "File.h"
 #include "Dir.h"
@@ -11,11 +9,15 @@
 #include "ScopedLock.h"
 #include "Mem.h"
 #include "Statistics.h"
+#include "Errno.h"
+#include "fctypes.h"
 #include <fcntl.h>
 #include <new>
 #include <vector>
 #include <pthread.h>
 #include <atomic>
+#include <unistd.h>
+
 
 // main.cpp will wait for this to be zero before exiting so all unlink/renames
 // can complete

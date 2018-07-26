@@ -19,6 +19,7 @@
 #include "SiteMedianPageTemperature.h"
 #include "Conf.h"
 #include "GbUtil.h"
+#include "Log.h"
 
 // The protocol is very simple.
 // The server Receives queries in the form

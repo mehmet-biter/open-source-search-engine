@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Proxy.h"
 #include "Process.h"
 #include "Msg13.h"
@@ -16,6 +14,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Statistics.h"
+#include "Errno.h"
 
 
 Proxy g_proxy;

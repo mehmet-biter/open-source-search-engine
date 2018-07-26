@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Xml.h"
 
 #include "Mem.h"     // mfree(), mmalloc()
@@ -8,6 +6,7 @@
 #include "Pos.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "Errno.h"
 #include "gbmemcpy.h"
 
 

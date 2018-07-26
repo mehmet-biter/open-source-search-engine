@@ -1,4 +1,10 @@
 #include "Json.h"
+#include "Log.h"
+#include "Errno.h"
+#include "utf8_fast.h"
+#include "fctypes.h"
+#include <stdlib.h>
+
 
 class JsonItem *Json::addNewItem () {
 

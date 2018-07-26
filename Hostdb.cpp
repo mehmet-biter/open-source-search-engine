@@ -18,10 +18,12 @@
 #include "ip.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <fcntl.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include "gbmemcpy.h"
 
 // a global class extern'd in .h file

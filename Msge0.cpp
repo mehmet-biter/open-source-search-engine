@@ -6,6 +6,7 @@
 #include "UdpServer.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <new>
 
 

@@ -1,5 +1,6 @@
 #ifndef GB_PAGEROOT_H
 #define GB_PAGEROOT_H
+#include <inttypes.h>
 
 
 class SearchInput;

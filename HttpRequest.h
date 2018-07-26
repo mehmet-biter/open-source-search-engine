@@ -26,6 +26,8 @@
 class TcpSocket;
 
 #include "GbFormat.h"
+#include <time.h>
+
 
 
 class HttpRequest {

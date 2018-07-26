@@ -11,6 +11,7 @@
 #include "Conf.h"
 #include "ScoringWeights.h"
 #include "Mem.h"
+#include "Errno.h"
 #include "GbSignature.h"
 #include <new>
 #include "ScopedLock.h"

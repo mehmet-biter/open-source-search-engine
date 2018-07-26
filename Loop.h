@@ -7,6 +7,7 @@
 #define GB_LOOP_H
 
 #include "GbMutex.h"
+#include <inttypes.h>
 
 
 int gbsystem(const char *cmd);

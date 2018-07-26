@@ -9,9 +9,13 @@
 #include "Collectiondb.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <fcntl.h>
 #include "Posdb.h"
 #include "gbmemcpy.h"
+#include "Errno.h"
+#include "gbmemcpy.h"
+
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096

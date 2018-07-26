@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include <sys/stat.h>
 #include "Titledb.h"
 #include "Tagdb.h"
@@ -19,6 +17,7 @@
 #include "GbUtil.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "Errno.h"
 #include "gbmemcpy.h"
 
 

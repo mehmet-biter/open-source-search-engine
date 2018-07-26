@@ -22,6 +22,7 @@
 #include "RdbList.h"
 #include "Conf.h"
 #include "TitleRecVersion.h"
+#include "Errno.h"
 
 DocReindex g_docReindex("docreindex.txt", false);
 DocReindex g_docReindexUrl("docreindexurl.txt", true);

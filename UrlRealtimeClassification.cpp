@@ -1,5 +1,6 @@
 #include "UrlRealtimeClassification.h"
 #include "Conf.h"
+#include "Log.h"
 
 // The protocol is very simple.
 // The server Receives queries in the form

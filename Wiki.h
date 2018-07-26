@@ -3,7 +3,6 @@
 #ifndef GB_WIKI_H
 #define GB_WIKI_H
 
-#include "gb-include.h"
 #include "BigFile.h"
 #include "HashTableX.h"
 

@@ -1,4 +1,3 @@
-#include "gb-include.h"
 #include "hash.h"
 #include "XmlDoc.h"
 #include "Conf.h"
@@ -57,6 +56,7 @@
 #include "SiteNumInlinks.h"
 #include "SiteMedianPageTemperature.h"
 #include "ip.h"
+#include "Errno.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>

@@ -17,6 +17,7 @@
 #include "max_url_len.h"
 #include "SafeBuf.h"
 #include "BaseScoringParameters.h"
+#include <sys/types.h>    //mode_t etc.
 
 #define USERAGENTMAXSIZE      128
 

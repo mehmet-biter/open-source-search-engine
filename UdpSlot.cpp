@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "UdpSlot.h"
 #include "UdpServer.h"
 #include "Hostdb.h"
@@ -11,6 +9,10 @@
 #include "Conf.h"
 #include "ip.h"
 #include "Mem.h"
+#include "fctypes.h"
+#include "Errno.h"
+#include <errno.h>
+#include <stdlib.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

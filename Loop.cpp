@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Loop.h"
 #include "JobScheduler.h"
 #include "UdpServer.h"
@@ -14,6 +12,7 @@
 
 #include "Stats.h"
 #include "GbDns.h"
+#include "Errno.h"
 
 #include <execinfo.h>
 #include <sys/auxv.h>
@@ -22,6 +21,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <fcntl.h>      // fcntl()
+#include <unistd.h>
 #include <sys/poll.h>   // POLLIN, POLLPRI, ...
 
 // raised from 5000 to 10000 because we have more UdpSlots now and Multicast

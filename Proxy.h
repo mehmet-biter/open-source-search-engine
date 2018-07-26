@@ -2,6 +2,7 @@
 #define GB_PROXY_H
 
 #include "max_hosts.h"
+#include <inttypes.h>
 
 #define MAX_STRIPES 8
 
@@ -44,7 +45,7 @@ class Proxy {
 	// protected:
 	void printRequest (TcpSocket *s, HttpRequest *r,
 			   uint64_t took = 0,
-			   char *content = NULL ,
+			   char *content = nullptr,
 			   int32_t contentLen = 0 );
 
 	int32_t m_proxyId;

@@ -1,5 +1,7 @@
 #ifndef GBSORT_H_
 #define GBSORT_H_
+#include <inttypes.h>
+#include <stddef.h>
 
 //*****************************************************************************
 //

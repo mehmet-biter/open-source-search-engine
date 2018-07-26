@@ -13,6 +13,8 @@
 #include "Titledb.h"	// for Titledb::validateSerializedRecord
 #include "SpiderdbRdbSqliteBridge.h"
 #include "SiteMedianPageTemperatureRegistry.h"
+#include "Errno.h"
+#include "Log.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

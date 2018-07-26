@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Wiktionary.h"
 
 #include "Query.h"
@@ -9,8 +7,10 @@
 #include "Conf.h"
 #include "Lang.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <unistd.h>
 #include "gbmemcpy.h"
 
 // the global instance

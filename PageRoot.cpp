@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "PageRoot.h"
 #include "HttpServer.h"
 #include "Titledb.h"
@@ -16,6 +14,7 @@
 #include "GbUtil.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

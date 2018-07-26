@@ -9,6 +9,9 @@
 #include "Conf.h"
 #include "Url.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "Log.h"
+#include "fctypes.h"
 
 
 Summary::Summary()

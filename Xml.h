@@ -19,7 +19,7 @@ public:
 
 	// do we have any xml in here?
 	bool isEmpty() const {
-		return ( m_xml == NULL );
+		return ( m_xml == nullptr );
 	}
 
 	// . set this xml class from a string
@@ -153,10 +153,10 @@ public:
 	// . use "http-equiv" for "name" for meta redirect tags
 	// . if "convertHtmlEntites" is true we change < to &lt; and > to &gt;
 	int32_t getMetaContent( char *buf, int32_t bufLen, const char *field, int32_t fieldLen, const char *name = "name",
-							int32_t startNode = 0, int32_t *matchedNode = NULL );
+							int32_t startNode = 0, int32_t *matchedNode = nullptr );
 
 	// just get a pointer to it
-	char *getMetaContentPointer( const char *field, int32_t fieldLen, const char *name = "name", int32_t *len = NULL );
+	char *getMetaContentPointer( const char *field, int32_t fieldLen, const char *name = "name", int32_t *len = nullptr );
 
 	// . filters out tags (uses html entities) and stores in "buf"
 	// . replaces "line breaking" html tags with 2 returns

@@ -1,11 +1,19 @@
 #include "SafeBuf.h"
-#include "gb-include.h"
 #include "Mem.h"
 #include "Conf.h"
 #include "Sanity.h"
+#include "utf8_fast.h"
+#include "Log.h"
+#include "Errno.h"
+#include "fctypes.h"
 #include <sys/stat.h> //O_CREAT etc.
 #include <fcntl.h>    //open()
 #include "gbmemcpy.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <unistd.h>
+#include "gbmemcpy.h"
+
 
 
 SafeBuf::SafeBuf(int32_t initSize, const char *label ) {

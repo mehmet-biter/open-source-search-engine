@@ -2,6 +2,7 @@
 
 #ifndef GB_POPS_H
 #define GB_POPS_H
+#include <inttypes.h>
 
 #define POPS_BUF_SIZE (10*1024)
 

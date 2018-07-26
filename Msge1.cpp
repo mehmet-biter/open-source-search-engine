@@ -7,6 +7,7 @@
 #include "Mem.h"
 #include "ScopedLock.h"
 #include "SiteGetter.h"
+#include "Errno.h"
 
 
 Msge1::Msge1()

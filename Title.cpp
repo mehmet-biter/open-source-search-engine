@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Query.h"
 #include "Title.h"
 #include "Sections.h"
@@ -16,6 +14,7 @@
 #include "Xml.h"
 #include "Mem.h"
 #include "GbUtil.h"
+#include "Errno.h"
 
 
 #ifdef _VALGRIND_

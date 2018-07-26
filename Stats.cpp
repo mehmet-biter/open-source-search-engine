@@ -1,10 +1,9 @@
-#include "gb-include.h"
-
 #include <errno.h>
 #include "Stats.h"
 #include "Conf.h"
 #include "ip.h"
 #include "Mem.h"
+#include "hash.h"
 
 class Stats g_stats;
 

@@ -19,6 +19,7 @@
 #include "ContentMatchList.h"
 #include "Log.h"
 #include "Conf.h"
+#include "fctypes.h"
 
 ContentMatchList g_contentRetryProxyList;
 

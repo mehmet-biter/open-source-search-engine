@@ -14,7 +14,6 @@
 // TODO: consider a "latestpubdateage" in url filters for pages that are
 //       adding new dates (not clocks) all the time
 
-#include "gb-include.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
@@ -43,6 +42,7 @@
 #include "ip.h"
 #include "Mem.h"
 #include "UrlBlockCheck.h"
+#include "Errno.h"
 #include <list>
 
 

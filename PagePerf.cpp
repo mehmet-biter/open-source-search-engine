@@ -1,10 +1,10 @@
-#include "gb-include.h"
-
 #include "Stats.h"
 #include "Pages.h"
 #include "Hostdb.h"
 #include "HttpServer.h"
 #include "HttpRequest.h"
+#include "Errno.h"
+#include <ctype.h>
 
 // . returns false if blocked, true otherwise
 // . sets errno on error

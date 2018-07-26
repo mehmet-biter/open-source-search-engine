@@ -1,5 +1,4 @@
 #include "Msg4Out.h"
-#include "gb-include.h"
 
 #include "UdpServer.h"
 #include "Hostdb.h"
@@ -11,6 +10,7 @@
 #include "SafeBuf.h"
 #include "JobScheduler.h"
 #include "ip.h"
+#include "Errno.h"
 #include "Log.h"
 #include "max_niceness.h"
 #include "Mem.h"
@@ -19,6 +19,7 @@
 #include "Titledb.h"	// for Titledb::validateSerializedRecord
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <unistd.h>
 #include <algorithm>
 #include <deque>
 

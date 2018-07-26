@@ -4,6 +4,7 @@
 #include "Collectiondb.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <fcntl.h>
 
 

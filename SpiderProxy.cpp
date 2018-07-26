@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Pages.h"
 #include "TcpSocket.h"
 #include "HttpServer.h"
@@ -14,6 +12,7 @@
 #include "Loop.h"
 #include "ip.h"
 #include "GbUtil.h"
+#include "Errno.h"
 
 
 //#define LOADPOINT_EXPIRE_MS (10*60*1000)

@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Parms.h"
 #include "File.h"
 #include "Conf.h"
@@ -40,6 +38,7 @@
 #include "QueryLanguage.h"
 #include "SiteNumInlinks.h"
 #include "SiteMedianPageTemperature.h"
+#include "Errno.h"
 #include <set>
 #include <fstream>
 #include "gbmemcpy.h"

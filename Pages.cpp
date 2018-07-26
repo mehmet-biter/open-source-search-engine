@@ -18,6 +18,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "GbUtil.h"
+#include "Errno.h"
 #include "default_css.inc"
 
 

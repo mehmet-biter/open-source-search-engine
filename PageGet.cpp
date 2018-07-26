@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "SafeBuf.h"
 #include "Collectiondb.h"
 //#include "CollectionRec.h"
@@ -15,6 +13,7 @@
 #include "GbUtil.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 
 
 // TODO: redirect to host that has the titleRec locally

@@ -1,10 +1,12 @@
-#include "gb-include.h"
-
 #include "HashTable.h"
 #include "BitOperations.h"
 #include "File.h"
 #include "Sanity.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "Log.h"
+#include <errno.h>
+#include <string.h>
 #include <fcntl.h>
 
 

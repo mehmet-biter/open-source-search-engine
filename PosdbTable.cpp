@@ -1,8 +1,6 @@
 #include "PosdbTable.h"
 #include "Posdb.h"
 
-#include "gb-include.h"
-
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
 #include "SiteMedianPageTemperatureRegistry.h"
@@ -19,6 +17,7 @@
 #include "Lang.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <math.h>
 #include <valarray>
 

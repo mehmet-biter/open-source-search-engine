@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "File.h"
 #include "Conf.h"
 #include "Loop.h"            // MAX_NUM_FDS etc.
@@ -7,8 +5,14 @@
 #include "Sanity.h"
 #include "ScopedLock.h"
 #include "GbMutex.h"
+#include "Errno.h"
+#include "errno.h"
+#include "Log.h"
+#include "fctypes.h"
+#include <stdio.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/types.h>       // for open/lseek
 #include <sys/stat.h>        // for open
 

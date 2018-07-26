@@ -21,7 +21,9 @@
 #include "max_niceness.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <fcntl.h>
+#include <unistd.h>
 
 
 

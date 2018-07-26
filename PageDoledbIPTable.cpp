@@ -6,6 +6,7 @@
 #include "Collectiondb.h"
 #include "SpiderColl.h"
 #include "ip.h"
+#include "Errno.h"
 #include <algorithm>
 
 

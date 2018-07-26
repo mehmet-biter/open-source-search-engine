@@ -6,8 +6,10 @@
 #include "Loop.h"
 #include "File.h"
 #include "Conf.h"
+#include "Errno.h"
 #include "Sanity.h"
 #include <fcntl.h>
+#include <unistd.h>
 #include "gbmemcpy.h"
 
 

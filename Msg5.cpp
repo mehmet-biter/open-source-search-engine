@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Msg5.h"
 #include "RdbBase.h"
 #include "Rdb.h"
@@ -11,6 +9,8 @@
 #include "Sanity.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "fctypes.h"
 
 //#define GBSANITYCHECK
 

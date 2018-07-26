@@ -9,6 +9,8 @@
 #include "Process.h"
 #include "Conf.h"
 #include "ScopedLock.h"
+#include "Errno.h"
+#include <unistd.h>
 #include <fcntl.h>
 
 

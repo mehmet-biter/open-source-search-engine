@@ -18,6 +18,7 @@
 #include "UrlBlockCheck.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
+#include "Errno.h"
 
 
 #define OVERFLOWLISTSIZE 200

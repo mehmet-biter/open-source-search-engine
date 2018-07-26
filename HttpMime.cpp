@@ -1,11 +1,10 @@
-#include "gb-include.h"
-
 #include "HttpMime.h"
 #include "HashTable.h"
 #include "HashTableX.h"
 #include "Process.h"
 #include "Conf.h"
 #include "gbmemcpy.h"
+#include "Errno.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

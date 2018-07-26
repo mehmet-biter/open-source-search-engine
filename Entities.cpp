@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Entities.h"
 #include "HashTableX.h"
 #include "Process.h"

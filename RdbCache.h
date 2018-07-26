@@ -45,6 +45,7 @@
 #include <time.h>       // time_t
 #include "collnum_t.h"
 #include "GbMutex.h"
+#include "fctypes.h"
 
 class RdbList;
 

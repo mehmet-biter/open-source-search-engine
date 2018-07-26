@@ -20,6 +20,7 @@
 #include "Process.h"
 #include "Posdb.h"
 #include "GbUtil.h"
+#include "Errno.h"
 
 Sections::Sections ( ) {
 	m_sections = NULL;

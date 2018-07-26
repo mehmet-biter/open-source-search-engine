@@ -7,6 +7,8 @@
 #include "GbMoveFile.h"
 #include <sys/stat.h>
 #include <stddef.h>
+#include <unistd.h>
+
 
 static sqlite3 *openDb(const char *sqlitedbName);
 static bool setSqliteSynchronous(sqlite3 *db, int value);

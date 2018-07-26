@@ -4,6 +4,7 @@
 #include "Spider.h" //dedupSpiderdbList()
 #include "MergeSpaceCoordinator.h"
 #include "Conf.h"
+#include "Errno.h"
 
 
 RdbMerge g_merge;

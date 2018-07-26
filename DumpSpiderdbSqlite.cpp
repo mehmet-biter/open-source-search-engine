@@ -3,6 +3,7 @@
 #include "SpiderdbSqlite.h"
 #include "ip.h"
 #include "Lang.h"
+#include "Errno.h"
 #include <time.h>
 
 

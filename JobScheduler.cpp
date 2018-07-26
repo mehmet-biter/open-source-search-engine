@@ -1,6 +1,7 @@
 #include "JobScheduler.h"
 #include "ScopedLock.h"
 #include "BigFile.h" //for FileState definition
+#include "Errno.h"
 #include <pthread.h>
 #include <vector>
 #include <list>

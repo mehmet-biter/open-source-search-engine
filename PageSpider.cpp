@@ -16,6 +16,7 @@
 #include "Process.h"
 #include "ip.h"
 #include "Mem.h"
+#include "Errno.h"
 
 namespace {
 

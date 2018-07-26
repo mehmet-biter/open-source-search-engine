@@ -1,8 +1,8 @@
-#include "gb-include.h"
-
 #include "XmlNode.h"
 #include "Mem.h"
 #include "Sanity.h"
+#include "utf8_fast.h"
+#include "hash.h"
 
 static int32_t getTagLen(const char *node, int maxNodeLen);
 

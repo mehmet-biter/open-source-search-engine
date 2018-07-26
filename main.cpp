@@ -2,7 +2,6 @@
 // Matt Wells, copyright Sep 2001
 // 
 
-#include "gb-include.h"
 
 #include <sched.h>        // clone()
 // declare this stuff up here for call the pread() in our seek test below
@@ -111,6 +110,7 @@
 #include "Lemma.h"
 #include "ip.h"
 #include "CountryLanguage.h"
+#include "Errno.h"
 
 
 #include <sys/stat.h> //umask()

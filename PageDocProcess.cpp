@@ -28,6 +28,7 @@
 #include "DocRebuild.h"
 #include "DocReindex.h"
 #include "JobScheduler.h"
+#include "Errno.h"
 
 struct PageDocProcessState {
 	PageDocProcessState(TcpSocket *s, HttpRequest *r, DocProcess *docProcess)

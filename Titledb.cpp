@@ -1,4 +1,3 @@
-#include "gb-include.h"
 
 #include "Titledb.h"
 #include "Collectiondb.h"

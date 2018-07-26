@@ -21,6 +21,7 @@
 #include "Msg0.h"
 #include "RdbList.h"
 #include "Conf.h"
+#include "Errno.h"
 
 DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);

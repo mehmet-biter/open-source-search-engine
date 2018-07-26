@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Titledb.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
@@ -23,7 +21,10 @@
 #include "Msg13.h"
 #include "Msg3.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <cmath>
+#include <unistd.h>
+
 
 
 static bool printNumAbbr(SafeBuf &p, int64_t vvv) {

@@ -10,6 +10,9 @@
 #include "ip.h"
 #include "Mem.h"
 #include "Msg0.h"         //msg+MSG0RDBIDOFFSET
+#include "Errno.h"
+#include "fctypes.h"
+#include "hash.h"
 
 
 // TODO: if we're ordered to close and we still are waiting on stuff

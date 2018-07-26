@@ -1,4 +1,3 @@
-#include "gb-include.h"
 
 #include "Collectiondb.h"
 #include "Xml.h"
@@ -23,6 +22,7 @@
 #include "File.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;

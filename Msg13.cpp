@@ -20,6 +20,8 @@
 #include "Sanity.h"
 #include "UrlMatchList.h"
 #include "ContentMatchList.h"
+#include "Errno.h"
+#include "Log.h"
 #include <string.h>
 
 

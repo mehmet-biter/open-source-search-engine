@@ -20,6 +20,7 @@
 #define MAX_FILENAME_LEN 256
 
 #include <pthread.h>
+#include <inttypes.h>
 
 
 bool doesFileExist ( const char *filename ) ;

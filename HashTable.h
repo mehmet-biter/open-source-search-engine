@@ -4,6 +4,8 @@
 
 #ifndef GB_HASHTABLE_H
 #define GB_HASHTABLE_H
+#include <inttypes.h>
+#include <stddef.h>
 
 
 class HashTable {

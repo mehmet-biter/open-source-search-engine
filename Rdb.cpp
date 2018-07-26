@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Rdb.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
@@ -23,7 +21,9 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <sys/stat.h> //mdir()
+#include <unistd.h>
 
 
 Rdb::Rdb ( ) {

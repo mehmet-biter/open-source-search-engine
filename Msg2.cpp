@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Msg2.h"
 #include "Stats.h"
 #include "RdbList.h"
@@ -11,6 +9,7 @@
 #include "Conf.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "Errno.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

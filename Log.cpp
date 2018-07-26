@@ -1,5 +1,4 @@
-#include "gb-include.h"
-
+#include "Log.h"
 #include "Mem.h"
 #if defined(__linux__)
 #include <sys/types.h>
@@ -10,9 +9,12 @@
 #include "Process.h"
 #include "Hostdb.h"
 #include "File.h"
+#include "fctypes.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
 // a global class extern'd in Log.h
 Log g_log;

@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Process.h"
 #include "Rdb.h"
 #include "Clusterdb.h"
@@ -52,9 +50,12 @@
 #include "QueryLanguage.h"
 #include "SiteNumInlinks.h"
 #include "SiteMedianPageTemperature.h"
+#include "Errno.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <unistd.h>
+
 
 bool g_inAutoSave;
 

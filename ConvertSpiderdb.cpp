@@ -8,6 +8,7 @@
 #include "Collectiondb.h"
 #include "Hostdb.h"
 #include "SpiderdbSqlite.h"
+#include <unistd.h>
 
 static const char create_table_statmeent[] =
 "CREATE TABLE spiderdb ("

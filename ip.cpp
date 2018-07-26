@@ -1,6 +1,7 @@
-#include "gb-include.h"
-
 #include "ip.h"
+#include "Log.h"
+#include <string.h>
+#include <stdio.h>
 
 int32_t atoip ( const char *s , int32_t slen ) {
 	// point to it

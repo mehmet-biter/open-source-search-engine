@@ -7,6 +7,7 @@
 #include "ip.h"
 #include "GbThreadQueue.h"
 #include "GbCache.h"
+#include "Errno.h"
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <vector>

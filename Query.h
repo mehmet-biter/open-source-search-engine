@@ -9,6 +9,8 @@
 #include "Lang.h"
 #include "WordVariationsConfig.h"
 #include "tokenizer.h"
+#include "utf8_fast.h"
+#include "types.h"
 class CollectionRec;
 
 

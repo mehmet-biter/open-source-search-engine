@@ -28,6 +28,7 @@
 #include "ip.h"
 #include "Linkdb.h"
 #include "SiteGetter.h"
+#include "Errno.h"
 
 
 namespace {

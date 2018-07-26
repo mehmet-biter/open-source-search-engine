@@ -4,6 +4,7 @@
 
 #ifndef GB_HASH_H
 #define GB_HASH_H
+#include <inttypes.h>
 
 
 //#define SEED8  148

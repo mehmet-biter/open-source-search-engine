@@ -5,6 +5,8 @@
 #include "Conf.h"
 #include "Log.h"
 #include "Statistics.h"
+#include "Errno.h"
+#include "utf8_fast.h"
 #include <arpa/inet.h>
 
 bool isUrlBlocked(const Url &url, int *p_errno) {

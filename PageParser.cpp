@@ -6,6 +6,7 @@
 #include "Process.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 
 
 class State8 {

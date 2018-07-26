@@ -17,6 +17,7 @@
 #include "Mem.h"
 #include "SiteGetter.h"
 #include "ip.h"
+#include "Errno.h"
 #include "gbmemcpy.h"
 
 #ifdef _VALGRIND_

@@ -1,5 +1,9 @@
-#include "gb-include.h"
+#include "hash.h"
 #include "Sanity.h"
+#include "utf8.h"
+#include "utf8_fast.h"
+#include "fctypes.h"
+#include <inttypes.h>
 
 #include "g_hashtab.inc"
 

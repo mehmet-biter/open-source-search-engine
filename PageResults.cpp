@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Collectiondb.h"
 #include "HttpServer.h"
 #include "Stats.h"
@@ -34,6 +32,7 @@
 #include "RobotsBlockedResultOverride.h"
 #include "QueryLanguage.h"
 #include "FxLanguage.h"
+#include "Errno.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

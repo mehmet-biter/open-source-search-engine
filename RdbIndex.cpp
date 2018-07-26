@@ -12,6 +12,7 @@
 #include "RdbBuckets.h"
 #include "JobScheduler.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <fcntl.h>
 
 #include <iterator>

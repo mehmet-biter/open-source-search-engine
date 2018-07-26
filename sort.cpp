@@ -1,9 +1,9 @@
-#include "gb-include.h"
-
-
 #include "sort.h"
-
 #include "Mem.h"
+#include "Sanity.h"
+#include <stdlib.h>
+#include <string.h>
+
 
 /*	$OpenBSD: qsort.c,v 1.10 2005/08/08 08:05:37 espie Exp $ */
 /*-

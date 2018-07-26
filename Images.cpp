@@ -1,4 +1,3 @@
-#include "gb-include.h"
 #include "Images.h"
 #include "Conf.h"
 #include "Query.h"
@@ -12,9 +11,12 @@
 #include "Process.h"
 #include "Posdb.h"
 #include "File.h"
+#include "Errno.h"
 #include <pthread.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include "gbmemcpy.h"
+#include <unistd.h>
 #include "gbmemcpy.h"
 
 

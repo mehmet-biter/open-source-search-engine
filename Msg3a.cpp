@@ -1,9 +1,4 @@
-#include "gb-include.h"
-
 #include "Msg3a.h"
-#include "Wiki.h"
-#include "sort.h"
-
 #include "Stats.h"
 #include "HashTableT.h"
 #include "SearchInput.h"
@@ -15,6 +10,7 @@
 #include "Lang.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 
 
 static const int signature_init = 0xb0a05d5a;

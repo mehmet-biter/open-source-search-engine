@@ -1,5 +1,6 @@
 #ifndef GB_ENTITIES_H
 #define GB_ENTITIES_H
+#include <inttypes.h>
 
 // Matt Wells, copyright Jul 2001
 

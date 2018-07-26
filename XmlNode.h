@@ -1,8 +1,6 @@
 #ifndef GB_XMLNODE_H
 #define GB_XMLNODE_H
 
-#include "gb-include.h"
-
 // . an xml node can be text or tag (html or xml tag)
 
 #include "nodeid_t.h"
@@ -13,7 +11,7 @@ bool isBreakingTagId ( nodeid_t tagId ) ;
 bool hasBackTag ( nodeid_t tagId ) ;
 
 // s points to tag name - first char
-nodeid_t getTagId ( const char *s , class NodeType **retp = NULL );
+nodeid_t getTagId ( const char *s , class NodeType **retp = nullptr );
 
 enum {
 	TAG_TEXTNODE = 0,

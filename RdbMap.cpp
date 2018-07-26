@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "RdbMap.h"
 #include "BigFile.h"
 #include "Process.h"
@@ -7,7 +5,10 @@
 #include "File.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "hash.h"
 #include <fcntl.h>
+#include <unistd.h>
 
 
 RdbMap::RdbMap() {

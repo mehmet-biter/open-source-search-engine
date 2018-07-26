@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Rdb.h"
 #include "Conf.h"
 #include "Clusterdb.h"
@@ -23,8 +21,10 @@
 #include "GbMakePath.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "Errno.h"
 #include <sys/stat.h> //mkdir(), stat()
 #include <fcntl.h>
+#include <unistd.h>
 #include <algorithm>
 #include <set>
 #include <signal.h>

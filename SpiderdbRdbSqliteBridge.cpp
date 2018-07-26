@@ -10,6 +10,7 @@
 #include "SpiderColl.h"
 #include "Conf.h"
 #include "ip.h"
+#include "Errno.h"
 #include <algorithm>
 
 static void addSpiderCollRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);

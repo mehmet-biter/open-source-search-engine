@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "TcpServer.h"
 #include "Stats.h"
 #include "Statistics.h"
@@ -14,10 +12,12 @@
 #include "max_niceness.h"
 #include "Process.h"
 #include "ip.h"
+#include "Errno.h"
 #include <sys/time.h>             // time()
 #include <sys/types.h>            // setsockopt()
 #include <sys/socket.h>           // setsockopt()
 #include <netinet/tcp.h>          // TCP_CORK and SOL_TCP (linux only!)
+#include <unistd.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

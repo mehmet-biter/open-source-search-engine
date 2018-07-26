@@ -19,6 +19,7 @@
 #include "DocDelete.h"
 #include "XmlDoc.h"
 #include "Conf.h"
+#include "Errno.h"
 
 DocDelete g_docDelete("docdelete.txt", false);
 DocDelete g_docDeleteUrl("docdeleteurl.txt", true);

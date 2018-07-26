@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HttpRequest.h"
 #include "ip.h"
 #include "Conf.h"
@@ -8,8 +6,13 @@
 #include "HttpMime.h"
 #include "Url.h"
 #include "TcpSocket.h"
+#include "utf8_fast.h"
 #include "Mem.h"
 #include "CountryLanguage.h"
+#include "Errno.h"
+#include "fctypes.h"
+#include "Log.h"
+#include "gbmemcpy.h"
 #include <stdlib.h>
 #include <float.h>
 #include "gbmemcpy.h"

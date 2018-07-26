@@ -25,10 +25,12 @@
 #include "ScopedLock.h"
 #include "Collectiondb.h"
 #include "ip.h"
+#include "Errno.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <algorithm>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 static GbThreadQueue s_docProcessFileThreadQueue;
 static GbThreadQueue s_docProcessDocThreadQueue;

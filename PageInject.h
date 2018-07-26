@@ -1,5 +1,7 @@
 #ifndef GB_PAGEINJECT_H
 #define GB_PAGEINJECT_H
+#include "XmlDoc.h"
+#include "Parms.h"
 
 // for getting list of injections currently being processed on this host
 // for printing in the Spider Queue table in Spider.cpp
@@ -9,8 +11,6 @@ void  handleRequest7 ( class UdpSlot *slot , int32_t netnice ) ;
 
 bool sendPageInject ( class TcpSocket *s, class HttpRequest *hr );
 
-#include "XmlDoc.h"
-#include "Parms.h"
 
 
 void setInjectionRequestFromParms ( class TcpSocket *sock , 

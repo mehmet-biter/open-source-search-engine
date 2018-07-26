@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "TcpSocket.h"
 #include "HttpServer.h"
 #include "HttpRequest.h"
@@ -10,6 +8,8 @@
 #include "Conf.h"
 #include "ip.h"
 #include "GbUtil.h"
+#include "hash.h"
+
 
 static int defaultSort    ( const void *i1, const void *i2 );
 static int splitTimeSort  ( const void *i1, const void *i2 );

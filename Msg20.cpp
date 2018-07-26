@@ -1,4 +1,3 @@
-#include "gb-include.h"
 #include "XmlDoc.h"
 #include "Hostdb.h"
 #include "UdpSlot.h"
@@ -6,6 +5,7 @@
 #include "ip.h"
 #include "Process.h"
 #include "Mem.h"
+#include "Errno.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

@@ -1,5 +1,3 @@
-//#include "gb-include.h"
-
 #include "Phrases.h"
 #include "tokenizer.h"
 #include "Bits.h"
@@ -7,6 +5,11 @@
 #include "Conf.h"
 #include "Sanity.h"
 #include "GbUtil.h"
+#include "Errno.h"
+#include "Log.h"
+#include "fctypes.h"
+#include "utf8_fast.h"
+#include "hash.h"
 
 
 Phrases::Phrases() : m_buf(NULL) {

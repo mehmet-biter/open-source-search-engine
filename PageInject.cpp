@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "PageInject.h"
 #include "HttpServer.h"
 #include "Pages.h"
@@ -17,6 +15,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Errno.h"
 #include <fcntl.h>
 
 

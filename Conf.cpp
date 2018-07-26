@@ -1,4 +1,3 @@
-#include "gb-include.h"
 
 #include "Conf.h"
 #include "Parms.h"
@@ -12,6 +11,7 @@
 #include "Mem.h"
 #include "TitleRecVersion.h"
 #include "ip.h"
+#include "Errno.h"
 #include <sys/stat.h> //umask()
 
 

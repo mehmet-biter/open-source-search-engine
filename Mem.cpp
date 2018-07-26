@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Mem.h"
 #include <sys/time.h>
 
@@ -8,8 +6,13 @@
 #include "ScopedLock.h"
 #include "GbMutex.h"
 #include "Conf.h"
+#include "Log.h"
+#include "Errno.h"
+#include "hash.h"
 #include "Sanity.h"
 #include <string.h>            //for strlen()
+#include <stdlib.h>
+#include <errno.h>
 
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so

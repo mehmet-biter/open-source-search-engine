@@ -1,7 +1,5 @@
 //-*- coding: utf-8 -*-
 
-#include "gb-include.h"
-
 #include "XmlDoc.h"
 #include "CountryCode.h" // g_countryCode
 #include "Collectiondb.h"
@@ -18,6 +16,7 @@
 #include "Lemma.h"
 #include <unordered_set>
 #include <string>
+#include "Errno.h"
 #include "gbmemcpy.h"
 
 

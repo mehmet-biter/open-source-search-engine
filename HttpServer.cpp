@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HttpServer.h"
 #include "Conf.h"
 #include "Pages.h"
@@ -26,6 +24,7 @@
 #include "GbUtil.h"
 #include "Mem.h"
 #include "ContentTypeBlockList.h"
+#include "Errno.h"
 #include "gbmemcpy.h"
 #include <fcntl.h>
 

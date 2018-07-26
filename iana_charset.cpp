@@ -2,7 +2,6 @@
 // Generated automatically by parse_iana_charsets.pl Thu Apr 10 03:09:39 2014
 // DO NOT EDIT!!!
 
-#include "gb-include.h"
 #include "iana_charset.h"
 #include "HashTableX.h"
 #include "Conf.h"

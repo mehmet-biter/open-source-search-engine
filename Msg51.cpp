@@ -3,8 +3,6 @@
 
 #include "Msg51.h"
 
-#include "gb-include.h"
-
 #include "Clusterdb.h"
 #include "Stats.h"
 #include "HashTableT.h"
@@ -16,6 +14,7 @@
 #include "Collectiondb.h"
 #include "UdpServer.h"
 #include "Conf.h"
+#include "Errno.h"
 
 
 // how many Msg0 requests can we launch at the same time?

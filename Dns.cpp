@@ -7,6 +7,9 @@
 #include "Dns_internals.h"
 #include "ip.h"
 #include "Mem.h"
+#include "Errno.h"
+#include "hash.h"
+#include "utf8_fast.h"
 #include "gbmemcpy.h"
 #include <fcntl.h>
 

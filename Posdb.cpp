@@ -4,6 +4,7 @@
 #include "RdbCache.h"
 #include "Conf.h"
 #include "Sanity.h"
+#include "Errno.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

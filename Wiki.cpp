@@ -4,8 +4,10 @@
 #include "Titledb.h"
 #include "Process.h"
 #include "Conf.h"
+#include "Errno.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <unistd.h>
 
 // the global instance
 Wiki g_wiki;

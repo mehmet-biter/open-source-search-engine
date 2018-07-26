@@ -1,11 +1,10 @@
-#include "gb-include.h"
-
 #include "Pages.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "HttpServer.h"
 #include "Collectiondb.h"
 #include "Parms.h"
+#include "Errno.h"
 
 #ifndef PRIVACORE_SAFE_VERSION
 

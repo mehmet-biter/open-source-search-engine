@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Msg22.h"
 #include "Titledb.h"
 #include "UdpServer.h"
@@ -8,6 +6,7 @@
 #include "Process.h"
 #include "Mem.h"
 #include "Msg5.h"
+#include "Errno.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 
