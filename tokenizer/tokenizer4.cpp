@@ -1,6 +1,7 @@
 #include "tokenizer.h"
 #include "tokenizer_util.h"
 #include "XmlNode.h"
+#include <string.h>
 
 static void recognize_superscript(TokenizerResult *tr);
 static void recognize_subscript(TokenizerResult *tr);
