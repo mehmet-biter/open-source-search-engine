@@ -22,13 +22,6 @@ typedef std::vector<UrlMatch> urlmatches_t;
 typedef std::vector<urlmatches_t> urlmatcheslist_t;
 typedef spp::sparse_hash_map<std::string, urlmatcheslist_t> urlmatchlist_map_t;
 
-struct UrlMatchCriterias {
-	bool m_hasDomain;
-	std::string m_domain;
-
-	urlmatcheslist_t m_urlMatches;
-};
-
 struct UrlMatchListItem {
 	spp::sparse_hash_set<std::string> m_domainMatches;
 	spp::sparse_hash_set<std::string> m_tldMatches;
