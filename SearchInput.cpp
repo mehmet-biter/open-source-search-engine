@@ -98,7 +98,7 @@ void SearchInput::clear () {
 }
 
 void SearchInput::copy ( class SearchInput *si ) {
-	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
+	memmove ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
 bool SearchInput::set(TcpSocket *sock, HttpRequest *r, lang_t primaryQueryLanguage, const std::vector<std::pair<lang_t, double>> &language_weights) {

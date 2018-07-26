@@ -1701,7 +1701,7 @@ bool Title::copyTitle(const TokenizerResult *tr, int32_t t0, int32_t t1) {
 				break;
 			}
 
-			gbmemcpy ( dst , "&lt;" , 4 );
+			memcpy ( dst , "&lt;" , 4 );
 			dst += 4 - cs;
 			continue;
 		}
@@ -1712,16 +1712,16 @@ bool Title::copyTitle(const TokenizerResult *tr, int32_t t0, int32_t t1) {
 				break;
 			}
 
-			gbmemcpy ( dst , "&gt;" , 4 );
+			memcpy ( dst , "&gt;" , 4 );
 			dst += 4 - cs;
 			continue;
 		}
 
-		// if more than 1 byte in char, use gbmemcpy
+		// if more than 1 byte in char, use memcpy
 		if ( cs == 1 ) {
 			*dst = *src;
 		} else {
-			gbmemcpy ( dst , src , cs );
+			memcpy ( dst , src , cs );
 		}
 	}
 
@@ -1731,10 +1731,10 @@ bool Title::copyTitle(const TokenizerResult *tr, int32_t t0, int32_t t1) {
 	// do not split a word in the middle!
 	if ( src < srcEnd ) { 
 		if ( lastp ) {
-			gbmemcpy ( lastp , "...\0" , 4 );
+			memcpy ( lastp , "...\0" , 4 );
 			dst = lastp + 3;
 		} else {
-			gbmemcpy ( dst   , "...\0" , 4 );
+			memcpy ( dst   , "...\0" , 4 );
 			dst += 3;
 		}
 	}

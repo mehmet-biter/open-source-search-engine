@@ -72,10 +72,10 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 	//get the 'path' part of the request.
 	char rbuf[1024];
 	if(r->getRequestLen() > 1023) {
-		gbmemcpy( rbuf, r->getRequest(), 1023);
+		memcpy( rbuf, r->getRequest(), 1023);
 	}
 	else {
-		gbmemcpy( rbuf, r->getRequest(), r->getRequestLen());
+		memcpy( rbuf, r->getRequest(), r->getRequestLen());
 	}
 	char* rbufEnd = rbuf;
 	//skip GET

@@ -1190,8 +1190,8 @@ void RdbMap::reduceMemFootPrint () {
 	m_offsets[0] = (short *)mmalloc ( 2 * pps , "RdbMap" );
 
 	// copy over
-	gbmemcpy ( m_keys   [0] , oldKeys    , m_ks * pps );
-	gbmemcpy ( m_offsets[0] , oldOffsets , 2    * pps );
+	memcpy ( m_keys   [0] , oldKeys    , m_ks * pps );
+	memcpy ( m_offsets[0] , oldOffsets , 2    * pps );
 
 	int oldPPS = PAGES_PER_SEGMENT;
 	mfree ( oldKeys    , m_ks * oldPPS , "RdbMap" );

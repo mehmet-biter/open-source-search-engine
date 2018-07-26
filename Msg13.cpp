@@ -758,9 +758,9 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 	// if proxy had one copy into the buf
 	if ( prep->m_usernamePwd[0] ) {
 		int32_t len = strlen(prep->m_usernamePwd);
-		gbmemcpy ( r->m_proxyUsernamePwdAuth , 
-			   prep->m_usernamePwd ,
-			   len );
+		memcpy ( r->m_proxyUsernamePwdAuth ,
+			 prep->m_usernamePwd ,
+			 len );
 		r->m_proxyUsernamePwdAuth[len] = '\0';
 	}
 
@@ -1582,9 +1582,9 @@ void gotHttpReply2 ( void *state ,
 			// if too big, forget it! otherwise we breach tmpBuf
 			if ( loc && locLen > 0 && locLen < 1024 ) {
 				p += sprintf ( p , "Location: " );
-				gbmemcpy ( p , loc , locLen );
+				memcpy ( p , loc , locLen );
 				p += locLen;
-				gbmemcpy ( p , "\r\n", 2 );
+				memcpy ( p , "\r\n", 2 );
 				p += 2;
 			}
 			// close it up
@@ -1598,7 +1598,7 @@ void gotHttpReply2 ( void *state ,
 			bytesOutPtr = &g_stats.m_compressMimeErrorBytesOut;
 			// only replace orig reply if we are smaller
 			if ( newSize < replySize ) {
-				gbmemcpy ( reply , tmpBuf , newSize );
+				memcpy ( reply , tmpBuf , newSize );
 				replySize = newSize;
 			}
 			// reset content hash
@@ -2573,7 +2573,7 @@ void fixGETorPOST ( char *squidProxiedReqBuf ) {
 	// bury the http://xyz.com part now
 	char *reqEnd = squidProxiedReqBuf + strlen(squidProxiedReqBuf);
 	// include the terminating \0, so add +1
-	gbmemcpy ( httpStart , s , reqEnd - s + 1 );
+	memmove ( httpStart , s , reqEnd - s + 1 );
 	// now make HTTP/1.1 into HTTP/1.0
 	char *hs = strstr ( httpStart , "HTTP/1.1" );
 	if ( ! hs ) return;

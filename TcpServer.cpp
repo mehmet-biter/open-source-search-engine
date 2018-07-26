@@ -394,7 +394,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port
 	mnew ( tst , sizeof(TcpState) , "TcpServer" );
 
 	// fill up our temporary state structure
-	gbmemcpy ( tst->m_hostname , hostname , hostnameLen );
+	memcpy ( tst->m_hostname , hostname , hostnameLen );
 
 	// NULL terminate the hostname in tst
 	tst->m_hostname [ hostnameLen ] = '\0';

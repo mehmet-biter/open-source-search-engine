@@ -109,7 +109,7 @@ bool Rdb::init(const char *dbname,
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
 	m_dbnameLen = strlen ( dbname );
-	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
+	memcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 
 	// store the other parameters for initializing each Rdb
@@ -2092,7 +2092,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		//// re -add with the proper value now
 		//
 		// otherwise, copy it over if still in tree
-		gbmemcpy ( dst , p , recSize );
+		memmove ( dst , p , recSize );
 		int32_t newOffset = dst - pstart;
 		// store in map, overwrite old value of 1
 		ht.addKey ( &oldOffset , &newOffset );

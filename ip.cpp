@@ -9,7 +9,7 @@ int32_t atoip ( const char *s , int32_t slen ) {
 	char buf[1024];
 	if ( s[slen] ) {
 		if ( slen >= 1024 ) slen = 1023;
-		gbmemcpy ( buf , s , slen );
+		memcpy ( buf , s , slen );
 		buf [ slen ] = '\0';
 		// point to that
 		p = buf;

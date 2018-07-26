@@ -196,7 +196,7 @@ bool RdbBase::init(const char *dir,
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
 	m_dbnameLen = strlen ( dbname );
-	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
+	memcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 	// store the other parameters
 	m_fixedDataSize    = fixedDataSize;

@@ -202,7 +202,7 @@ bool buildProxyTable ( ) {
 		newThing.m_lastDownloadTookMS = -1;
 		newThing.m_lastSuccessfulTestMS = -1;
 
-		gbmemcpy(newThing.m_usernamePwd,usernamePwd,usernamePwdLen);
+		memcpy(newThing.m_usernamePwd,usernamePwd,usernamePwdLen);
 		// ensure it is NULL terminated
 		newThing.m_usernamePwd[usernamePwdLen] = '\0';
 

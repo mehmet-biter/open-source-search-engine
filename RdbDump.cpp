@@ -465,9 +465,9 @@ bool RdbDump::dumpList2(bool recall) {
 				char tmp[MAX_KEY_BYTES];
 				char *p = m_list->getList();
 				// swap high 12 bytes with low 6 bytes for first key
-				gbmemcpy (tmp, p, m_ks - 12);
-				gbmemcpy (p, p + (m_ks - 12), 12);
-				gbmemcpy (p + 12, tmp, m_ks - 12);
+				memcpy (tmp, p, m_ks - 12);
+				memmove (p, p + (m_ks - 12), 12);
+				memcpy (p + 12, tmp, m_ks - 12);
 				// big hack here
 				m_list->setList(p + 12);
 				m_list->setListPtr(p + 12);
@@ -499,9 +499,9 @@ bool RdbDump::dumpList2(bool recall) {
 				m_hacked = true;
 				char tmp[MAX_KEY_BYTES];
 				char *p = m_list->getList();
-				gbmemcpy (tmp, p, m_ks - 6);
-				gbmemcpy (p, p + (m_ks - 6), 6);
-				gbmemcpy (p + 6, tmp, m_ks - 6);
+				memcpy (tmp, p, m_ks - 6);
+				memmove (p, p + (m_ks - 6), 6);
+				memcpy (p + 6, tmp, m_ks - 6);
 				// big hack here
 				m_list->setList(p + 6);
 				// make this work for POSDB, too
@@ -709,9 +709,9 @@ void RdbDump::addListToRdbMapRdbIndex(void *state) {
 	if (that->m_hacked) {
 		char tmp[MAX_KEY_BYTES];
 		char *p = that->m_list->getList() - 6 ;
-		gbmemcpy (tmp, p, 6);
-		gbmemcpy (p, p + 6, that->m_ks - 6);
-		gbmemcpy (p + (that->m_ks - 6), tmp, 6);
+		memcpy (tmp, p, 6);
+		memmove (p, p + 6, that->m_ks - 6);
+		memcpy (p + (that->m_ks - 6), tmp, 6);
 		// undo the big hack
 		that->m_list->setList(p);
 		// make this work for POSDB...
@@ -729,9 +729,9 @@ void RdbDump::addListToRdbMapRdbIndex(void *state) {
 		char tmp[MAX_KEY_BYTES];
 		char *p = that->m_list->getList() - 12 ;
 		// swap high 12 bytes with low 6 bytes for first key
-		gbmemcpy (tmp, p, 12);
-		gbmemcpy (p, p + 12, 6);
-		gbmemcpy (p + 6, tmp, 12);
+		memcpy (tmp, p, 12);
+		memmove (p, p + 12, 6);
+		memcpy (p + 6, tmp, 12);
 		// big hack here
 		that->m_list->setList(p);
 		that->m_list->setListPtr(p);

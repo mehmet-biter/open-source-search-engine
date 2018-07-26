@@ -2096,7 +2096,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// count it
 		recCount++;
 		// sanity
-		gbmemcpy ( (char *)&finalKey , rec , sizeof(key128_t) );
+		memcpy ( (char *)&finalKey , rec , sizeof(key128_t) );
 		// skip to next guy
 		m_list.skipCurrentRecord();
 		// negative? wtf?
@@ -2651,7 +2651,7 @@ gotNewWinner:
 		int32_t rsize = srep->getRecSize();
 		if((size_t)rsize > sizeof(m_lastReplyBuf))
 			gbshutdownAbort(true);
-		gbmemcpy ( m_lastReplyBuf, srep, rsize );
+		memmove ( m_lastReplyBuf, srep, rsize );
 		m_lastReplyValid = true;
 	}
 

@@ -436,7 +436,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 			maxScore = score;
 
 			// save this too
-			gbmemcpy ( maxGotIt , gotIt , m_q->m_numWords );
+			memmove ( maxGotIt , gotIt , m_q->m_numWords );
 
 		}
 	

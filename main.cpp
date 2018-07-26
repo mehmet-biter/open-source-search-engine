@@ -2785,12 +2785,12 @@ void dumpRobotsTxtCache(const char *url) {
 	}
 	else
 	{
-		gbmemcpy ( p , u.getScheme() , u.getSchemeLen() );
+		memcpy ( p , u.getScheme() , u.getSchemeLen() );
 		p += u.getSchemeLen();
 		p += sprintf(p,"://");
 	}
 
-	gbmemcpy ( p , u.getHost() , u.getHostLen() );
+	memcpy ( p , u.getHost() , u.getHostLen() );
 	p += u.getHostLen();
 
 	// add port if not default

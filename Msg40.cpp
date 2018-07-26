@@ -427,7 +427,7 @@ bool Msg40::federatedLoop ( ) {
 		// assign it
 		m_msg3aPtrs[i] = mp;
 		// assign the request for it
-		gbmemcpy ( &mp->m_msg39req , &mr , sizeof(Msg39Request) );
+		memcpy ( &mp->m_msg39req , &mr , sizeof(Msg39Request) );
 		// then customize it to just search this collnum
 		mp->m_msg39req.m_collnum = cp[i];
 

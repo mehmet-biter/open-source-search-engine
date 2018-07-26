@@ -525,7 +525,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 			// otherwise, alloc space for the reply
 			reply = (char *)mmalloc (recSize, "Msg22");
 			if ( ! reply ) goto hadError;
-			gbmemcpy ( reply , rec , recSize );
+			memcpy ( reply , rec , recSize );
 		}
 		// otherwise we send back the whole list!
 		else {

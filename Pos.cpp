@@ -399,7 +399,7 @@ unsigned Pos::filter( const TokenizerResult *tr, int32_t a, int32_t b, bool addE
 					dotCount = 0;
 					dotPrevChar = f;
 
-					gbmemcpy( f, p, cs );
+					memcpy( f, p, cs );
 					f += cs;
 				}
 			} else {
