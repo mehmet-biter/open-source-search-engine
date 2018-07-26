@@ -484,14 +484,15 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 			continue;
 		
 		const TokenRange t0_copy = t0; //copied due to vector modification
+		const TokenRange t2_copy = t2; //ditto
 		
 		//generate the token <word>+apostrophe+'s'
 		size_t token_a_len = t0_copy.token_len + 1 + 1;
 		char *token_a = (char*)tr->egstack.alloc(token_a_len);
-		memcpy(token_a, t0_copy.token_start, t0.token_len);
+		memcpy(token_a, t0_copy.token_start, t0_copy.token_len);
 		token_a[t0_copy.token_len] = '\'';
 		token_a[t0_copy.token_len+1] = 's';
-		tr->tokens.emplace_back(t0_copy.start_pos,t2.end_pos,token_a, token_a_len, false, true);
+		tr->tokens.emplace_back(t0_copy.start_pos,t2_copy.end_pos,token_a, token_a_len, false, true);
 
 		//German/Danish/Norwegian/Swedish don't use apostrophe for possessive-s, however some web pages may use it for
 		//stylistic/origin reasons (eg McDonald's) or because they like the "greengrocer's apostrophe".
@@ -499,9 +500,9 @@ static void combine_possessive_s_tokens(TokenizerResult *tr, lang_t lang) {
 		if(lang!=langEnglish && lang!=langDutch) {
 			size_t token_b_len = t0_copy.token_len + 1;
 			char *token_b = (char*)tr->egstack.alloc(token_b_len);
-			memcpy(token_b, t0_copy.token_start, t0.token_len);
+			memcpy(token_b, t0_copy.token_start, t0_copy.token_len);
 			token_b[t0_copy.token_len] = 's';
-			tr->tokens.emplace_back(t0_copy.start_pos,t2.end_pos,token_b, token_b_len, false, true);
+			tr->tokens.emplace_back(t0_copy.start_pos,t2_copy.end_pos,token_b, token_b_len, false, true);
 		}
 		//In the case of "John's car" we now have the tokens:
 		//  John
