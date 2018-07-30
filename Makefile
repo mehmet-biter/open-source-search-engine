@@ -99,6 +99,7 @@ OBJS_O3 = \
 	MemoryMappedFile.o \
 	Lexicons.o \
 	Lemma.o \
+	Serialize.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)

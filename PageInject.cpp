@@ -7,6 +7,7 @@
 #include "HttpRequest.h"
 #include "UdpSlot.h"
 #include "UdpServer.h"
+#include "Serialize.h"
 #include "Stats.h"
 #include "Collectiondb.h"
 #include "Process.h"

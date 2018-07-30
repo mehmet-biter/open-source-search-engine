@@ -1,6 +1,7 @@
 #include "Msg25.h"
 #include "Linkdb.h"
 #include "UdpSlot.h"
+#include "Serialize.h"
 #include "linkspam.h"
 #include "Xml.h"
 #include "HashTableX.h"

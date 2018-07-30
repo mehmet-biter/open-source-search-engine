@@ -1,4 +1,5 @@
 #include "Msg3a.h"
+#include "Serialize.h"
 #include "Stats.h"
 #include "HashTableT.h"
 #include "SearchInput.h"

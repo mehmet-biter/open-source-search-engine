@@ -1,5 +1,6 @@
 #include "Msg39.h"
 #include "UdpSlot.h"
+#include "Serialize.h"
 #include "Stats.h"
 #include "JobScheduler.h"
 #include "UdpServer.h"

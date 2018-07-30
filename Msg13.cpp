@@ -1,6 +1,7 @@
 #include "Msg13.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
+#include "Serialize.h"
 #include "HttpServer.h"
 #include "Conf.h"
 #include "Stats.h"

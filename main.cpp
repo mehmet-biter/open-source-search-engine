@@ -26,6 +26,7 @@
 #include "Collectiondb.h"
 #include "Sections.h"
 #include "UdpServer.h"
+#include "Serialize.h"
 #include "Repair.h"
 #include "DailyMerge.h"
 #include "MsgC.h"
