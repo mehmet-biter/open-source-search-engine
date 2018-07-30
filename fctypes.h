@@ -55,8 +55,6 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
 
-// . get the # of words in this string
-int32_t      getNumWords ( char *s , int32_t len ) ;
 int32_t      atol2       ( const char *s, int32_t len ) ;
 int64_t atoll1      ( const char *s ) ;
 int64_t atoll2      ( const char *s, int32_t len ) ;

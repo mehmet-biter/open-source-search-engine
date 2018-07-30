@@ -69,24 +69,6 @@ const char *strnstrn(const char *haystack, int32_t haystackLen, const char *need
 	return (const char*)memmem(haystack,haystackLen,needle,needleLen);
 }
 
-// . get the # of words in this string
-int32_t getNumWords ( char *s , int32_t len ) {
-
-	int32_t wordCount = 0;
-	bool inWord   = false;
-	for ( int32_t i = 0 ; i < len ; i++ ) {
-		if ( ! is_alnum_a ( s[i] ) && s[i]!='\'' ) {
-			inWord = false;
-			continue;
-		}
-		if ( ! inWord ) {
-			inWord = true;
-			wordCount++;
-		}
-	}
-	return wordCount;
-}
-
 // . this stores a "n" into "s" and returns the # of bytes written into "s"
 // . it also puts commas into the number
 // . it now also NULL terminates bytes written into "s"

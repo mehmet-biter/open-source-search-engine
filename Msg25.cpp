@@ -44,6 +44,8 @@ static LinkInfo *makeLinkInfo(int32_t       ip,
 			      Msg25        *msg25,
 			      SafeBuf      *linkInfoBuf);
 
+static int32_t getNumWords(const char *s, int32_t len);
+
 
 // 1MB read size for now
 #define READSIZE 1000000
@@ -5092,4 +5094,23 @@ int32_t getSiteRank(int32_t sni) {
 	if ( sni <= 5000-1 ) return 13;
 	if ( sni <= 10000-1 ) return 14;
 	return 15;
+}
+
+
+// . get the # of words in this string
+static int32_t getNumWords(const char *s, int32_t len) {
+
+	int32_t wordCount = 0;
+	bool inWord   = false;
+	for ( int32_t i = 0 ; i < len ; i++ ) {
+		if ( ! is_alnum_a ( s[i] ) && s[i]!='\'' ) {
+			inWord = false;
+			continue;
+		}
+		if ( ! inWord ) {
+			inWord = true;
+			wordCount++;
+		}
+	}
+	return wordCount;
 }
