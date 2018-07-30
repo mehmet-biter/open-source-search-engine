@@ -260,38 +260,6 @@ char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needl
 	return res;
 }
 
-// . convert < to &lt; and > to &gt
-// . store "t" into "s"
-// . returns bytes stored into "s"
-// . NULL terminates "s" if slen > 0
-int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srclen ) {
-	char *start = dst ;
-	// leave a char for the \0
-	char *dstend  = dst + dstlen - 1;
-	const char *srcend  = src + srclen;
-	for ( ; src < srcend && dst + 4 < dstend ; src++ ) {
-		if ( *src == '<' ) {
-			*dst++ = '&';
-			*dst++ = 'l';
-			*dst++ = 't';
-			*dst++ = ';';
-			continue;
-		}			
-		if ( *src == '>' ) {
-			*dst++ = '&';
-			*dst++ = 'g';
-			*dst++ = 't';
-			*dst++ = ';';
-			continue;
-		}			
-		*dst++ = *src;
-	}
-	// NULL terminate "dst"
-	*dst = '\0';
-	// return # of bytes, excluding \0, stored into s
-	return dst - start;
-}
-
 // . if "doSpecial" is true, then we don't touch &lt;, &gt; and &amp;
 int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial ) {
 	//special-case optimization

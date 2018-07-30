@@ -16,12 +16,6 @@ class SafeBuf;
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
 
-// . convert < to &lt; and > to &gt and & to &amp;
-// . store "t" into "s"
-// . returns bytes stored into "s"
-// . NULL terminates "s"
-int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srclen ) ;
-
 // . basically just converts "'s to &#34;'s
 // . store "src" into "dest" and return bytes stored
 // . does not do bounds checking in "dest"
