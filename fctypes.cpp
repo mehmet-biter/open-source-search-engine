@@ -789,26 +789,6 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 }
 
 
-bool is_urlchar(char s) {
-	// [a-z0-9/:_-.?$,~=#&%+@]
-	if(isalnum(s)) return true;
-	if(s == '/' ||
-	   s == ':' ||
-	   s == '_' ||
-	   s == '-' ||
-	   s == '.' ||
-	   s == '?' ||
-	   s == '$' ||
-	   s == ',' ||
-	   s == '~' ||
-	   s == '=' ||
-	   s == '#' ||
-	   s == '&' ||
-	   s == '%' ||
-	   s == '+' ||
-	   s == '@') return true;
-	return false;
-}
 // don't allow "> in our input boxes
 int32_t cleanInput(char *outbuf, int32_t outbufSize, const char *inbuf, int32_t inbufLen){
 	char *p = outbuf;

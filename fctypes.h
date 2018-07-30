@@ -48,8 +48,6 @@ int32_t urlEncode     ( char *dest , int32_t destLen , const char *src , int32_t
 int32_t urlDecode ( char *dest , const char *src , int32_t tlen ) ;
 int32_t urlDecodeNoZeroes ( char *dest , const char *src , int32_t tlen ) ;
 
-bool is_urlchar(char s);
-
 // convert hex ascii string into binary
 void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
