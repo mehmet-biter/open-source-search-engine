@@ -284,9 +284,8 @@ bool expandHtml (  SafeBuf& sb,
 			// never allow to go negative
 			if ( c < 0 ) c = 0;
 			//p+=ulltoa(p,c);
-			char *p = (char*) sb.getBufPtr();
 			sb.reserve2x(16);
-			int32_t len = ulltoa(p, c);
+			int32_t len = ulltoa(sb.getBufPtr(), c);
 			sb.incrementLength(len);
 			// skip over %N
 			i += 1;
@@ -295,11 +294,10 @@ bool expandHtml (  SafeBuf& sb,
 		if ( head[i+1] == 'n' ) { 
 			// now we got the %n, insert the collection doc count
 			//p+=ulltoa(p,docsInColl);
-			char *p = (char*) sb.getBufPtr();
 			sb.reserve2x(16);
 			int64_t docsInColl = 0;
 			if ( cr ) docsInColl = cr->getNumDocsIndexed();
-			int32_t len = ulltoa(p, docsInColl);
+			int32_t len = ulltoa(sb.getBufPtr(), docsInColl);
 			sb.incrementLength(len);
 			// skip over %n
 			i += 1;
