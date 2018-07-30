@@ -27,7 +27,7 @@ static bool sendHttpReply        ( void *state );
 // but if we call serialize() then it makes news ones into its own blob.
 // so we gotta know our first and last ptr_* pointers for serialize/deseria().
 // kinda like how search input works
-void setInjectionRequestFromParms(TcpSocket *sock, HttpRequest *hr, CollectionRec *cr, InjectionRequest *ir) {
+static void setInjectionRequestFromParms(TcpSocket *sock, HttpRequest *hr, CollectionRec *cr, InjectionRequest *ir) {
 	// just in case set all to zero
 	memset ( ir , 0 , sizeof(InjectionRequest ));
 

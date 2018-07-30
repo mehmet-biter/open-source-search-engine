@@ -13,11 +13,6 @@ bool sendPageInject ( class TcpSocket *s, class HttpRequest *hr );
 
 
 
-void setInjectionRequestFromParms ( class TcpSocket *sock , 
-				    class HttpRequest *hr ,
-				    class CollectionRec *cr ,
-				    class InjectionRequest *ir ) ;
-
 class InjectionRequest {
  public:
 

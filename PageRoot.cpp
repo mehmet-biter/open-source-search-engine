@@ -1307,9 +1307,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// default to zero
 	memset ( ir , 0 , sizeof(InjectionRequest) );
 
-	// this will fill in GigablastRequest so all the parms we need are set
-	//setInjectionRequestFromParms ( sock , hr , cr , ir );
-
 	int32_t collLen;
 	const char *coll = hr->getString ( "c" , &collLen ,NULL );
 	if ( ! coll ) coll = g_conf.m_defaultColl;
