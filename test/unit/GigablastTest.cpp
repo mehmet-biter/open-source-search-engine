@@ -6,6 +6,7 @@
 #include "Conf.h"
 #include "Hostdb.h"
 #include "Domains.h"
+#include "Log.h"
 
 #include <stdlib.h>
 #include <libgen.h>

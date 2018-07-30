@@ -4,6 +4,7 @@
 #include "Url.h"
 #include "Conf.h"
 #include "Log.h"
+#include "Errno.h"
 
 TEST(UrlBlockCheckTest, BlockIPUrl) {
 	std::vector<std::tuple<const char *, bool, int>> test_cases = {

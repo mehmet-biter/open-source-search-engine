@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "BigFile.h"
 #include "Process.h"
+#include "Log.h"
 #include <fcntl.h>
 
 static void createFile(BigFile *file, const char *file_name) {
