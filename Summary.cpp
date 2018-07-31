@@ -68,6 +68,7 @@ bool Summary::isSetFromTags() const {
 
 bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+	//logHexTrace(g_conf.m_logTraceSummary,m_summary,m_summaryLen,"summary candidate:");
 
 	if ( m_summaryLen > 0 ) {
 		// trim elipsis
@@ -84,6 +85,31 @@ bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 			return false;
 		}
 
+		//Verify that it isn't html junk. Some pages do have html code such as <img... in their description which is most certainly an error
+		//maybeRemoveHtmlFormatting() has already taken care of single- and double-encoded html entities so if there is html in the summary
+		//then it is already pure. Unless it was triple-encoded - but some pages just can't be helped.
+		if(memchr(m_summary, '<', m_summaryLen)!=NULL) {
+			//If the summary mentions "html" or "tag" then it might be a page about html in whcih case the summary could intentionally contain html tags
+			if(memmem(m_summary,m_summaryLen,"html",4)==0 &&
+			   memmem(m_summary,m_summaryLen,"HTML",4)==0 &&
+			   memmem(m_summary,m_summaryLen,"tag",3)==0 &&
+			   memmem(m_summary,m_summaryLen,"TAG",3)==0)
+			{
+				//Only detect it on a few tell-tale markers. Otherwise we could incorrectly reject summaries with equations, eg "n<p" which may look like a starting html tag
+				if(memmem(m_summary,m_summaryLen,"<img",4)!=0 ||
+				   memmem(m_summary,m_summaryLen,"<IMG",4)!=0 ||
+				   memmem(m_summary,m_summaryLen,"<style",6)!=0 ||
+				   memmem(m_summary,m_summaryLen,"<STYLE",6)!=0 ||
+				   memmem(m_summary,m_summaryLen,"<title",6)!=0 ||
+				   memmem(m_summary,m_summaryLen,"<TITLE",6)!=0)
+				{
+					logTrace(g_conf.m_logTraceSummary,"Summary looks like html junk. END. Returning false");
+					return false;
+				}
+			}
+				
+		}
+		
 		m_summaryExcerptLen[0] = m_summaryLen;
 		m_numExcerpts = 1;
 		m_displayLen = m_summaryLen;
