@@ -490,7 +490,7 @@ bool Synonyms::addAmpPhrase(const TokenizerResult *tr, unsigned wordNum, class H
 	// logic in Phrases.cpp will xor it with 0x768867 
 	// because it contains a stop word. this prevents "st.
 	// and" from matching "stand".
-	h ^= 0x768867;
+	h ^= 0x768867; //keep in sync with Phrases
 	
 	// do not add dups
 	if ( dt->isInTable ( &h ) ) return true;

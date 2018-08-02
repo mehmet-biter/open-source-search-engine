@@ -246,7 +246,15 @@ void Phrases::setPhrase(unsigned i, const TokenizerResult &tr, const Bits &bits)
 	// . "st. and"    !-> stand
 	// . "the rapist" !-> therapist
 	else {
-		m_phraseIds2[i] = h2 ^ 0x768867;
+		m_phraseIds2[i] = h2;
+		//The XORing with 0x768867 was lost in the code that uses the new tokenizer instead of the old "Words" class.
+		//So the above detection of stopwords doesn't have any effect currently. I'm not even sure if it has any
+		//benefits for languages that compound words more often than English (german/danish/norwegian/greek/…)
+		//We keep the code around if we ever want to do something similar, but possibly for more than just English,
+		//and hopefully with detection of part-of-speech.
+		//Old code:
+		//m_phraseIds2[i] = h2 ^ 0x768867;
+		//note: Synonyms.cpp also does this
 		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", wids[i]=%20" PRIu64". END. either no hyphen or a stopword. m_phraseIds2[i]=%" PRIu64 "", i, token1.token_hash, m_phraseIds2[i]);
 	}
 }
