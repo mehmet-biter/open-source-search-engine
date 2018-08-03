@@ -1171,6 +1171,31 @@ bool Query::setQTerms() {
 		}
 	}
 	
+	//Merge duplicated synonyms.
+	//If one of the above synonym-generations produced the same word (eg. from wiktionary, word-variations and as lemma) then we want to use
+	//the one with highest weight
+	for(int i=0; i<n; i++) {
+		if(m_qterms[i].m_synonymOf) {
+			//it's a synonym. Are there other synonyms on the same base word with the same form? If so then merge/delete
+			for(int j=i+1; j<n; ) {
+				if(m_qterms[j].m_synonymOf == m_qterms[i].m_synonymOf &&
+				   m_qterms[j].m_termLen == m_qterms[i].m_termLen &&
+				   memcmp(m_qterms[j].m_term,m_qterms[i].m_term,m_qterms[j].m_termLen)==0)
+				{
+					//Identical synonyms of same base word
+					//note: direct memcmp() test. Downside is that we don't eliminate uppercase/lowercase duplicates, but neither
+					//do we get into trouble with German eszet, Lithuanian i, ligatures, titlecase, etc.
+					logTrace(g_conf.m_logTraceQuery, "merging identical synonyms '%.*s' for word '%.*s'", m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_synonymOf->m_termLen,m_qterms[i].m_synonymOf->m_term);
+					m_qterms[i].m_termWeight = std::max(m_qterms[i].m_termWeight,m_qterms[j].m_termWeight);
+					m_qterms[i].m_userWeight = std::max(m_qterms[i].m_userWeight,m_qterms[j].m_userWeight);
+					memmove(m_qterms+j, m_qterms+j+1, sizeof(m_qterms[0])*(n-j-1));
+					n--;
+				} else
+					j++;
+			}
+		}
+	}
+	
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
