@@ -2,6 +2,7 @@
 #include "STOWordVariationGenerator.h"
 #include <string.h>
 #include <set>
+#include <tuple>
 
 
 namespace {
@@ -201,14 +202,15 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the highest weight
-	std::set<std::string> seen_variations;
+	typedef std::tuple<std::string,unsigned,unsigned> dupelim_t;
+	std::set<dupelim_t> seen_variations;
 	for(auto iter = variations.begin(); iter!=variations.end(); ) {
 		if(iter->weight < threshold)
 			iter = variations.erase(iter);
-		else if(seen_variations.find(iter->word)!=seen_variations.end())
+		else if(seen_variations.find(dupelim_t(iter->word,iter->source_word_start,iter->source_word_end)) != seen_variations.end())
 			iter = variations.erase(iter);
 		else {
-			seen_variations.insert(iter->word);
+			seen_variations.emplace(iter->word,iter->source_word_start,iter->source_word_end);
 			++iter;
 		}
 	}
