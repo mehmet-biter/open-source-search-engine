@@ -44,6 +44,10 @@ public:
 					    const std::vector<std::string> &source_words,
 					    const std::vector<std::string> &lower_source_words,
 					    float weight);
+	void make_proper_noun_genitive_lemma(std::vector<WordVariationGenerator::Variation> &variations,
+					     const std::vector<std::string> &source_words,
+					     const std::vector<std::string> &lower_source_words,
+					     float weight);
 	void handle_adjective_grammatical_gender_simplification(std::vector<WordVariationGenerator::Variation> &variations,
 					                        const std::vector<std::string> &source_words,
 					                        const std::vector<std::string> &lower_source_words,
@@ -191,6 +195,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	//currently inactive because Query.cpp/PosdbTable.cpp cannot handle wordvariations spanning more than one word
 	//make_proper_noun_part_genetive(variations,source_words,lower_source_words,1.2);
 	
+	if(weights.proper_noun_genitive_to_lemma >= threshold) {
+		make_proper_noun_genitive_lemma(variations,source_words,lower_source_words,weights.proper_noun_genitive_to_lemma);
+	}
+	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the highest weight
 	std::set<std::string> seen_variations;
@@ -219,6 +227,12 @@ static uint64_t wordformattrs2bitmask(const sto::WordForm &wf) {
 static bool same_wordform_as_source(const sto::WordForm &wf, const std::string source_word) {
 	return wf.written_form_length==source_word.length() &&
 	       memcmp(wf.written_form,source_word.data(),source_word.length())==0;
+}
+
+
+static bool has_proper_suffix(const std::string &str, const char *suffix, unsigned suffixlen) {
+	return str.length() > suffixlen &&
+	       memcmp(str.data()+str.length()-suffixlen, suffix, suffixlen)==0;
 }
 
 
@@ -742,6 +756,97 @@ void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<W
 		v0_0.source_word_start = i;
 		v0_0.source_word_end = i+5;
 		variations.push_back(v0_0);
+	}
+}
+
+
+void WordVariationGenerator_danish::make_proper_noun_genitive_lemma(std::vector<WordVariationGenerator::Variation> &variations,
+								    const std::vector<std::string> &source_words,
+								    const std::vector<std::string> &lower_source_words,
+								    float weight)
+{
+	//In Danish you can have something or someone of/in/at something be described with a genitive. Eg:
+	//  Fåborgvejens slagter
+	
+	//iterate though the words and find <proper-noun-genitive> [<adj>] <noun>, and generate <proper-noun> as variation of proper-noun-genitive
+	for(unsigned i=0; i+2<lower_source_words.size(); i++) {
+		auto source_word0(lower_source_words[i]);
+		if(source_word0==" ")
+			continue;
+		
+		auto source_word2(lower_source_words[i+2]);
+		if(source_word2==" ")
+			continue;
+		bool word2_is_noun_or_adjective = false;
+		LogicalMatches matches2(*lexicon,source_word2,noun);
+		for(auto match : matches2) {
+			if(match->part_of_speech==sto::part_of_speech_t::adjective ||
+			   match->part_of_speech==sto::part_of_speech_t::commonNoun) {
+				word2_is_noun_or_adjective = true;
+				break;
+			}
+		}
+		if(!word2_is_noun_or_adjective)
+			continue;
+		
+		//find noun (note we go for exact match - not suffix matches)
+		auto matches(lexicon->query_matches(capitalize_word(source_word0)));
+		const sto::LexicalEntry *lexicalentry_noun_genitive = NULL;
+		for(auto match : matches) {
+			if(match->part_of_speech==sto::part_of_speech_t::properNoun) {
+				auto wordforms(match->query_all_explicit_word_forms());
+				for(auto wordform : wordforms) {
+					if(wordform->has_attribute(sto::word_form_attribute_t::case_genitiveCase))
+					{
+						lexicalentry_noun_genitive = match;
+					}
+				}
+			}
+		}
+		if(lexicalentry_noun_genitive) {
+			if(lower_source_words[i+1]!=" ")
+				continue;
+			
+			//not done: checking last word is a noun or yet another adjective.
+			
+			const sto::WordForm *propernoun_base_wordform = lexicalentry_noun_genitive->find_base_wordform();
+			if(!propernoun_base_wordform)
+				continue; // ? this is not really supposed to happen, but we have to allow for errors in the lexicon
+			
+			WordVariationGenerator::Variation v0_0;
+			v0_0.word = std::string(propernoun_base_wordform->written_form,propernoun_base_wordform->written_form_length);
+			v0_0.weight = weight;
+			v0_0.source_word_start = i;
+			v0_0.source_word_end = i+1;
+			variations.push_back(v0_0);
+		} else if(matches.empty()) {
+			//If word0 isn't in in STO it can still be a proper noun, eg a road name
+			//hackity-hack...
+			//Recognize suffixes indicating roads/streets in genitive form
+			//  -vejs	-> -vej
+			//  -vejens	-> -vej
+			//  -gades	-> -gade
+			//  -gadens	-> -gade
+			//There are other suffixes (-stræde, -sti, -allè, -boulevard ...) but they are much rarer
+			std::string guess;
+			if(has_proper_suffix(source_word0,"vejs",4))
+				guess = source_word0.substr(0,source_word0.length()-4)+"vej";
+			else if(has_proper_suffix(source_word0,"vejens",6))
+				guess = source_word0.substr(0,source_word0.length()-6)+"vej";
+			else if(has_proper_suffix(source_word0,"gades",5))
+				guess = source_word0.substr(0,source_word0.length()-5)+"gade";
+			else if(has_proper_suffix(source_word0,"gadens",6))
+				guess = source_word0.substr(0,source_word0.length()-6)+"gade";
+
+			if(guess.length()>0) {
+				WordVariationGenerator::Variation v0_0;
+				v0_0.word = guess;
+				v0_0.weight = weight;
+				v0_0.source_word_start = i;
+				v0_0.source_word_end = i+1;
+				variations.push_back(v0_0);
+			}
+		}
 	}
 }
 

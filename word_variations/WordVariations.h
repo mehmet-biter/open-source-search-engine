@@ -13,6 +13,7 @@ struct WordVariationWeights {
 	float noun_singular_plural;
 	float noun_plural_singular;
 	float proper_noun_spelling_variants;
+	float proper_noun_genitive_to_lemma;
 	float verb_spelling_variants;
 	float verb_past_past_variants;
 	float simple_spelling_variants;       //simple variants, eg "cyklen" vs. "cykelen"
@@ -24,6 +25,7 @@ struct WordVariationWeights {
 	    noun_singular_plural(1.0),
 	    noun_plural_singular(1.0),
 	    proper_noun_spelling_variants(1.0),
+	    proper_noun_genitive_to_lemma(1.0),
 	    verb_spelling_variants(1.0),
 	    verb_past_past_variants(1.0),
 	    simple_spelling_variants(1.0),

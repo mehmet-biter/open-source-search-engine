@@ -3644,6 +3644,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "proper noun: genitive to lemma";
+	m->m_desc  = "Weight of the lemma of a proper noun in genitive. Eg. Nygades->nygade.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.proper_noun_genitive_to_lemma);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_genitive_to_lemma);
+	m->m_cgi  = "lwv_proper_noun_gentive_to_lemma";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "proper noun: common spelling differences";
 	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
 		     "Note that what is and isn't a proper noun is determined by heuristics.";
@@ -7564,6 +7573,15 @@ void Parms::init ( ) {
 	m->m_def   = "1.0";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
 	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "proper noun: genitive to lemma";
+	m->m_desc  = "Weight of the lemma of a proper noun in genitive. Eg. Nygades->nygade.";
+	m->m_def   = "0.9";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_genitive_to_lemma);
+	m->m_cgi  = "lwv_proper_noun_gentive_to_lemma";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;
