@@ -1048,7 +1048,7 @@ bool Query::setQTerms() {
 			if(!m_tr[i].is_alfanum)
 				continue;
 			std::string w(m_tr[i].token_start,m_tr[i].token_len);
-			logTrace(g_conf.m_logTraceQuery, "@@ Checking lemma for '%s'", w.c_str());
+			logTrace(g_conf.m_logTraceQuery, "Checking lemma for '%s'", w.c_str());
 			auto le = lemma_lexicon->lookup(w);
 			if(!le) {
 				//Not found as-is in lexicon. Try lowercase in case it is a capitalized word
@@ -1092,11 +1092,10 @@ bool Query::setQTerms() {
 				continue;
 			if(wf->written_form_length==w.size() && memcmp(wf->written_form,w.data(),w.size())==0)
 				continue; //already base form)
-			logTrace(g_conf.m_logTraceQuery, "@@ Generating synonym from lemma: %s -> %.*s", w.c_str(), wf->written_form_length,wf->written_form);
+			logTrace(g_conf.m_logTraceQuery, "Generating synonym from lemma: %s -> %.*s", w.c_str(), wf->written_form_length,wf->written_form);
 			
 			QueryWord *qw  = &m_qwords[i];
 			QueryTerm *origTerm = qw->m_queryWordTerm;
-////QQQQQQQQQQQQQ
 
 			// add that query term
 			QueryTerm *qt   = &m_qterms[n];
@@ -1166,8 +1165,6 @@ bool Query::setQTerms() {
 			}
 			// otherwise, add it
 			n++;
-
-////QQQQQQQQQQQQQQ
 		}
 	}
 	
