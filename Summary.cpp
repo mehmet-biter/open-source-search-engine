@@ -12,8 +12,13 @@
 #include "Errno.h"
 #include "Log.h"
 #include "fctypes.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 
+static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word, int end_word);
+
+	
 Summary::Summary()
     : m_summaryLen(0)
     , m_numExcerpts(0)
@@ -448,6 +453,11 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 			  score);
 			*/
 
+			if(looksLikeCookieWarning(*tr,a,b)) {
+				logTrace(g_conf.m_logTraceSummary, "Summary looks like cookie warning");
+				score = 0.0;
+			}
+			
 			// skip if was in title or something
 			if ( score <= 0 ) {
 				continue;
@@ -1098,6 +1108,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
 	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE|SEC_IN_HEAD;
+	bool skipUntilEndDivOrP = false;
 
 	// get the section ptr array 1-1 with the words, "sp"
 	Section **sp = NULL;
@@ -1109,6 +1120,21 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 		const auto &token = (*tr)[i];
 		// skip if in bad section
 		if ( sp && (sp[i]->m_flags & badFlags) ) {
+			continue;
+		}
+		
+		//if we see something that looks like a cookie warning then we have to skip to the next </div> or </p>
+		if(looksLikeCookieWarning(*tr,start,i)) {
+			logTrace(g_conf.m_logTraceSummary,"Summary for tokens [%i..%zu) looks like cookie warning", start,i);
+			start = i;
+			skipUntilEndDivOrP = true;
+			continue;
+		}
+		if(skipUntilEndDivOrP) {
+			if(token.nodeid&BACKBIT && (token.nodeid==(TAG_DIV|BACKBIT) || token.nodeid==(TAG_P|BACKBIT))) {
+				skipUntilEndDivOrP = false;
+				start = i;
+			}
 			continue;
 		}
 
@@ -1240,4 +1266,91 @@ void Summary::maybeRemoveHtmlFormatting() {
 			}
 		}
 	}
+}
+
+
+
+//Hardcoded detection of cookie warnings
+//Various sites uses many, many different ways of showing cookie warnings. So instead of matching on section/span/div id or class, we go directly for text.
+//Note: the cookie warning may not contain the word "cookie" because it can be called something else (eg. kakor in Swedish)
+
+//This list is incomplet but it's a start.
+static const char *cookie_warning_excerpt[] = {
+	//English
+	"website uses certain cookies",
+	"We use cookies on our website",
+	"Our site uses cookies",
+	//German
+	"Website benötigt JavaScript und Cookies",
+	"Webseite verwendet Cookies",
+	//Danish
+	"Vi anvender cookies på",
+	"Vores cookies hjælper os",
+	"Vi bruger cookies for",
+	"Brug af cookies",
+	"Accepter cookies fra ",
+	"accepterer du brugen af cookies",
+	"bruger cookies til",
+	//Swedish
+	"Det krävs att cookies är aktiverat",
+	"Vi använder kakor(cookies)",
+	"godkänner du att vi använder cookies",
+	"Det krävs att cookies är aktiverat",
+	"Det krävs att cookies är aktiverat",
+	"använder vi cookies för",
+	"använder vi oss av kakor",
+	//Norwegian
+	"vårt benytter cookies for",
+	"Vi bruker informasjonskapsler (cookies)",
+	//Polish
+	"korzysta z plików cookies",
+	//French
+	"acceptez l'utilisation de cookies",
+	//Portuguese
+	"Esta página utiliza cookies propias",
+};
+static const size_t cookie_warning_excerpts = sizeof(cookie_warning_excerpt)/sizeof(cookie_warning_excerpt[0]);
+
+static TokenizerResult tr_cookie_warning_excepts[cookie_warning_excerpts];
+static bool tr_cookie_warning_excepts_initialized = false;
+static GbMutex mtx_tr_cookie_excepts;
+
+static void initialize_tr_cookie_warning_excepts() {
+	ScopedLock sl(mtx_tr_cookie_excepts);
+	if(!tr_cookie_warning_excepts_initialized) {
+		for(unsigned i=0; i<cookie_warning_excerpts; i++) {
+			plain_tokenizer_phase_1(cookie_warning_excerpt[i], strlen(cookie_warning_excerpt[i]), &(tr_cookie_warning_excepts[i]));
+			calculate_tokens_hashes(&(tr_cookie_warning_excepts[i]));
+		}
+		tr_cookie_warning_excepts_initialized = true;
+	}
+}
+
+static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word_, int end_word_) {
+	initialize_tr_cookie_warning_excepts();
+	if(end_word_<=start_word_ || start_word_<0 || end_word_<0)
+		return false;
+	unsigned start_word = (unsigned)start_word_;
+	unsigned end_word = (unsigned)end_word_;
+	
+	for(unsigned i = 0; i<cookie_warning_excerpts; i++) {
+		const auto &cookie_tokens = tr_cookie_warning_excepts[i].tokens;
+		if(cookie_tokens.size() > end_word-start_word)
+			continue;
+		for(unsigned j=start_word; j<=end_word-cookie_tokens.size(); j++) {
+			bool match = true;
+			for(unsigned k=0; k<cookie_tokens.size(); k++) {
+				const auto &cookie_word = cookie_tokens[k];
+				const auto &summary_word = tr[j+k];
+				if(cookie_word.is_alfanum && cookie_word.token_hash!=summary_word.token_hash)
+				{
+					match = false;
+					break;
+				}
+			}
+			if(match)
+				return true;
+		}
+	}
+	return false;
 }
