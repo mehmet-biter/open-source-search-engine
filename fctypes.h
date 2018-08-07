@@ -16,12 +16,6 @@ class SafeBuf;
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
 
-// . basically just converts "'s to &#34;'s
-// . store "src" into "dest" and return bytes stored
-// . does not do bounds checking in "dest"
-// . used to encode things as form input variables, like query in HttpPage0.cpp
-int32_t dequote       ( char *dest , char *dend , const char *src , int32_t srcLen ) ;
-
 // . entity-ize a string so it's safe for html output
 // . converts "'s to &#34;'s, &'s to &amps; <'s the &lt; and >'s to &gt;
 // . store "src" into "dest" and return bytes stored

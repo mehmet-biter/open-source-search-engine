@@ -363,31 +363,6 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial )
 	return dst - start;
 }
 
-// . make something safe as an form input value by translating the quotes
-// . store "t" into "s" and return bytes stored
-// . does not do bounds checking
-int32_t dequote ( char *s , char *send , const char *t , int32_t tlen ) {
-	char *start = s;
-	const char *tend = t + tlen;
-	for ( ; t < tend && s < send ; t++ ) {
-		if ( *t == '"' ) {
-			if ( s + 5 >= send ) return 0;
-			*s++ = '&';
-			*s++ = '#';
-			*s++ = '3';
-			*s++ = '4';
-			*s++ = ';';
-			continue;
-		}
-		*s++ = *t;		
-	}
-	// all or nothing
-	if ( s + 1 >= send ) return 0;
-	*s = '\0';
-	return s - start;
-}
-
-
 // . entity-ize a string so it's safe for html output
 // . store "t" into "s" and return bytes stored
 // . does bounds checking

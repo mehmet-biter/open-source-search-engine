@@ -185,11 +185,7 @@ bool expandHtml (  SafeBuf& sb,
 
 		if ( head[i+1] == 'q' ) { 
 			// now we got the %q, insert the query
-			char *p    = (char*) sb.getBufPtr();
-			char *pend = (char*) sb.getBufEnd();
-			int32_t eqlen = dequote ( p , pend , q , qlen );
-			//p += eqlen;
-			sb.incrementLength(eqlen);
+			sb.dequote(q,qlen);
 			// skip over %q
 			i += 1;
 			continue;
