@@ -2546,7 +2546,7 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	time_t ts = mr->m_lastSpidered;
 	if(si->m_format == FORMAT_HTML && ts>0) {
 		sb->safePrintf(" - indexed: ");
-		time_t now = getTimeGlobal();
+		time_t now = getTime();
 		printTimeAgo(sb, now-ts, now, false);
 	}
 
@@ -2554,7 +2554,7 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	ts = mr->m_lastModified;
 	if(si->m_format == FORMAT_HTML && ts>0) {
 		sb->safePrintf(" - modified: ");
-		time_t now = getTimeGlobal();
+		time_t now = getTime();
 		printTimeAgo(sb, now-ts, now, false);
 	}
 

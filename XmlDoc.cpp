@@ -462,7 +462,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 	// . set spider time to current time
 	// . this might already be valid if we set it in
 	//   getTestSpideredDate()
-	m_spideredTime      = getTimeGlobal();
+	m_spideredTime      = getTime();
 	m_spideredTimeValid = true;
 	return m_spideredTime;
 }
@@ -6826,7 +6826,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// is it valid?
 	bool valid = true;
 	// current time
-	int32_t now = getTimeGlobal();
+	int32_t now = getTime();
 
 	// get tag age in days
 	int32_t age = 0; if ( tag ) age = (now - tag->m_timestamp) ;
@@ -7005,7 +7005,7 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	// assume valid when it returns
 	m_siteLinkInfoValid = true;
 
-	int32_t lastUpdateTime = getTimeGlobal();
+	int32_t lastUpdateTime = getTime();
 
 	bool onlyNeedGoodInlinks = true;
 	// so if steve wants to display all links then set this
@@ -7811,7 +7811,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		m_getLinkInfoStartTime = gettimeofdayInMilliseconds();
 
 		// get this
-		int32_t lastUpdateTime = getTimeGlobal();
+		int32_t lastUpdateTime = getTime();
 
 		// do not redo it
 		m_calledMsg25 = true;
@@ -14164,7 +14164,7 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 
 	if ( ! m_spideredTimeValid ) {
 		m_spideredTimeValid = true;
-		m_spideredTime = getTimeGlobal();//0; use now!
+		m_spideredTime = getTime();//0; use now!
 	}
 
 	// if doing diffbot query reindex
@@ -15125,7 +15125,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 // of the widget list.
 int32_t XmlDoc::getIndexedTime() {
 	if ( m_indexedTimeValid ) return m_indexedTime;
-	m_indexedTime = getTimeGlobal();
+	m_indexedTime = getTime();
 	return m_indexedTime;
 }
 
@@ -19054,7 +19054,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		     old1 != -1 &&
 		     ! m_updatingSiteLinkInfoTags )
 			return &m_newTagBuf;
-		int32_t now = getTimeGlobal();
+		int32_t now = getTime();
 		if ( g_conf.m_logDebugLinkInfo )
 			log("xmldoc: adding tag site=%s sitenuminlinks=%" PRId32,
 			    mysite,m_siteNumInlinks);
@@ -19138,7 +19138,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		log("xmldoc: adding tags for mysite=%s",mysite);
 
 	// current time
-	int32_t now = getTimeGlobal();
+	int32_t now = getTime();
 
 	// store tags into here
 	SafeBuf *tbuf = &m_newTagBuf;

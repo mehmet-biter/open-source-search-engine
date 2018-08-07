@@ -374,7 +374,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 		       , DARK_BLUE 
 			);
 
-	int32_t now = getTimeLocal();
+	int32_t now = getTime();
 
 	// print it
 	for ( int32_t i = 0 ; i < s_iptab.getNumSlots() ; i++ ) {

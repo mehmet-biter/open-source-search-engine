@@ -63,7 +63,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 	if (hid==0 && nowLocalMS - g_process.m_processStartTime < 1*60*1000)
 		return;
 	// wait until the right time (this is in UTC)
-	time_t nowSynced = getTimeSynced();
+	time_t nowSynced = getTime();
 
 	// get time since midnight
 	struct tm tm_buf;

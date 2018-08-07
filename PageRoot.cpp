@@ -1274,7 +1274,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 
 
 	uint32_t h = iptop ( sock->m_ip );
-	int32_t now = getTimeGlobal();
+	int32_t now = getTime();
 	// . allow 1 submit every 1 hour
 	// . restrict by submitter domain ip
 	if ( ! st1->m_isMasterAdmin &&

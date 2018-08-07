@@ -319,7 +319,7 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	                ns );
 
 	// print time format: 7/23/1971 10:45:32
-	time_t nowUTC = getTimeGlobal();
+	time_t nowUTC = getTime();
 	struct tm *timeStruct ;
 	char time[256];
 	struct tm tm_buf;

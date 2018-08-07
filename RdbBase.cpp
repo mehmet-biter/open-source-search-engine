@@ -2191,7 +2191,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 	int64_t mint = 0x7fffffffffffffffLL ;
 	int32_t mini = -1;
 	bool minOld = false;
-	int32_t nowLocal = getTimeLocal();
+	int32_t nowLocal = getTime();
 	for(int32_t i = 0; i + mergeFileCount <= numFiles; i++) {
 		//Consider the filees [i..i+mergeFileCount)
 

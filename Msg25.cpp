@@ -2913,7 +2913,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 	// set our header
 	info->m_version                = 0;
 	info->m_lisize                 = need;
-	info->m_lastUpdated            = lastUpdateTime;//getTimeGlobal();
+	info->m_lastUpdated            = lastUpdateTime;//getTime();
 	// how many Inlinks we stored in info->m_buf[]
 	info->m_numStoredInlinks       = count;
 	// the gross total of inlinks we got, both internal and external

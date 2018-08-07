@@ -2806,7 +2806,7 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	// . TODO: calculate the other values... lazy!!! (m_isRSSExt, 
 	//         m_siteNumInlinks,...)
 	m_isAddUrl     = 1;
-	m_addedTime    = (uint32_t)getTimeGlobal();//now;
+	m_addedTime    = (uint32_t)getTime();
 	m_fakeFirstIp   = 1;
 	//m_probDocId     = probDocId;
 	m_firstIp       = firstIp;

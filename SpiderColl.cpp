@@ -1367,7 +1367,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	if ( shortRead ) {
 		// mark when the scan completed so we can do another one
 		// like 24 hrs from that...
-		m_lastScanTime = getTimeLocal();
+		m_lastScanTime = getTime();
 
 		log(LOG_DEBUG, "spider: WaitingTree rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
 		    m_coll, m_numAdded, m_numBytesScanned);
@@ -1529,7 +1529,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		//   still have the problem of that if a url we spidered is due
 		//   to be respidered very soon we will miss it, as only the reply
 		//   is added back into spiderdb, not a new request.
-		int32_t nowLocal = getTimeLocal();
+		int32_t nowLocal = getTime();
 		// make it one hour so we don't cock-block a new high priority
 		// request that just got added... crap, what if its an addurl
 		// or something like that????

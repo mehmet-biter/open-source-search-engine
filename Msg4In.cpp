@@ -157,7 +157,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	if ( g_hostdb.m_myHostId != 0 && ! g_parms.inSyncWithHost0() ) {
 		// limit logging to once per second
 		static int32_t s_lastTime = 0;
-		int32_t now = getTimeLocal();
+		int32_t now = getTime();
 		if ( now - s_lastTime >= 1 ) {
 			s_lastTime = now;
 			log(LOG_INFO, "msg4: waiting to sync with host #0 before accepting data");

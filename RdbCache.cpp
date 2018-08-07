@@ -451,14 +451,14 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	int32_t timestamp = *(int32_t *)p;
 	if ( cachedTime ) *cachedTime = timestamp;
 	// return false if too old
-	if ( maxAge > 0 && getTimeLocal() - timestamp > maxAge ) {
+	if ( maxAge > 0 && getTime() - timestamp > maxAge ) {
 		// debug msg
 		// don't print for tagdb, however, spider prints it
 		// too much and i don't care about it
 		if ( m_dbname[0]!='s' || m_dbname[1]!='i' )
 			log(LOG_DEBUG,"db: Found rec in cache for %s, but elapsed time of %" PRId32" is greater than %" PRId32".",
 			    m_dbname, 
-			    (int32_t)(getTimeLocal() - timestamp) , 
+			    (int32_t)(getTime() - timestamp) , 
 			    maxAge );
 		if ( incCounts ) incrementMisses();
 		return false;
@@ -620,7 +620,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	}
 
 	// don't allow 0 timestamps, those are special indicators
-	if ( timestamp == 0 ) timestamp = getTimeLocal();
+	if ( timestamp == 0 ) timestamp = getTime();
 	//if ( timestamp == 0 && cacheKey.n0 == 0LL && cacheKey.n1 == 0 )
 	if ( timestamp == 0 && KEYCMP(cacheKey,KEYMIN(),m_cks)==0 ) {
 		log(LOG_LOGIC, "db: cache: addRecord: Bad key/timestamp.");

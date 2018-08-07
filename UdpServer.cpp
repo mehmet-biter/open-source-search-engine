@@ -1585,7 +1585,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 				    "0x%" PRIx32,(int32_t)slot->getMsgType());
 
 			if ( g_conf.m_maxCallbackDelay >= 0 ) {
-				start = gettimeofdayInMillisecondsLocal();
+				start = gettimeofdayInMilliseconds();
 			}
 
 			// call it
@@ -1597,7 +1597,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 
 			if ( g_conf.m_maxCallbackDelay >= 0 ) {
-				int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
+				int64_t elapsed = gettimeofdayInMilliseconds() - start;
 
 				if ( elapsed >= g_conf.m_maxCallbackDelay ) {
 					log(LOG_WARN, "UdpServer Took %" PRId64" ms to call callback2 for msgType=0x%02x niceness=%" PRId32,

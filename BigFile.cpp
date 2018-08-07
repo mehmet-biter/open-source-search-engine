@@ -586,7 +586,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// reset file size in case we change it here
 	if ( doWrite ) {
 		m_fileSize = -1;
-		m_lastModified = getTimeLocal();
+		m_lastModified = getTime();
 	}
 	// . sanity check
 	// . when our offset was just a int32_t 2gig+ files, when dumped,

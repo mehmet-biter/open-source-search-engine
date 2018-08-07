@@ -10673,7 +10673,7 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 	pn->m_nextNode       = NULL;
 	pn->m_parmId         = s_parmId; // take a ticket
 	pn->m_calledCallback = false;
-	pn->m_startTime      = getTimeLocal();
+	pn->m_startTime      = getTime();
 	pn->m_state          = state;
 	pn->m_callback       = callback;
 	pn->m_sendToGrunts   = sendToGrunts;
@@ -10714,7 +10714,7 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 static void tryToCallCallbacks ( ) {
 
 	ParmNode *pn = s_headNode;
-	int32_t now = getTimeLocal();
+	int32_t now = getTime();
 
 	for ( ; pn ; pn = pn->m_nextNode ) {
 		// skip if already called callback
@@ -10768,7 +10768,7 @@ void Parms::gotParmReplyWrapper(void *state, UdpSlot *slot) {
 	if ( g_errno ) {
 		// remember error info for retry
 		h->m_lastTryError = g_errno;
-		h->m_lastTryTime = getTimeLocal();
+		h->m_lastTryTime = getTime();
 		// if a host timed out he could be dead, so try to call
 		// the callback for this "pn" anyway. if the only hosts we
 		// do not have replies for are dead, then we'll call the
@@ -10869,7 +10869,7 @@ bool Parms::doParmSendingLoop ( ) {
 	// do not re-register
 	s_registeredSleep = true;
 
-	int32_t now = getTimeLocal();
+	int32_t now = getTime();
 
 	// try to send a parm update request to each host
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {

@@ -305,7 +305,7 @@ bool Process::init ( ) {
 	m_callback      = NULL;
 
 	// do not do an autosave right away
-	m_lastSaveTime = 0;//gettimeofdayInMillisecondsLocal();
+	m_lastSaveTime = 0;
 	// reset this
 	m_sentShutdownNote = false;
 	// this is used for shutting down as well
@@ -446,10 +446,10 @@ void processSleepWrapper(int /*fd*/, void * /*state*/) {
 	// get time the day started
 	int32_t now;
 	if ( g_hostdb.m_myHost->m_isProxy ) {
-		now = getTimeLocal();
+		now = getTime();
 	} else {
 		// that way autosaves all happen at about the same time
-		now = getTimeGlobal();
+		now = getTime();
 	}
 
 	// set this for the first time

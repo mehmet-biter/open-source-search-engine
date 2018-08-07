@@ -39,7 +39,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "\t\"statusMsg\":\"%s\",\n"
 			       , (int)crawlStatus, crawlMsg);
 		sb->safePrintf("\t\"processStartTime\":%" PRId64",\n", (g_process.m_processStartTime / 1000));
-		sb->safePrintf("\t\"currentTime\":%" PRIu32"\n", (uint32_t)getTimeGlobal() );
+		sb->safePrintf("\t\"currentTime\":%" PRIu32"\n", (uint32_t)getTime() );
 		sb->safePrintf("\t}\n");
 		sb->safePrintf("}\n");
 	}
@@ -47,8 +47,8 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	if ( format == FORMAT_XML ) {
 		sb->safePrintf("<response>\n\t<statusCode>%" PRId32"</statusCode>\n", (int)crawlStatus);
 		sb->safePrintf("\t<statusMsg><![CDATA[%s]]></statusMsg>\n", crawlMsg);
-		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n", (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n", (uint32_t)getTimeGlobal() );
+		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n", (uint32_t)getTime() );
+		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n", (uint32_t)getTime() );
 		sb->safePrintf("</response>\n");
 	}
 
@@ -66,7 +66,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 	// . assume separated by white space \n \t or space
 	const char *p = doc;
 
-	uint32_t now = (uint32_t)getTimeGlobal();
+	uint32_t now = (uint32_t)getTime();
 
 	for(;;) {
 		// skip white space (\0 is not a whitespace)

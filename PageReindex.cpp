@@ -341,7 +341,7 @@ bool Msg1c::gotList ( ) {
 	// bail if no need
 	if ( numDocIds <= 0 ) return true;
 
-	int32_t nowGlobal = getTimeGlobal();
+	int32_t nowGlobal = getTime();
 
 	HashTableX dt;
 	char dbuf[1024];

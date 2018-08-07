@@ -546,37 +546,7 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *s , int32_t slen ) {
 	return j;
 }
 
-time_t getTimeGlobal() {
-	return gettimeofdayInMillisecondsSynced() / 1000;
-}
 
-time_t getTimeSynced() {
-	return gettimeofdayInMillisecondsSynced() / 1000;
-}
-
-int64_t gettimeofdayInMillisecondsGlobal() {
-	return gettimeofdayInMillisecondsSynced();
-}
-
-int64_t gettimeofdayInMillisecondsSynced() {
-	struct timeval tv;
-	gettimeofday ( &tv , NULL );
-	int64_t now = (int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	return now;
-}
-
-int64_t gettimeofdayInMillisecondsGlobalNoCore() {
-	struct timeval tv;
-	gettimeofday ( &tv , NULL );
-	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	return now;
-}
-
-int64_t gettimeofdayInMillisecondsLocal() {
-	return gettimeofdayInMilliseconds();
-}
-
-// "local" means the time on this machine itself, NOT a timezone thing.
 int64_t gettimeofdayInMilliseconds() {
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
@@ -584,15 +554,10 @@ int64_t gettimeofdayInMilliseconds() {
 }
 
 time_t getTime () {
-	return getTimeLocal();
-}
-
-// . get time in seconds
-time_t getTimeLocal () {
-	// get time now
 	uint32_t now = gettimeofdayInMilliseconds() / 1000;
 	return (time_t)now;
 }
+
 
 
 #include "HttpMime.h" // CT_HTML

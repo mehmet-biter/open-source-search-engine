@@ -449,7 +449,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		kv = kbuf;
 		fclose(ff);
 	}
-        time_t now = getTimeLocal();
+        time_t now = getTime();
 	struct tm tm_buf;
 	char nowStr[64];
 	char buf2[64];
@@ -594,7 +594,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	}
 
 	// end table
-	time_t nowg = getTimeGlobal();
+	time_t nowg = getTime();
 	{
 		struct tm tm_buf;
 		char buf[64];

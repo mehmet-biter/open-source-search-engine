@@ -159,7 +159,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
 
-	int32_t now = getTimeLocal();
+	int32_t now = getTime();
 
 	// point to head of active linked list of collection recs
 	const CollectionRec *nextActive = g_spiderLoop.getActiveList();
@@ -469,7 +469,7 @@ subloopNextPriority:
 	if ( ! cr->m_spideringEnabled ) goto subloop;
 
 	// set current time, synced with host #0
-	nowGlobal = (uint32_t)getTimeGlobal();
+	nowGlobal = (uint32_t)getTime();
 
 	// get max spiders
 	int32_t maxSpiders = cr->m_maxNumSpiders;
@@ -670,7 +670,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 		return true;
 	}
 
-	time_t nowGlobal = getTimeGlobal();
+	time_t nowGlobal = getTime();
 
 	// reset ptr to point to first rec in list
 	m_list.resetListPtr();
@@ -1383,7 +1383,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp(int32_t firstIp, collnum_t collnum) {
 
 CollectionRec *SpiderLoop::getActiveList() {
 
-	uint32_t nowGlobal = (uint32_t)getTimeGlobal();
+	uint32_t nowGlobal = (uint32_t)getTime();
 
 	if ( nowGlobal >= m_recalcTime && m_recalcTimeValid )
 		m_activeListValid = false;

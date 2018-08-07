@@ -665,7 +665,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	int32_t ip = 0;
 	if ( s ) ip = s->m_ip;
 	// get the time stamp
-	int32_t now = getTimeGlobal();
+	int32_t now = getTime();
 
 	// . loop over all urls/sites in text area
 	// . no! just use single url for now

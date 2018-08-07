@@ -1059,7 +1059,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	else
 		enc[0] = '\0';
 	// get the time now
-	//time_t now = getTimeGlobal();
+	//time_t now = getTime();
 	time_t now = getTime();
 	// get the greenwhich mean time (GMT)
 	char ns[128];

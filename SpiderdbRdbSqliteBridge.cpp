@@ -28,14 +28,14 @@ class DbTimerLogger {
 public:
 	DbTimerLogger(const char *name_)
 	  : name(name_),
-	    timing_lock_start(gettimeofdayInMillisecondsGlobal())
+	    timing_lock_start(gettimeofdayInMilliseconds())
 	{}
 	~DbTimerLogger() {
 		finish();
 	}
 	void finish() {
 		if(name) {
-			int64_t timing_lock_end = gettimeofdayInMillisecondsGlobal();
+			int64_t timing_lock_end = gettimeofdayInMilliseconds();
 			int64_t duration = timing_lock_end-timing_lock_start;
 			if (g_conf.m_logTimingDb || duration >= g_conf.m_logSqliteTransactionTimeThreshold) {
 				log(LOG_TIMING, "db:%s: lock: %ld ms", name, duration);

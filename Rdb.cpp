@@ -1648,7 +1648,7 @@ int64_t Rdb::getNumTotalRecs(bool useCache) const {
 	// this gets slammed w/ too many collections so use a cache...
 	int32_t now = 0;
 	if ( useCache ) {
-		now = getTimeLocal();
+		now = getTime();
 		if ( now - m_cacheLastTime == 0 ) 
 			return m_cacheLastTotal;
 	}

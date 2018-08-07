@@ -664,7 +664,7 @@ bool Dns::getIp ( const char *hostname,
 		// keep track of how many times we pluck out a DnsState
 		// from DnsState::m_buf.
 		ds->m_loopCount = 0;
-		ds->m_startTime = getTime();//time(NULL);//getTimeLocal();
+		ds->m_startTime = getTime();
 	}
 
 	// set the ce.m_ds to our dns state so if a key collides later
@@ -686,7 +686,7 @@ bool Dns::getIp ( const char *hostname,
 	// reset m_loopCount and startTime if we are just starting
 	if ( callback != gotIpOfDNSWrapper ) {
 		ds->m_loopCount = 0;
-		ds->m_startTime = getTime();//time(NULL);//getTimeLocal();
+		ds->m_startTime = getTime();
 	}
 
 	// set caller callback info
@@ -951,7 +951,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// let's clear g_errno since caller may have set it in gotIp()
 	g_errno = 0;
 	// if we have been at this too long, give up
-	int32_t now = getTime(); // time(NULL);//getTimeLocal();
+	int32_t now = getTime();
 	int32_t delta = now - ds->m_startTime;
 	// quick fix if the system clock was changed on us
 	if ( delta < 0   ) ds->m_startTime = now;

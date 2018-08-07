@@ -508,7 +508,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	     !tcp->closeLeastUsed()) {
 		static int32_t s_last = 0;
 		static int32_t s_count = 0;
-		int32_t now = getTimeLocal();
+		int32_t now = getTime();
 		if ( now - s_last < 5 ) 
 			s_count++;
 		else {

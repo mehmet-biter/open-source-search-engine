@@ -761,7 +761,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	if ( m_maxSocketsPtr && m_numIncomingUsed >= *m_maxSocketsPtr ) 
 		if ( ! closeLeastUsed () ){
 			// note it in the log
-			int32_t now = getTimeLocal();
+			int32_t now = getTime();
 			static int32_t s_last = 0;
 			static int32_t s_count = 0;
 			if ( now - s_last < 5 && s_last ) 
@@ -874,7 +874,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	if ( isIncoming && m_numIncomingUsed >= *m_maxSocketsPtr ) {
 		if ( ! closeLeastUsed () ) {
 			// note it in the log
-			int32_t now = getTimeLocal();
+			int32_t now = getTime();
 			static int32_t s_last = 0;
 			static int32_t s_count = 0;
 			if ( now - s_last < 5 && s_last ) {
