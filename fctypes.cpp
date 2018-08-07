@@ -564,11 +564,7 @@ time_t getTime () {
 
 // returns length of stripped content, but will set g_errno and return -1
 // on error
-int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip ) {
-	if ( !strip ) {
-		log( LOG_WARN, "query: html stripping not required!" );
-		return contentLen;
-	}
+int32_t stripHtml( char *content, int32_t contentLen, int32_t version ) {
 	if ( ! content )
 		return 0;
 	if ( contentLen == 0 )
@@ -584,9 +580,6 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		return -1;
 	}
 
-	//if( strip == 4 )
-	//	return tmpXml.getText( content, contentLen );
-
 	// go tag by tag
 	int32_t     n       = tmpXml.getNumNodes();
 	XmlNode *nodes   = tmpXml.getNodes();
@@ -597,7 +590,6 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 	char    *xend    = content + contentLen;
 	int32_t     stackid = -1;
 	int32_t     stackc  =  0;
-	char     skipIt  =  0;
 	// . hack COL tag to NOT require a back tag
 	// . do not leave it that way as it could mess up our parsing
 	//g_nodes[25].m_hasBackTag = 0;
@@ -605,47 +597,10 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		// get id of this node
 		int32_t id = nodes[i].m_nodeId;
 		
-		// if strip is 4, just remove the script tag
-		if( strip == 4 ){
-			if ( id ){
-				if ( id == TAG_SCRIPT ){
-					skipIt ^= 1;
-					continue;
-				}
-			}
-			else if ( skipIt ) continue;
-			goto keepit;
-		}
-		
-		// if strip is 3, ALL tags will be removed!
-		if( strip == 3 ) {
-			if( id ) {
-				// . we dont want anything in between:
-				//   - script tags (83)
-				//   - style tags  (111)
-				if ((id == TAG_SCRIPT) || (id == TAG_STYLE)) skipIt ^= 1;
-				// save img to have alt text kept.
-				if ( id == TAG_IMG  ) goto keepit;
-				continue;
-			}
-			else {
-				if( skipIt ) continue;
-				goto keepit;
-			}
-		}
 		// get it
-		int32_t fk;
-		if   ( strip == 1 ) fk = g_nodes[id].m_filterKeep1;
-		else                fk = g_nodes[id].m_filterKeep2;
+		int32_t fk = g_nodes[id].m_filterKeep1;
 		// if tag is <link ...> only keep it if it has
 		// rel="stylesheet" or rel=stylesheet
-		if ( strip == 2 && id == TAG_LINK ) { // <link> tag id
-			int32_t   fflen;
-			char *ff = nodes[i].getFieldValue ( "rel" , &fflen );
-			if ( ff && fflen == 10 &&
-			     strncmp(ff,"stylesheet",10) == 0 )
-				goto keepit;
-		}
 		// just remove just the tag if this is 2
 		if ( fk == 2 ) continue;
 		// keep it if not in a stack

@@ -116,7 +116,7 @@ int64_t gettimeofdayInMilliseconds();  //milliseconds since 1970
 time_t  getTime();                     //seconds since 1970
 
 
-int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
+int32_t stripHtml( char *content, int32_t contentLen, int32_t version );
 
 // convert hex digit to value
 inline int32_t htob ( char s ) {

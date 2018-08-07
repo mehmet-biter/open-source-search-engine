@@ -646,7 +646,7 @@ bool processLoop ( void *state ) {
 	}
 
 	if ( st->m_strip == 1 ) {
-		contentLen = stripHtml( content, contentLen, (int32_t)xd->m_version, st->m_strip );
+		contentLen = stripHtml( content, contentLen, (int32_t)xd->m_version );
 	}
 
 	// it returns -1 and sets g_errno on error, line OOM
