@@ -1,6 +1,7 @@
 #include "Robots.h"
 #include "Url.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 #include "Log.h"
 #include "Conf.h"
 #include <functional>

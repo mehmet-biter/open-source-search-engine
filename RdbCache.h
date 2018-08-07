@@ -46,6 +46,7 @@
 #include "collnum_t.h"
 #include "GbMutex.h"
 #include "fctypes.h"
+#include "types.h"
 
 class RdbList;
 

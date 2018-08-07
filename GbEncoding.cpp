@@ -3,6 +3,7 @@
 #include "iana_charset.h"
 #include "ByteOrderMark.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 
 #include "Log.h"
 #include <cstdlib>

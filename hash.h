@@ -5,6 +5,7 @@
 #ifndef GB_HASH_H
 #define GB_HASH_H
 #include <inttypes.h>
+#include "utf8_fast.h"
 
 
 //#define SEED8  148

@@ -1,5 +1,6 @@
 #include "UrlComponent.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 #include "Log.h"
 #include <algorithm>
 

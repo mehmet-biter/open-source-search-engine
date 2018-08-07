@@ -3,6 +3,7 @@
 #include "ScopedLock.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "utf8_fast.h"
 #include "third-party/c-ares/ares.h"
 #include "ip.h"
 #include "GbThreadQueue.h"

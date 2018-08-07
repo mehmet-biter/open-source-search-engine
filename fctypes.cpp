@@ -1,17 +1,12 @@
-#include "Loop.h"
-#include "Entities.h"
-#include "SafeBuf.h"
+#include "fctypes.h"
+#include "Entities.h" //getHtmlEntity()
 #include "Xml.h"
 #include "XmlNode.h"
-#include "Conf.h"
-#include "Process.h"
-#include "Hostdb.h"
-#include "Mem.h"
 #include "utf8_fast.h"
-#include "fctypes.h"
 #include "Log.h"
 #include "Errno.h"
 #include <fcntl.h>
+#include <sys/time.h>
 #include "gbmemcpy.h"
 
 
@@ -173,7 +168,7 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
 		dst++;
 	}
 	// sanity check
-	if ( src != srcEnd ) { g_process.shutdownAbort(true); }
+	if ( src != srcEnd ) { gbshutdownAbort(true); }
 }
 
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
@@ -186,7 +181,7 @@ void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
 	// always null term!
 	*dst = '\0';
 	// sanity check
-	if ( src != srcEnd ) { g_process.shutdownAbort(true); }
+	if ( src != srcEnd ) { gbshutdownAbort(true); }
 }
 
 
@@ -345,7 +340,7 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial )
 
 				// sanity check. do not eat our tail if dst == src
 				if ( totalUtf8Bytes > skip ) {
-					g_process.shutdownAbort(true);
+					gbshutdownAbort(true);
 				}
 
 				// advance dst ptr
@@ -624,7 +619,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version ) {
 		gbmemcpy ( x , nodes[i].m_node , nodes[i].m_nodeLen );
 		x += nodes[i].m_nodeLen;
 		// sanity check
-		if ( x > xend ) { g_process.shutdownAbort(true);}
+		if ( x > xend ) { gbshutdownAbort(true);}
 	}
 	contentLen = x - content;
 	content [ contentLen ] = '\0';

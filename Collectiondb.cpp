@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Errno.h"
+#include "utf8_fast.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;

@@ -1,5 +1,6 @@
 #include "matches2.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 
 
 // . get the first substring in "haystack" that matches a string in "needles"

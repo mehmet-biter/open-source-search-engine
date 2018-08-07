@@ -10,6 +10,7 @@
 #include "Hostdb.h"
 #include "File.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <fcntl.h>

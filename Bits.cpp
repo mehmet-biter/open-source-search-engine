@@ -1,6 +1,7 @@
 #include "Bits.h"
 #include "StopWords.h"
 #include "fctypes.h"
+#include "utf8_fast.h"
 #include "Abbreviations.h"
 #include "XmlNode.h"
 #include "Mem.h"

@@ -3,15 +3,13 @@
 #ifndef GB_FCTYPES_H
 #define GB_FCTYPES_H
 
-#include <sys/time.h>  // gettimeofday()
-#include <math.h>      // floor()
-#include <float.h>	// FLT_EPSILON, DBL_EPSILON
-#include "utf8_fast.h"
-#include "types.h"
 #include "Sanity.h"
+#include <inttypes.h>
+#include <time.h>
+#include <math.h>      // fabs()
+#include <float.h>	// FLT_EPSILON, DBL_EPSILON
+#include <string.h>
 
-
-class SafeBuf;
 
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
@@ -114,7 +112,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version );
 
 // convert hex digit to value
 inline int32_t htob ( char s ) {
-	if ( is_digit(s) ) return s - '0';
+	if ( s >= '0'  && s <= '9' ) return s - '0';
 	if ( s >= 'a'  && s <= 'f' ) return (s - 'a') + 10;
 	if ( s >= 'A'  && s <= 'F' ) return (s - 'A') + 10;
 	return 0;
