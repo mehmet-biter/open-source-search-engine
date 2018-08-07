@@ -111,10 +111,10 @@ char *strnstr( const char *haystack, const char *needle, int32_t haystackLen);
 
 const char *strnstrn(const char *haystack, int32_t haystackLen, const char *needle, int32_t needleLen);
 
-int64_t gettimeofdayInMilliseconds() ;// this is local now
 
-// . get time in seconds since epoch
-time_t getTime       ();  // this is local now
+int64_t gettimeofdayInMilliseconds();  //milliseconds since 1970
+time_t  getTime();                     //seconds since 1970
+
 
 int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
 
