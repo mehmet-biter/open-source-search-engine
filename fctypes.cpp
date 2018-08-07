@@ -546,20 +546,8 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *s , int32_t slen ) {
 	return j;
 }
 
-int64_t globalToLocalTimeMilliseconds ( int64_t global ) {
-	return global;
-}
-
-int64_t localToGlobalTimeMilliseconds ( int64_t local ) {
-	return local;
-}
-
 time_t getTimeGlobal() {
 	return gettimeofdayInMillisecondsSynced() / 1000;
-}
-
-time_t getTimeGlobalNoCore() {
-	return gettimeofdayInMillisecondsGlobalNoCore() / 1000;
 }
 
 time_t getTimeSynced() {
@@ -586,12 +574,6 @@ int64_t gettimeofdayInMillisecondsGlobalNoCore() {
 
 int64_t gettimeofdayInMillisecondsLocal() {
 	return gettimeofdayInMilliseconds();
-}
-
-uint64_t gettimeofdayInMicroseconds(void) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return(((uint64_t)tv.tv_sec * 1000000LL) + (uint64_t)tv.tv_usec);
 }
 
 // "local" means the time on this machine itself, NOT a timezone thing.

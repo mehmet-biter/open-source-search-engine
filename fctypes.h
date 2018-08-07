@@ -111,10 +111,6 @@ char *strnstr( const char *haystack, const char *needle, int32_t haystackLen);
 
 const char *strnstrn(const char *haystack, int32_t haystackLen, const char *needle, int32_t needleLen);
 
-// convert global to local time in milliseconds
-int64_t globalToLocalTimeMilliseconds ( int64_t global ) ;
-int64_t localToGlobalTimeMilliseconds ( int64_t local  ) ;
-
 // we now default this to local time to avoid jumpiness associated with
 // having to sync with host #0. most routines calling this usually are just
 // taking deltas. 
@@ -123,14 +119,12 @@ int64_t gettimeofdayInMillisecondsGlobalNoCore() ; // synced with host #0
 int64_t gettimeofdayInMillisecondsSynced() ; // synced with host #0
 int64_t gettimeofdayInMillisecondsLocal () ;// this is local now
 int64_t gettimeofdayInMilliseconds() ;// this is local now
-uint64_t gettimeofdayInMicroseconds(void) ;
 
 // . get time in seconds since epoch
 // . use this instead of call to time(NULL) cuz it uses adjustment
 time_t getTime       ();  // this is local now
 time_t getTimeLocal  (); 
 time_t getTimeGlobal (); // synced with host #0's system clock
-time_t getTimeGlobalNoCore (); // synced with host #0's system clock
 time_t getTimeSynced (); // synced with host #0's system clock
 
 int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
