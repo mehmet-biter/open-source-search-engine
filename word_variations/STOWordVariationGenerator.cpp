@@ -2,6 +2,7 @@
 #include "Lexicons.h"
 #include "fctypes.h"  //to_lower_utf8
 #include "utf8.h" //getUtf8CharSize etc
+#include "utf8_fast.h"
 
 
 bool STOWordVariationGenerator::load_lexicon(const char *filename) {
