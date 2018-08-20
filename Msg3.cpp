@@ -1034,6 +1034,11 @@ void Msg3::setPageRanges(RdbBase *base) {
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+		if(!map && (m_scan[i].m_fileId%2)==0) {
+			//Maybe we refer to a in-progress-merge file, eg. 0002, which has been finished and renamed in the meantime to 0003
+			//See RdbBase::unlinksDone() for details
+			map = base->getMapById(m_scan[i].m_fileId+1);
+		}
 		if (!map) {
 			gbshutdownLogicError();
 		}

@@ -1553,6 +1553,7 @@ void RdbBase::unlinksDone() {
 	// . the fileId of the merge file becomes that of the first sourcefile, which happens to be one more than the tmp.merge file
 	// . but secondary id should remain the same
 	m_fileInfo[x].m_fileId |= 1;
+	//note: Msg::setPageRanges() has a workaround for this renumbering
 
 	{
 		ScopedLock sl(m_mtxJobCount);
