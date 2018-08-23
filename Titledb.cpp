@@ -60,9 +60,6 @@ bool Titledb::init ( ) {
 	                  getUseHalfKeys(),
 	                  getKeySize(),
 	                  false);         //useIndexFile
-
-	// validate
-	//return verify ( );
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -80,9 +77,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	                  getUseHalfKeys(),
 	                  getKeySize(),
 	                  false);         //useIndexFile
-
-	// validate
-	//return verify ( );
 }
 
 bool Titledb::verify(const char *coll) {
@@ -94,7 +88,6 @@ bool Titledb::verify(const char *coll) {
 	key96_t endKey;
 	startKey.setMin();
 	endKey.setMax();
-	//int32_t minRecSizes = 64000;
 	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	if ( ! msg5.getList ( RDB_TITLEDB   ,
@@ -125,8 +118,6 @@ bool Titledb::verify(const char *coll) {
 		// skip negative keys
 		if ( (k.n0 & 0x01) == 0x00 ) continue;
 		count++;
-		//uint32_t groupId = getGroupId ( RDB_TITLEDB , &k );
-		//if ( groupId == g_hostdb.m_groupId ) got++;
 		uint32_t shardNum = getShardNum ( RDB_TITLEDB, &k );
 		if ( shardNum == getMyShardNum() ) got++;
 	}
@@ -166,10 +157,6 @@ bool Titledb::verify(const char *coll) {
 }
 
 bool Titledb::isLocal ( int64_t docId ) {
-	// shift it up (64 minus 38) bits so we can mask it
-	//key96_t key = makeTitleRecKey ( docId , false /*isDelKey?*/ );
-	// mask upper bits of the top 4 bytes
-	//return ( getGroupIdFromDocId ( docId ) == g_hostdb.m_groupId ) ;
 	return ( getShardNumFromDocId(docId) == getMyShardNum() );
 }
 
@@ -178,7 +165,6 @@ bool Titledb::isLocal ( int64_t docId ) {
 // . hi bits are set in the key
 key96_t Titledb::makeKey ( int64_t docId, int64_t uh48, bool isDel ){
 	key96_t key ;
-	// top bits are the docid so generic getGroupId() works!
 	key.n1 = (uint32_t)(docId >> 6); // (NUMDOCIDBITS-32));
 
 	int64_t n0 = (uint64_t)(docId&0x3f);
