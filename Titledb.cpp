@@ -44,6 +44,26 @@ bool Titledb::init ( ) {
 	if ( d1a || d2a ) { g_process.shutdownAbort(true); }
 	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 
+	// another one
+	url = "http://www.example.net/";
+	uu.set(url);
+	d1a = uu.getDomain();
+	dlen1 = uu.getDomainLen();
+	dlen2 = 0;
+	d2a = getDomFast ( url , &dlen2 );
+	if ( !d1 || !d2 ) { g_process.shutdownAbort(true); }
+	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
+
+	// another one
+	url = "http://www.example.ac.uk/";
+	uu.set(url);
+	d1a = uu.getDomain();
+	dlen1 = uu.getDomainLen();
+	dlen2 = 0;
+	d2a = getDomFast ( url , &dlen2 );
+	if ( !d1 || !d2 ) { g_process.shutdownAbort(true); }
+	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
+
 	// . what's max # of tree nodes?
 	// . assume avg TitleRec size (compressed html doc) is about 1k we get:
 	// . NOTE: overhead is about 32 bytes per node
