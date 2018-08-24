@@ -111,10 +111,6 @@ public:
 	// does this key/docId/url have it's titleRec stored locally?
 	static bool isLocal(int64_t docId);
 
-	static bool isLocal(const Url *url) {
-		return isLocal(getProbableDocId(url));
-	}
-
 	// . make the key of a TitleRec from a docId
 	// . remember to set the low bit so it's not a delete
 	// . hi bits are set in the key
