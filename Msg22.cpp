@@ -371,32 +371,32 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// . otherwise, url was given, like from Msg15
 	// . we may get multiple tfndb recs
 	if ( r->m_url[0] ) {
-	   int32_t  dlen = 0;
-	   // this causes ip based urls to be inconsistent with the call
-	   // to getProbableDocId(url) below
-	   const char *dom  = getDomFast ( r->m_url , &dlen );
-	   // bogus url?
-	   if ( ! dom ) {
-	       log(LOG_WARN, "msg22: got bad url in request: %s from "
-		   "hostid %" PRId32" for msg22 call ",
-		   r->m_url,slot->m_host->m_hostId);
-	       g_errno = EBADURL;
-	       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-	       g_udpServer.sendErrorReply ( slot , g_errno );
-	       mdelete ( st , sizeof(State22) , "Msg22" );
-	       delete ( st );
-	       return;
-	   }
-	   int64_t pd = Titledb::getProbableDocId (r->m_url,dom,dlen);
-	   int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-	   int64_t d2 = Titledb::getLastProbableDocId  ( pd );
-	   // sanity - bad url with bad subdomain?
-	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
-	   // store these
-	   st->m_pd     = pd;
-	   st->m_docId1 = d1;
-	   st->m_docId2 = d2;
-	   st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
+		//old code had a mysterious comment about the call to getDomFast() instead of Url::getDomain() (via Titlerec::getProbablyDocid) and
+		//not working for ip-addresses. Changed now to do it the normal way - I don't know whay you would want to keep a bug around.
+		Url url;
+		url.set(r->m_url);
+		// bogus url?
+		if ( ! url.getDomain() ) {
+			log(LOG_WARN, "msg22: got bad url in request: %s from "
+			    "hostid %" PRId32" for msg22 call ",
+			    r->m_url,slot->m_host->m_hostId);
+			g_errno = EBADURL;
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+			g_udpServer.sendErrorReply ( slot , g_errno );
+			mdelete ( st , sizeof(State22) , "Msg22" );
+			delete ( st );
+			return;
+		}
+		int64_t pd = Titledb::getProbableDocId (&url);
+		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+		// sanity - bad url with bad subdomain?
+		if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
+		// store these
+		st->m_pd     = pd;
+		st->m_docId1 = d1;
+		st->m_docId2 = d2;
+		st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
 	}
 
 	// make titledb keys
