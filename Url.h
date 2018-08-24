@@ -109,7 +109,7 @@ public:
 	const char *getScheme() const { return m_scheme; }
 	int32_t getSchemeLen() const { return m_slen; }
 
-	char       *getHost()       { return m_host; }
+	//char       *getHost()       { return m_host; }
 	const char *getHost() const { return m_host; }
 	int32_t getHostLen() const { return m_hlen; }
 

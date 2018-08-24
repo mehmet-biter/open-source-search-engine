@@ -2356,7 +2356,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 	url.set( hr->m_squidProxiedUrl, hr->m_squidProxiedUrlLen );
 
 	// get hostname for ip lookup
-	char *host = url.getHost();
+	const char *host = url.getHost();
 	int32_t hlen = url.getHostLen();
 
 	// . return false if this blocked

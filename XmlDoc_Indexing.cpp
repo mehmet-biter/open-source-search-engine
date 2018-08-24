@@ -229,7 +229,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	setStatus ( "hashing no-split SiteGetter terms");
 
 	Url *fu = getFirstUrl();
-	char *host = fu->getHost    ();
+	const char *host = fu->getHost();
 
 	//
 	// HASH terms for SiteGetter.cpp
@@ -953,7 +953,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// ensure score is positive
 	//if ( siteScore <= 0 ) siteScore = 1;
 	// get the hostname (later we set to domain name)
-	char *name    = fu->getHost();
+	const char *name = fu->getHost();
 	int32_t  nameLen = fu->getHostLen();
 	
 #ifdef _VALGRIND_
@@ -961,7 +961,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 #endif
 	// . point to the end of the whole thing, including port field
 	// . add in port, if non default
-	char *end3    = name + fu->getHostLen() + fu->getPortLen();
+	const char *end3 = name + fu->getHostLen() + fu->getPortLen();
 	
 	// Generate string with port if server runs on non-standard ports
 	char pbuf[12];

@@ -249,8 +249,8 @@ private:
 	int32_t m_niceness;
 
 	const char *m_dom;
-	char *m_hostEnd;
-	char *m_p;
+	const char *m_hostEnd;
+	const char *m_p;
 
 	int32_t  m_requests;
 	int32_t  m_replies;
