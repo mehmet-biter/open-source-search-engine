@@ -1228,7 +1228,7 @@ bool XmlDoc::setFirstUrl ( const char *u ) {
 	m_currentUrlValid = true;
 
 	// set this to the normalized url
-	ptr_firstUrl  = m_firstUrl.getUrl();
+	ptr_firstUrl  = const_cast<char*>(m_firstUrl.getUrl());
 	size_firstUrl = m_firstUrl.getUrlLen() + 1;
 
 	return true;
@@ -1460,14 +1460,14 @@ bool XmlDoc::injectDoc(const char *url,
 			m_canonicalRedirUrlValid = true;
 
 			// store canonical url in titlerec as well
-			ptr_redirUrl    = m_canonicalUrl.getUrl();
+			ptr_redirUrl    = const_cast<char*>(m_canonicalUrl.getUrl());
 			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
 		} else {
 			m_redirUrl.set(redirUrl);
 			m_redirUrlPtr = &m_redirUrl;
 			m_redirUrlValid = true;
 
-			ptr_redirUrl = m_redirUrl.getUrl();
+			ptr_redirUrl = const_cast<char*>(m_redirUrl.getUrl());
 			size_redirUrl = m_redirUrl.getUrlLen() + 1;
 
 			if (indexCode == 0) {
@@ -2602,7 +2602,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			m_indexCodeValid = true;
 
 			// store canonical url in titlerec as well
-			ptr_redirUrl    = m_canonicalUrl.getUrl();
+			ptr_redirUrl    = const_cast<char*>(m_canonicalUrl.getUrl());
 			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
 
 			// make sure we store an empty document
@@ -3387,7 +3387,7 @@ bool *XmlDoc::getIsSiteMap ( ) {
 	if ( m_isSiteMapValid ) return &m_isSiteMap;
 	uint8_t  *ct = getContentType();
 	if ( ! ct    || ct    == (uint8_t  *)-1 ) return (bool *)ct;
-	char *uf = m_firstUrl.getFilename();
+	const char *uf = m_firstUrl.getFilename();
 	int32_t ulen = m_firstUrl.getFilenameLen();
 	// sitemap.xml
 	m_isSiteMap = false;
@@ -5564,7 +5564,7 @@ Url **XmlDoc::getRedirUrl() {
 		if ( strcmp ( cu->getUrl(), tt->getUrl() ) != 0 ) {
 			m_redirUrlValid = true;
 			m_redirUrlPtr   = &m_redirUrl;
-			ptr_redirUrl    = m_redirUrl.getUrl();
+			ptr_redirUrl    = const_cast<char*>(m_redirUrl.getUrl());
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
 			/// @todo ALC should we use EDOCSIMPLIFIEDREDIR
@@ -5687,7 +5687,7 @@ Url **XmlDoc::getRedirUrl() {
 	if (httpStatus != 301 && httpStatus != 308 && !sameDom) {
 		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr   = &m_redirUrl;
-		ptr_redirUrl    = m_redirUrl.getUrl();
+		ptr_redirUrl    = const_cast<char*>(m_redirUrl.getUrl());
 		size_redirUrl    = m_redirUrl.getUrlLen()+1;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return redirUrl. Not same domain [%s]", m_redirUrlPtr->getUrl());
 		return &m_redirUrlPtr;
@@ -5705,7 +5705,7 @@ Url **XmlDoc::getRedirUrl() {
 	// . or one with a www for hostname
 	// . or could be same as firstUrl but with a / appended
 	const char *r   = loc->getUrl();
-	char *u   = f->getUrl();
+	const char *u   = f->getUrl();
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
 
@@ -5811,7 +5811,7 @@ Url **XmlDoc::getRedirUrl() {
 		m_redirUrlPtr = &m_redirUrl;
 
 		// store redirUrl in titlerec as well
-		ptr_redirUrl = m_redirUrl.getUrl();
+		ptr_redirUrl = const_cast<char*>(m_redirUrl.getUrl());
 		size_redirUrl = m_redirUrl.getUrlLen() + 1;
 
 		// make sure we store an empty document
@@ -5832,7 +5832,7 @@ Url **XmlDoc::getRedirUrl() {
 	// good to go
 	m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 	m_redirUrlPtr = &m_redirUrl;
-	ptr_redirUrl = m_redirUrl.getUrl();
+	ptr_redirUrl = const_cast<char*>(m_redirUrl.getUrl());
 	size_redirUrl = m_redirUrl.getUrlLen()+1;
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return [%s]", m_redirUrlPtr->getUrl());
 	return &m_redirUrlPtr;
@@ -6356,7 +6356,7 @@ char **XmlDoc::getOldTitleRec() {
 		docId = m_docId;
 	}
 	// if url not valid, use NULL
-	char *u = NULL;
+	const char *u = NULL;
 	if (docId == 0LL) {
 		if (ptr_firstUrl || m_firstUrlValid) {
 			u = getFirstUrl()->getUrl();
@@ -6502,7 +6502,7 @@ int64_t *XmlDoc::getDocId ( ) {
 	}
 
 	// ensure it is within probable range
-	char *u = getFirstUrl()->getUrl();
+	const char *u = getFirstUrl()->getUrl();
 	int64_t pd = Titledb::getProbableDocId(u);
 	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
 	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
@@ -7840,7 +7840,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		bool oneVotePerIpDom = cr->m_oneVotePerIpDom;
 
 		// call it. this is defined in Linkdb.cpp
-		char *url = getFirstUrl()->getUrl();
+		const char *url = getFirstUrl()->getUrl();
 		if ( ! getLinkInfo ( &m_tmpBuf12,
 				     &m_mcast12,
 				        mysite ,
@@ -8300,7 +8300,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// clear it first
 	r->reset();
 	// and set the url
-	r->ptr_url  = cu->getUrl();
+	r->ptr_url  = const_cast<char*>(cu->getUrl());
 	r->size_url = cu->getUrlLen()+1;
 
 	// sanity check
@@ -11609,7 +11609,7 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	if (  m_docIdValid )
 		sb->safePrintf("docid=%" PRIu64" ",m_docId);
 
-	char *u = getFirstUrl()->getUrl();
+	const char *u = getFirstUrl()->getUrl();
 	int64_t pd = Titledb::getProbableDocId(u);
 	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
 	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
@@ -15454,7 +15454,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		// done if we are
 		if ( m_reply.m_errno && ! m_req->m_showBanned ) {
 			// give back the url at least
-			m_reply.ptr_ubuf = getFirstUrl()->getUrl();
+			m_reply.ptr_ubuf = const_cast<char*>(getFirstUrl()->getUrl());
 			m_reply.size_ubuf = getFirstUrl()->getUrlLen() + 1;
 			m_replyValid = true;
 			return &m_reply;
@@ -15643,7 +15643,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_siteRank         = getSiteRank();
 	m_reply.m_isAdult          = m_isAdult; //QQQ getIsAdult()? hmmm
 
-	m_reply.ptr_ubuf             = getFirstUrl()->getUrl();
+	m_reply.ptr_ubuf             = const_cast<char*>(getFirstUrl()->getUrl());
 	m_reply.ptr_rubuf            = ru;
 	m_reply.ptr_metadataBuf      = NULL;
 

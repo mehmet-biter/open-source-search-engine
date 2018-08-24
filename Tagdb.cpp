@@ -1306,7 +1306,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	m_url = url;
 
 	// point to url
-	char *u    = url->getUrl();
+	const char *u    = url->getUrl();
 	int32_t  ulen = url->getUrlLen();
 
 	// point to the TLD of the url

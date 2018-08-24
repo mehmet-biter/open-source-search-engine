@@ -236,7 +236,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	//
 	// these are now no-split terms
 	//
-	char *s    = fu->getUrl   ();
+	const char *s = fu->getUrl();
 	int32_t  slen = fu->getUrlLen();
 	// . this termId is used by SiteGetter.cpp for determining subsites
 	// . matches what is in SiteGet::getSiteList()
@@ -259,7 +259,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// hash it
 	if ( add ) {
 		// remove the last path component
-		char *end2 = s + slen - 2;
+		const char *end2 = s + slen - 2;
 		// back up over last component
 		for ( ; end2 > fu->getPath() && *end2 != '/' ; end2-- ) ;
 		// hash that part of the url

@@ -4169,7 +4169,7 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	// href="...ami.php?url=http://lewebpedagogique.com/blog/2008/11/16/
 	// la-seconde-guerre-mondiale-cours ... will have its cgi ignored so
 	// such links as this one will not be considered permalinks
-	char *pathOverride = NULL;
+	const char *pathOverride = NULL;
 	bool  ignoreCgi    = false;
 	if ( (flags & LF_SUBDIR) && m_parentIsPermalink ) {
 		pathOverride = url.getUrl() + m_parentUrl->getUrlLen();
@@ -4656,9 +4656,10 @@ bool isPermalink(Links       *links,
 		 LinkInfo    *linkInfo,
 		 bool         isRSS,
 		 const char **note,
-		 char        *pathOverride,
+		 const char  *pathOverride,
 		 bool         ignoreCgi,
 		 linkflags_t *retFlags) {
+
 
 	// reset. caller will OR these into its flags
 	if ( retFlags ) *retFlags = 0;
@@ -4718,7 +4719,7 @@ bool isPermalink(Links       *links,
 	if ( status == 1 ) return true;
 	if ( status == 0 ) return false;
 
-	char *pathStart = u->getPath();
+	const char *pathStart = u->getPath();
 	// a hack by Links.cpp after setting LF_SUBDIR
 	if ( pathOverride ) pathStart = pathOverride;
 
@@ -4726,14 +4727,14 @@ bool isPermalink(Links       *links,
 	linkflags_t extraFlags  = 0;
 
 	// we must have a sequence of 3 or more digits in the path
-	char *p      = pathStart;
+	const char *p    = pathStart;
 	int32_t  plen   = u->getPathLen();
-	char *pend   = u->getPath() + plen;
+	const char *pend = u->getPath() + plen;
 	int32_t  dcount = 0;
 	// now we scan the cgi stuff too!!
 	// http://www.rocklintoday.com/news/templates/sierra_college.asp?articleid=6848&zoneid=51
 	// http://www.freemarketnews.com/WorldNews.asp?nid=57373
-	char *uend   = u->getUrl() + u->getUrlLen();
+	const char *uend   = u->getUrl() + u->getUrlLen();
 	// halt at path if we should
 	if ( ignoreCgi ) uend -= u->getQueryLen(); // CgiLen();
 	// see if we find the digits in the cgi part
@@ -4923,7 +4924,7 @@ bool isPermalink(Links       *links,
 	}
 	
 
-	char *pos;
+	const char *pos;
 	// category or tag page detection
 	pos = gb_strcasestr(u->getUrl(), "cat=");
 	if ( pos && pos > u->getUrl() && !is_alpha_a(*(pos-1))){

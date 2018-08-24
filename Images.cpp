@@ -658,7 +658,7 @@ bool Images::downloadImage ( ) {
 	r->m_maxOtherDocLen = 500000;
 	r->m_urlIp = m_latestIp;
 	// url is the most important
-	r-> ptr_url = m_imageUrl.getUrl();
+	r->ptr_url = const_cast<char*>(m_imageUrl.getUrl());
 	r->size_url = m_imageUrl.getUrlLen()+1; // include \0
 	// . try to download it
 	// . i guess we are ignoring hammers at this point

@@ -569,7 +569,7 @@ bool isPermalink (
 		   class LinkInfo    *linkInfo    ,
 		   bool         isRSS       ,
 		   const char       **note        = NULL  ,
-		   char        *pathOverride= NULL  ,
+		   const char  *pathOverride= NULL,
 		   bool         ignoreCgi   = false ,
 		   linkflags_t  *extraFlags = NULL  ) ;
 

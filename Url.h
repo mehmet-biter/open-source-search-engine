@@ -102,14 +102,12 @@ public:
 
 	int32_t getIp() const { return m_ip; }
 
-	char       *getUrl()       { return m_url; }
 	const char *getUrl() const { return m_url; }
 	int32_t getUrlLen() const { return m_ulen; }
 
 	const char *getScheme() const { return m_scheme; }
 	int32_t getSchemeLen() const { return m_slen; }
 
-	//char       *getHost()       { return m_host; }
 	const char *getHost() const { return m_host; }
 	int32_t getHostLen() const { return m_hlen; }
 
@@ -123,20 +121,16 @@ public:
 	const char *getMidDomain() const { return m_domain; }
 	int32_t getMidDomainLen() const { return m_mdlen; }
 
-	char       *getPath()       { return m_path; }
 	const char *getPath() const { return m_path; }
 	int32_t getPathLen() const { return m_plen; }
-	char       *getPathEnd()       { return m_path + m_plen; }
 	const char *getPathEnd() const { return m_path + m_plen; }
 
-	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
 	int32_t getFilenameLen() const { return m_flen; }
 
 	const char *getExtension() const { return m_extension; }
 	int32_t getExtensionLen() const { return m_elen; }
 
-	char       *getQuery()       { return m_query; }
 	const char *getQuery() const { return m_query; }
 	int32_t getQueryLen() const { return m_qlen; }
 
