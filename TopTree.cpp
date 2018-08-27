@@ -7,6 +7,7 @@
 #include "Sanity.h"
 #include "ScopedLock.h"
 #include "Conf.h"
+#include "Docid.h"
 
 TopTree::TopTree() { 
 	m_nodes = NULL; 
@@ -184,7 +185,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	logTrace(g_conf.m_logTraceTopTree, "BEGIN");
 
 	// respect the dom hashes
-	uint8_t domHash = Titledb::getDomHash8FromDocId(t->m_docId);
+	uint8_t domHash = Docid::getDomHash8FromDocId(t->m_docId);
 
 	logTrace(g_conf.m_logTraceTopTree, "new node m_docId: %" PRId64", domHash: %" PRIu8 ", score: %f", t->m_docId, domHash, t->m_score);
 
@@ -416,7 +417,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//if ( getNext(tn) == -1 ) gbshutdownLogicError();
 		// get the min node
 		TopNode *t = &m_nodes[tn];
-		uint8_t domHash2 = Titledb::getDomHash8FromDocId(t->m_docId);
+		uint8_t domHash2 = Docid::getDomHash8FromDocId(t->m_docId);
 		// . also must delete from m_t2
 		// . make the key
 		key96_t k;

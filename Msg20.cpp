@@ -13,6 +13,7 @@
 #include "SummaryCache.h"
 #include "Conf.h"
 #include "Stats.h"
+#include "Docid.h"
 
 
 struct Msg20State {
@@ -159,7 +160,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	if ( req->m_docId >= 0 ) 
 		shardNum = g_hostdb.getShardNumFromDocId(req->m_docId);
 	else {
-		int64_t pdocId = Titledb::getProbableDocId(req->ptr_ubuf);
+		int64_t pdocId = Docid::getProbableDocId(req->ptr_ubuf);
 		shardNum = getShardNumFromDocId(pdocId);
 	}
 
@@ -201,7 +202,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	int64_t probDocId    = req->m_docId;
 	// i think reference pages just pass in a url to get the summary
 	if ( probDocId < 0 && req->size_ubuf ) 
-		probDocId = Titledb::getProbableDocId ( req->ptr_ubuf );
+		probDocId = Docid::getProbableDocId ( req->ptr_ubuf );
 	if ( probDocId < 0        ) {
 		log("query: Got bad docid/url combo.");
 		probDocId = 0;

@@ -112,6 +112,7 @@
 #include "ip.h"
 #include "CountryLanguage.h"
 #include "Errno.h"
+#include "Docid.h"
 
 
 #include <sys/stat.h> //umask()
@@ -4338,7 +4339,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			const char *dd = "";
 			if ((k.n0 & 0x01) == 0x00) dd = " (delete)";
 			int64_t d = Posdb::getDocId(&k);
-			uint8_t dh = Titledb::getDomHash8FromDocId(d);
+			uint8_t dh = Docid::getDomHash8FromDocId(d);
 			char *rec = list.getCurrentRec();
 			int32_t recSize = 18;
 			if (rec[0] & 0x04) recSize = 6;

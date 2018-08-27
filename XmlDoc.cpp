@@ -57,6 +57,7 @@
 #include "SiteMedianPageTemperature.h"
 #include "ip.h"
 #include "Errno.h"
+#include "Docid.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -6503,9 +6504,9 @@ int64_t *XmlDoc::getDocId ( ) {
 
 	// ensure it is within probable range
 	const char *u = getFirstUrl()->getUrl();
-	int64_t pd = Titledb::getProbableDocId(u);
-	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+	int64_t pd = Docid::getProbableDocId(u);
+	int64_t d1 = Docid::getFirstProbableDocId ( pd );
+	int64_t d2 = Docid::getLastProbableDocId  ( pd );
 	if ( m_docId < d1 || m_docId > d2 ) {
 		g_process.shutdownAbort(true);
 	}
@@ -11610,9 +11611,9 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("docid=%" PRIu64" ",m_docId);
 
 	const char *u = getFirstUrl()->getUrl();
-	int64_t pd = Titledb::getProbableDocId(u);
-	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+	int64_t pd = Docid::getProbableDocId(u);
+	int64_t d1 = Docid::getFirstProbableDocId ( pd );
+	int64_t d2 = Docid::getLastProbableDocId  ( pd );
 	sb->safePrintf("probdocid=%" PRIu64" ",pd);
 	sb->safePrintf("probdocidmin=%" PRIu64" ",d1);
 	sb->safePrintf("probdocidmax=%" PRIu64" ",d2);
@@ -17093,7 +17094,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			 "<td>0x%" PRIx32"</td>"
 			 "</tr>\n"
 			 ,
-			 (int32_t)Titledb::getDomHash8FromDocId(m_docId)
+			 (int32_t)Docid::getDomHash8FromDocId(m_docId)
 			 );
 
 	struct tm tm_buf;

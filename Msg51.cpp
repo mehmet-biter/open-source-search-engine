@@ -15,6 +15,7 @@
 #include "UdpServer.h"
 #include "Conf.h"
 #include "Errno.h"
+#include "Docid.h"
 
 
 // how many Msg0 requests can we launch at the same time?
@@ -476,7 +477,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// . these are only 32 bits!
 		int64_t h;
 		if(fakeIt)
-			h = Titledb::getDomHash8FromDocId(docIds[i]);
+			h = Docid::getDomHash8FromDocId(docIds[i]);
 		else
 			h = Clusterdb::getSiteHash26 ( &clusterRecs[i] );
 

@@ -20,6 +20,7 @@
 #include "Parms.h"
 #include "SpiderLoop.h"
 #include "Process.h"
+#include "Docid.h"
 
 //////////////////////////////////////////
 //
@@ -94,7 +95,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		if ( url.getUrlLen() <= 0 ) continue;
 
 		// need this
-		int64_t probDocId = Titledb::getProbableDocId(&url);
+		int64_t probDocId = Docid::getProbableDocId(&url);
 
 		// make it
 		SpiderRequest sreq;

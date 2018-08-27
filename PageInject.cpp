@@ -17,6 +17,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Errno.h"
+#include "Docid.h"
 #include <fcntl.h>
 
 
@@ -102,7 +103,7 @@ static Host *getHostToHandleInjection(char *url) {
 	Url norm;
 	norm.set(url);
 
-	int64_t docId = Titledb::getProbableDocId ( &norm );
+	int64_t docId = Docid::getProbableDocId ( &norm );
 	uint32_t shardNum = getShardNumFromDocId(docId);
 	Host *host = g_hostdb.getHostWithSpideringEnabled(shardNum);
 

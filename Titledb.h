@@ -47,47 +47,6 @@ public:
 		return m_rdb.getNumTotalRecs() * (int64_t)g_hostdb.m_numShards;
 	}
 
-	// . get the probable docId from a url/coll
-	// . it's "probable" because it may not be the actual docId because
-	//   in the case of a collision we pick a nearby docId that is 
-	//   different but guaranteed to be in the same group/cluster, so you 
-	//   can be assured the top 32 bits of the docId will be unchanged
-	static uint64_t getProbableDocId(const Url *url) {
-		return getProbableDocId(url->getUrl(), url->getDomain(), url->getDomainLen());
-	}
-
-	// a different way to do it
-	static uint64_t getProbableDocId(const char *url) {
-		Url u;
-		u.set( url );
-		return getProbableDocId(&u);
-	}
-
-	// a different way to do it
-	static uint64_t getProbableDocId(const char *url, const char *dom, int32_t domLen) {
-		uint64_t probableDocId = hash64b(url,0) & 
-			DOCID_MASK;
-		// clear bits 6-13 because we want to put the domain hash there
-		// dddddddd dddddddd ddhhhhhh hhdddddd
-		probableDocId &= 0xffffffffffffc03fULL;
-		uint32_t h = hash8(dom,domLen);
-		//shift the hash by 6
-		h <<= 6;
-		// OR in the hash
-		probableDocId |= h;
-		return probableDocId;
-	}
-
-	// turn off the last 6 bits
-	static uint64_t getFirstProbableDocId(int64_t d) {
-		return d & 0xffffffffffffffc0ULL;
-	}
-
-	// turn on the last 6 bits for the end docId
-	static uint64_t getLastProbableDocId(int64_t d) {
-		return d | 0x000000000000003fULL;
-	}
-
 	// . the top NUMDOCIDBITs of "key" are the docId
 	// . we use the top X bits of the keys to partition the records
 	// . using the top bits to partition allows us to keep keys that
@@ -99,10 +58,6 @@ public:
 	}
 
 	static int64_t getDocId(const key96_t *key) { return getDocIdFromKey(key); }
-
-	static uint8_t getDomHash8FromDocId (int64_t d) {
-		return (d & ~0xffffffffffffc03fULL) >> 6;
-	}
 
 	static int64_t getUrlHash48 ( key96_t *k ) {
 		return ((k->n0 >> 10) & 0x0000ffffffffffffLL);

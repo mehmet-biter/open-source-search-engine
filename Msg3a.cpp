@@ -12,6 +12,7 @@
 #include "Mem.h"
 #include "ScopedLock.h"
 #include "Errno.h"
+#include "Docid.h"
 
 
 static const int signature_init = 0xb0a05d5a;
@@ -668,7 +669,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 			     this,
 			     j, shardNum,
 			     docIds[j],
-			     (int32_t)Titledb::getDomHash8FromDocId(docIds[j]),
+			     (int32_t)Docid::getDomHash8FromDocId(docIds[j]),
 			     scores[j],
 			     flags[j]);
 		}

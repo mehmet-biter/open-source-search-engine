@@ -7,6 +7,7 @@
 #include "Mem.h"
 #include "Msg5.h"
 #include "Errno.h"
+#include "Docid.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 
@@ -126,7 +127,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// if no docid provided, use probable docid
 	if ( ! docId ) {
 		if( url ) {
-			docId = Titledb::getProbableDocId ( url );
+			docId = Docid::getProbableDocId ( url );
 		}
 		else {
 			// Should never happen. Dump core if it does. Coverity 1361199
@@ -358,8 +359,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// so try the range
 	if ( r->m_getAvailDocIdOnly ) {
 	   int64_t pd = r->m_docId;
-	   int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-	   int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+	   int64_t d1 = Docid::getFirstProbableDocId ( pd );
+	   int64_t d2 = Docid::getLastProbableDocId  ( pd );
 	   // sanity - bad url with bad subdomain?
 	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 	   // make sure we get a decent sample in titledb then in
@@ -371,7 +372,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// . otherwise, url was given, like from Msg15
 	// . we may get multiple tfndb recs
 	if ( r->m_url[0] ) {
-		//old code had a mysterious comment about the call to getDomFast() instead of Url::getDomain() (via Titlerec::getProbablyDocid) and
+		//old code had a mysterious comment about the call to getDomFast() instead of Url::getDomain() (via Docid::getProbablyDocid) and
 		//not working for ip-addresses. Changed now to do it the normal way - I don't know whay you would want to keep a bug around.
 		Url url;
 		url.set(r->m_url);
@@ -387,9 +388,9 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 			delete ( st );
 			return;
 		}
-		int64_t pd = Titledb::getProbableDocId (&url);
-		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+		int64_t pd = Docid::getProbableDocId (&url);
+		int64_t d1 = Docid::getFirstProbableDocId ( pd );
+		int64_t d2 = Docid::getLastProbableDocId  ( pd );
 		// sanity - bad url with bad subdomain?
 		if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 		// store these
@@ -452,7 +453,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// set probable docid
 	int64_t pd = 0LL;
 	if ( r->m_url[0] ) {
-		pd = Titledb::getProbableDocId(r->m_url);
+		pd = Docid::getProbableDocId(r->m_url);
 		if ( pd != st->m_pd ) { 
 			log("db: crap probable docids do not match! u=%s",
 			    r->m_url);

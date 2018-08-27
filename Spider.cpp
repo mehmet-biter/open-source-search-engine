@@ -43,6 +43,7 @@
 #include "Mem.h"
 #include "UrlBlockCheck.h"
 #include "Errno.h"
+#include "Docid.h"
 #include <list>
 
 
@@ -2779,7 +2780,7 @@ void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status
 
 static int32_t getFakeIpForUrl2(const Url *url2) {
 	// make the probable docid
-	int64_t probDocId = Titledb::getProbableDocId ( url2 );
+	int64_t probDocId = Docid::getProbableDocId ( url2 );
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);
 	return firstIp;
@@ -2794,7 +2795,7 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	// reset it
 	reset();
 	// make the probable docid
-	int64_t probDocId = Titledb::getProbableDocId ( url );
+	int64_t probDocId = Docid::getProbableDocId ( url );
 
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);

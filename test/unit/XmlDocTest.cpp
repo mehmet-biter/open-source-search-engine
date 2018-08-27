@@ -5,6 +5,7 @@
 #include "Collectiondb.h"
 #include "ip.h"
 #include "Mem.h"
+#include "Docid.h"
 
 class XmlDocTest : public ::testing::Test {
 protected:
@@ -27,7 +28,7 @@ static void initializeDocForPosdb(XmlDoc *xmlDoc, const char *url, char *content
 	xmlDoc->m_oldDoc = NULL;
 
 	xmlDoc->m_docIdValid = true;
-	xmlDoc->m_docId = Titledb::getProbableDocId(url);
+	xmlDoc->m_docId = Docid::getProbableDocId(url);
 
 	xmlDoc->m_ipValid = true;
 	xmlDoc->m_ip = atoip("127.0.0.2");
