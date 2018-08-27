@@ -25,10 +25,7 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_t *dlen) {
 	// assume no domain 
 	*dlen = 0;
-	// get host length
-	//int32_t hostLen = strlen(host);
-	// get the tld in host, if any, if not, it returns NULL
-	const char *s = tld; // getTLD ( host , hostLen );
+	const char *s = tld;
 	// return NULL if host contains no valid tld
 	if ( ! s ) return NULL;
 	// if s is host we just have tld
@@ -39,7 +36,6 @@ const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_
 	s--;
 	// now go back until s hits "host" or another period
 	while ( s > host && *s !='.' ) s--;
-	// . now *s=='.' or s==host
 	// . if s is host then "host" is an acceptable domain w/o a hostname
 	// . fix http://.xyz.com/...... by checking for period
 	if ( s == host && *s !='.' ) { *dlen = hostLen; return s; }
