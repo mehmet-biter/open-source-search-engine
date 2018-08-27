@@ -41,8 +41,6 @@ void Url::reset() {
 	m_hlen      = 0;
 	m_elen      = 0;
 	m_mdlen     = 0;
-	// ip related stuff
-	m_ip          = 0;
 
 	// Coverity
 	m_plen = 0;
@@ -1375,9 +1373,9 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 	// advance m_ulen to end of hostname
 	m_ulen += m_hlen;
 
-	// . set our m_ip if hostname is in a.b.c.d format
+	// . Test if hostname is in a.b.c.d format
 	// . this returns 0 if not a valid ip string
-	m_ip = atoip ( m_host , m_hlen );
+	int32_t ip = atoip ( m_host , m_hlen );
 
 	// advance i to the : for the port, if it exists
 	i = j;
@@ -1386,7 +1384,7 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 	m_host [ m_hlen ] = '\0';
 
 	// use ip as domain if we're just an ip address like 192.0.2.1
-	if ( m_ip ) {
+	if ( ip ) {
 		// ip address has no tld, or mid domain
 		m_tld    = NULL;
 		m_tldLen = 0;
@@ -1417,7 +1415,7 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 	// . otherwise a domain name of "xxx" would become "www.xxx" and if
 	//   Url::set() is called on that it would be "www.www.xxx" (bad bad)
 	// . let's only add "www." if there's only 1 period, ok?
-	if ( ! m_ip && addWWW && m_host == m_domain  && strchr(m_host,'.') ) {
+	if ( ! ip && addWWW && m_host == m_domain  && strchr(m_host,'.') ) {
 		memmove ( m_host + 4 , m_host , m_hlen );
 		gbmemcpy ( m_host , "www." , 4 );
 		if ( m_domain ) m_domain += 4;
@@ -1630,7 +1628,6 @@ void Url::print() const {
 	logf(LOG_TRACE, "\thosthash32   : %" PRIx32, getHostHash32());
 	logf(LOG_TRACE, "\thosthash48   : %" PRIx64, getHostHash64());
 
-	logf(LOG_TRACE, "\tip           : %" PRId32, m_ip);
 	logf(LOG_TRACE, "\tscheme       : %.*s", m_slen, m_scheme);
 	logf(LOG_TRACE, "\tpath         : %.*s", m_plen, m_path);
 	logf(LOG_TRACE, "\tquery        : %s", m_query);

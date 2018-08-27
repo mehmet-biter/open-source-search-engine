@@ -100,8 +100,6 @@ public:
 
 	int32_t getDefaultPort() const { return m_defPort; }
 
-	int32_t getIp() const { return m_ip; }
-
 	const char *getUrl() const { return m_url; }
 	int32_t getUrlLen() const { return m_ulen; }
 
@@ -225,9 +223,6 @@ private:
 	// points into "url" (a.com, www.yahoo.com, 192.0.2.1, ...)(allLowercase)
 	char *m_host;
 	int32_t m_hlen;
-
-	// it's 0 if we don't have one
-	int32_t m_ip;
 
 	// points into "url" (/  /~mwells/  /a/b/ ...) (always ends in /)
 	char *m_path;

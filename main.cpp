@@ -2472,13 +2472,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			// extract the url
 			Url *u = xd->getFirstUrl();
 
-			// get ip
-			char ipbuf [ 32 ];
-			iptoa(u->getIp(),ipbuf);
-			// pad with spaces
-			int32_t blen = strlen(ipbuf);
-			while ( blen < 15 ) ipbuf[blen++]=' ';
-			ipbuf[blen]='\0';
 			//int32_t nc = xd->size_catIds / 4;//tr.getNumCatids();
 			if ( justPrintDups ) {
 				// print into buf
