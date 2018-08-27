@@ -9,6 +9,7 @@
 #include "Titledb.h" //DOCID_MASK
 #include "hash.h"
 #include "spider_status_t.h"
+#include "max_url_len.h"
 
 
 class RdbList;

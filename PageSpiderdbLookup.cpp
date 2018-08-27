@@ -12,6 +12,7 @@
 #include "max_url_len.h"
 #include "GbUtil.h"
 #include "Errno.h"
+#include "Url.h"
 
 
 

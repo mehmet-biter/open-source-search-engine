@@ -1,4 +1,3 @@
-
 #include "Matches.h"
 #include "Query.h"
 #include "Titledb.h"  // for getting total # of docs in db
@@ -12,6 +11,8 @@
 #include "BitOperations.h"
 #include "Process.h"
 #include "Mem.h"
+#include "Url.h"
+#include "hash.h"
 
 
 // TODO: have Matches set itself from all the meta tags, titles, link text,

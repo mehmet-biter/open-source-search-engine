@@ -8,6 +8,7 @@
 #include "ScopedLock.h"
 #include "SiteGetter.h"
 #include "Errno.h"
+#include "utf8_fast.h"
 
 
 Msge1::Msge1()

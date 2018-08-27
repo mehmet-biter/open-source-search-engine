@@ -17,6 +17,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Titledb.h"	// for Titledb::validateSerializedRecord
+#include "fctypes.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 #include <unistd.h>

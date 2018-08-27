@@ -7,6 +7,9 @@
 #include "Sanity.h"
 #include "Conf.h"
 #include "Errno.h"
+#include "fctypes.h"
+#include "utf8_fast.h"
+#include "hash.h"
 #include "gbmemcpy.h"
 
 

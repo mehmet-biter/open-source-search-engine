@@ -13,6 +13,7 @@
 #include "JobScheduler.h"
 #include "ScopedLock.h"
 #include "Errno.h"
+#include "fctypes.h"
 #include <fcntl.h>
 
 #include <iterator>

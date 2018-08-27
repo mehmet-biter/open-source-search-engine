@@ -15,6 +15,7 @@
 #include "SiteMedianPageTemperatureRegistry.h"
 #include "Errno.h"
 #include "Log.h"
+#include "fctypes.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

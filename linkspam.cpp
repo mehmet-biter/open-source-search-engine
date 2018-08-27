@@ -8,6 +8,8 @@
 #include "Linkdb.h"
 #include "Xml.h"
 #include "matches2.h"
+#include "fctypes.h"
+#include "utf8_fast.h"
 
 static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_t linkNode,
 		   const char **note ) ;

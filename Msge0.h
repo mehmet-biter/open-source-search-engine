@@ -8,6 +8,7 @@
 #include "Linkdb.h"
 #include "Tagdb.h"
 #include "GbMutex.h"
+#include "Url.h"
 
 class Msge0 {
 

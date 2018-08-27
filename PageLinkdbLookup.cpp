@@ -29,6 +29,7 @@
 #include "Linkdb.h"
 #include "SiteGetter.h"
 #include "Errno.h"
+#include "Url.h"
 
 
 namespace {

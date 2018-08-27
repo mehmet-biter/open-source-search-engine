@@ -15,6 +15,8 @@
 #include "Mem.h"
 #include "GbUtil.h"
 #include "Errno.h"
+#include "fctypes.h"
+#include "hash.h"
 
 
 #ifdef _VALGRIND_
