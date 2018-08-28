@@ -152,13 +152,17 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			Words *words = xmlDoc.getWords();
-			if (words == nullptr || words == (Words*)-1) {
-				logf(LOG_TRACE, "Unable to get Words for docId=%" PRIu64, docId);
+			const TokenizerResult *tr = xmlDoc.getTokenizerResult();
+			if (tr == nullptr || tr == (TokenizerResult*)-1) {
+				logf(LOG_TRACE, "Unable to get TokenizerResult for docId=%" PRIu64, docId);
 				continue;
 			}
 
-			fprintf(stdout, "%" PRIu64"|%d|%d|%s\n", docId, words->getNumAlnumWords(), hasScript, xmlDoc.getFirstUrl()->getUrl());
+			unsigned alfanum_token_count = 0;
+			for(const auto &t : tr->tokens)
+				if(t.is_alfanum)
+					alfanum_token_count++;
+			fprintf(stdout, "%" PRIu64"|%u|%d|%s\n", docId, alfanum_token_count, hasScript, xmlDoc.getFirstUrl()->getUrl());
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
