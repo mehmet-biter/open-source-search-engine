@@ -12,6 +12,7 @@
 #include "WantedChecker.h"
 #include "utf8_convert.h"
 #include "Domains.h"
+#include "Docid.h"
 #include "Version.h"
 #include <libgen.h>
 #include <algorithm>
@@ -168,9 +169,9 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			int64_t probableDocId = Titledb::getProbableDocId(url);
-			int64_t firstProbableDocId = Titledb::getFirstProbableDocId(probableDocId);
-			int64_t lastProbableDocId = Titledb::getLastProbableDocId(probableDocId);
+			int64_t probableDocId = Docid::getProbableDocId(url);
+			int64_t firstProbableDocId = Docid::getFirstProbableDocId(probableDocId);
+			int64_t lastProbableDocId = Docid::getLastProbableDocId(probableDocId);
 			if (docId < firstProbableDocId || docId > lastProbableDocId) {
 				fprintf(stdout, "%" PRId64"|docid out of range|%s\n", docId, url->getUrl());
 				continue;

@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "hash.h"
 #include "Version.h"
 #include <sys/stat.h>
 #include <errno.h>
