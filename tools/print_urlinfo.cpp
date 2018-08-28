@@ -5,6 +5,8 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "hash.h"
+#include "Docid.h"
 #include "Version.h"
 #include <libgen.h>
 
@@ -55,11 +57,11 @@ int main(int argc, char **argv) {
 	logf(LOG_TRACE, "\tsitehash32   : %" PRIx32, hash32(sg.getSite(), sg.getSiteLen(), 0));
 	logf(LOG_TRACE, "\t");
 
-	uint64_t probableDocId = Titledb::getProbableDocId(&url);
+	uint64_t probableDocId = Docid::getProbableDocId(&url);
 	logf(LOG_TRACE, "Document info");
 	logf(LOG_TRACE, "\tprobabledocid      : %" PRIu64, probableDocId);
-	logf(LOG_TRACE, "\tfirstprobabledocid : %" PRIu64, Titledb::getFirstProbableDocId(probableDocId));
-	logf(LOG_TRACE, "\tlastprobabledocid  : %" PRIu64, Titledb::getLastProbableDocId(probableDocId));
+	logf(LOG_TRACE, "\tfirstprobabledocid : %" PRIu64, Docid::getFirstProbableDocId(probableDocId));
+	logf(LOG_TRACE, "\tlastprobabledocid  : %" PRIu64, Docid::getLastProbableDocId(probableDocId));
 
 	return 0;
 }
