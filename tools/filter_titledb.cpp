@@ -15,6 +15,7 @@
 #include "Version.h"
 #include "GbUtil.h"
 #include "ip.h"
+#include "Errno.h"
 #include <libgen.h>
 #include <algorithm>
 #include <limits.h>
