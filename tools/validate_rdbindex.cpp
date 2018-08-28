@@ -7,6 +7,7 @@
 #include "Collectiondb.h"
 #include "Mem.h"
 #include "Version.h"
+#include "Errno.h"
 #include <libgen.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -180,14 +181,14 @@ int main(int argc, char **argv) {
 	}
 
 	logf(LOG_DEBUG, "Starting test with %zu entries", testData.size());
-	uint64_t start = gettimeofdayInMicroseconds();
+	uint64_t start = gettimeofdayInMilliseconds();
 
 	RdbIndexQuery rdbIndexQuery(base);
 	for (auto it = testData.begin(); it != testData.end(); ++it) {
 		assert(rdbIndexQuery.getFilePos(*it >> RdbBase::s_docIdFileIndex_docIdOffset, false) == static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask));
 	}
 
-	uint64_t diff = gettimeofdayInMicroseconds() - start;
-	logf(LOG_DEBUG, "Ending test after %ld ms (%f us)", diff / 1000, ((double)diff / testData.size()));
+	uint64_t diff = gettimeofdayInMilliseconds() - start;
+	logf(LOG_DEBUG, "Ending test after %ld ms (%f us)", diff, ((double)diff / testData.size()));
 	return 0;
 }
