@@ -1440,11 +1440,6 @@ bool printSearchResultsTail(State0 *st) {
 	// end the two-pane table
 	if ( si->m_format == FORMAT_HTML) sb->safePrintf("</td></tr></table>");
 
-	// for storing a list of all of the sites we displayed, now we print a 
-	// link at the bottom of the page to ban all of the sites displayed 
-	// with one click
-	SafeBuf banSites;
-
 	//
 	// PRINT PREV 10 NEXT 10 links!
 	// 
@@ -1604,18 +1599,6 @@ bool printSearchResultsTail(State0 *st) {
 
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format != FORMAT_HTML ) isAdmin = false;
-
-	if ( isAdmin && banSites.length() > 0 )
-		sb->safePrintf ("<br><br><div align=right><b>"
-			       "<a style=color:green; href=\"/admin/tagdb?"
-			       //"tagid0=%" PRId32"&"
-			       "tagtype0=manualban&"
-			       "tagdata0=1&"
-			       "c=%s&uenc=1&u=%s\">"
-			       "[ban all of these domains]</a></b></div>"
-			       "<br>\n ", 
-			       coll, banSites.getBufStart());
-
 
 	// TODO: print cache line in light gray here
 	// TODO: "these results were cached X minutes ago"
@@ -2900,7 +2883,6 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 			      , coll
 			      , un
 			      , dbuf );
-		//banSites->safePrintf("%s+", dbuf);
 		dlen = uu.getHostLen();
 		memcpy ( dbuf , uu.getHost() , dlen );
 		dbuf [ dlen ] = '\0';
