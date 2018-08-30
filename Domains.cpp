@@ -21,6 +21,10 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 	return host;
 }
 
+const char *getDomainOfIp(const char *host, int32_t hostLen, int32_t *dlen) {
+	return getDomainOfIp(const_cast<char*>(host),hostLen,dlen);
+}
+
 
 const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_t *dlen) {
 	// assume no domain 

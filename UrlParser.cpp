@@ -126,10 +126,10 @@ void UrlParser::parse() {
 	int32_t ip = atoip(m_host, m_hostLen);
 	if (ip) {
 		int32_t domainLen = 0;
-		m_domain = getDomainOfIp(const_cast<char *>(m_host), m_hostLen, &domainLen);
+		m_domain = getDomainOfIp(m_host, m_hostLen, &domainLen);
 		m_domainLen = domainLen;
 	} else {
-		const char *tldPos = ::getTLD(const_cast<char *>(m_host), m_hostLen);
+		const char *tldPos = ::getTLD(m_host, m_hostLen);
 		if (tldPos) {
 			size_t tldLen = m_host + m_hostLen - tldPos;
 			if (tldLen < m_hostLen) {

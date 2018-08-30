@@ -10,6 +10,7 @@ const char *getDomain(const char *host, int32_t hostLen, const char *tld, int32_
 
 // when host is like 192.0.2.1  use this one
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
+const char *getDomainOfIp(const char *host, int32_t hostLen, int32_t *dlen);
 
 // used by getDomain() above
 const char *getTLD ( const char *host , int32_t hostLen ) ;
