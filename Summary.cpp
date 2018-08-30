@@ -1288,15 +1288,13 @@ static const char *cookie_warning_excerpt[] = {
 	"Vores cookies hjælper os",
 	"Vi bruger cookies for",
 	"Brug af cookies",
-	"Accepter cookies fra ",
+	"Accepter cookies fra",
 	"accepterer du brugen af cookies",
 	"bruger cookies til",
 	//Swedish
 	"Det krävs att cookies är aktiverat",
 	"Vi använder kakor(cookies)",
 	"godkänner du att vi använder cookies",
-	"Det krävs att cookies är aktiverat",
-	"Det krävs att cookies är aktiverat",
 	"använder vi cookies för",
 	"använder vi oss av kakor",
 	//Norwegian
