@@ -1122,14 +1122,15 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 		if ( sp && (sp[i]->m_flags & badFlags) ) {
 			continue;
 		}
-		
-		//if we see something that looks like a cookie warning then we have to skip to the next </div> or </p>
-		if(looksLikeCookieWarning(*tr,start,i)) {
-			logTrace(g_conf.m_logTraceSummary,"Summary for tokens [%i..%zu) looks like cookie warning", start,i);
-			start = i;
-			skipUntilEndDivOrP = true;
-			continue;
-		}
+
+		//Commented out due to performance problems		
+// 		//if we see something that looks like a cookie warning then we have to skip to the next </div> or </p>
+// 		if(looksLikeCookieWarning(*tr,start,i)) {
+// 			logTrace(g_conf.m_logTraceSummary,"Summary for tokens [%i..%zu) looks like cookie warning", start,i);
+// 			start = i;
+// 			skipUntilEndDivOrP = true;
+// 			continue;
+// 		}
 		if(skipUntilEndDivOrP) {
 			if(token.nodeid&BACKBIT && (token.nodeid==(TAG_DIV|BACKBIT) || token.nodeid==(TAG_P|BACKBIT))) {
 				skipUntilEndDivOrP = false;
