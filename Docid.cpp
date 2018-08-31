@@ -533,7 +533,7 @@ void CompatibleUrl::set(const char *t, int32_t tlen) {
 	}
 	// . otherwise, get the tld
 	// . uses thorough list of tlds in Domains.cpp
-	else if ( ( m_tld = ::getTLD ( m_host, m_hlen ) ) && m_tld > m_host ) {
+	else if ( ( m_tld = ::getTLD_static ( m_host, m_hlen ) ) && m_tld > m_host ) {
 		// set m_domain if we had a tld that's not equal to our host
 		m_tldLen = strlen ( m_tld  );
 		m_domain = ::getDomain ( m_host , m_hlen , m_tld , &m_dlen );
