@@ -446,12 +446,6 @@ int main2 ( int argc , char *argv[] ) {
 	//initialize IP address checks
 	initialize_ip_address_checks();
 
-	// Make sure TLD table is initializing before calling any URL handling function
-	if(!initializeDomains(g_hostdb.m_dir)) {
-		log( LOG_ERROR, "Domains initialization failed!" );
-		return 1;
-	}
-	
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server
@@ -472,6 +466,12 @@ int main2 ( int argc , char *argv[] ) {
 	// . let's mix it up again
 	srand ( time(NULL) );
 
+	// Make sure TLD table is initializing before calling any URL handling function
+	if(!initializeDomains(g_hostdb.m_dir)) {
+		log( LOG_ERROR, "Domains initialization failed!" );
+		return 1;
+	}
+	
 	// do not save conf if any core dump occurs starting here
 	// down to where we set this back to true
 	g_conf.m_save = false;
