@@ -14,9 +14,52 @@
 #include "fctypes.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "hash.h"
 
 
-static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word, int end_word);
+static void findCookieWarningLessSubrange(const TokenizerResult &tr, int start_word, int end_word, int *cookie_warning_less_start, int *cookie_warning_less_end);
+static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word_, int end_word_);
+
+
+//List of wods/tokens that in a query signals that we shoudl not filter out cookie-warning-looking text segments. So if you search for "oat meal cookie" you may
+//get a document summary that includes the cookie warning.
+static struct {
+	const char *token;
+	int64_t token_hash;
+} query_cookie_words[] = {
+	{ "cookie",0},		//many languages
+	{ "cookies",0},		//many languages
+	{ "kakor",0},		//swedish&norwegian
+	{ "koekies",0},		//afrikaans
+	{ "sīkfailus",0},	//latvian
+	{ "küpsiseid",0},	//estonian
+	{ "slapukus",0},	//lithuanian
+	{ "kolačiće",0},	//croatian
+};
+static GbMutex mtx_query_cookie_words;
+static bool query_cookie_words_initialied = false;
+
+static void initializeQueryCookieWords() {
+	ScopedLock sl(mtx_query_cookie_words);
+	if(!query_cookie_words_initialied) {
+		for(auto &e : query_cookie_words) {
+			e.token_hash = hash64Lower_utf8(e.token,strlen(e.token));
+		}
+	}
+}
+
+
+//does the query has any terms that indicate they may be searching for cookies (the ones you eat)?
+static bool queryHasCookieWords(const Query *q) {
+	initializeQueryCookieWords();
+	for(int i=0; i<q->getNumTerms(); i++) {
+		for(const auto &e : query_cookie_words) {
+			if(e.token_hash==q->getRawTermId(i))
+				return true;
+		}
+	}
+	return false;
+}
 
 	
 Summary::Summary()
@@ -27,6 +70,7 @@ Summary::Summary()
     , m_maxNumCharsPerLine(0)
 	, m_isSetFromTags(false)
     , m_q(NULL)
+    , m_avoid_cookie_warnings(true)
     , m_wordWeights(NULL)
     , m_wordWeightSize(0)
     , m_buf4(NULL)
@@ -223,6 +267,9 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
+	if(q)
+		m_avoid_cookie_warnings = !queryHasCookieWords(q);
+	
 	if ( maxNumCharsPerLine < 10 ) {
 		maxNumCharsPerLine = 10;
 	}
@@ -453,7 +500,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 			  score);
 			*/
 
-			if(looksLikeCookieWarning(*tr,a,b)) {
+			if(m_avoid_cookie_warnings && looksLikeCookieWarning(*tr,a,b)) {
 				logTrace(g_conf.m_logTraceSummary, "Summary looks like cookie warning");
 				score = 0.0;
 			}
@@ -1108,7 +1155,6 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
 	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE|SEC_IN_HEAD;
-	bool skipUntilEndDivOrP = false;
 
 	// get the section ptr array 1-1 with the words, "sp"
 	Section **sp = NULL;
@@ -1120,22 +1166,6 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 		const auto &token = (*tr)[i];
 		// skip if in bad section
 		if ( sp && (sp[i]->m_flags & badFlags) ) {
-			continue;
-		}
-
-		//Commented out due to performance problems		
-// 		//if we see something that looks like a cookie warning then we have to skip to the next </div> or </p>
-// 		if(looksLikeCookieWarning(*tr,start,i)) {
-// 			logTrace(g_conf.m_logTraceSummary,"Summary for tokens [%i..%zu) looks like cookie warning", start,i);
-// 			start = i;
-// 			skipUntilEndDivOrP = true;
-// 			continue;
-// 		}
-		if(skipUntilEndDivOrP) {
-			if(token.nodeid&BACKBIT && (token.nodeid==(TAG_DIV|BACKBIT) || token.nodeid==(TAG_P|BACKBIT))) {
-				skipUntilEndDivOrP = false;
-				start = i;
-			}
 			continue;
 		}
 
@@ -1183,9 +1213,18 @@ bool Summary::getDefaultSummary(const Xml *xml, const TokenizerResult *tr, const
 			
 		// end of consecutive words
 		if ( numConsecutive > longestConsecutive ) {
-			longestConsecutive = numConsecutive;
-			bestStart = start;
-			bestEnd = i-1;
+			int cookieWarningLessStart, cookieWarningLessEnd;
+			if(m_avoid_cookie_warnings)
+				findCookieWarningLessSubrange(*tr, start, i, &cookieWarningLessStart, &cookieWarningLessEnd);
+			else {
+				cookieWarningLessStart = start;
+				cookieWarningLessEnd = i;
+			}
+			if(cookieWarningLessEnd-cookieWarningLessStart > longestConsecutive) {
+				longestConsecutive = cookieWarningLessEnd-cookieWarningLessStart;
+				bestStart = cookieWarningLessStart;
+				bestEnd = cookieWarningLessEnd-1;
+			}
 		}
 		start = -1;
 		numConsecutive = 0;
@@ -1311,15 +1350,18 @@ static const char *cookie_warning_excerpt[] = {
 static const size_t cookie_warning_excerpts = sizeof(cookie_warning_excerpt)/sizeof(cookie_warning_excerpt[0]);
 
 static TokenizerResult tr_cookie_warning_excepts[cookie_warning_excerpts];
+static size_t min_except_token_count = 0;
 static bool tr_cookie_warning_excepts_initialized = false;
 static GbMutex mtx_tr_cookie_excepts;
 
 static void initialize_tr_cookie_warning_excepts() {
 	ScopedLock sl(mtx_tr_cookie_excepts);
 	if(!tr_cookie_warning_excepts_initialized) {
+		min_except_token_count = INT32_MAX;
 		for(unsigned i=0; i<cookie_warning_excerpts; i++) {
 			plain_tokenizer_phase_1(cookie_warning_excerpt[i], strlen(cookie_warning_excerpt[i]), &(tr_cookie_warning_excepts[i]));
 			calculate_tokens_hashes(&(tr_cookie_warning_excepts[i]));
+			min_except_token_count = std::min(min_except_token_count,tr_cookie_warning_excepts[i].size());
 		}
 		tr_cookie_warning_excepts_initialized = true;
 	}
@@ -1331,6 +1373,12 @@ static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word_, i
 		return false;
 	unsigned start_word = (unsigned)start_word_;
 	unsigned end_word = (unsigned)end_word_;
+	while(start_word<end_word && !tr[start_word].is_alfanum)
+		start_word++;
+	while(end_word > start_word && !tr[end_word-1].is_alfanum)
+		end_word--;
+	if(end_word-start_word < min_except_token_count)
+		return false;
 	
 	for(unsigned i = 0; i<cookie_warning_excerpts; i++) {
 		const auto &cookie_tokens = tr_cookie_warning_excepts[i].tokens;
@@ -1352,4 +1400,55 @@ static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word_, i
 		}
 	}
 	return false;
+}
+
+
+static unsigned num_alfanum_tokens_in_range(const TokenizerResult &tr, unsigned start, unsigned end) {
+	unsigned count = 0;
+	for(unsigned i=start; i<end; i++)
+		if(tr[i].is_alfanum)
+			count++;
+	return count;
+}
+
+
+//In range [start_word..end_word) find a subrange that doesn't contain a cookie warning.
+//In theory we could do binary search, or range scan, etc. but testing if something is a cookie warning is not cheap. So instead we use much simplified logic
+static void findCookieWarningLessSubrange(const TokenizerResult &tr, int start_word, int end_word, int *cookie_warning_less_start, int *cookie_warning_less_end)
+{
+	if(!looksLikeCookieWarning(tr,start_word,end_word)) {
+		*cookie_warning_less_start = start_word;
+		*cookie_warning_less_end = end_word;
+		return;
+	}
+	
+	int min_alfanum_tokens = std::max(4,(end_word-start_word)/50);
+	//find the first subrange that does not contain a cookie warning and has at least 4 (or 2%) alfanum tokens
+	*cookie_warning_less_start = start_word;
+	*cookie_warning_less_end = start_word;
+	int start = start_word;
+	int i = start_word;
+	while(i<end_word) {
+		//sweep to </p> or </div> or end
+		while(i<end_word && tr[i].nodeid!=(TAG_P|BACKBIT) && tr[i].nodeid!=(TAG_DIV|BACKBIT))
+			i++;
+		if(!looksLikeCookieWarning(tr,start,i)) {
+			//candidate [start..i[
+			if(i-start >= min_alfanum_tokens) {
+				int c = num_alfanum_tokens_in_range(tr,start,i);
+				if(c>=min_alfanum_tokens) {
+					if(c > *cookie_warning_less_end-*cookie_warning_less_start) {
+						*cookie_warning_less_start = start;
+						*cookie_warning_less_end = i;
+					}
+				}
+			}
+		} else {
+			//cookie warning detected. If we already have a good subrange then break out of loop and live with the result we have.
+			if(*cookie_warning_less_start!=*cookie_warning_less_end)
+				break;
+			start = i+1;
+		}
+		i++;
+	}
 }

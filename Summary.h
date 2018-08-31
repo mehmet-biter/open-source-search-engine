@@ -82,6 +82,7 @@ private:
 
 	// ptr to the query
 	const Query     *m_q;
+	bool             m_avoid_cookie_warnings;
 
 	float *m_wordWeights;
 	int32_t m_wordWeightSize;
