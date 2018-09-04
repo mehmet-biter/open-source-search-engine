@@ -138,8 +138,8 @@ public:
 	bool m_needsFree;
 	char m_localBuf [ BITS_LOCALBUFSIZE ];
 
-	// get bits for the ith word
 	wbit_t getAlnumBits( int32_t i ) const;
+	wbit_t getNonAlnumBits(unsigned i) const;
 };
 
 #endif // GB_BITS_H

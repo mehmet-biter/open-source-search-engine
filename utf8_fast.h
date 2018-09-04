@@ -96,8 +96,10 @@ static inline bool is_alnum_utf8(const uint8_t *src) {
 
 bool is_alnum_utf8_string(const char *s, const char *send);
 bool is_upper_utf8_string(const char *s, const char *send); //string does not contain any lowercase letters
+bool is_all_upper_utf8_string(const char *s, const char *send); //string contains only uppercase letters
 bool is_wspace_utf8_string(const char *s, const char *send);
 bool has_wspace_utf8_string(const char *s, const char *send);
+bool is_capitalized_utf8_word(const char *s, const char *send); //first char is uppercase/titlecase letter, rest is lowercase letters
 
 bool is_alnum_api_utf8_string(const char *s, const char *send); //starts with letter or underscore, contains only ascii letters/digits and underscore
 bool is_ascii_digit_string(const char *s, const char *send); //consists of pure ascii digits 0-9

@@ -49,7 +49,7 @@ bool Bits::set(const TokenizerResult *tr) {
 	// save words so printBits works
 	m_tr = tr;
 	// how many words?
-	int32_t numBits = tr->size();
+	unsigned numBits = tr->size();
 	// how much space do we need?
 	int32_t need = numBits * sizeof(wbit_t);
 	// assume no malloc
@@ -72,7 +72,7 @@ bool Bits::set(const TokenizerResult *tr) {
 
 	wbit_t bits;
 
-	for ( int32_t i = 0 ; i < numBits ; i++ ) {
+	for ( unsigned i = 0 ; i < numBits ; i++ ) {
 		const auto &token = (*m_tr)[i];
 		if ( token.nodeid ) {
 			nodeid_t tid = token.nodeid & BACKBITCOMP;
@@ -95,10 +95,7 @@ bool Bits::set(const TokenizerResult *tr) {
 			bits = getAlnumBits( i );
 			brcount = 0;
 		} else {
-			// . just allow anything now!
-			// . the curved quote in utf8 is 3 bytes long and with
-			//   a space before it, was causing issues here!
-			bits= D_CAN_PAIR_ACROSS;
+			bits= getNonAlnumBits(i);
 		}
 
 		// remember our bits.
@@ -174,6 +171,59 @@ wbit_t Bits::getAlnumBits( int32_t i ) const {
 
 	return (D_CAN_BE_IN_PHRASE | D_CAN_PAIR_ACROSS | D_IS_STOPWORD);
 }
+
+
+//Calculate bits for non-alfanum, non-html token
+wbit_t Bits::getNonAlnumBits(unsigned i) const {
+	//by default we can pair across
+	wbit_t rc = D_CAN_PAIR_ACROSS;
+	//But if this token is '.'<whitespace> then it could be either:
+	//  a sentence-end marker:     "bla bla bla. Hello world, bla bla"
+	//  or an abbreviation marker: "bla bla Dr. Frank Smith bla bla"
+	//In the case sentence-end marker we shouldn't pair words across it to make bigrams.
+	//But which is which? We would need to know the language, the region, the abbreviation's costumary style, the document style, and age of the text.
+	//Instead we guess:
+	//  "foo.foo"					can pair across
+	//  "boo.+boo"					can pair across
+	//  "Dr Smith"					can pair across
+	//If the middle token is '.'<whitespace>:
+	//  "goo. goo"					can pair across
+	//  "Dr. Smith"					can pair across
+	//  "Prof. Smith"				can pair across
+	//  "xoo. xoo"					can pair across
+	//  "x. Alle"					cannot pair across
+	//  "W. Bush"					can pair across
+	//  "SK. Alle"					cannot pair across
+	//  "St. Alle"					can pair across
+	// "I LIKE CAPSLOCK. IT'S THE BEST"		can pair across
+	// "G. camelopardalis"				can pair across
+	// "D. ǅamonja"					can pair across (titlecase)
+	// "He hates numlock. He think it's the worst"	can pair across
+	if(i>0 && i+1<m_tr->size()) {
+		const auto &prev_token = (*m_tr)[i-1];
+		const auto &this_token = (*m_tr)[i];
+		const auto &next_token = (*m_tr)[i+1];
+		if(this_token.token_len>=2 &&
+		   this_token.token_start[0]=='.' &&
+		   prev_token.is_alfanum &&
+		   next_token.is_alfanum &&
+		   is_wspace_utf8_string(this_token.token_start+1, this_token.token_end()))
+		{
+			//ok, prev token is alfanum, this token is '.'<whitespace>, and next token is alfanum
+			//we are now guessing if pairing across makes any sense
+			//from the table above we can deduce this logic:
+			//  next.token must be capitalized (first char must be uppercase/titlecase, rest must be lowercase)
+			//  prev.token must be all-caps and 2+ chars long, OR single lowercase letter
+			size_t next_token_codepoint_count = strnlen_utf8(prev_token.token_start,prev_token.token_len);
+			if(is_capitalized_utf8_word(next_token.token_start,next_token.token_end()) &&
+			   ((next_token_codepoint_count==1 && is_lower_utf8(prev_token.token_start)) ||
+			    (next_token_codepoint_count>1 && is_all_upper_utf8_string(prev_token.token_start, prev_token.token_end()))))
+				rc &= ~D_CAN_PAIR_ACROSS;
+		}
+	}
+	return rc;
+}
+
 
 //
 // Summary.cpp sets its own bits.

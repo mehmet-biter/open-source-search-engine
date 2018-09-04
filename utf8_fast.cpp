@@ -289,6 +289,64 @@ bool is_upper_utf8_string(const char *s, const char *send) {
 	return true;
 }
 
+bool is_all_upper_utf8_string(const char *s, const char *send) {
+	//todo: what about titlecase?
+	char cs = 0;
+	for( ; s < send; s += cs) {
+		cs = getUtf8CharSize(s);
+		if(cs == 1) {
+			if(!is_upper_a(*s))
+				return false;
+		} else {
+			if(!is_upper_utf8(s))
+				return false;
+		}
+	}
+	return true;
+}
+
+//Check for pure capitalized words like "Smith", "London", "ǅemal"
+//Surname oddities like "oBrien" and "macDonal" are not supported (returns false)
+bool is_capitalized_utf8_word(const char *s, const char *send) {
+	bool first_char = true;
+	char cs = 0;
+	for( ; s < send; s += cs) {
+		cs = getUtf8CharSize(s);
+		if(cs == 1) {
+			//ascii optimization
+			if(first_char) {
+				if(!is_upper_a(*s))
+					return false;
+			} else {
+				//must lowercase letter
+				if(is_upper_a(*s))
+					return false;
+				if(!is_alpha_a(*s))
+					return false;
+			}
+		} else {
+			UChar32 uc = utf8Decode(s);
+			if(first_char) {
+				//no is_titlecase() function. We just check for 4 titlecase codepoitns. The rest are in Greek extended, which we ignore for now.
+				if(!UnicodeMaps::is_uppercase(uc) &&
+				   uc!=0x01C5 &&  //ǅ
+				   uc!=0x01C8 &&  //ǈ
+				   uc!=0x01CB &&  //ǋ
+				   uc!=0x01F2)    //ǲ
+					return false;
+			} else {
+				//must lowercase letter
+				if(UnicodeMaps::is_uppercase(uc))
+					return false;
+				if(!UnicodeMaps::is_alphabetic(uc))
+					return false;
+			}
+		}
+		first_char = false;
+	}
+	return true;
+}
+
 bool is_wspace_utf8_string(const char *s, const char *send) {
 	char cs = 0;
 	for( ; s < send ; s += cs) {
