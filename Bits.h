@@ -13,43 +13,25 @@
 #include <inttypes.h>
 
 
-// . here's the bit define's:
-// . used for phrasing 
+//
+// Bits set by Bits::set() and available via queryBits/clearBits/assignBits/setBits
+
 // . no punctuation or "big" numbers can be in a phrase
-#define D_CAN_BE_IN_PHRASE      0x0001 
+#define D_CAN_BE_IN_PHRASE      0x01
 // is this word a stop word?
-#define D_IS_STOPWORD           0x0002
-
-//#define D_UNUSED              0x0004
-//#define D_UNUSED              0x0008
-//#define D_UNUSED              0x0010
-
+#define D_IS_STOPWORD           0x02
 // . used for phrasing 
 // . can we continue forming our phrase after this word?
 // . some puntuation words and all stop words can be paired across
-#define D_CAN_PAIR_ACROSS       0x0020 
-
-//#define D_UNUSED              0x0040
-//#define D_UNUSED              0x0080
-//#define D_UNUSED              0x0100
-//#define D_UNUSED              0x0200
-
+#define D_CAN_PAIR_ACROSS       0x04
 // set by Sections.cpp::setMenu() function
-#define D_IN_LINK               0x0400
-
-//#define D_UNUSED              0x0800
-//#define D_UNUSED              0x1000
-//#define D_UNUSED              0x2000
-//#define D_UNUSED              0x4000
-//#define D_UNUSED          0x00008000
-//#define D_UNUSED          0x00010000
-#define D_IS_IN_URL         0x00020000
-//#define D_UNUSED          0x00040000
-//#define D_UNUSED          0x00080000
+#define D_IN_LINK               0x08
+// is this word potentiialy part of a URL?
+#define D_IS_IN_URL             0x10
+//If adding more bits make sure they fit in 8 bits or extend wbit_t type below
 
 //
-// the bits below here are used for Summary.cpp when calling 
-// Bits::setForSummary()
+// Bits set by Bits::setForSummary() and available via querySWBits/setSWBits
 //
 
 // . is this word a strong connector?
@@ -78,16 +60,14 @@
 #define D_IN_BLOCKQUOTE         0x0800
 // for Summary.cpp
 #define D_USED                  0x1000
-
-//
-// end summary bits
-//
+//If adding more bits make sure they fit in 16 bits or extend swbit_t type below
 
 
-// Words class bits. the most common case
-typedef uint32_t wbit_t;
 
-// summary bits used for doing summaries at query time
+// bitmask type for normal bits
+typedef uint8_t wbit_t;
+
+// bitmask type for summary bits
 typedef uint16_t swbit_t;
 
 class TokenizerResult;
@@ -140,7 +120,7 @@ public:
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;
 
-	char m_localBuf[sizeof(wbit_t)*5];
+	char m_localBuf[sizeof(wbit_t)*10];
 
 	wbit_t getAlnumBits( int32_t i ) const;
 	wbit_t getNonAlnumBits(unsigned i) const;
