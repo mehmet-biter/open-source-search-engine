@@ -71,6 +71,7 @@ typedef uint8_t wbit_t;
 typedef uint16_t swbit_t;
 
 class TokenizerResult;
+class Sections;
 
 class Bits {
 public:
@@ -95,7 +96,7 @@ public:
 		return m_bits[i] & D_CAN_PAIR_ACROSS;
 	}
 
-	void setInLinkBits ( class Sections *ss ) ;
+	void setInLinkBits(const Sections *ss);
 	void setInUrlBits  ();
 
 	wbit_t queryBits(unsigned i) const { return m_bits[i]; }
