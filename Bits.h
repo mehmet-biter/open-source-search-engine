@@ -119,19 +119,25 @@ public:
 	void setInLinkBits ( class Sections *ss ) ;
 	void setInUrlBits  ();
 
-	// leave public so Query.cpp can tweak this
-	wbit_t *m_bits;
-	int32_t m_bitsSize;
-
-	// . wordbits
-	// . used only by setForSummary() now to avoid having to update a
-	//   lot of code
-	swbit_t *m_swbits;
-	int32_t m_swbitsSize;
-
+	wbit_t queryBits(unsigned i) const { return m_bits[i]; }
+	void assignBits(unsigned i, wbit_t b){ m_bits[i] = b; }
+	void setBits(unsigned i, wbit_t b) { m_bits[i] |= b; }
+	void clearBits(unsigned i, wbit_t b) { m_bits[i] &= ~b; }
+	
+	swbit_t querySWBits(unsigned i) const { return m_swbits[i]; }
+	void setSWBits(unsigned i, swbit_t b) { m_swbits[i] |= b; }
+	
  private:
 	const TokenizerResult *m_tr;
 
+	wbit_t *m_bits;
+	int32_t m_bitsSize;
+	
+	// . wordbits
+	// . used only by setForSummary() now to avoid having to update a lot of code
+	swbit_t *m_swbits;
+	int32_t m_swbitsSize;
+	
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;
 

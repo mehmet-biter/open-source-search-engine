@@ -2114,8 +2114,8 @@ bool Query::setQWords ( char boolFlag ,
 				opcode = opcode_t::OP_RIGHTPAREN;
 			// no pair across or even include any boolean op phrs
 			if ( opcode != opcode_t::OP_NONE ) {
-				bits.m_bits[i] &= ~D_CAN_PAIR_ACROSS;
-				bits.m_bits[i] &= ~D_CAN_BE_IN_PHRASE;
+				bits.clearBits(i,D_CAN_PAIR_ACROSS);
+				bits.clearBits(i,D_CAN_BE_IN_PHRASE);
 				qw->m_ignoreWord = IGNORE_BOOLOP;
 				qw->m_opcode     = opcode;
 				if ( opcode == opcode_t::OP_LEFTPAREN  ) continue;
@@ -2230,7 +2230,7 @@ bool Query::setQWords ( char boolFlag ,
 	// now modify the Bits class before generating phrases
 	for ( int32_t i = 0 ; i < numWords ; i++ ) {
 		// get default bits
-		unsigned char b = bits.m_bits[i];
+		unsigned char b = bits.queryBits(i);
 		// allow pairing across anything by default
 		b |= D_CAN_PAIR_ACROSS;
 		// get Query Word
@@ -2290,7 +2290,7 @@ bool Query::setQWords ( char boolFlag ,
 		}
 	next:
 		// set it back all tweaked
-		bits.m_bits[i] = b;
+		bits.assignBits(i,b);
 	}
 
 	// treat strongly connected phrases like cd-rom and 3.2.0.3 as being

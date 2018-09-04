@@ -536,10 +536,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		// who is the winning match?
 		maxm = &matches->getMatch(maxi);
 		const TokenizerResult *tr = maxm->m_tr;
-
-		// we now use "m_swbits" for the summary bits since they are
-		// of size sizeof(swbit_t), a int16_t at this point
-		swbit_t *bb = maxm->m_bits->m_swbits;
+		Bits *swbits = const_cast<Bits*>(maxm->m_bits); //constcast because although the matches are const, their m_bits->*swbit* belong to us
 
 		// this should be impossible
 		if ( maxa > (int32_t)tr->size() || maxb > (int32_t)tr->size() ) {
@@ -559,7 +556,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		// is punct word before us pair acrossable? if so then we probably are not the start of a sentence.
 		// or if into the sample and previous excerpt had an ellipsis do not bother using one for us.
 		if ( !is_alpha_utf8(c) || is_upper_utf8(c) ||
-		     (bb[maxa] & D_STARTS_SENTENCE) ||
+		     (swbits->querySWBits(maxa) & D_STARTS_SENTENCE) ||
 		     (p > m_summary && hadEllipsis)) {
 			needEllipsis = false;
 		}
@@ -596,7 +593,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		hadEllipsis = needEllipsis;
 
 		// start with quote?
-		if ( (bb[maxa] & D_IN_QUOTES) && p + 1 < pend ) {
+		if ( (swbits->querySWBits(maxa) & D_IN_QUOTES) && p + 1 < pend ) {
 			// preceed with quote
 			*p++ = '\"';
 		}
@@ -643,7 +640,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		// them again
 		for ( int32_t j = maxa ; j < maxb ; j++ ) {
 			// mark it as used
-			bb[j] |= D_USED;
+			swbits->setSWBits(j,D_USED);
 		}
 
 		// if we ended on punct that can be paired across we need
@@ -675,7 +672,7 @@ bool Summary::setSummary(const Xml *xml, const TokenizerResult *tr, const Sectio
 		// zero out the scores so they will not be used in others
 		for ( int32_t j = maxa ; j < maxb ; j++ ) {
 			// mark it
-			bb[j] |= D_USED;
+			swbits->setSWBits(j,D_USED);
 		}
 	}
 
@@ -732,9 +729,6 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	Section **sp = NULL;
 	int32_t *pos = m->m_pos->m_pos;
 
-	// use "m_swbits" not "m_bits", that is what Bits::setForSummary() uses
-	const swbit_t *bb = m->m_bits->m_swbits;
-
 	// shortcut
 	if ( m->m_sections ) {
 		sp = m->m_sections->m_sectionPtrs;
@@ -758,7 +752,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 
 	// . we NULLify the section ptrs if we already used the word in another summary.
 	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE;
-	if ( (bb[matchWordNum] & D_USED) || ( sp && (sp[matchWordNum]->m_flags & badFlags) ) ) {
+	if ( (m->m_bits->querySWBits(matchWordNum) & D_USED) || ( sp && (sp[matchWordNum]->m_flags & badFlags) ) ) {
 		// assume no best window
 		*besta = -1;
 		*bestb = -1;
@@ -790,7 +784,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		//   we are getting a second/third/... excerpt here now then
 		// stop if its the start of a sentence, too
 		// stop before title word
-		if ( (bb[a-1] & D_USED) || (bb[a] & D_STARTS_SENTENCE) || ( bb[a-1] & D_IN_TITLE )) {
+		if ( (m->m_bits->querySWBits(a-1) & D_USED) || (m->m_bits->querySWBits(a) & D_STARTS_SENTENCE) || ( m->m_bits->querySWBits(a-1) & D_IN_TITLE )) {
 			goodStart = true;
 			break;
 		}
@@ -806,7 +800,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// stop if its the start of a quoted sentence
-		if ( a+1<nw && (bb[a+1] & D_IN_QUOTES) && 
+		if ( a+1<nw && (m->m_bits->querySWBits(a+1) & D_IN_QUOTES) &&
 		     (*tr)[a].token_start[0] == '\"' ){
 			startOnQuote = true;
 			goodStart    = true;
@@ -815,7 +809,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 
 		// find out the first instance of a fragment (comma, etc)
 		// watch out! because frag also means 's' in there's
-		if ( ( bb[a] & D_STARTS_FRAGMENT ) && !(bb[a-1] & D_IS_STRONG_CONNECTOR) && firstFrag == -1 ) {
+		if ( ( m->m_bits->querySWBits(a) & D_STARTS_FRAGMENT ) && !(m->m_bits->querySWBits(a-1) & D_IS_STRONG_CONNECTOR) && firstFrag == -1 ) {
 			firstFrag = a;
 		}
 
@@ -836,7 +830,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		// do not break right after a "strong connector", like 
 		// apostrophe
 		while ( a < matchWordNum && a > 0 && 
-			( bb[a-1] & D_IS_STRONG_CONNECTOR ) )
+			( m->m_bits->querySWBits(a-1) & D_IS_STRONG_CONNECTOR ) )
 			a++;
 		
 		// don't let punct or tag word start a line
@@ -863,12 +857,12 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// don't include any dead zone, those are already-used samples
-		if ( bb[b] & D_USED ) {
+		if ( m->m_bits->querySWBits(b) & D_USED ) {
 			break;
 		}
 
 		// stop on a title word
-		if ( bb[b] & D_IN_TITLE ) {
+		if ( m->m_bits->querySWBits(b) & D_IN_TITLE ) {
 			break;
 		}
 
@@ -910,7 +904,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 		
 		// do not break right after a "strong connector", like apostrophe
-		while ( b > matchWordNum && (bb[b-2] & D_IS_STRONG_CONNECTOR) ) {
+		while ( b > matchWordNum && (m->m_bits->querySWBits(b-2) & D_IS_STRONG_CONNECTOR) ) {
 			b--;
 		}
 	}
@@ -990,12 +984,12 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		int32_t t = 100;
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
+		if ( m->m_bits->querySWBits(i) & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 
 		// boost it if in bold or italics
-		if ( bb[i] & D_IN_BOLDORITALICS ) {
+		if ( m->m_bits->querySWBits(i) & D_IN_BOLDORITALICS ) {
 			t *= 2;
 		}
 
@@ -1051,7 +1045,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		}
 
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
+		if ( m->m_bits->querySWBits(i) & ( D_IN_PARENTHESES | D_IN_SUP | D_IN_LIST ) ) {
 			t /= 2;
 		}
 
@@ -1091,9 +1085,9 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 		// a match can give us 10k to 100k pts based on the tf weights
 		// so we don't want to overwhelm that too much, so let's make
 		// this a 20k bonus if it starts a sentence
-		if ( bb[a] & D_STARTS_SENTENCE ) {
+		if ( (a) & D_STARTS_SENTENCE ) {
 			score += 8000;
-		} else if ( bb[a] & D_STARTS_FRAGMENT ) {
+		} else if ( (a) & D_STARTS_FRAGMENT ) {
 			// likewise, a fragment, like after a comma
 			score += 4000;
 		}

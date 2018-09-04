@@ -1331,8 +1331,6 @@ bool Sections::addSentenceSections ( ) {
 
 	// need D_IS_IN_URL bits to be valid
 	m_bits->setInUrlBits ( );
-	// shortcut
-	wbit_t *bb = m_bits->m_bits;
 
 	// is the abbr. a noun? like "appt."
 	bool hasWordAfter = false;
@@ -1376,7 +1374,7 @@ bool Sections::addSentenceSections ( ) {
 				numAlnums++;
 				// skip if stop word and need not be
 				// capitalized
-				if ( bb[j] & D_IS_STOPWORD ) continue;
+				if ( m_bits->queryBits(j) & D_IS_STOPWORD ) continue;
 				if ( token2.token_len <= 1 ) continue;
 				if ( is_digit(token2.token_start[0]) ) continue;
 				if ( !is_upper_utf8(token2.token_start)) capped=false;
@@ -1548,9 +1546,9 @@ bool Sections::addSentenceSections ( ) {
 			// to be split up or used as a splitter. we want
 			// to keep the full url intact.
 			if ( j > i && j+1 < m_nw &&
-			     (bb[j-1] & D_IS_IN_URL) &&
-			     (bb[j  ] & D_IS_IN_URL) &&
-			     (bb[j+1] & D_IS_IN_URL) )
+			     (m_bits->queryBits(j-1) & D_IS_IN_URL) &&
+			     (m_bits->queryBits(j  ) & D_IS_IN_URL) &&
+			     (m_bits->queryBits(j+1) & D_IS_IN_URL) )
 				continue;
 
 			// was last punct containing a comma?
@@ -2366,16 +2364,13 @@ bool Sections::setMenus ( ) {
 	// . this bits array is 1-1 with the words
 	m_bits->setInLinkBits(this);
 
-	// shortcut
-	wbit_t *bb = m_bits->m_bits;
-
 	sec_t flag;
 	// set SEC_PLAIN_TEXT and SEC_LINK_TEXT for all sections
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		// need alnum word
 		if ( ! (*m_tr)[i].is_alfanum ) continue;
 		// get our flag
-		if ( bb[i] & D_IN_LINK ) flag = SEC_LINK_TEXT;
+		if ( m_bits->queryBits(i) & D_IN_LINK ) flag = SEC_LINK_TEXT;
 		else                     flag = SEC_PLAIN_TEXT;
 		// get section ptr
 		Section *sk = m_sectionPtrs[i];
