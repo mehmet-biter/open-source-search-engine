@@ -83,7 +83,6 @@
 // end summary bits
 //
 
-#define BITS_LOCALBUFSIZE 20
 
 // Words class bits. the most common case
 typedef uint32_t wbit_t;
@@ -141,8 +140,7 @@ public:
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;
 
-	bool m_needsFree;
-	char m_localBuf [ BITS_LOCALBUFSIZE ];
+	char m_localBuf[sizeof(wbit_t)*5];
 
 	wbit_t getAlnumBits( int32_t i ) const;
 	wbit_t getNonAlnumBits(unsigned i) const;

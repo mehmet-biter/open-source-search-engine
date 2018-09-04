@@ -12,11 +12,15 @@
 #include "Errno.h"
 #include "Log.h"
 
-Bits::Bits() {
-	m_bits = NULL;
-	m_swbits = NULL;
-	memset(m_localBuf, 0, sizeof(m_localBuf));
-	reset();
+Bits::Bits()
+  : m_tr(NULL),
+    m_bits(NULL),
+    m_bitsSize(0),
+    m_swbits(NULL),
+    m_swbitsSize(0),
+    m_inLinkBitsSet(false),
+    m_inUrlBitsSet(false)
+{
 }
 
 Bits::~Bits() {
@@ -24,20 +28,16 @@ Bits::~Bits() {
 }
 
 void Bits::reset() {
-	if ( m_bits && m_needsFree ) // (char *)m_bits != m_localBuf )
+	if(m_bits && (void*)m_bits != (void*)m_localBuf)
 		mfree ( m_bits , m_bitsSize , "Bits" );
-	if ( m_swbits && m_needsFree )
+	if ( m_swbits && (void*)m_swbits != (void*)m_localBuf )
 		mfree ( m_swbits , m_swbitsSize , "Bits" );
 	m_bits = NULL;
+	m_bitsSize = 0;
 	m_swbits = NULL;
+	m_swbitsSize = 0;
 	m_inLinkBitsSet = false;
 	m_inUrlBitsSet = false;
-
-	// Coverity
-	m_bitsSize = 0;
-	m_swbitsSize = 0;
-	m_tr = NULL;
-	m_needsFree = false;
 }
 
 // . set bits for each word
@@ -51,17 +51,14 @@ bool Bits::set(const TokenizerResult *tr) {
 	// how many words?
 	unsigned numBits = tr->size();
 	// how much space do we need?
-	int32_t need = numBits * sizeof(wbit_t);
-	// assume no malloc
-	m_needsFree = false;
+	size_t need = numBits * sizeof(wbit_t);
 
 	// use local buf?
-	if ( need < BITS_LOCALBUFSIZE ) {
+	if ( need < sizeof(m_localBuf) ) {
 		m_bits = (wbit_t *) m_localBuf;
 	} else {
 		m_bitsSize = need;
 		m_bits = (wbit_t *)mmalloc ( need , "Bits1" );
-		m_needsFree = true;
 	}
 	if ( ! m_bits ) {
 		log("build: Could not allocate Bits table used to parse words: %s", mstrerror(g_errno));
@@ -266,22 +263,18 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	m_tr = tr;
 
 	// how many words?
-	int32_t numBits = tr->size();
+	unsigned numBits = tr->size();
 
 	// how much space do we need?
-	int32_t need = sizeof(swbit_t) * numBits;
-
-	// assume no malloc
-	m_needsFree = false;
+	size_t need = sizeof(swbit_t) * numBits;
 
 	// use local buf?
-	if ( need < BITS_LOCALBUFSIZE ) {
+	if ( need < sizeof(m_localBuf) ) {
 		m_swbits = (swbit_t *)m_localBuf;
 	} else {
 		// i guess need to malloc
 		m_swbitsSize = need;
 		m_swbits = (swbit_t *)mmalloc( need, "BitsW" );
-		m_needsFree = true;
 	}
 
 	if ( !m_swbits ) {
@@ -301,7 +294,7 @@ bool Bits::setForSummary ( const TokenizerResult *tr ) {
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;
 
-	for ( int32_t i = 0 ; i < numBits ; i++ ) {
+	for ( unsigned i = 0 ; i < numBits ; i++ ) {
 		// assume none are set
 		m_swbits[i] = 0;
 		const auto &token = (*m_tr)[i];
