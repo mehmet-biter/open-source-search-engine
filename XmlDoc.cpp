@@ -3629,7 +3629,7 @@ lang_t XmlDoc::getSummaryLangIdCLD2() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+	if (!title.setTitleFromTags(xml, 80, m_contentType, false)) {
 		return langUnknown;
 	}
 
@@ -16249,7 +16249,7 @@ Title *XmlDoc::getTitle() {
 	int64_t start = logQueryTimingStart();
 
 	// we try to set from tags to avoid initializing everything else
-	if ( m_title.setTitleFromTags( xml, titleMaxLen, *contentTypePtr ) ) {
+	if ( m_title.setTitleFromTags( xml, titleMaxLen, *contentTypePtr, m_isSiteRoot ) ) {
 		m_titleValid = true;
 
 		logQueryTimingEnd( __func__, start );

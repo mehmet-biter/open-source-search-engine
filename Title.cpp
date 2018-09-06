@@ -70,54 +70,81 @@ void Title::setTitle(const std::string &title) {
 	m_title[m_titleLen] = '\0';
 }
 
-bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType ) {
+bool Title::setTitleFromTags(Xml *xml, int32_t maxTitleLen, uint8_t contentType, bool is_root_page) {
 	/// @todo cater for CT_DOC (when antiword is replaced)
 	// only allow html & pdf documents for now
 	if ( contentType != CT_HTML && contentType != CT_PDF ) {
 		return false;
 	}
 
-	/// @todo ALC configurable minTitleLen so we can tweak this as needed
-	const int minTitleLen = 3;
+	//We consider meta "og:title", meta "title", (if it's a root page) meta "og:site_name", and plain <title>
+	//We select the longest candidate, provided it is not obscenely long.
+	struct {
+		char title[MAX_TITLE_LEN];
+		int32_t title_len;
+	} candidate_title[4];
+	int candidate_titles = 0;
+	
+	if(contentType == CT_HTML) {
+		if(xml->getTagContent("property", "og:title", candidate_title[candidate_titles].title, MAX_TITLE_LEN, 0, maxTitleLen, &(candidate_title[candidate_titles].title_len), true, TAG_META) ) {
+			logDebug(g_conf.m_logDebugTitle, "title: found meta property og:title. title='%.*s'", candidate_title[candidate_titles].title_len, candidate_title[candidate_titles].title );
+			candidate_titles++;
+		}
 
-	// meta property = "og:title"
-	if ( contentType == CT_HTML &&
-	     xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
-		logDebug(g_conf.m_logDebugTitle, "title: generated from meta property og:title. title='%.*s'", m_titleLen, m_title );
-
-		return true;
+		if (xml->getTagContent("name", "title", candidate_title[candidate_titles].title, MAX_TITLE_LEN, 0, maxTitleLen, &(candidate_title[candidate_titles].title_len), true, TAG_META) ) {
+			logDebug(g_conf.m_logDebugTitle, "title: found meta title. title='%.*s'", candidate_title[candidate_titles].title_len, candidate_title[candidate_titles].title );
+			candidate_titles++;
+		}
+		if(is_root_page &&
+		   xml->getTagContent("property", "og:site_name", candidate_title[candidate_titles].title, MAX_TITLE_LEN, 0, maxTitleLen, &(candidate_title[candidate_titles].title_len), true, TAG_META) ) {
+			logDebug(g_conf.m_logDebugTitle, "title: found meta property og:site_name. title='%.*s'", candidate_title[candidate_titles].title_len, candidate_title[candidate_titles].title );
+			candidate_titles++;
+		}
 	}
 
-	// meta name = "title"
-	if ( contentType == CT_HTML &&
-	     xml->getTagContent("name", "title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
-		logDebug(g_conf.m_logDebugTitle, "title: generated from meta property title. title='%.*s'", m_titleLen, m_title );
-
-		return true;
-	}
-
-	// title
-	if ( xml->getTagContent( "", "", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_TITLE ) ) {
+	// <title>
+	if ( xml->getTagContent( "", "", candidate_title[candidate_titles].title, MAX_TITLE_LEN, 0, maxTitleLen, &(candidate_title[candidate_titles].title_len), true, TAG_TITLE ) ) {
+		bool bad_title = false;
 		if ( contentType == CT_PDF ) {
 			// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
-			const char *result = strnstr( m_title, "/in.", m_titleLen );
+			const char *result = strnstr( candidate_title[candidate_titles].title, "/in.", candidate_title[candidate_titles].title_len );
 			if ( result != NULL ) {
 				char *endp = NULL;
 
 				// do some further verification to avoid screwing up title
-				if ( ( strtoll( result + 4, &endp, 10 ) > 0 ) && ( endp == m_title + m_titleLen ) ) {
-					m_title[0] = '\0';
-					m_titleLen = 0;
-					return false;
+				if ( ( strtoll( result + 4, &endp, 10 ) > 0 ) && ( endp == candidate_title[candidate_titles].title + candidate_title[candidate_titles].title_len ) ) {
+					bad_title = true;
 				}
 			}
 		}
-
-		logDebug(g_conf.m_logDebugTitle, "title: generated from title tag. title='%.*s'", m_titleLen, m_title );
-
-		return true;
+		if(!bad_title) {
+			logDebug(g_conf.m_logDebugTitle, "title: found title tag. title='%.*s'", candidate_title[candidate_titles].title_len, candidate_title[candidate_titles].title );
+			candidate_titles++;
+		}
 	}
 
+	if(candidate_titles>0) {
+		const int minTitleLen = 3; //in bytes
+		const int maxTitleLen = 160; //in bytes
+		int best_candidate = -1;
+		for(int i=0; i<candidate_titles; i++) {
+			if(candidate_title[i].title_len>=minTitleLen &&
+			   candidate_title[i].title_len<=maxTitleLen &&
+			   (best_candidate==-1 || candidate_title[i].title_len>candidate_title[best_candidate].title_len))
+				best_candidate = i;
+		}
+		if(best_candidate>=0) {
+			memcpy(m_title, candidate_title[best_candidate].title, candidate_title[best_candidate].title_len);
+			m_titleLen = candidate_title[best_candidate].title_len;
+			m_title[m_titleLen] = '\0';
+#ifdef _VALGRIND_
+			VALGRIND_CHECK_MEM_IS_DEFINED(m_title,m_titleLen+1);
+#endif
+			logDebug(g_conf.m_logDebugTitle, "title: chose best candidate '%.*s'", m_titleLen, m_title );
+			return true;
+		}
+	}
+	
 	logDebug(g_conf.m_logDebugTitle, "title: unable to generate title from meta/title tags");
 
 	return false;

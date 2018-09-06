@@ -30,7 +30,7 @@ public:
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
 				   uint8_t langId );
 
-	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType);
+	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType, bool is_root_page);
 
 	const char *getTitle() const { return m_title; }
 
