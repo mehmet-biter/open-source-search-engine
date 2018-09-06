@@ -108,7 +108,7 @@ void Bits::setInLinkBits(const Sections *ss) {
 	m_inLinkBitsSet = true;
 	if ( ss->m_numSections == 0 ) return;
 	// sets bits for Bits.cpp for D_IN_LINK for each ALNUM word
-	for(const Section *si = ss->m_rootSection ; ; si = si->m_next) {
+	for(const Section *si = ss->m_rootSection; si; si = si->m_next) {
 		// skip if not a href section
 		if ( si->m_baseHash != TAG_A ) continue;
 		// set boundaries
