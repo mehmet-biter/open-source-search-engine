@@ -21,7 +21,7 @@ static void findCookieWarningLessSubrange(const TokenizerResult &tr, int start_w
 static bool looksLikeCookieWarning(const TokenizerResult &tr, int start_word_, int end_word_);
 
 
-//List of wods/tokens that in a query signals that we shoudl not filter out cookie-warning-looking text segments. So if you search for "oat meal cookie" you may
+//List of words/tokens that in a query signals that we should not filter out cookie-warning-looking text segments. So if you search for "oat meal cookie" you may
 //get a document summary that includes the cookie warning.
 static struct {
 	const char *token;
