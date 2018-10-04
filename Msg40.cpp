@@ -1617,14 +1617,6 @@ bool Msg40::gotEnoughSummaries() {
 		     now - m_startTime );
 
 
-	/////////////
-	//
-	//
-	// prepare query term extra info for gigabits
-	//
-	////////////
-
-
 	// set m_moreToCome, if true, we print a "Next 10" link
 	m_moreToCome = (visible > m_si->m_docsWanted+m_si->m_firstResultNum);
 	if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
