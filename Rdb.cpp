@@ -217,7 +217,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	if ( g_repairMode==REPAIR_MODE_NONE ) { g_process.shutdownAbort(true); }
 	// make a dir in the trash subfolder to hold them
 	uint32_t t = (uint32_t)getTime();
-	char dstDir[256];
+	char dstDir[sizeof(g_hostdb.m_dir)+128];
 	// make the trash dir if not there
 	snprintf(dstDir, sizeof(dstDir), "%s/trash/" , g_hostdb.m_dir );
 	dstDir[ sizeof(dstDir)-1 ] = '\0';

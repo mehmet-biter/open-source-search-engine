@@ -33,8 +33,8 @@ Wiki::~Wiki () {
 bool Wiki::load() {
 
 	// load it from .dat file if exists and is newer
-	char ff1[256];
-	char ff2[256];
+	char ff1[sizeof(g_hostdb.m_dir)+128];
+	char ff2[sizeof(g_hostdb.m_dir)+128];
 	snprintf(ff1, sizeof(ff1), "%swikititles.txt.part2", g_hostdb.m_dir);
 	ff1[ sizeof(ff1)-1 ] = '\0';
 	snprintf(ff2, sizeof(ff2), "%swikititles2.dat", g_hostdb.m_dir);
@@ -78,14 +78,14 @@ bool Wiki::loadText ( int32_t fileSize ) {
 	log(LOG_INFO,"wiki: generating wikititles2.dat file");
 
 	SafeBuf sb;
-	char ff1[256];
+	char ff1[sizeof(g_hostdb.m_dir)+128];
 	snprintf(ff1, sizeof(ff1), "%swikititles.txt.part1", g_hostdb.m_dir);
 	ff1[ sizeof(ff1)-1 ] = '\0';
 
 	log(LOG_INFO,"wiki: Loading %s",ff1);
 	if ( ! sb.fillFromFile(ff1) ) return false;
 
-	char ff2[256];
+	char ff2[sizeof(g_hostdb.m_dir)+128];
 	snprintf(ff2, sizeof(ff2), "%swikititles.txt.part2", g_hostdb.m_dir);
 	ff2[ sizeof(ff2)-1 ] = '\0';
 	

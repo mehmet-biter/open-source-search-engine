@@ -157,10 +157,10 @@ bool Wiktionary::test2 ( ) {
 bool Wiktionary::load() {
 
 	// load it from .dat file if exists and is newer
-	char ff1[256];
-	//char ff2[256];
-	char ff3[256];
-	char ff4[256];
+	char ff1[sizeof(g_hostdb.m_dir)+128];
+	//char ff2[sizeof(g_hostdb.m_dir)+128];
+	char ff3[sizeof(g_hostdb.m_dir)+128];
+	char ff4[sizeof(g_hostdb.m_dir)+128];
 	snprintf(ff1, sizeof(ff1), "%swiktionary.txt.aa", g_hostdb.m_dir);
 	ff1[ sizeof(ff1)-1 ] = '\0';
 	//sprintf(ff2, "%swiktionary-mybuf.txt", g_hostdb.m_dir);
@@ -436,7 +436,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	// wiktionary-buf.txt   (one syn set per line)
 	// wiktionary-lang.txt  (<landId>|<word>\n) (used by Speller.cpp)
 	//
-	char ff1[256];
+	char ff1[sizeof(g_hostdb.m_dir)+128];
 	snprintf(ff1, sizeof(ff1), "%swiktionary.txt.aa", g_hostdb.m_dir);
 	ff1[ sizeof(ff1)-1 ] = '\0';
 

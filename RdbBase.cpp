@@ -572,7 +572,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
 					if((fileId%2)==0) {
 						*anyCrashedMerges = true;
-						char fullname[1024];
+						char fullname[sizeof(m_collectionDirName)+256];
 						sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 						log(LOG_DEBUG,"Removing %s", fullname);
 						if(!doDryrun) {
@@ -618,7 +618,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
 				{
 					*anyCrashedMerges = true;
-					char fullname[1024];
+					char fullname[sizeof(m_collectionDirName)+256];
 					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
 					if(!doDryrun) {
@@ -663,7 +663,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
 				{
 					*anyCrashedMerges = true;
-					char fullname[1024];
+					char fullname[sizeof(m_mergeDirName)+256];
 					sprintf(fullname,"%s/%s",m_mergeDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
 					if(!doDryrun) {

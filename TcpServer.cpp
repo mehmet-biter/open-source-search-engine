@@ -213,7 +213,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 			const SSL_METHOD *meth = SSLv23_method();
 			m_ctx = SSL_CTX_new(meth);
 			// get the certificate location
-			char sslCertificate[256];
+			char sslCertificate[sizeof(g_hostdb.m_dir)+256];
 			snprintf(sslCertificate, sizeof(sslCertificate), "%sgb.pem", g_hostdb.m_dir);
 			sslCertificate[ sizeof(sslCertificate)-1 ] = '\0';
 

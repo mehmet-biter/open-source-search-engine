@@ -360,8 +360,8 @@ class Hostdb {
 	int32_t          m_numShards;
 	char          m_dir[256];
 
-	char          m_httpRootDir[256];
-	char          m_logFilename[256];
+	char          m_httpRootDir[sizeof(m_dir)+128];
+	char          m_logFilename[sizeof(m_dir)+128];
 
 	int32_t          m_indexSplits; 
 

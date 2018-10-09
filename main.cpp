@@ -5094,7 +5094,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t output) {
 			loop = 0;
 
 			FILE *fhndl;		
-			char out[128];
+			char out[sizeof(g_hostdb.m_dir)+128];
 			if( output != 9 ) goto printHtml;
 			// Dump raw data to a file to parse later
 			snprintf( out, sizeof(out), "%scntdom.xml", g_hostdb.m_dir );
