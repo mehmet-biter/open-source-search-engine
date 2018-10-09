@@ -133,6 +133,10 @@ void Mem::delnew ( void *ptr , size_t size , const char *note ) {
 	return;
 }
 
+//dynamic throw(...) may be deprecated by the signatures for new and new[] must be exactly like this
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+
 // . global override of new and delete operators
 // . seems like constructor and destructor are still called
 // . just use to check if enough memory
@@ -208,6 +212,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 
 	return mem;
 }
+#pragma GCC diagnostic pop
 
 
 Mem::Mem() {

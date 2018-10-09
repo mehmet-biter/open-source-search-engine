@@ -70,6 +70,11 @@ bool Dir::open ( ) {
 	return true;
 }
 
+//Disable deprecated-declarations about use of readdir_r(). the glib maintainers deprecate readdir_r() because the linux
+//version of readdir() is thread-safe. But the maintainers didn't think of other platforms, so that deprecation is
+//linux-centric and not portable.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 const char *Dir::getNextFilename(const char *pattern) {
 	if (!m_dir) {
 		log("dir: m_dir is NULL so can't find pattern %s", pattern);
@@ -91,3 +96,4 @@ const char *Dir::getNextFilename(const char *pattern) {
 
 	return NULL;
 }
+#pragma GCC diagnostic pop
