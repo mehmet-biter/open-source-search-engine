@@ -102,7 +102,9 @@ void TcpServer::reset() {
 		SSL_CTX_free(m_ctx);
 		// clean up the SSL crap
 		ERR_free_strings();
-		ERR_remove_state(0);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+		ERR_remove_thread_state(NULL);
+#endif
 		m_ctx = NULL;
 	}
 }
