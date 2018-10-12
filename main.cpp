@@ -1262,9 +1262,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if(!initialiseAllPrimaryRdbs())
-		return 1;
-
 	// . collectiondb, does not use rdb, loads directly from disk
 	// . do this up here so RdbTree::fixTree_unlocked() can fix RdbTree::m_collnums
 	// . this is a fake init, cuz we pass in "true"
@@ -1272,6 +1269,9 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "db: Collectiondb load failed." );
 		return 1;
 	}
+
+	if(!initialiseAllPrimaryRdbs())
+		return 1;
 
 	// the spider cache used by SpiderLoop
 	if ( ! g_spiderCache.init() ) {
