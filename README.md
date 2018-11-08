@@ -1,3 +1,10 @@
+# Warning: Do not use this code.
+
+Findx is shutting down. Please read https://privacore.github.io/
+
+
+
+
 # Gigablast - an open source search engine
 
 An open source web and enterprise search engine and spider/crawler.
